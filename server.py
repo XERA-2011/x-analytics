@@ -4,10 +4,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from x_analysis.sentiment_analysis import SentimentAnalysis
 
 # 创建独立的 FastAPI 应用
+# root_path 用于支持通过 /aktools/ 前缀访问时 Swagger UI 正常工作
 app = FastAPI(
     title="X-Service API",
     description="自定义数据分析服务，集成 AKShare 数据能力",
-    version="1.0.0"
+    version="1.0.0",
+    root_path="/aktools"
 )
 
 # 配置 CORS (允许跨域)
