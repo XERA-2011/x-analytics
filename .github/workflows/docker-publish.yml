@@ -10,7 +10,7 @@ env:
   GHCR_REGISTRY: ghcr.io
   GHCR_IMAGE: ${{ github.repository }}
   # 阿里云容器镜像服务
-  ALIYUN_REGISTRY: registry.cn-shenzhen.aliyuncs.com
+  ALIYUN_REGISTRY: crpi-8pt82bfwac9xhe36.cn-shenzhen.personal.cr.aliyuncs.com
   ALIYUN_IMAGE: xera_2011/x-analytics
 
 jobs:
