@@ -188,9 +188,10 @@ def setup_default_warmup_jobs():
     )
     
     # 恐慌贪婪指数 - 计算较重，低频刷新
+    # 注意：必须传递与 API 默认值一致的参数，确保缓存键匹配
     scheduler.add_warmup_job(
         job_id="warmup:sentiment:fear_greed",
-        func=lambda: warmup_cache(SentimentAnalysis.calculate_fear_greed_custom),
+        func=lambda: warmup_cache(SentimentAnalysis.calculate_fear_greed_custom, symbol="sh000001", days=14),
         trading_interval_minutes=5,
         non_trading_interval_minutes=60,
     )
@@ -210,6 +211,28 @@ def setup_default_warmup_jobs():
         non_trading_interval_minutes=60,
     )
 
+    # -------------------------------------------------------------------------
+    # 新增预热任务
+    # -------------------------------------------------------------------------
+    from .index import IndexAnalysis
+    from .fund import FundAnalysis
+
+    # 主要指数对比
+    scheduler.add_warmup_job(
+        job_id="warmup:index:compare",
+        func=lambda: warmup_cache(IndexAnalysis.compare_indices),
+        trading_interval_minutes=1,
+        non_trading_interval_minutes=30,
+    )
+
+    # 基金排行 (低频更新)
+    scheduler.add_warmup_job(
+        job_id="warmup:fund:top",
+        func=lambda: warmup_cache(FundAnalysis.get_top_funds, indicator="近1年", top_n=10),
+        trading_interval_minutes=60,
+        non_trading_interval_minutes=240,
+    )
+
 
 def initial_warmup():
     """
@@ -227,7 +250,7 @@ def initial_warmup():
         print(f"  市场概览预热失败: {e}")
     
     try:
-        warmup_cache(SentimentAnalysis.calculate_fear_greed_custom)
+        warmup_cache(SentimentAnalysis.calculate_fear_greed_custom, symbol="sh000001", days=14)
     except Exception as e:
         print(f"  恐慌指数预热失败: {e}")
     
@@ -236,5 +259,17 @@ def initial_warmup():
         warmup_cache(MarketAnalysis.get_sector_bottom)
     except Exception as e:
         print(f"  板块排行预热失败: {e}")
+        
+    try:
+        from .index import IndexAnalysis
+        warmup_cache(IndexAnalysis.compare_indices)
+    except Exception as e:
+        print(f"  指数对比预热失败: {e}")
+
+    try:
+        from .fund import FundAnalysis
+        warmup_cache(FundAnalysis.get_top_funds, indicator="近1年", top_n=10)
+    except Exception as e:
+        print(f"  基金排行预热失败: {e}")
     
     print("🔥 初始缓存预热完成")

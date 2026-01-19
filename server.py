@@ -106,17 +106,8 @@ def get_fund_top(n: int = 10):
 @app.get("/api/stock/search", tags=["个股分析"], summary="搜索个股")
 def search_stock(keyword: str):
     """搜索 A 股股票 (代码或名称)"""
-    import akshare as ak
-    try:
-        # 获取实时行情数据作为搜索源
-        df = ak.stock_zh_a_spot_em()
-        # 模糊匹配
-        mask = df["名称"].str.contains(keyword, na=False) | df["代码"].str.contains(keyword, na=False)
-        result = df[mask][["代码", "名称", "最新价", "涨跌幅"]].head(10)
-        return result.to_dict(orient="records")
-    except Exception as e:
-        print(f"搜索失败: {e}")
-        return []
+    from analytics.stock import StockAnalysis
+    return StockAnalysis.search(keyword=keyword)
 
 
 # -----------------------------------------------------------------------------

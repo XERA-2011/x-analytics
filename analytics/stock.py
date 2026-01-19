@@ -10,6 +10,8 @@ import pandas as pd
 from typing import Optional, List, Tuple
 from datetime import datetime, timedelta
 
+from .cache import cached
+
 
 class StockAnalysis:
     """A股股票分析类"""
@@ -178,6 +180,46 @@ class StockAnalysis:
             report["历史分析"] = f"获取失败: {e}"
         
         return report
+    
+    @staticmethod
+    @cached("stock:spot_data", ttl=30, stale_ttl=60)
+    def _get_spot_data() -> list:
+        """
+        获取 A 股实时行情数据（带缓存）
+        
+        缓存: 30秒 TTL + 60秒 Stale
+        """
+        try:
+            df = ak.stock_zh_a_spot_em()
+            return df[["代码", "名称", "最新价", "涨跌幅"]].to_dict(orient="records")
+        except Exception as e:
+            print(f"获取 A 股行情失败: {e}")
+            return []
+    
+    @staticmethod
+    def search(keyword: str) -> list:
+        """
+        搜索 A 股股票 (代码或名称)
+        
+        Args:
+            keyword: 搜索关键词（支持代码或名称模糊匹配）
+            
+        Returns:
+            list: 匹配的股票列表（最多 10 条）
+        """
+        try:
+            # 从缓存获取 A 股列表
+            data = StockAnalysis._get_spot_data()
+            if not data:
+                return []
+            
+            # 转换为 DataFrame 进行筛选
+            df = pd.DataFrame(data)
+            mask = df["名称"].str.contains(keyword, na=False) | df["代码"].str.contains(keyword, na=False)
+            return df[mask].head(10).to_dict(orient="records")
+        except Exception as e:
+            print(f"搜索失败: {e}")
+            return []
 
 
 def demo():

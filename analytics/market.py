@@ -144,6 +144,18 @@ class MarketAnalysis:
             return []
 
     @staticmethod
+    @cached("market:board_cons", ttl=300, stale_ttl=600)
+    def _get_board_cons(board_code: str) -> List[Dict]:
+        """获取板块成分股（带缓存）"""
+        try:
+            cons = ak.stock_board_industry_cons_em(symbol=board_code)
+            if not cons.empty and "涨跌幅" in cons.columns:
+                return cons[["名称", "涨跌幅"]].to_dict(orient="records")
+        except Exception as e:
+            print(f"获取板块成分股失败 [{board_code}]: {e}")
+        return []
+
+    @staticmethod
     @cached("market:sector_bottom", ttl=300, stale_ttl=600)
     def get_sector_bottom(n: int = 5) -> List[Dict]:
         """
@@ -170,16 +182,18 @@ class MarketAnalysis:
                     # 尝试获取该板块成分股以找到领跌股
                     try:
                         board_code = row["板块代码"]
-                        # 获取板块成分股
-                        cons = ak.stock_board_industry_cons_em(symbol=board_code)
-                        if not cons.empty and "涨跌幅" in cons.columns:
-                            # 找跌得最惨的
-                            worst_stock = cons.sort_values("涨跌幅", ascending=True).iloc[0]
+                        # 获取板块成分股 (使用缓存方法)
+                        # cons = ak.stock_board_industry_cons_em(symbol=board_code)
+                        cons_list = MarketAnalysis._get_board_cons(board_code)
+                        
+                        if cons_list:
+                            # 找跌得最惨的 (在内存中排序)
+                            cons_list.sort(key=lambda x: x["涨跌幅"])
+                            worst_stock = cons_list[0]
                             item["领涨股票"] = worst_stock["名称"]
                             item["领涨股票-涨跌幅"] = worst_stock["涨跌幅"]
                     except Exception as e:
-                        print(f"获取板块成分股失败 [{row['板块名称']}]: {e}")
-                        
+                        print(f"处理板块成分股失败 [{row['板块名称']}]: {e}")
                     results.append(item)
                 
                 return results
