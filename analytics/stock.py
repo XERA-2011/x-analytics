@@ -71,7 +71,7 @@ class StockAnalysis:
         self._realtime_data = df[df["代码"] == self.symbol].iloc[0]
         return self._realtime_data
     
-    def calculate_returns(self, periods: List[int] = [1, 5, 20, 60]) -> pd.DataFrame:
+    def calculate_returns(self, periods: Optional[List[int]] = None) -> pd.DataFrame:
         """
         计算不同周期的收益率
         
@@ -81,6 +81,8 @@ class StockAnalysis:
         Returns:
             pd.DataFrame: 各周期收益率
         """
+        if periods is None:
+            periods = [1, 5, 20, 60]
         if self._hist_data is None:
             self.get_history()
             
@@ -95,16 +97,18 @@ class StockAnalysis:
         
         return pd.DataFrame([results])
     
-    def calculate_ma(self, windows: List[int] = [5, 10, 20, 60]) -> pd.DataFrame:
+    def calculate_ma(self, windows: Optional[List[int]] = None) -> pd.DataFrame:
         """
         计算移动平均线
         
         Args:
-            windows: 均线周期列表
+            windows: 均线周期列表，默认 [5, 10, 20, 60]
             
         Returns:
             pd.DataFrame: 带均线的数据
         """
+        if windows is None:
+            windows = [5, 10, 20, 60]
         if self._hist_data is None:
             self.get_history()
             

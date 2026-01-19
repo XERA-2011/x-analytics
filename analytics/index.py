@@ -8,7 +8,7 @@ Desc: 指数分析工具
 import akshare as ak
 import pandas as pd
 from typing import Optional, List, Dict
-from datetime import datetime, timedelta
+from datetime import datetime
 
 
 # 常用指数代码
@@ -147,7 +147,7 @@ class IndexAnalysis:
         return report
     
     @staticmethod
-    @cached("index:compare", ttl=300, stale_ttl=300)
+    @cached("index:compare", ttl=300, stale_ttl=600)
     def compare_indices() -> pd.DataFrame:
         """
         对比主要指数表现 (使用实时行情)
@@ -202,8 +202,12 @@ def demo():
     print("📊 主要指数对比")
     print("=" * 60)
     
-    compare_df = IndexAnalysis.compare_indices()
-    print(compare_df.to_string(index=False))
+    compare_data = IndexAnalysis.compare_indices()
+    if compare_data:
+        import pandas as pd
+        print(pd.DataFrame(compare_data).to_string(index=False))
+    else:
+        print("获取失败")
 
 
 if __name__ == "__main__":

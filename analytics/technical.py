@@ -209,7 +209,6 @@ def apply_indicators(df: pd.DataFrame) -> pd.DataFrame:
     Returns:
         pd.DataFrame: 添加了技术指标的数据
     """
-    ti = TechnicalIndicators()
     result = df.copy()
     
     close = df["收盘"]
@@ -217,38 +216,40 @@ def apply_indicators(df: pd.DataFrame) -> pd.DataFrame:
     low = df["最低"]
     volume = df["成交量"]
     
+    TI = TechnicalIndicators  # 简写
+    
     # 均线
-    result["MA5"] = ti.MA(close, 5)
-    result["MA10"] = ti.MA(close, 10)
-    result["MA20"] = ti.MA(close, 20)
-    result["MA60"] = ti.MA(close, 60)
+    result["MA5"] = TI.MA(close, 5)
+    result["MA10"] = TI.MA(close, 10)
+    result["MA20"] = TI.MA(close, 20)
+    result["MA60"] = TI.MA(close, 60)
     
     # MACD
-    macd, signal, hist = ti.MACD(close)
+    macd, signal, hist = TI.MACD(close)
     result["MACD"] = macd
     result["MACD_Signal"] = signal
     result["MACD_Hist"] = hist
     
     # RSI
-    result["RSI"] = ti.RSI(close)
+    result["RSI"] = TI.RSI(close)
     
     # 布林带
-    upper, middle, lower = ti.BOLL(close)
+    upper, middle, lower = TI.BOLL(close)
     result["BOLL_Upper"] = upper
     result["BOLL_Middle"] = middle
     result["BOLL_Lower"] = lower
     
     # KDJ
-    k, d, j = ti.KDJ(high, low, close)
+    k, d, j = TI.KDJ(high, low, close)
     result["K"] = k
     result["D"] = d
     result["J"] = j
     
     # ATR
-    result["ATR"] = ti.ATR(high, low, close)
+    result["ATR"] = TI.ATR(high, low, close)
     
     # OBV
-    result["OBV"] = ti.OBV(close, volume)
+    result["OBV"] = TI.OBV(close, volume)
     
     return result
 

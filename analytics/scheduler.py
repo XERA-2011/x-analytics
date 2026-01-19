@@ -6,11 +6,54 @@
 """
 
 import os
-from datetime import datetime
+from datetime import datetime, date, timedelta
 from typing import Callable, List, Optional
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.interval import IntervalTrigger
+from functools import lru_cache
+import akshare as ak
+
+# -----------------------------------------------------------------------------
+# 交易日历工具
+# -----------------------------------------------------------------------------
+@lru_cache(maxsize=1)
+def _get_trading_days_cache(year: int) -> set:
+    """获取指定年份的交易日历（缓存）"""
+    try:
+        print(f"📅正在获取 {year} 年交易日历...")
+        tool_trade_date_hist_sina_df = ak.tool_trade_date_hist_sina()
+        # 筛选年份
+        df = tool_trade_date_hist_sina_df
+        trade_dates = set(df['trade_date'].dt.strftime('%Y-%m-%d').tolist())
+        return trade_dates
+    except Exception as e:
+        print(f"⚠️ 获取交易日历失败: {e}")
+        return set()
+
+def is_trading_day(d: date = None) -> bool:
+    """
+    判断是否是交易日
+    如果是周末，直接返回 False
+    如果是周一至周五，尝试查日历（处理节假日），如果查不到日历则默认是 True
+    """
+    if d is None:
+        d = date.today()
+    
+    # 1. 基础过滤：周末
+    if d.weekday() >= 5:
+        return False
+        
+    # 2. 精确过滤：查表（处理法定节假日）
+    try:
+        trading_days = _get_trading_days_cache(d.year)
+        if trading_days:
+            return d.strftime('%Y-%m-%d') in trading_days
+    except:
+        pass
+        
+    # 降级策略：默认周一到周五都是
+    return True
 
 
 class CacheScheduler:
@@ -58,30 +101,55 @@ class CacheScheduler:
         # 包装函数，添加时间感知
         def smart_warmup():
             now = datetime.now()
+            d = now.date()
             hour = now.hour
             minute = now.minute
-            weekday = now.weekday()  # 0=周一, 6=周日
             
-            # 判断是否在交易时段（周一到周五 9:30-15:00）
-            is_trading_hours = (
-                weekday < 5 and  # 周一到周五
-                ((hour == 9 and minute >= 30) or (10 <= hour < 15) or (hour == 15 and minute == 0))
-            )
+            # 1. 判断是否是交易日
+            is_trade_day = is_trading_day(d)
             
-            # 非交易时段，根据间隔决定是否执行
-            if not is_trading_hours:
-                # 每 N 分钟执行一次（通过检查当前分钟是否能被间隔整除）
-                if minute % non_trading_interval_minutes != 0:
-                    return  # 跳过本次执行
+            # 2. 判断是否在交易时段 (9:30 - 15:00)
+            # 精确匹配：9:30 开盘，15:00 收盘
+            is_active_time = False
+            if is_trade_day:
+                if (hour == 9 and minute >= 30) or (10 <= hour < 15) or (hour == 15 and minute == 0):
+                    is_active_time = True
             
-            try:
-                print(f"🔄 执行预热任务: {job_id}")
-                func(**kwargs)
-            except Exception as e:
-                print(f"❌ 预热任务失败 [{job_id}]: {e}")
+            # 3. 决策执行
+            should_run = False
+            
+            if is_active_time:
+                # 交易时段：由 IntervalTrigger 控制频率 (即 trading_interval_minutes)
+                # 直接执行
+                should_run = True
+            else:
+                # 非交易时段：检查频率控制
+                # 将分钟间隔转换为小时，避免 minute % 1440 这种永远非 0 的 bug
+                # 如果间隔 >= 60，则按小时对齐
+                
+                # 既然我们在非交易时段，IntervalTrigger 还在不断触发 (每 trading_interval_minutes 一次)
+                # 我们需要在这里限流
+                
+                if non_trading_interval_minutes >= 60:
+                    # 例如 60, 1440
+                    hours_interval = non_trading_interval_minutes // 60
+                    # 只在整点执行
+                    if minute == 0 and (hour % hours_interval == 0):
+                        should_run = True
+                else:
+                    # 分钟级间隔
+                    if minute % non_trading_interval_minutes == 0:
+                        should_run = True
+
+            if should_run:
+                try:
+                    # print(f"🔄 执行预热任务: {job_id}")
+                    func(**kwargs)
+                except Exception as e:
+                    print(f"❌ 预热任务失败 [{job_id}]: {e}")
         
-        # 使用较短的间隔注册任务（交易时段间隔）
-        # 非交易时段的频率控制在 smart_warmup 内部实现
+        # 使用交易时段的间隔注册任务
+        # 调度器会以较高频率触发，我们在 smart_warmup 里进行过滤
         self.scheduler.add_job(
             smart_warmup,
             IntervalTrigger(minutes=trading_interval_minutes),
@@ -89,7 +157,7 @@ class CacheScheduler:
             replace_existing=True
         )
         self._jobs.append(job_id)
-        print(f"✅ 注册预热任务: {job_id} (交易时段: {trading_interval_minutes}分钟, 其他: {non_trading_interval_minutes}分钟)")
+        print(f"✅ 注册预热任务: {job_id} (交易时段: {trading_interval_minutes}m, 非交易: {non_trading_interval_minutes}m)")
     
     def add_simple_job(
         self,
@@ -175,9 +243,11 @@ def setup_default_warmup_jobs():
     
     刷新策略：
     - 5分钟刷新 (交易时段)：恐慌指数、指数对比
-    - 1小时刷新 (交易时段)：市场概览、领涨/领跌板块
-    - 12小时刷新 (交易时段)：基金排行
-    - 非交易时段：统一 24 小时刷新一次
+    - 30分钟刷新 (交易时段)：市场概览
+    - 60分钟刷新 (交易时段)：领涨/领跌板块
+    - 12小时刷新：基金排行
+    - 非交易时段：统一 4 小时刷新一次
+    - 特殊任务：每个交易日 09:25 强制全量预热
     
     在 server.py 启动时调用
     """
@@ -185,19 +255,16 @@ def setup_default_warmup_jobs():
     from .market import MarketAnalysis
     from .sentiment import SentimentAnalysis
     
-    # 非交易时段统一 24 小时 = 1440 分钟
-    NON_TRADING_INTERVAL = 1440
-    
     # =========================================================================
     # 5分钟刷新组：恐慌指数、指数对比
     # =========================================================================
     
-    # 恐慌贪婪指数
+    # 恐慌贪婪指数 (非交易时段 4小时刷一次)
     scheduler.add_warmup_job(
         job_id="warmup:sentiment:fear_greed",
         func=lambda: warmup_cache(SentimentAnalysis.calculate_fear_greed_custom, symbol="sh000001", days=14),
         trading_interval_minutes=5,
-        non_trading_interval_minutes=NON_TRADING_INTERVAL,
+        non_trading_interval_minutes=240, 
     )
     
     # 主要指数对比
@@ -206,19 +273,19 @@ def setup_default_warmup_jobs():
         job_id="warmup:index:compare",
         func=lambda: warmup_cache(IndexAnalysis.compare_indices),
         trading_interval_minutes=5,
-        non_trading_interval_minutes=NON_TRADING_INTERVAL,
+        non_trading_interval_minutes=240,
     )
     
     # =========================================================================
-    # 1小时刷新组：市场概览、领涨/领跌板块
+    # 30-60分钟刷新组：市场概览、领涨/领跌板块
     # =========================================================================
     
-    # 市场概览
+    # 市场概览 (交易段 30m, 休市 4h)
     scheduler.add_warmup_job(
         job_id="warmup:market:overview",
         func=lambda: warmup_cache(MarketAnalysis.get_market_overview_v2),
-        trading_interval_minutes=60,
-        non_trading_interval_minutes=NON_TRADING_INTERVAL,
+        trading_interval_minutes=30,
+        non_trading_interval_minutes=240,
     )
     
     # 领涨板块
@@ -226,7 +293,7 @@ def setup_default_warmup_jobs():
         job_id="warmup:market:sector_top",
         func=lambda: warmup_cache(MarketAnalysis.get_sector_top),
         trading_interval_minutes=60,
-        non_trading_interval_minutes=NON_TRADING_INTERVAL,
+        non_trading_interval_minutes=240,
     )
     
     # 领跌板块
@@ -234,7 +301,7 @@ def setup_default_warmup_jobs():
         job_id="warmup:market:sector_bottom",
         func=lambda: warmup_cache(MarketAnalysis.get_sector_bottom),
         trading_interval_minutes=60,
-        non_trading_interval_minutes=NON_TRADING_INTERVAL,
+        non_trading_interval_minutes=240,
     )
 
     # =========================================================================
@@ -246,8 +313,25 @@ def setup_default_warmup_jobs():
         job_id="warmup:fund:top",
         func=lambda: warmup_cache(FundAnalysis.get_top_funds, indicator="近1年", top_n=10),
         trading_interval_minutes=720,  # 12小时
-        non_trading_interval_minutes=NON_TRADING_INTERVAL,
+        non_trading_interval_minutes=720,
     )
+    
+    # =========================================================================
+    # 特殊任务：开盘前强制刷新 (仅交易日 9:25)
+    # =========================================================================
+    def pre_market_warmup():
+        if is_trading_day():
+            print("🌅 执行开盘前(9:25)强制预热...")
+            # 触发一次初始预热逻辑（这也包含核心指标）
+            initial_warmup()
+
+    scheduler.scheduler.add_job(
+        pre_market_warmup,
+        CronTrigger(day_of_week='mon-fri', hour=9, minute=25),
+        id="warmup:special:pre_market",
+        replace_existing=True
+    )
+    print("✅ 注册特殊任务: 开盘前强制预热 (09:25)")
 
 
 def warmup_with_retry(func, name: str, max_retries: int = 3, *args, **kwargs) -> bool:

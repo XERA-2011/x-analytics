@@ -36,8 +36,6 @@ class MarketAnalysis:
                 "sz399006": "创业板指",
             }
             
-            total_volume = 0
-            
             for code, name in indices_map.items():
                 df = ak.stock_zh_index_daily(symbol=code)
                 if df.empty:
@@ -71,13 +69,13 @@ class MarketAnalysis:
         return summary
 
     @staticmethod
-    @cached("market:overview", ttl=3600, stale_ttl=3600)
+    @cached("market:overview", ttl=2400, stale_ttl=3600)
     def get_market_overview_v2() -> Dict[str, Any]:
         """
         获取市场综合概览 (API 专用)
         包含：主要指数、上涨下跌家数、两市成交额
         
-        缓存: 60秒 TTL + 120秒 Stale
+        缓存: 30分钟 TTL + 60分钟 Stale
         """
         result = {
             "update_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -127,12 +125,12 @@ class MarketAnalysis:
         return result
 
     @staticmethod
-    @cached("market:sector_top", ttl=3600, stale_ttl=3600)
+    @cached("market:sector_top", ttl=3600, stale_ttl=7200)
     def get_sector_top(n: int = 5) -> List[Dict]:
         """
         获取领涨行业
         
-        缓存: 180秒 TTL + 300秒 Stale
+        缓存: 60分钟 TTL + 120分钟 Stale
         """
         try:
             df = ak.stock_board_industry_name_em()
@@ -144,7 +142,7 @@ class MarketAnalysis:
             return []
 
     @staticmethod
-    @cached("market:board_cons", ttl=3600, stale_ttl=3600)
+    @cached("market:board_cons", ttl=3600, stale_ttl=7200)
     def _get_board_cons(board_code: str) -> List[Dict]:
         """获取板块成分股（带缓存）"""
         try:
@@ -156,12 +154,12 @@ class MarketAnalysis:
         return []
 
     @staticmethod
-    @cached("market:sector_bottom", ttl=3600, stale_ttl=3600)
+    @cached("market:sector_bottom", ttl=3600, stale_ttl=7200)
     def get_sector_bottom(n: int = 5) -> List[Dict]:
         """
         获取领跌行业 (并获取该行业内跌幅最大的股票)
         
-        缓存: 300秒 TTL + 600秒 Stale (因为需要多次请求，缓存时间设长一点)
+        缓存: 60分钟 TTL + 120分钟 Stale
         """
         try:
             df = ak.stock_board_industry_name_em()

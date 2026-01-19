@@ -72,6 +72,7 @@ class SentimentAnalysis:
             return {}
 
     @staticmethod
+    @cached("sentiment:qvix", ttl=600, stale_ttl=1200)
     def get_qvix_indices() -> Dict[str, float]:
         """
         获取中国波指 (QVIX) - 类 VIX 指数
@@ -79,6 +80,8 @@ class SentimentAnalysis:
 
         Returns:
             dict: 各主要指数的 QVIX 最新值
+        
+        缓存: 10分钟 TTL + 20分钟 Stale
         """
         indices = {
             "50ETF_QVIX": ak.index_option_50etf_qvix,
@@ -126,12 +129,15 @@ class SentimentAnalysis:
             return pd.DataFrame()
 
     @staticmethod
+    @cached("sentiment:north_funds", ttl=300, stale_ttl=600)
     def get_north_funds_sentiment() -> Dict[str, Any]:
         """
         获取北向资金情绪 (外资态度)
         
         Returns:
             dict: 北向资金流向数据
+        
+        缓存: 5分钟 TTL + 10分钟 Stale
         """
         try:
             # 获取北向资金实时流向
@@ -240,7 +246,7 @@ def analyze_sentiment_report():
         print("获取 QVIX 数据失败或暂无数据")
 
     # 3. 资金情绪
-    print("\n� 聪明钱情绪 (北向资金)")
+    print("\n💰 聪明钱情绪 (北向资金)")
     print("-" * 60)
     north_data = SentimentAnalysis.get_north_funds_sentiment()
     if north_data:
@@ -281,7 +287,7 @@ def analyze_sentiment_report():
     
     # 北向信号
     if north_data and north_data.get("数值", 0) > 50:
-        signals.append("� 外资大幅扫货 (>50亿)，情绪显著提振。")
+        signals.append("💼 外资大幅扫货 (>50亿)，情绪显著提振。")
     elif north_data and north_data.get("数值", 0) < -50:
         signals.append("🏃 外资大幅出逃 (<-50亿)，需警惕风险。")
 

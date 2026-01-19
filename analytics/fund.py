@@ -14,7 +14,7 @@ from datetime import datetime
 from .cache import cached
 import requests
 from akshare.utils import demjson
-from akshare.utils.cons import headers as default_headers
+# akshare utilities
 import random
 
 # -----------------------------------------------------------------------------
@@ -255,9 +255,23 @@ class FundAnalysis:
             return []
     
     @staticmethod
+    @cached("fund:all_list", ttl=3600, stale_ttl=7200)
+    def _get_all_funds() -> list:
+        """
+        获取全部基金列表（带缓存，1小时刷新）
+        用于搜索功能复用
+        """
+        try:
+            df = ak.fund_open_fund_daily_em()
+            return df[["基金代码", "基金简称", "日增长率"]].to_dict(orient="records")
+        except Exception as e:
+            print(f"获取基金列表失败: {e}")
+            return []
+    
+    @staticmethod
     def search_fund(keyword: str) -> pd.DataFrame:
         """
-        搜索基金
+        搜索基金（使用缓存数据）
         
         Args:
             keyword: 关键词（基金名称或代码）
@@ -266,8 +280,11 @@ class FundAnalysis:
             pd.DataFrame: 匹配的基金列表
         """
         try:
-            df = ak.fund_open_fund_daily_em()
+            data = FundAnalysis._get_all_funds()
+            if not data:
+                return pd.DataFrame()
             
+            df = pd.DataFrame(data)
             # 按代码或名称筛选
             mask = (
                 df["基金代码"].str.contains(keyword, na=False) | 
