@@ -159,10 +159,10 @@ class FundAnalysis:
                 df["日增长率_num"] = pd.to_numeric(df["日增长率"], errors="coerce")
                 df = df.sort_values("日增长率_num", ascending=False)
                 
-            return df.head(top_n)
+            return df.head(top_n).to_dict(orient="records")
         except Exception as e:
             print(f"获取基金排行失败: {e}")
-            return pd.DataFrame()
+            return []
     
     @staticmethod
     def search_fund(keyword: str) -> pd.DataFrame:

@@ -90,18 +90,22 @@ def get_index_compare():
     """获取主要指数对比 (上证/深证/创业板等)"""
     from analytics.index import IndexAnalysis
     # 暂时不加缓存装饰器，因为 compare_indices 内部涉及多个网络请求，如果要缓存建议在内部加
-    df = IndexAnalysis.compare_indices()
-    return df.to_dict(orient="records")
+    # 暂时不加缓存装饰器，因为 compare_indices 内部涉及多个网络请求，如果要缓存建议在内部加
+    data = IndexAnalysis.compare_indices()
+    return data
 
 @app.get("/api/fund/top", tags=["基金分析"], summary="获取基金涨幅榜")
 def get_fund_top(n: int = 10):
     """获取场外基金日涨幅榜 Top N"""
     from analytics.fund import FundAnalysis
     # 同样由内部或 Redis 缓存控制
-    df = FundAnalysis.get_top_funds(top_n=n)
-    if df.empty:
+    # 同样由内部或 Redis 缓存控制
+    data = FundAnalysis.get_top_funds(top_n=n)
+    if not data:
         return []
-    return df[["基金代码", "基金简称", "日增长率"]].to_dict(orient="records")
+    
+    # 已经是 list[dict]
+    return [{"基金代码": item["基金代码"], "基金简称": item["基金简称"], "日增长率": item["日增长率"]} for item in data]
 
 @app.get("/api/stock/search", tags=["个股分析"], summary="搜索个股")
 def search_stock(keyword: str):

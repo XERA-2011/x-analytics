@@ -169,11 +169,11 @@ class IndexAnalysis:
             # 转换格式: 1日涨跌改为百分比字符串
             result_df["1日涨跌"] = result_df["1日涨跌"].apply(lambda x: f"{x:+.2f}%")
             
-            return result_df
+            return result_df.to_dict(orient="records")
             
         except Exception as e:
             print(f"获取指数对比失败: {e}")
-            return pd.DataFrame()
+            return []
 
 
 def demo():
