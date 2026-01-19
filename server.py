@@ -26,7 +26,7 @@ app.add_middleware(
 # -----------------------------------------------------------------------------
 # API 接口
 # -----------------------------------------------------------------------------
-@app.get("/api/x/sentiment/fear-greed", tags=["情绪分析"], summary="获取市场恐慌贪婪指数")
+@app.get("/api/sentiment/fear-greed", tags=["情绪分析"], summary="获取市场恐慌贪婪指数")
 def get_fear_greed_index(symbol: str = "sh000001", days: int = 14):
     """
     计算基于 RSI 和 Bias 的自定义恐慌贪婪指数。
@@ -35,17 +35,17 @@ def get_fear_greed_index(symbol: str = "sh000001", days: int = 14):
     """
     return SentimentAnalysis.calculate_fear_greed_custom(symbol=symbol, days=days)
 
-@app.get("/api/x/sentiment/qvix", tags=["情绪分析"], summary="获取中国波指(QVIX)")
+@app.get("/api/sentiment/qvix", tags=["情绪分析"], summary="获取中国波指(QVIX)")
 def get_qvix_indices():
     """获取主要 ETF 期权的波动率指数 (QVIX)"""
     return SentimentAnalysis.get_qvix_indices()
 
-@app.get("/api/x/sentiment/north-flow", tags=["情绪分析"], summary="获取北向资金情绪")
+@app.get("/api/sentiment/north-flow", tags=["情绪分析"], summary="获取北向资金情绪")
 def get_north_flow():
     """获取北向资金(聪明钱)的实时流向与净买入额"""
     return SentimentAnalysis.get_north_funds_sentiment()
 
-@app.get("/api/x/health", tags=["系统"], summary="服务健康检查")
+@app.get("/api/health", tags=["系统"], summary="服务健康检查")
 def health_check():
     return {"status": "ok", "service": "x-analytics", "version": "1.0.0"}
 

@@ -4,7 +4,7 @@
  */
 
 // API 基础路径
-const API_BASE = '/api/x';
+const API_BASE = '/analytics/api';
 
 // ============================================
 // 工具函数
