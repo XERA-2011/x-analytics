@@ -23,6 +23,9 @@ MAJOR_INDICES = {
 }
 
 
+from .cache import cached
+
+
 class IndexAnalysis:
     """指数分析类"""
     
@@ -144,6 +147,7 @@ class IndexAnalysis:
         return report
     
     @staticmethod
+    @cached("index:compare", ttl=60, stale_ttl=120)
     def compare_indices() -> pd.DataFrame:
         """
         对比主要指数表现 (使用实时行情)
