@@ -204,11 +204,21 @@ def demo():
     print("\n📈 今日基金涨幅榜 Top 5")
     print("-" * 60)
     
+    # get_top_funds 返回的是 list[dict]
     top_funds = FundAnalysis.get_top_funds(top_n=5)
+    
     if len(top_funds) > 0:
-        display_cols = ["基金代码", "基金简称", "日增长率"]
-        available_cols = [c for c in display_cols if c in top_funds.columns]
-        print(top_funds[available_cols].to_string(index=False))
+        print(f"{'基金代码':<10} {'基金简称':<20} {'日增长率':<10}")
+        print("-" * 60)
+        for item in top_funds:
+            code = item.get("基金代码", "")
+            name = item.get("基金简称", "")
+            # 截断过长名称
+            if len(name) > 15:
+                name = name[:13] + ".."
+            
+            rate = item.get("日增长率", "")
+            print(f"{code:<10} {name:<20} {str(rate):<10}")
     
     # 搜索示例
     print("\n🔍 搜索包含 '沪深300' 的基金")
