@@ -10,16 +10,21 @@ import os
 import json
 import hashlib
 import redis
+from redis import ConnectionPool
 import time
 import threading
 from functools import wraps
 from typing import Optional, Any, Callable
+
+# 缓存版本号：当缓存数据结构变化时递增，自动使旧缓存失效
+CACHE_VERSION = "v1"
 
 
 class RedisCache:
     """Redis 缓存封装类"""
     
     _instance: Optional['RedisCache'] = None
+    _instance_lock = threading.Lock()  # 线程安全锁
     
     def __init__(self, redis_url: Optional[str] = None):
         """
@@ -34,22 +39,28 @@ class RedisCache:
     
     @classmethod
     def get_instance(cls) -> 'RedisCache':
-        """获取单例实例"""
+        """获取单例实例（线程安全）"""
         if cls._instance is None:
-            cls._instance = cls()
+            with cls._instance_lock:
+                # 双重检查锁定模式
+                if cls._instance is None:
+                    cls._instance = cls()
         return cls._instance
     
     @property
     def redis(self) -> redis.Redis:
-        """懒加载 Redis 连接"""
+        """懒加载 Redis 连接（使用连接池）"""
         if self._redis is None:
             try:
-                self._redis = redis.from_url(
+                # 使用连接池管理连接
+                pool = ConnectionPool.from_url(
                     self.redis_url,
+                    max_connections=10,
                     decode_responses=True,
                     socket_connect_timeout=5,
                     socket_timeout=5
                 )
+                self._redis = redis.Redis(connection_pool=pool)
                 # 测试连接
                 self._redis.ping()
                 self._connected = True
@@ -112,16 +123,36 @@ class RedisCache:
         return 0
     
     def get_stats(self) -> dict:
-        """获取统计"""
+        """获取统计（包含命中率）"""
         if not self.connected:
             return {"connected": False, "error": "Redis 未连接"}
         try:
+            memory_info = self.redis.info("memory")
+            stats_info = self.redis.info("stats")
+            
+            # 计算命中率
+            hits = stats_info.get("keyspace_hits", 0)
+            misses = stats_info.get("keyspace_misses", 0)
+            total = hits + misses
+            hit_rate = round(hits / total * 100, 2) if total > 0 else 0
+            
+            # 获取缓存键数量
+            keys_count = len(list(self.redis.scan_iter(match=f"xanalytics:{CACHE_VERSION}:*", count=1000)))
+            
             return {
                 "connected": True,
-                "info": self.redis.info("memory")
+                "version": CACHE_VERSION,
+                "keys_count": keys_count,
+                "hit_rate": f"{hit_rate}%",
+                "hits": hits,
+                "misses": misses,
+                "memory": {
+                    "used_memory_human": memory_info.get("used_memory_human"),
+                    "used_memory_peak_human": memory_info.get("used_memory_peak_human")
+                }
             }
-        except Exception:
-            return {"connected": False}
+        except Exception as e:
+            return {"connected": False, "error": str(e)}
 
     def lock(self, name: str, timeout: int = 10, blocking_timeout: int = 5):
         """获取分布式锁"""
@@ -146,10 +177,11 @@ cache = RedisCache.get_instance()
 
 
 def make_cache_key(prefix: str, *args, **kwargs) -> str:
-    """生成缓存键"""
+    """生成缓存键（包含版本号，使用 SHA256 哈希）"""
     params_str = json.dumps({"args": args, "kwargs": kwargs}, sort_keys=True, default=str)
-    params_hash = hashlib.md5(params_str.encode()).hexdigest()[:8]
-    return f"xanalytics:{prefix}:{params_hash}"
+    # 使用 SHA256 替代 MD5，取前 12 位以减少碰撞风险
+    params_hash = hashlib.sha256(params_str.encode()).hexdigest()[:12]
+    return f"xanalytics:{CACHE_VERSION}:{prefix}:{params_hash}"
 
 
 def cached(key_prefix: str, ttl: int = 60, stale_ttl: Optional[int] = None):

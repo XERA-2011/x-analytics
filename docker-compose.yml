@@ -15,7 +15,7 @@ services:
       timeout: 5s
       retries: 5
 
-  # X-Analytics 主服务
+  # x-analytics 主服务
   x-analytics:
     build: .
     container_name: x-analytics-app

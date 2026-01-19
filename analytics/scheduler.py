@@ -173,103 +173,166 @@ def setup_default_warmup_jobs():
     """
     设置默认的缓存预热任务
     
+    刷新策略：
+    - 5分钟刷新 (交易时段)：恐慌指数、指数对比
+    - 1小时刷新 (交易时段)：市场概览、领涨/领跌板块
+    - 12小时刷新 (交易时段)：基金排行
+    - 非交易时段：统一 24 小时刷新一次
+    
     在 server.py 启动时调用
     """
     from .cache import warmup_cache
     from .market import MarketAnalysis
     from .sentiment import SentimentAnalysis
     
-    # 市场概览 - 热点数据，高频刷新
-    scheduler.add_warmup_job(
-        job_id="warmup:market:overview",
-        func=lambda: warmup_cache(MarketAnalysis.get_market_overview_v2),
-        trading_interval_minutes=1,
-        non_trading_interval_minutes=30,
-    )
+    # 非交易时段统一 24 小时 = 1440 分钟
+    NON_TRADING_INTERVAL = 1440
     
-    # 恐慌贪婪指数 - 计算较重，低频刷新
-    # 注意：必须传递与 API 默认值一致的参数，确保缓存键匹配
+    # =========================================================================
+    # 5分钟刷新组：恐慌指数、指数对比
+    # =========================================================================
+    
+    # 恐慌贪婪指数
     scheduler.add_warmup_job(
         job_id="warmup:sentiment:fear_greed",
         func=lambda: warmup_cache(SentimentAnalysis.calculate_fear_greed_custom, symbol="sh000001", days=14),
         trading_interval_minutes=5,
-        non_trading_interval_minutes=60,
+        non_trading_interval_minutes=NON_TRADING_INTERVAL,
     )
     
-    # 板块排行
-    scheduler.add_warmup_job(
-        job_id="warmup:market:sector_top",
-        func=lambda: warmup_cache(MarketAnalysis.get_sector_top),
-        trading_interval_minutes=3,
-        non_trading_interval_minutes=60,
-    )
-    
-    scheduler.add_warmup_job(
-        job_id="warmup:market:sector_bottom",
-        func=lambda: warmup_cache(MarketAnalysis.get_sector_bottom),
-        trading_interval_minutes=3,
-        non_trading_interval_minutes=60,
-    )
-
-    # -------------------------------------------------------------------------
-    # 新增预热任务
-    # -------------------------------------------------------------------------
-    from .index import IndexAnalysis
-    from .fund import FundAnalysis
-
     # 主要指数对比
+    from .index import IndexAnalysis
     scheduler.add_warmup_job(
         job_id="warmup:index:compare",
         func=lambda: warmup_cache(IndexAnalysis.compare_indices),
-        trading_interval_minutes=1,
-        non_trading_interval_minutes=30,
+        trading_interval_minutes=5,
+        non_trading_interval_minutes=NON_TRADING_INTERVAL,
+    )
+    
+    # =========================================================================
+    # 1小时刷新组：市场概览、领涨/领跌板块
+    # =========================================================================
+    
+    # 市场概览
+    scheduler.add_warmup_job(
+        job_id="warmup:market:overview",
+        func=lambda: warmup_cache(MarketAnalysis.get_market_overview_v2),
+        trading_interval_minutes=60,
+        non_trading_interval_minutes=NON_TRADING_INTERVAL,
+    )
+    
+    # 领涨板块
+    scheduler.add_warmup_job(
+        job_id="warmup:market:sector_top",
+        func=lambda: warmup_cache(MarketAnalysis.get_sector_top),
+        trading_interval_minutes=60,
+        non_trading_interval_minutes=NON_TRADING_INTERVAL,
+    )
+    
+    # 领跌板块
+    scheduler.add_warmup_job(
+        job_id="warmup:market:sector_bottom",
+        func=lambda: warmup_cache(MarketAnalysis.get_sector_bottom),
+        trading_interval_minutes=60,
+        non_trading_interval_minutes=NON_TRADING_INTERVAL,
     )
 
-    # 基金排行 (低频更新)
+    # =========================================================================
+    # 12小时刷新组：基金排行
+    # =========================================================================
+    from .fund import FundAnalysis
+    
     scheduler.add_warmup_job(
         job_id="warmup:fund:top",
         func=lambda: warmup_cache(FundAnalysis.get_top_funds, indicator="近1年", top_n=10),
-        trading_interval_minutes=60,
-        non_trading_interval_minutes=240,
+        trading_interval_minutes=720,  # 12小时
+        non_trading_interval_minutes=NON_TRADING_INTERVAL,
     )
+
+
+def warmup_with_retry(func, name: str, max_retries: int = 3, *args, **kwargs) -> bool:
+    """
+    带指数退避重试的缓存预热
+    
+    Args:
+        func: 要预热的被 @cached 装饰的函数
+        name: 任务名称（用于日志）
+        max_retries: 最大重试次数
+        *args, **kwargs: 传递给函数的参数
+    
+    Returns:
+        是否预热成功
+    """
+    import time
+    from .cache import warmup_cache
+    
+    for attempt in range(max_retries):
+        try:
+            warmup_cache(func, *args, **kwargs)
+            return True
+        except Exception as e:
+            if attempt < max_retries - 1:
+                wait_time = 2 ** attempt  # 指数退避: 1s, 2s, 4s
+                print(f"  ⚠️ {name}预热失败 (尝试 {attempt + 1}/{max_retries}): {e}")
+                print(f"     {wait_time}秒后重试...")
+                time.sleep(wait_time)
+            else:
+                print(f"  ❌ {name}预热失败 (已重试{max_retries}次): {e}")
+                return False
+    return False
 
 
 def initial_warmup():
     """
-    启动时立即执行一次预热
+    启动时立即执行一次预热（带重试机制）
     """
-    from .cache import warmup_cache
     from .market import MarketAnalysis
     from .sentiment import SentimentAnalysis
     
     print("🔥 开始初始缓存预热...")
     
-    try:
-        warmup_cache(MarketAnalysis.get_market_overview_v2)
-    except Exception as e:
-        print(f"  市场概览预热失败: {e}")
+    success_count = 0
+    total_count = 5
     
-    try:
-        warmup_cache(SentimentAnalysis.calculate_fear_greed_custom, symbol="sh000001", days=14)
-    except Exception as e:
-        print(f"  恐慌指数预热失败: {e}")
+    # 市场概览
+    if warmup_with_retry(MarketAnalysis.get_market_overview_v2, "市场概览"):
+        success_count += 1
     
-    try:
-        warmup_cache(MarketAnalysis.get_sector_top)
-        warmup_cache(MarketAnalysis.get_sector_bottom)
-    except Exception as e:
-        print(f"  板块排行预热失败: {e}")
-        
+    # 恐慌贪婪指数
+    if warmup_with_retry(
+        SentimentAnalysis.calculate_fear_greed_custom, 
+        "恐慌指数",
+        3,
+        symbol="sh000001", 
+        days=14
+    ):
+        success_count += 1
+    
+    # 板块排行
+    if warmup_with_retry(MarketAnalysis.get_sector_top, "领涨板块"):
+        success_count += 1
+    warmup_with_retry(MarketAnalysis.get_sector_bottom, "领跌板块")
+    
+    # 指数对比
     try:
         from .index import IndexAnalysis
-        warmup_cache(IndexAnalysis.compare_indices)
-    except Exception as e:
-        print(f"  指数对比预热失败: {e}")
+        if warmup_with_retry(IndexAnalysis.compare_indices, "指数对比"):
+            success_count += 1
+    except ImportError:
+        print("  ⚠️ 指数分析模块未找到，跳过")
 
+    # 基金排行
     try:
         from .fund import FundAnalysis
-        warmup_cache(FundAnalysis.get_top_funds, indicator="近1年", top_n=10)
-    except Exception as e:
-        print(f"  基金排行预热失败: {e}")
+        if warmup_with_retry(
+            FundAnalysis.get_top_funds, 
+            "基金排行",
+            3,
+            indicator="近1年", 
+            top_n=10
+        ):
+            success_count += 1
+    except ImportError:
+        print("  ⚠️ 基金分析模块未找到，跳过")
     
-    print("🔥 初始缓存预热完成")
+    print(f"🔥 初始缓存预热完成 ({success_count}/{total_count} 成功)")

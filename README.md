@@ -1,4 +1,4 @@
-# X-Analytics
+# x-analytics
 
 个人 A 股数据分析平台，基于 [AKShare](https://github.com/akfamily/akshare) 构建。
 

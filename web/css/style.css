@@ -1,17 +1,44 @@
 /* ============================================
-   X-Analytics 仪表盘样式 - 黑白极简风格
+   x-analytics Dashboard Theme
+   Modern, Dark Mode, Data-Driven
    ============================================ */
 
 :root {
-    --bg-primary: #0a0a0a;
-    --bg-secondary: #111111;
-    --bg-card: #1a1a1a;
-    --text-primary: #ffffff;
-    --text-secondary: #888888;
-    --border-color: #333333;
-    --card-radius: 8px;
+    /* Base Colors */
+    --bg-app: #09090b;
+    /* 极深灰背景 */
+    --bg-card: #18181b;
+    /* 卡片背景 */
+    --bg-card-hover: #27272a;
+    --bg-header: rgba(9, 9, 11, 0.8);
+
+    /* Text Colors */
+    --text-primary: #f4f4f5;
+    --text-secondary: #a1a1aa;
+    --text-tertiary: #52525b;
+
+    /* Semantic Colors */
+    --color-up: #ef4444;
+    /* 涨 - 红色 (可根据需求改为绿色) */
+    --color-down: #22c55e;
+    /* 跌 - 绿色 */
+    --color-neutral: #71717a;
+
+    /* Brand Colors */
+    --brand-primary: #3b82f6;
+    --brand-glow: rgba(59, 130, 246, 0.5);
+
+    /* Layout */
+    --radius-md: 12px;
+    --radius-sm: 6px;
+    --header-height: 64px;
+
+    /* Effects */
+    --shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --backdrop-blur: blur(12px);
 }
 
+/* Reset & Base */
 * {
     margin: 0;
     padding: 0;
@@ -19,209 +46,490 @@
 }
 
 body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-    background: var(--bg-primary);
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background-color: var(--bg-app);
     color: var(--text-primary);
-    line-height: 1.6;
-    min-height: 100vh;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
 }
 
-.container {
-    max-width: 1200px;
+/* Typography Helpers */
+.font-mono {
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.text-up {
+    color: var(--color-up);
+}
+
+.text-down {
+    color: var(--color-down);
+}
+
+.text-neutral {
+    color: var(--color-neutral);
+}
+
+/* Layout Containers */
+.dashboard-container {
+    max-width: 1400px;
     margin: 0 auto;
-    padding: 0 20px;
+    padding: 24px;
+    padding-bottom: 60px;
 }
 
 /* Header */
 .header {
-    background: var(--bg-secondary);
-    padding: 40px 0;
-    text-align: center;
-    border-bottom: 1px solid var(--border-color);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    height: var(--header-height);
+    background: var(--bg-header);
+    backdrop-filter: var(--backdrop-blur);
+    border-bottom: 1px solid #27272a;
+    display: flex;
+    align-items: center;
+}
+
+.header .container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 24px;
+    width: 100%;
 }
 
 .logo {
-    font-size: 2rem;
+    font-size: 1.25rem;
     font-weight: 700;
-    color: var(--text-primary);
+    letter-spacing: -0.025em;
+    background: linear-gradient(to right, #fff, #a1a1aa);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
 }
 
-.tagline {
-    color: var(--text-secondary);
-    margin-top: 8px;
-    font-size: 1rem;
+/* Dashboard Sections */
+.dashboard-section {
+    margin-bottom: 40px;
+    animation: fadeIn 0.5s ease-out;
 }
 
-/* Main Content */
-main {
-    padding: 40px 0;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-    gap: 24px;
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-left: 4px;
 }
 
-/* Cards */
-.card {
-    background: var(--bg-card);
-    border: 1px solid var(--border-color);
-    border-radius: var(--card-radius);
-    overflow: hidden;
-}
-
-.card-title {
+.header-left {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 16px 20px;
-    background: var(--bg-secondary);
-    border-bottom: 1px solid var(--border-color);
-    font-size: 1rem;
-    font-weight: 600;
+    gap: 12px;
 }
 
-.icon {
-    font-size: 1.2rem;
+.section-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Badges */
+.refresh-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    font-family: 'JetBrains Mono', monospace;
+    border: 1px solid transparent;
+}
+
+.pulse-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: currentColor;
+    animation: pulse 2s infinite;
+}
+
+.refresh-5min {
+    background: rgba(234, 179, 8, 0.1);
+    color: #facc15;
+    border-color: rgba(234, 179, 8, 0.2);
+}
+
+.refresh-1hour {
+    background: rgba(59, 130, 246, 0.1);
+    color: #60a5fa;
+    border-color: rgba(59, 130, 246, 0.2);
+}
+
+.refresh-12hour {
+    background: rgba(168, 85, 247, 0.1);
+    color: #c084fc;
+    border-color: rgba(168, 85, 247, 0.2);
+}
+
+/* Universal Card Styles */
+.card {
+    background: var(--bg-card);
+    border: 1px solid #27272a;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+    box-shadow: var(--shadow-card);
+    display: flex;
+    flex-direction: column;
+}
+
+.card:hover {
+    border-color: #3f3f46;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+}
+
+.card-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid #27272a;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.02);
 }
 
 .card-body {
     padding: 20px;
+    flex: 1;
+    position: relative;
 }
 
-/* Chart Container */
-.chart {
+.card-body.no-padding {
+    padding: 0;
+}
+
+.card-body.scrollable {
+    overflow-y: auto;
+    max-height: 400px;
+}
+
+.card-body.flex-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Grid Systems */
+
+/* 1. Core Monitor Grid */
+.grid-core-monitor {
+    display: grid;
+    grid-template-columns: 350px 1fr;
+    gap: 24px;
+    /* height: 380px;  <-- Remove fixed height to prevent truncation */
+    align-items: stretch;
+    /* Ensure both cards match height */
+}
+
+/* Hero Card (Fear & Greed) */
+.card-hero {
+    height: 100%;
+    min-height: 480px;
+    /* Give it a reasonable min-height */
+}
+
+.chart-gauge {
     width: 100%;
-    height: 250px;
+    height: 100%;
+    min-height: 250px;
 }
 
-/* Loading */
-.loading {
-    color: var(--text-secondary);
+.indicator-overlay {
+    position: absolute;
+    bottom: 20px;
+    left: 0;
+    width: 100%;
     text-align: center;
-    padding: 20px;
+    pointer-events: none;
 }
 
-/* Indicator Info */
-.indicator-info {
-    margin-top: 16px;
-    padding-top: 16px;
-    border-top: 1px solid var(--border-color);
+/* 2. Market Depth Grid */
+.grid-market-depth {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 24px;
 }
 
-.indicator-info .value {
-    font-size: 2rem;
-    font-weight: 700;
+/* 3. Opportunities Grid */
+.grid-opportunities {
+    display: grid;
+    grid-template-columns: 1fr;
 }
 
-.indicator-info .label {
+/* Data Lists */
+.data-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.data-list.grid-2-cols {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    align-content: start;
+}
+
+.list-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    border-radius: var(--radius-sm);
+    transition: all 0.2s;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid transparent;
+}
+
+.list-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: #3f3f46;
+    transform: translateX(4px);
+}
+
+/* 核心指数专用样式 */
+.index-item {
+    padding: 14px 16px;
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.index-item:hover {
+    transform: translateY(-2px);
+    /* 向上浮动而不是向右 */
+    background: rgba(255, 255, 255, 0.06);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+}
+
+.index-item .item-name {
+    font-size: 0.95rem;
     color: var(--text-secondary);
-    font-size: 0.9rem;
-    margin-top: 4px;
 }
 
-.indicator-info .status {
-    display: inline-block;
-    padding: 4px 12px;
-    border-radius: 4px;
+.index-value-group {
+    text-align: right;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+}
+
+.index-item .item-value {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.2;
+}
+
+.index-item .item-change {
     font-size: 0.85rem;
-    font-weight: 500;
-    margin-top: 8px;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
+    font-weight: 600;
 }
 
-/* North Flow Stats */
-.north-flow-stats {
+.item-name {
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.item-sub {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-left: 8px;
+}
+
+.item-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+.compact .list-item {
+    padding: 10px 0;
+    border-bottom: 1px solid #27272a;
+    border-radius: 0;
+}
+
+.compact .list-item:last-child {
+    border-bottom: none;
+}
+
+/* Market Overview specific */
+.market-stats-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 16px;
 }
 
-.stat-item {
-    text-align: center;
+.stat-box {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: var(--radius-sm);
     padding: 16px;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
+    text-align: center;
+    border: 1px solid transparent;
 }
 
-.stat-value {
+.stat-box.up {
+    border-color: rgba(239, 68, 68, 0.2);
+    background: rgba(239, 68, 68, 0.05);
+}
+
+.stat-box.down {
+    border-color: rgba(34, 197, 94, 0.2);
+    background: rgba(34, 197, 94, 0.05);
+}
+
+.stat-num {
+    font-family: 'JetBrains Mono', monospace;
     font-size: 1.5rem;
     font-weight: 700;
-    color: var(--text-primary);
+    margin-bottom: 4px;
 }
 
-.stat-label {
+.stat-desc {
+    font-size: 0.8rem;
     color: var(--text-secondary);
-    font-size: 0.85rem;
-    margin-top: 4px;
 }
 
-/* QVIX List */
-.qvix-list {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
+/* Fund Grid */
+.fund-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
 }
 
-.qvix-item {
+.fund-card {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: var(--radius-sm);
+    padding: 16px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 12px 16px;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
+    border: 1px solid transparent;
+    transition: all 0.2s;
 }
 
-.qvix-name {
-    font-weight: 500;
-}
-
-.qvix-value {
-    font-size: 1.2rem;
-    font-weight: 700;
-    color: var(--text-primary);
+.fund-card:hover {
+    border-color: #3f3f46;
+    background: rgba(255, 255, 255, 0.05);
 }
 
 /* Footer */
 .footer {
     text-align: center;
-    padding: 30px 0;
-    border-top: 1px solid var(--border-color);
-    color: var(--text-secondary);
-    font-size: 0.9rem;
+    padding: 40px 0;
+    color: var(--text-tertiary);
+    font-size: 0.85rem;
+    border-top: 1px solid #27272a;
+    margin-top: 40px;
 }
 
 .footer a {
-    color: var(--text-primary);
+    color: var(--text-secondary);
     text-decoration: none;
+    transition: color 0.15s;
 }
 
 .footer a:hover {
-    text-decoration: underline;
+    color: var(--text-primary);
 }
 
-.update-time {
-    margin-top: 8px;
-    font-size: 0.85rem;
+/* Loading & Misc */
+.loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--text-tertiary);
+    font-size: 0.9rem;
+}
+
+/* Animations */
+@keyframes pulse {
+    0% {
+        transform: scale(0.95);
+        opacity: 0.8;
+    }
+
+    50% {
+        transform: scale(1.05);
+        opacity: 0.4;
+    }
+
+    100% {
+        transform: scale(0.95);
+        opacity: 0.8;
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* Responsive */
-@media (max-width: 768px) {
-    .header {
-        padding: 30px 0;
-    }
+@media (max-width: 1024px) {
 
-    .logo {
-        font-size: 1.5rem;
-    }
-
-    main {
+    .grid-core-monitor,
+    .grid-market-depth {
         grid-template-columns: 1fr;
-        padding: 20px 0;
+        height: auto;
     }
 
-    .north-flow-stats {
+    .card-hero {
+        height: 350px;
+    }
+
+    /* 平板/小屏下核心指数恢复单列或保持双列视情况而定，这里建议保持双列或紧凑单列 */
+    /* 如果空间足够，list 可以 flex wrap */
+}
+
+@media (max-width: 768px) {
+    .dashboard-container {
+        padding: 16px;
+    }
+
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .header-left {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .data-list.grid-2-cols {
+        grid-template-columns: 1fr;
+        /* 手机端强制单列 */
+        gap: 8px;
+    }
+
+    .fund-grid {
         grid-template-columns: 1fr;
     }
 }

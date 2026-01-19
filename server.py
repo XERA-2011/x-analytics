@@ -15,7 +15,7 @@ import os
 async def lifespan(app: FastAPI):
     """应用生命周期管理"""
     # 启动时
-    print("🚀 X-Analytics 服务启动中...")
+    print("🚀 x-analytics 服务启动中...")
     
     # 检查 Redis 连接
     if cache.connected:
@@ -34,14 +34,14 @@ async def lifespan(app: FastAPI):
     yield
     
     # 关闭时
-    print("🛑 X-Analytics 服务关闭中...")
+    print("🛑 x-analytics 服务关闭中...")
     scheduler.shutdown(wait=False)
 
 
 # 创建 FastAPI 应用
 # root_path 用于支持通过反向代理访问时 Swagger UI 正常工作
 app = FastAPI(
-    title="X-Analytics API",
+    title="x-analytics API",
     description="A 股数据分析服务，基于 AKShare 构建，支持 Redis 缓存加速",
     version="2.0.0",
     root_path="/analytics",

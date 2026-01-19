@@ -224,7 +224,7 @@ class FundAnalysis:
         return report
     
     @staticmethod
-    @cached("fund:top", ttl=3600, stale_ttl=7200)
+    @cached("fund:top", ttl=43200, stale_ttl=43200)
     def get_top_funds(indicator: str = "近1年", top_n: int = 10) -> pd.DataFrame:
         """
         获取热门基金排行

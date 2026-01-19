@@ -147,7 +147,7 @@ class IndexAnalysis:
         return report
     
     @staticmethod
-    @cached("index:compare", ttl=60, stale_ttl=120)
+    @cached("index:compare", ttl=300, stale_ttl=300)
     def compare_indices() -> pd.DataFrame:
         """
         对比主要指数表现 (使用实时行情)

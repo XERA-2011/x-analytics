@@ -4,98 +4,132 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>X-Analytics | 数据分析</title>
+    <title>x-analytics | 市场感知控制台</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+
     <link rel="stylesheet" href="css/style.css">
-    <!-- ECharts CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <!-- ECharts (Local) -->
+    <script src="js/echarts.min.js"></script>
 </head>
 
 <body>
-    <header class="header">
-        <div class="container">
-            <h1 class="logo">X-Analytics</h1>
-        </div>
-    </header>
+    <main class="dashboard-container">
 
-    <main class="container">
-        <!-- 恐慌贪婪指数 -->
-        <section class="card" id="fear-greed-card">
-            <h2 class="card-title">
-                <span class="icon">🎯</span>
-                恐慌贪婪指数
-            </h2>
-            <div class="card-body">
-                <div id="fear-greed-gauge" class="chart"></div>
-                <div class="indicator-info" id="fear-greed-info">
-                    <p class="loading">加载中...</p>
+        <!-- Section 1: 核心监控 (高频) -->
+        <section class="dashboard-section">
+            <div class="section-header">
+                <div class="header-left">
+                    <span class="section-title">⚡ 核心监控</span>
+                    <span class="refresh-badge refresh-5min">
+                        <span class="pulse-dot"></span> 5min 刷新
+                    </span>
+                </div>
+            </div>
+
+            <div class="grid-core-monitor">
+                <!-- 恐慌贪婪指数 (左侧大图) -->
+                <div class="card card-hero" id="fear-greed-card">
+                    <div class="card-header">
+                        <span class="icon">🎯</span> 恐慌贪婪指数
+                    </div>
+                    <div class="card-body flex-center">
+                        <div id="fear-greed-gauge" class="chart-gauge"></div>
+                        <div class="indicator-overlay" id="fear-greed-info">
+                            <p class="loading">加载中...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 主要指数对比 (右侧列表) -->
+                <div class="card card-list">
+                    <div class="card-header">
+                        <span class="icon">📊</span> 核心指数
+                    </div>
+                    <div class="card-body">
+                        <div id="index-list" class="data-list grid-2-cols">
+                            <div class="loading">加载中...</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
 
-        <!-- 市场概况 -->
-        <div class="card">
-            <div class="card-title">
-                <span class="icon">📈</span>
-                市场概况 (实时)
-            </div>
-            <div class="card-body">
-                <div id="market-overview" class="north-flow-stats">
-                    <div class="loading">加载中...</div>
+        <!-- Section 2: 市场深度 (中频) -->
+        <section class="dashboard-section">
+            <div class="section-header">
+                <div class="header-left">
+                    <span class="section-title">📈 市场深度</span>
+                    <span class="refresh-badge refresh-1hour">1h 刷新</span>
                 </div>
             </div>
-        </div>
 
-        <!-- 主要指数对比 -->
-        <div class="card">
-            <div class="card-title">
-                <span class="icon">📊</span>
-                主要指数对比
-            </div>
-            <div class="card-body">
-                <div id="index-list" class="qvix-list">
-                    <div class="loading">加载中...</div>
+            <div class="grid-market-depth">
+                <!-- 市场概况 -->
+                <div class="card card-summary">
+                    <div class="card-header">
+                        <span class="icon">🌡️</span> 市场热度
+                    </div>
+                    <div class="card-body">
+                        <div id="market-overview" class="market-stats-grid">
+                            <div class="loading">加载中...</div>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </div>
 
-        <!-- 基金涨幅榜 -->
-        <div class="card">
-            <div class="card-title">
-                <span class="icon">💰</span>
-                基金涨幅 Top 10
-            </div>
-            <div class="card-body">
-                <div id="fund-list" class="qvix-list">
-                    <div class="loading">加载中...</div>
+                <!-- 领涨板块 -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="icon">🔥</span> 领涨板块
+                    </div>
+                    <div class="card-body">
+                        <div id="sector-list" class="data-list compact">
+                            <div class="loading">加载中...</div>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </div>
 
-        <!-- 领涨行业 -->
-        <div class="card">
-            <div class="card-title">
-                <span class="icon">🔥</span>
-                领涨行业 Top 5
-            </div>
-            <div class="card-body">
-                <div id="sector-list" class="qvix-list">
-                    <div class="loading">加载中...</div>
+                <!-- 领跌板块 -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="icon">❄️</span> 领跌板块
+                    </div>
+                    <div class="card-body">
+                        <div id="sector-list-bottom" class="data-list compact">
+                            <div class="loading">加载中...</div>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
+        </section>
 
-        <!-- 领跌行业 -->
-        <div class="card">
-            <div class="card-title">
-                <span class="icon">❄️</span>
-                领跌行业 Top 5
-            </div>
-            <div class="card-body">
-                <div id="sector-list-bottom" class="qvix-list">
-                    <div class="loading">加载中...</div>
+        <!-- Section 3: 机会发现 (低频) -->
+        <section class="dashboard-section">
+            <div class="section-header">
+                <div class="header-left">
+                    <span class="section-title">💰 机会发现</span>
+                    <span class="refresh-badge refresh-12hour">12h 刷新</span>
                 </div>
             </div>
-        </div>
+
+            <div class="grid-opportunities">
+                <!-- 基金排行 -->
+                <div class="card card-wide">
+                    <div class="card-header">
+                        <span class="icon">🏆</span> 热门基金 Top 10
+                    </div>
+                    <div class="card-body">
+                        <div id="fund-list" class="fund-grid">
+                            <div class="loading">加载中...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
     </main>
 
     <footer class="footer">

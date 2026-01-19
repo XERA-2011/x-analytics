@@ -71,7 +71,7 @@ class MarketAnalysis:
         return summary
 
     @staticmethod
-    @cached("market:overview", ttl=60, stale_ttl=120)
+    @cached("market:overview", ttl=3600, stale_ttl=3600)
     def get_market_overview_v2() -> Dict[str, Any]:
         """
         获取市场综合概览 (API 专用)
@@ -127,7 +127,7 @@ class MarketAnalysis:
         return result
 
     @staticmethod
-    @cached("market:sector_top", ttl=180, stale_ttl=300)
+    @cached("market:sector_top", ttl=3600, stale_ttl=3600)
     def get_sector_top(n: int = 5) -> List[Dict]:
         """
         获取领涨行业
@@ -144,7 +144,7 @@ class MarketAnalysis:
             return []
 
     @staticmethod
-    @cached("market:board_cons", ttl=300, stale_ttl=600)
+    @cached("market:board_cons", ttl=3600, stale_ttl=3600)
     def _get_board_cons(board_code: str) -> List[Dict]:
         """获取板块成分股（带缓存）"""
         try:
@@ -156,7 +156,7 @@ class MarketAnalysis:
         return []
 
     @staticmethod
-    @cached("market:sector_bottom", ttl=300, stale_ttl=600)
+    @cached("market:sector_bottom", ttl=3600, stale_ttl=3600)
     def get_sector_bottom(n: int = 5) -> List[Dict]:
         """
         获取领跌行业 (并获取该行业内跌幅最大的股票)
