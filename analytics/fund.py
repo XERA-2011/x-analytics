@@ -12,6 +12,91 @@ from datetime import datetime
 
 
 from .cache import cached
+import requests
+from akshare.utils import demjson
+from akshare.utils.cons import headers as default_headers
+import random
+
+# -----------------------------------------------------------------------------
+# Monkey Patch: 增强版 AkShare 基金排行获取
+# 原版可能因 headers 简单而被云服务器屏蔽
+# -----------------------------------------------------------------------------
+def _patched_fund_open_fund_daily_em() -> pd.DataFrame:
+    """
+    (Patched) 东方财富网-天天基金网-基金数据-开放式基金净值
+    增强了 Header 伪装
+    """
+    url = "https://fund.eastmoney.com/Data/Fund_JJJZ_Data.aspx"
+    
+    # 构建更真实的随机 Header
+    user_agents = [
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36"
+    ]
+    
+    headers = {
+        "User-Agent": random.choice(user_agents),
+        "Referer": "https://fund.eastmoney.com/fund.html",
+        "Host": "fund.eastmoney.com",
+        "Accept": "*/*",
+        "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
+        "Connection": "keep-alive"
+    }
+    
+    params = {
+        "t": "1",
+        "lx": "1",
+        "letter": "",
+        "gsid": "",
+        "text": "",
+        "sort": "zdf,desc",
+        "page": "1,50000",
+        "dt": str(int(datetime.now().timestamp() * 1000)),
+        "atfc": "",
+        "onlySale": "0",
+    }
+    
+    try:
+        res = requests.get(url, params=params, headers=headers, timeout=10)
+        res.raise_for_status()
+        text_data = res.text
+        
+        # 处理返回数据
+        # var db={...}
+        json_str = text_data.strip()
+        if json_str.startswith("var db="):
+            json_str = json_str[7:]
+            
+        data_json = demjson.decode(json_str)
+        temp_df = pd.DataFrame(data_json["datas"])
+        show_day = data_json["showday"]
+        
+        # 映射列名
+        temp_df.columns = [
+            "基金代码", "基金简称", "-",
+            f"{show_day[0]}-单位净值", f"{show_day[0]}-累计净值",
+            f"{show_day[1]}-单位净值", f"{show_day[1]}-累计净值",
+            "日增长值", "日增长率",
+            "申购状态", "赎回状态",
+            "-", "-", "-", "-", "-", "-",
+            "手续费", "-", "-", "-"
+        ]
+        
+        # 筛选必要列
+        data_df = temp_df[[
+            "基金代码", "基金简称", "日增长率", 
+            "申购状态", "赎回状态", "手续费"
+        ]]
+        return data_df
+        
+    except Exception as e:
+        print(f"[Patch Error] 获取基金排行异常: {e}")
+        # 如果 Patch 失败，尝试回退或是直接返回空 DF
+        return pd.DataFrame()
+
+# 应用 Monkey Patch
+ak.fund_open_fund_daily_em = _patched_fund_open_fund_daily_em
 
 
 class FundAnalysis:
