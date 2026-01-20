@@ -286,6 +286,16 @@ def setup_default_warmup_jobs():
         non_trading_interval_minutes=240,
     )
 
+    # 全球主要市场指数
+    from .global_index import GlobalIndexAnalysis
+
+    scheduler.add_warmup_job(
+        job_id="warmup:index:global",
+        func=lambda: warmup_cache(GlobalIndexAnalysis.get_global_indices),
+        trading_interval_minutes=5,
+        non_trading_interval_minutes=240,
+    )
+
     # =========================================================================
     # 30-60分钟刷新组：市场概览、领涨/领跌板块
     # =========================================================================

@@ -103,6 +103,14 @@ def get_index_compare():
     return data
 
 
+@app.get("/api/index/global", tags=["指数分析"], summary="获取全球主要市场指数")
+def get_global_indices():
+    """获取全球主要市场指数 (日经225, 纳斯达克, 标普500, 恒生指数, 恒生科技等)"""
+    from analytics.global_index import GlobalIndexAnalysis
+
+    return GlobalIndexAnalysis.get_global_indices()
+
+
 @app.get("/api/fund/top", tags=["基金分析"], summary="获取基金涨幅榜")
 def get_fund_top(n: int = 10):
     """获取场外基金日涨幅榜 Top N"""

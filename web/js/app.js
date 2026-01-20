@@ -170,6 +170,38 @@ async function loadIndexCompare() {
     // Lucide icons are not needed inside list items for performance, keeping it clean
 }
 
+// 2.5. Global Market Indices (High Frequency)
+async function loadGlobalIndices() {
+    const el = document.getElementById('global-index-list');
+    if (!el) return;
+
+    const data = await fetchAPI('/index/global');
+
+    if (!data || data.length === 0) {
+        el.innerHTML = '<div class="loading">暂无数据</div>';
+        return;
+    }
+
+    el.innerHTML = data.map(item => {
+        const change = item.change_pct;
+        const colorClass = formatters.colorClass(change);
+        const sign = change >= 0 ? '+' : '';
+
+        return `
+        <div class="list-item index-item">
+            <div class="item-name">
+                <span style="margin-right: 6px;">${item.flag}</span>
+                ${item.name}
+            </div>
+            <div class="index-value-group">
+                <span class="item-value font-mono">${item.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                <span class="item-change font-mono ${colorClass} bg-${change >= 0 ? 'up' : 'down'}-soft">${sign}${change.toFixed(2)}%</span>
+            </div>
+        </div>
+        `;
+    }).join('');
+}
+
 // 3. Market Overview (Medium Frequency)
 async function loadMarketOverview() {
     const el = document.getElementById('market-overview');
@@ -276,6 +308,7 @@ async function init() {
     // Initial Load - Sequential to avoid race conditions affecting layout
     await loadFearGreedIndex();
     await loadIndexCompare();
+    await loadGlobalIndices();
     await loadMarketOverview();
 
     // Parallel Load for lower priority
@@ -298,6 +331,7 @@ async function init() {
     setInterval(async () => {
         await loadFearGreedIndex();
         await loadIndexCompare();
+        await loadGlobalIndices();
     }, 5 * MINUTE);
 
     // 1-hour Group
