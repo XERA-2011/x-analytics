@@ -39,7 +39,7 @@ class SentimentAnalysis:
                 return {}
 
             close = df["close"]
-            
+
             # --- 1. 动量指标: RSI (权重 25%) ---
             # 反映价格变化的快慢
             delta = close.diff()
@@ -48,7 +48,7 @@ class SentimentAnalysis:
             rs = gain / loss
             rsi = 100 - (100 / (1 + rs))
             current_rsi = rsi.iloc[-1]
-            
+
             # 映射: RSI > 80 (贪婪), < 20 (恐慌)
             # RSI本身就是0-100，直接使用
             score_rsi = current_rsi
@@ -66,7 +66,7 @@ class SentimentAnalysis:
 
             # --- 3. 市场广度: 涨跌家数比 (权重 25%) ---
             # 反映市场参与度
-            score_breadth = 50 # 默认中性
+            score_breadth = 50  # 默认中性
             try:
                 up_down = ak.stock_zh_a_spot_em()
                 if not up_down.empty:
@@ -81,24 +81,28 @@ class SentimentAnalysis:
 
             # --- 4. 市场恐慌: 波动率 QVIX (权重 25%) ---
             # 反映期权市场对未来的恐慌预期
-            score_qvix = 50 # 默认中性
+            score_qvix = 50  # 默认中性
             try:
                 # 获取 50ETF 期权波动率作为代表
                 qvix_df = ak.index_option_50etf_qvix()
                 if not qvix_df.empty:
                     # 适配不同列名
-                    col = "close" if "close" in qvix_df.columns else (
-                        "qvix" if "qvix" in qvix_df.columns else qvix_df.columns[0]
+                    col = (
+                        "close"
+                        if "close" in qvix_df.columns
+                        else (
+                            "qvix" if "qvix" in qvix_df.columns else qvix_df.columns[0]
+                        )
                     )
                     current_vix = float(qvix_df.iloc[-1][col])
-                    
+
                     # VIX 越高越恐慌 (分数越低)
                     # 假设 VIX 15 为贪婪(100分), VIX 35 为极度恐慌(0分)
                     # 这是一个反向指标
                     # 线性映射: (35 - VIX) / (35 - 15) * 100
                     # VIX <= 15 -> Score 100
                     # VIX >= 35 -> Score 0
-                    
+
                     if current_vix <= 15:
                         score_qvix = 100
                     elif current_vix >= 35:
@@ -110,10 +114,10 @@ class SentimentAnalysis:
 
             # 综合评分 (各 25%)
             final_score = (
-                score_rsi * 0.25 + 
-                score_bias * 0.25 + 
-                score_breadth * 0.25 + 
-                score_qvix * 0.25
+                score_rsi * 0.25
+                + score_bias * 0.25
+                + score_breadth * 0.25
+                + score_qvix * 0.25
             )
 
             return {
@@ -127,8 +131,8 @@ class SentimentAnalysis:
                     "rsi_val": round(current_rsi, 2),
                     "bias_val": round(current_bias, 2),
                     "breadth_score": round(score_breadth, 2),
-                    "qvix_score": round(score_qvix, 2)
-                }
+                    "qvix_score": round(score_qvix, 2),
+                },
             }
         except Exception as e:
             print(f"计算自定义恐慌指数失败: {e}")
@@ -282,7 +286,7 @@ def analyze_sentiment_report():
     print("2. Bias (25%) - 价格乖离")
     print("3. 广度 (25%) - 市场参与度")
     print("4. QVIX (25%) - 恐慌波动率")
-    
+
     fg_data = SentimentAnalysis.calculate_fear_greed_custom()
 
     score = 50  # 默认中性
@@ -297,7 +301,7 @@ def analyze_sentiment_report():
             status = "极度恐慌 🟢"
         elif score < 40:
             status = "恐慌 🔵"
-        
+
         details = fg_data.get("details", {})
 
         print(f"日期: {fg_data.get('date', '-')}")

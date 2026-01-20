@@ -26,7 +26,7 @@ class MarketAnalysis:
             "indices": [],
             "volume": {"total": 0, "desc": "未知"},
         }
-        
+
         indices_list: List[Dict[str, Any]] = []
         summary["indices"] = indices_list
 

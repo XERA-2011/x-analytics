@@ -70,11 +70,11 @@ class StockAnalysis:
         df = ak.stock_zh_a_spot_em()
         # Ensure df is not empty before accessing iloc
         if df.empty:
-            return pd.Series(dtype=object) # Return an empty Series if no data
-        
+            return pd.Series(dtype=object)  # Return an empty Series if no data
+
         filtered_df = df[df["代码"] == self.symbol]
         if filtered_df.empty:
-            return pd.Series(dtype=object) # Return an empty Series if symbol not found
+            return pd.Series(dtype=object)  # Return an empty Series if symbol not found
 
         self._realtime_data = filtered_df.iloc[0]
         return self._realtime_data
@@ -95,7 +95,7 @@ class StockAnalysis:
             self.get_history()
 
         if self._hist_data is None:
-            return pd.DataFrame() # Should not verify empty dataframe for logic correctness here, just type safety
+            return pd.DataFrame()  # Should not verify empty dataframe for logic correctness here, just type safety
 
         # Cast to pd.DataFrame after None check
         df = cast(pd.DataFrame, self._hist_data).copy()
@@ -123,7 +123,7 @@ class StockAnalysis:
             windows = [5, 10, 20, 60]
         if self._hist_data is None:
             self.get_history()
-        
+
         if self._hist_data is None:
             return pd.DataFrame()
 
@@ -155,7 +155,7 @@ class StockAnalysis:
         returns = hist_data["收盘"].pct_change().dropna()
         if returns.empty:
             return 0.0
-        
+
         # Ensure there are enough data points for the window
         if len(returns) < window:
             return 0.0

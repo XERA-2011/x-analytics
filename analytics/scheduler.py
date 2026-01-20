@@ -276,10 +276,6 @@ def setup_default_warmup_jobs():
         non_trading_interval_minutes=240,
     )
 
-
-
-
-
     # 金银比
     from .precious_metal import PreciousMetalAnalysis
 
@@ -398,7 +394,5 @@ def initial_warmup():
     if warmup_with_retry(MarketAnalysis.get_sector_top, "领涨板块"):
         success_count += 1
     warmup_with_retry(MarketAnalysis.get_sector_bottom, "领跌板块")
-
-
 
     print(f"🔥 初始缓存预热完成 ({success_count}/{total_count} 成功)")

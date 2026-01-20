@@ -104,8 +104,12 @@ if __name__ == "__main__":
     data = PreciousMetalAnalysis.get_gold_silver_ratio()
     if "error" not in data:
         print("=== 金银比分析 ===")
-        print(f"🥇 黄金: ${data['gold']['price']:.2f} ({data['gold']['change_pct']:+.2f}%)")
-        print(f"🥈 白银: ${data['silver']['price']:.2f} ({data['silver']['change_pct']:+.2f}%)")
+        print(
+            f"🥇 黄金: ${data['gold']['price']:.2f} ({data['gold']['change_pct']:+.2f}%)"
+        )
+        print(
+            f"🥈 白银: ${data['silver']['price']:.2f} ({data['silver']['change_pct']:+.2f}%)"
+        )
         print(f"📊 金银比: {data['ratio']:.2f} ({data['ratio_interpretation']})")
     else:
         print(f"错误: {data['error']}")

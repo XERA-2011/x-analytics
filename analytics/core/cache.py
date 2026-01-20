@@ -53,9 +53,7 @@ class RedisCache:
         if self._redis is None:
             try:
                 # 使用连接池管理连接
-                if (
-                    self.redis_url is None
-                ):  # This check is technically redundant due to __init__ default, but added as per instruction's intent
+                if self.redis_url is None:
                     raise ValueError("Redis URL is not configured.")
                 pool = ConnectionPool.from_url(
                     self.redis_url,
@@ -272,13 +270,6 @@ def cached(key_prefix: str, ttl: int = 60, stale_ttl: Optional[int] = None):
 
             # 3. 需要刷新数据
             if should_refresh:
-                # 尝试获取分布式锁 (非阻塞如果允许陈旧返回)
-                # 如果 return_stale=True (Stale-While-Revalidate)，我们只尝试获取非阻塞锁
-                # 如果获取到了 -> 我来刷新
-                # 如果没获取到 -> 别人在刷，我直接返回陈旧数据
-
-                # 如果 return_stale=False (Cache Miss)，我们需要阻塞等待锁，或者通过
-
                 lock_key = f"refresh:{cache_key}"
                 blocking = not return_stale
 
@@ -292,7 +283,6 @@ def cached(key_prefix: str, ttl: int = 60, stale_ttl: Optional[int] = None):
                     if acquired:
                         try:
                             # 再次检查缓存 (双重检查) - 仅针对 Cache Miss 的情况
-                            # 因为可能但在等待锁的时候，别人已经刷好了
                             if not return_stale:
                                 retry_data = cache.get(cache_key)
                                 if retry_data and "_meta" in retry_data:
@@ -339,12 +329,8 @@ def cached(key_prefix: str, ttl: int = 60, stale_ttl: Optional[int] = None):
                             return real_data
                         else:
                             # Cache Miss 且获取锁失败 (超时)
-                            # 这种情况通常是系统过载，或者上一个计算卡死
-                            # 降级：直接执行函数 (虽然可能重复计算，但在无缓存时总比报错好)
                             print(f"⚠️ 获取锁超时，强制执行: {key_prefix}")
                             result = func(*args, **kwargs)
-                            # 这种情况下不写入缓存，避免覆盖正在进行的计算？或者写入？
-                            # 选择写入，由于是最后执行完的，数据最新
                             return result
 
                 except Exception as e:

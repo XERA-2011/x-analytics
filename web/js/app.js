@@ -138,10 +138,6 @@ async function loadFearGreedIndex() {
     window.addEventListener('resize', () => chart.resize());
 }
 
-
-
-
-
 // 2.6. Gold Silver Ratio (High Frequency)
 async function loadGoldSilverRatio() {
     const el = document.getElementById('gold-silver-ratio');
@@ -176,8 +172,8 @@ async function loadGoldSilverRatio() {
         </div>
         <div class="gold-silver-item ratio">
             <div class="item-label">📊 金银比</div>
-            <div class="item-price">${ratio}</div>
-            <div class="item-desc">${data.ratio_interpretation}</div>
+            <div class="item-price">${ratio.current}</div>
+            <div class="item-desc">${ratio.analysis?.comment || '--'}</div>
         </div>
     `;
 }
@@ -246,7 +242,171 @@ async function loadSectorList(endpoint, elementId) {
 async function loadSectorTop() { await loadSectorList('/market/sector-top?n=5', 'sector-list'); }
 async function loadSectorBottom() { await loadSectorList('/market/sector-bottom?n=5', 'sector-list-bottom'); }
 
+// ============================================
+// US Market & Metals Loading Logic
+// ============================================
 
+// 5. US Fear & Greed
+async function loadUSFearGreed() {
+    // Load CNN Index
+    const cnnData = await fetchAPI('/us/fear-greed');
+    const cnnContainer = document.getElementById('us-cnn-fear');
+
+    if (cnnContainer) {
+        if (!cnnData || cnnData.error) {
+            cnnContainer.innerHTML = '<div class="placeholder"><p>暂无CNN数据</p></div>';
+        } else {
+            const score = cnnData.current_value || 50;
+            const level = cnnData.current_level || '中性';
+            const date = cnnData.date ? cnnData.date.substring(0, 10) : '--';
+
+            cnnContainer.innerHTML = `
+                <div class="fear-greed-display">
+                    <div class="fg-score class-${getScoreClass(score)}">${score}</div>
+                    <div class="fg-level">${level}</div>
+                    <div class="fg-meta">
+                        <span>日变动: ${formatters.percent(cnnData.change_1d || 0)}</span>
+                        <span>更新: ${date}</span>
+                    </div>
+                </div>
+            `;
+        }
+    }
+
+    // Load Custom Index
+    const customData = await fetchAPI('/us/fear-greed/custom');
+    const customContainer = document.getElementById('us-custom-fear');
+
+    if (customContainer) {
+        if (!customData || customData.error) {
+            customContainer.innerHTML = '<div class="placeholder"><p>暂无自定义数据</p></div>';
+        } else {
+            const score = customData.score || 50;
+            const level = customData.level || '中性';
+
+            // Build indicator badges
+            let indicatorsHtml = '';
+            if (customData.indicators) {
+                const mapName = {
+                    "vix": "VIX", "sp500_momentum": "S&P动量",
+                    "market_breadth": "广度", "safe_haven": "避险"
+                };
+                for (const [key, val] of Object.entries(customData.indicators)) {
+                    indicatorsHtml += `
+                        <div class="fg-badge">
+                            <span>${mapName[key] || key}</span>
+                            <span class="${formatters.colorClass(val.score - 50)}">${Math.round(val.score)}</span>
+                        </div>
+                    `;
+                }
+            }
+
+            customContainer.innerHTML = `
+                <div class="fear-greed-display">
+                    <div class="fg-score class-${getScoreClass(score)}">${score}</div>
+                    <div class="fg-level">${level}</div>
+                    <div class="fg-indicators">
+                        ${indicatorsHtml}
+                    </div>
+                </div>
+            `;
+        }
+    }
+}
+
+function getScoreClass(score) {
+    if (score >= 75) return 'extreme-greed';
+    if (score >= 55) return 'greed';
+    if (score <= 25) return 'extreme-fear';
+    if (score <= 45) return 'fear';
+    return 'neutral';
+}
+
+// 6. US Market Heat (Sectors)
+async function loadUSMarketHeat() {
+    const el = document.getElementById('market-us-heat');
+    if (!el) return;
+
+    const data = await fetchAPI('/us/market-heat');
+    if (!data || data.length === 0) {
+        el.innerHTML = '<div class="placeholder"><p>暂无数据</p></div>';
+        return;
+    }
+
+    // Render as a grid of blocks
+    el.innerHTML = data.map(item => {
+        const change = item.change_pct;
+        // Determine background intensity based on change magnitude
+        const intensity = Math.min(Math.abs(change) * 10, 50) + 10; // example scaling
+        const colorVar = change >= 0 ? `rgba(34, 197, 94, ${intensity / 100})` : `rgba(239, 68, 68, ${intensity / 100})`;
+
+        return `
+            <div class="heat-block" style="background-color: ${colorVar}">
+                <div class="heat-name">${item.name}</div>
+                <div class="heat-val">${formatters.percent(change)}</div>
+            </div>
+        `;
+    }).join('');
+}
+
+// 7. US Bond Yields
+async function loadUSBondYields() {
+    const el = document.getElementById('us-treasury');
+    if (!el) return;
+
+    const data = await fetchAPI('/us/bond-yields');
+    if (!data || data.length === 0) {
+        el.innerHTML = '<div class="placeholder"><p>暂无数据</p></div>';
+        return;
+    }
+
+    el.innerHTML = data.map(item => {
+        let valClass = '';
+        if (item.is_spread) {
+            valClass = item.value < 0 ? 'text-down' : 'text-up';
+        }
+
+        return `
+            <div class="bond-item">
+                <span class="bond-name">${item.name}</span>
+                <span class="bond-val ${valClass}">${item.value}${item.suffix || ''}</span>
+            </div>
+        `;
+    }).join('');
+}
+
+// 8. Metal Spot Prices
+async function loadMetalSpotPrices() {
+    const el = document.getElementById('metal-prices');
+    if (!el) return;
+
+    const data = await fetchAPI('/metals/spot-prices');
+    if (!data || data.length === 0) {
+        el.innerHTML = '<div class="placeholder"><p>暂无数据</p></div>';
+        return;
+    }
+
+    el.innerHTML = `
+        <table class="simple-table">
+            <thead>
+                <tr>
+                    <th>名称</th>
+                    <th>价格</th>
+                    <th>涨跌幅</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${data.map(item => `
+                    <tr>
+                        <td>${item.name}</td>
+                        <td>${item.price}</td>
+                        <td class="${formatters.colorClass(item.change_pct)}">${formatters.percent(item.change_pct)}</td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>
+    `;
+}
 
 // ============================================
 // Initialization & Loop
@@ -255,6 +415,10 @@ function updateTime() {
     const el = document.getElementById('update-time');
     if (el) el.innerHTML = `${lucideIcon('clock', 'footer-icon')} Last Updated: <span class="font-mono">${new Date().toLocaleTimeString('en-US', { hour12: false })}</span>`;
 
+    // Also update footer time
+    const footerEl = document.getElementById('footer-update-time');
+    if (footerEl) footerEl.innerText = new Date().toLocaleString('zh-CN');
+
     // Refresh icons for dynamic content if needed
     if (window.lucide) lucide.createIcons();
 }
@@ -262,18 +426,30 @@ function updateTime() {
 async function init() {
     updateTime();
 
-    // Initial Load - Sequential to avoid race conditions affecting layout
+    // Initial Load
     await loadFearGreedIndex();
     await loadGoldSilverRatio();
     await loadMarketOverview();
+
+    // New Loaders
+    // We run these without awaiting them to block the initial UI less, or await if we want strict order
+    // But since they are independent, parallel is fine.
+    loadUSFearGreed();
+    loadUSMarketHeat();
+    loadUSBondYields();
+    loadMetalSpotPrices();
 
     Promise.all([
         loadSectorTop(),
         loadSectorBottom()
     ]).then(() => {
-        // Refresh icons once everything is loaded
         if (window.lucide) lucide.createIcons();
     });
+
+    // Setup Tab Switching for US Fear & Greed Cards
+    setupCardTabs();
+    // Setup Main Tabs
+    setupMainTabs();
 
     // Refresh Strategy
     const MINUTE = 60 * 1000;
@@ -285,7 +461,15 @@ async function init() {
     setInterval(async () => {
         await loadFearGreedIndex();
         await loadGoldSilverRatio();
+        await loadMetalSpotPrices();
     }, 5 * MINUTE);
+
+    // 30-min Group (US Market)
+    setInterval(async () => {
+        await loadUSFearGreed();
+        await loadUSMarketHeat();
+        await loadUSBondYields();
+    }, 30 * MINUTE);
 
     // 1-hour Group
     setInterval(async () => {
@@ -293,6 +477,56 @@ async function init() {
         await loadSectorTop();
         await loadSectorBottom();
     }, 1 * HOUR);
+}
+
+function setupCardTabs() {
+    const tabButtons = document.querySelectorAll('.card-tab');
+    tabButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            // Find parent card header to limit scope
+            const header = btn.closest('.card-header');
+            if (!header) return;
+
+            // Siblings buttons
+            header.querySelectorAll('.card-tab').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            // Content switching
+            const targetId = btn.getAttribute('data-target');
+            const cardBody = header.nextElementSibling;
+            if (cardBody && targetId) {
+                // Hide all containers in this body
+                const containers = cardBody.children;
+                for (let i = 0; i < containers.length; i++) {
+                    containers[i].classList.remove('active');
+                    containers[i].style.display = 'none'; // Ensure hidden
+                }
+
+                // Show target
+                const target = document.getElementById(targetId);
+                if (target) {
+                    target.classList.add('active');
+                    target.style.display = 'block';
+                }
+            }
+        });
+    });
+}
+
+function setupMainTabs() {
+    const tabs = document.querySelectorAll('.tab-navigation .tab-btn');
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            tabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+
+            const targetId = tab.getAttribute('data-tab');
+            document.querySelectorAll('.tab-content').forEach(c => {
+                c.classList.remove('active');
+                if (c.id === targetId) c.classList.add('active');
+            });
+        });
+    });
 }
 
 document.addEventListener('DOMContentLoaded', init);

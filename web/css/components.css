@@ -1,0 +1,511 @@
+/* 组件样式 */
+
+/* 恐慌贪婪指数组件 */
+.fear-greed-container {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-lg);
+    min-height: 120px;
+}
+
+.fear-greed-gauge {
+    width: 120px;
+    height: 120px;
+    position: relative;
+    flex-shrink: 0;
+}
+
+.fear-greed-info {
+    flex: 1;
+    text-align: left;
+}
+
+.fear-greed-score {
+    font-size: 2rem;
+    font-weight: 700;
+    font-family: var(--font-mono);
+    margin-bottom: var(--spacing-xs);
+}
+
+.fear-greed-level {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: var(--spacing-xs);
+}
+
+.fear-greed-description {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+/* 移动端恐慌贪婪指数优化 */
+@media (max-width: 768px) {
+    .fear-greed-container {
+        flex-direction: column;
+        text-align: center;
+        gap: var(--spacing-md);
+        min-height: 100px;
+    }
+    
+    .fear-greed-gauge {
+        width: 100px;
+        height: 100px;
+    }
+    
+    .fear-greed-info {
+        text-align: center;
+    }
+    
+    .fear-greed-score {
+        font-size: 1.75rem;
+    }
+}
+
+.fear-greed-indicators {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-lg);
+    width: 100%;
+}
+
+.indicator-item {
+    text-align: center;
+    padding: var(--spacing-sm);
+    background: var(--bg-tertiary);
+    border-radius: var(--border-radius);
+}
+
+.indicator-name {
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+    margin-bottom: var(--spacing-xs);
+}
+
+.indicator-value {
+    font-size: 0.875rem;
+    font-weight: 600;
+    font-family: var(--font-mono);
+}
+
+/* 领涨领跌股组件 */
+.leaders-list {
+    display: block;
+}
+
+.leaders-list.active {
+    display: block;
+}
+
+.stock-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-sm) 0;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.stock-item:last-child {
+    border-bottom: none;
+}
+
+.stock-info {
+    flex: 1;
+}
+
+.stock-name {
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 2px;
+}
+
+.stock-code {
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+    font-family: var(--font-mono);
+}
+
+.stock-metrics {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    text-align: right;
+}
+
+.stock-price {
+    font-family: var(--font-mono);
+    font-weight: 600;
+}
+
+.stock-change {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.875rem;
+}
+
+.stock-change.positive {
+    background: var(--success-color);
+    color: white;
+}
+
+.stock-change.negative {
+    background: var(--danger-color);
+    color: white;
+}
+
+.stock-volume {
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+    font-family: var(--font-mono);
+}
+
+/* 市场热度组件 */
+.market-heat-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+}
+
+.heat-score-section {
+    text-align: center;
+}
+
+.heat-score {
+    font-size: 2rem;
+    font-weight: 700;
+    font-family: var(--font-mono);
+    margin-bottom: var(--spacing-xs);
+}
+
+.heat-level {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: var(--spacing-sm);
+}
+
+.heat-metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: var(--spacing-sm);
+}
+
+.heat-metric {
+    text-align: center;
+    padding: var(--spacing-sm);
+    background: var(--bg-tertiary);
+    border-radius: var(--border-radius);
+}
+
+.metric-label {
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+    margin-bottom: var(--spacing-xs);
+}
+
+.metric-value {
+    font-size: 0.875rem;
+    font-weight: 600;
+    font-family: var(--font-mono);
+}
+
+/* 红利低波组件 */
+.dividend-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+}
+
+.dividend-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--spacing-sm);
+}
+
+.dividend-stat {
+    text-align: center;
+    padding: var(--spacing-sm);
+    background: var(--bg-tertiary);
+    border-radius: var(--border-radius);
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+    margin-bottom: var(--spacing-xs);
+}
+
+.stat-value {
+    font-size: 1rem;
+    font-weight: 600;
+    font-family: var(--font-mono);
+}
+
+.dividend-stocks {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.dividend-stock {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-sm) 0;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.dividend-stock:last-child {
+    border-bottom: none;
+}
+
+.dividend-info {
+    flex: 1;
+}
+
+.dividend-name {
+    font-weight: 500;
+    margin-bottom: 2px;
+}
+
+.dividend-code {
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+    font-family: var(--font-mono);
+}
+
+.dividend-metrics {
+    display: flex;
+    gap: var(--spacing-md);
+    font-size: 0.875rem;
+    font-family: var(--font-mono);
+}
+
+.dividend-yield {
+    color: var(--success-color);
+    font-weight: 600;
+}
+
+.dividend-pe {
+    color: var(--text-secondary);
+}
+
+/* 债券组件 */
+.bonds-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+}
+
+.yield-curve {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+    gap: var(--spacing-sm);
+}
+
+.yield-item {
+    text-align: center;
+    padding: var(--spacing-sm);
+    background: var(--bg-tertiary);
+    border-radius: var(--border-radius);
+}
+
+.yield-period {
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+    margin-bottom: var(--spacing-xs);
+}
+
+.yield-rate {
+    font-size: 0.875rem;
+    font-weight: 600;
+    font-family: var(--font-mono);
+}
+
+.yield-change {
+    font-size: 0.75rem;
+    font-family: var(--font-mono);
+    margin-top: 2px;
+}
+
+.yield-change.positive {
+    color: var(--danger-color);
+}
+
+.yield-change.negative {
+    color: var(--success-color);
+}
+
+.bond-analysis {
+    padding: var(--spacing-md);
+    background: var(--bg-tertiary);
+    border-radius: var(--border-radius);
+}
+
+.analysis-title {
+    font-weight: 600;
+    margin-bottom: var(--spacing-sm);
+}
+
+.analysis-content {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+/* 金银比组件 */
+.gold-silver-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+}
+
+.ratio-display {
+    text-align: center;
+}
+
+.ratio-value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    font-family: var(--font-mono);
+    margin-bottom: var(--spacing-xs);
+}
+
+.ratio-level {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: var(--spacing-sm);
+}
+
+.ratio-comment {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+.metal-prices {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-md);
+}
+
+.metal-price {
+    text-align: center;
+    padding: var(--spacing-md);
+    background: var(--bg-tertiary);
+    border-radius: var(--border-radius);
+}
+
+.metal-name {
+    font-size: 0.875rem;
+    color: var(--text-tertiary);
+    margin-bottom: var(--spacing-xs);
+}
+
+.metal-value {
+    font-size: 1.25rem;
+    font-weight: 600;
+    font-family: var(--font-mono);
+    margin-bottom: var(--spacing-xs);
+}
+
+.metal-change {
+    font-size: 0.875rem;
+    font-family: var(--font-mono);
+}
+
+.metal-change.positive {
+    color: var(--success-color);
+}
+
+.metal-change.negative {
+    color: var(--danger-color);
+}
+
+.investment-advice {
+    padding: var(--spacing-md);
+    background: var(--bg-tertiary);
+    border-radius: var(--border-radius);
+}
+
+.advice-title {
+    font-weight: 600;
+    margin-bottom: var(--spacing-sm);
+}
+
+.advice-content {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+.advice-strategy {
+    display: inline-block;
+    padding: 2px 6px;
+    background: var(--primary-color);
+    color: white;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    margin: 0 2px;
+}
+
+/* 金属现货价格组件 */
+.metal-prices-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: var(--spacing-md);
+}
+
+.metal-price-card {
+    text-align: center;
+    padding: var(--spacing-lg);
+    background: var(--bg-tertiary);
+    border-radius: var(--border-radius);
+    transition: all var(--transition-normal);
+}
+
+.metal-price-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.metal-icon {
+    font-size: 2rem;
+    margin-bottom: var(--spacing-sm);
+}
+
+.metal-price-name {
+    font-weight: 600;
+    margin-bottom: var(--spacing-xs);
+}
+
+.metal-price-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    font-family: var(--font-mono);
+    margin-bottom: var(--spacing-xs);
+}
+
+.metal-price-change {
+    font-size: 0.875rem;
+    font-family: var(--font-mono);
+}
+
+/* 滚动条样式 */
+.dividend-stocks::-webkit-scrollbar {
+    width: 4px;
+}
+
+.dividend-stocks::-webkit-scrollbar-track {
+    background: var(--bg-tertiary);
+    border-radius: 2px;
+}
+
+.dividend-stocks::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 2px;
+}
+
+.dividend-stocks::-webkit-scrollbar-thumb:hover {
+    background: var(--text-tertiary);
+}

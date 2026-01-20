@@ -1,0 +1,307 @@
+/* 移动端适配样式 */
+
+@media (max-width: 768px) {
+    /* 导航栏移动端适配 */
+    .navbar-content {
+        height: 56px;
+        padding: 0 var(--spacing-md);
+    }
+    
+    .brand-text {
+        font-size: 1.25rem;
+    }
+    
+    .navbar-info {
+        flex-direction: column;
+        align-items: flex-end;
+        gap: var(--spacing-xs);
+    }
+    
+    .update-time {
+        font-size: 0.75rem;
+    }
+    
+    .status-indicator {
+        font-size: 0.75rem;
+    }
+    
+    /* 主容器移动端适配 */
+    .main-container {
+        padding: 70px var(--spacing-md) var(--spacing-lg);
+    }
+    
+    /* 标签导航移动端适配 */
+    .tab-navigation {
+        flex-direction: column;
+        gap: var(--spacing-xs);
+        margin-bottom: var(--spacing-lg);
+    }
+    
+    .tab-btn {
+        justify-content: center;
+        padding: var(--spacing-md);
+    }
+    
+    /* 区块头部移动端适配 */
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-sm);
+        margin-bottom: var(--spacing-md);
+    }
+    
+    .section-header h2 {
+        font-size: 1.25rem;
+    }
+    
+    /* 仪表板网格移动端适配 */
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-md);
+    }
+    
+    .card-hero,
+    .card-wide {
+        grid-column: span 1;
+    }
+    
+    .metals-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    /* 卡片移动端适配 */
+    .card-header {
+        padding: var(--spacing-md);
+        flex-wrap: wrap;
+        gap: var(--spacing-sm);
+    }
+    
+    .card-body {
+        padding: var(--spacing-md);
+    }
+    
+    .card-tabs {
+        flex-wrap: wrap;
+    }
+    
+    /* 恐慌贪婪指数移动端适配 */
+    .fear-greed-gauge {
+        width: 150px;
+        height: 150px;
+    }
+    
+    .fear-greed-score {
+        font-size: 2rem;
+    }
+    
+    .fear-greed-level {
+        font-size: 1rem;
+    }
+    
+    .fear-greed-indicators {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    /* 股票列表移动端适配 */
+    .stock-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-xs);
+        padding: var(--spacing-md) 0;
+    }
+    
+    .stock-metrics {
+        width: 100%;
+        justify-content: space-between;
+    }
+    
+    .stock-change {
+        font-size: 0.75rem;
+    }
+    
+    /* 市场热度移动端适配 */
+    .heat-score {
+        font-size: 1.5rem;
+    }
+    
+    .heat-metrics {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    /* 红利低波移动端适配 */
+    .dividend-stats {
+        grid-template-columns: 1fr;
+    }
+    
+    .dividend-stock {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-xs);
+    }
+    
+    .dividend-metrics {
+        width: 100%;
+        justify-content: space-between;
+    }
+    
+    /* 债券移动端适配 */
+    .yield-curve {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    
+    /* 金银比移动端适配 */
+    .ratio-value {
+        font-size: 2rem;
+    }
+    
+    .metal-prices {
+        grid-template-columns: 1fr;
+    }
+    
+    /* 金属价格移动端适配 */
+    .metal-prices-container {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .metal-price-card {
+        padding: var(--spacing-md);
+    }
+    
+    .metal-price-value {
+        font-size: 1rem;
+    }
+    
+    /* 底部移动端适配 */
+    .footer-content {
+        flex-direction: column;
+        gap: var(--spacing-sm);
+        text-align: center;
+        padding: 0 var(--spacing-md);
+    }
+    
+    .footer-left,
+    .footer-right {
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    /* 超小屏幕适配 */
+    .main-container {
+        padding: 70px var(--spacing-sm) var(--spacing-md);
+    }
+    
+    .navbar-content {
+        padding: 0 var(--spacing-sm);
+    }
+    
+    .card-header,
+    .card-body {
+        padding: var(--spacing-sm);
+    }
+    
+    .fear-greed-gauge {
+        width: 120px;
+        height: 120px;
+    }
+    
+    .fear-greed-score {
+        font-size: 1.5rem;
+    }
+    
+    .ratio-value {
+        font-size: 1.5rem;
+    }
+    
+    .heat-score {
+        font-size: 1.25rem;
+    }
+    
+    .yield-curve {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .metal-prices-container {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* 触摸设备优化 */
+@media (hover: none) and (pointer: coarse) {
+    .tab-btn,
+    .card-tab,
+    .info-btn {
+        min-height: 44px;
+        min-width: 44px;
+    }
+    
+    .card:hover {
+        transform: none;
+        box-shadow: var(--shadow-md);
+    }
+    
+    .metal-price-card:hover {
+        transform: none;
+    }
+}
+
+/* 横屏模式适配 */
+@media (max-width: 768px) and (orientation: landscape) {
+    .main-container {
+        padding: 70px var(--spacing-md) var(--spacing-md);
+    }
+    
+    .dashboard-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .fear-greed-container {
+        flex-direction: row;
+        align-items: center;
+    }
+    
+    .fear-greed-gauge {
+        flex-shrink: 0;
+    }
+    
+    .fear-greed-info {
+        text-align: left;
+        flex: 1;
+    }
+}
+
+/* 可访问性增强 */
+@media (prefers-reduced-motion: reduce) {
+    .pulse-dot {
+        animation: none;
+    }
+    
+    .loading-spinner {
+        animation: none;
+    }
+    
+    .card {
+        transition: none;
+    }
+    
+    .metal-price-card {
+        transition: none;
+    }
+}
+
+/* 高对比度模式 */
+@media (prefers-contrast: high) {
+    :root {
+        --border-color: #000000;
+        --text-secondary: #000000;
+        --text-tertiary: #333333;
+    }
+    
+    .card {
+        border-width: 2px;
+    }
+    
+    .tab-btn.active {
+        border: 2px solid var(--primary-dark);
+    }
+}

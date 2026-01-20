@@ -4,3 +4,4 @@ uvicorn>=0.22.0
 pandas>=1.4.0
 redis>=5.0.0
 apscheduler>=3.10.0
+pytz>=2023.3

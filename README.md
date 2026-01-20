@@ -12,6 +12,9 @@
 # 一键启动 (Redis + App)
 docker-compose up -d --build
 
+# 重启
+docker-compose restart x-analytics
+
 # 查看日志
 docker-compose logs -f x-analytics
 

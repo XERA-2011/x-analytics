@@ -4,10 +4,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>x-analytics</title>
-    <meta name="description" content="实时监控 A 股市场情绪、行业板块和基金表现的智能分析平台">
+    <title>x-analytics v2.0 - 三大板块金融数据分析</title>
+    <meta name="description" content="沪港深市场、美股市场、有色金属三大板块实时数据分析平台">
 
-    <!-- Fonts (Fira Code + Fira Sans for data dashboard) -->
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
@@ -17,84 +17,71 @@
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/mobile.css">
     <link rel="icon" href="favicon.ico" type="image/x-icon">
 </head>
 
 <body>
-    <!-- Floating Navbar -->
+    <!-- 顶部导航 -->
     <header class="navbar">
         <div class="navbar-content">
             <div class="navbar-brand">
-
                 <span class="brand-text">x-analytics</span>
+                <span class="version-badge">v2.0</span>
+            </div>
+            <div class="navbar-info">
+                <span class="update-time" id="global-update-time">加载中...</span>
+                <div class="status-indicator" id="status-indicator">
+                    <span class="pulse-dot"></span>
+                    <span>实时</span>
+                </div>
             </div>
         </div>
     </header>
 
-    <main class="dashboard-container">
+    <!-- 主要内容 -->
+    <main class="main-container">
+        <!-- 板块切换导航 -->
+        <nav class="tab-navigation">
+            <button class="tab-btn active" data-tab="market-cn">
+                <i data-lucide="trending-up"></i>
+                沪港深指数
+            </button>
+            <button class="tab-btn" data-tab="market-us">
+                <i data-lucide="dollar-sign"></i>
+                美股纳指标普
+            </button>
+            <button class="tab-btn" data-tab="metals">
+                <i data-lucide="coins"></i>
+                有色金属
+            </button>
+        </nav>
 
-
-
-
-        <!-- Section 1.6: 金银比 (高频) -->
-        <section class="dashboard-section">
+        <!-- 沪港深市场板块 -->
+        <section class="tab-content active" id="market-cn">
             <div class="section-header">
-                <span class="refresh-badge">
-                    <span class="pulse-dot"></span> 5min 刷新
-                </span>
-            </div>
-
-            <div class="grid-core-monitor" style="grid-template-columns: 1fr;">
-                <!-- 金银比 -->
-                <div class="card card-list">
-                    <div class="card-header">
-                        <span>🥇 金银比</span>
-                    </div>
-                    <div class="card-body">
-                        <div id="gold-silver-ratio" class="gold-silver-container">
-                            <div class="loading">
-                                <i data-lucide="loader-2" class="loading-spinner"></i>
-                                加载中...
-                            </div>
-                        </div>
-                    </div>
+                <h2>沪港深指数</h2>
+                <div class="refresh-info">
+                    <span class="refresh-badge">
+                        <span class="pulse-dot"></span>
+                        <span id="cn-refresh-interval">30秒</span> 刷新
+                    </span>
                 </div>
             </div>
-        </section>
 
-        <!-- Section 2: 市场深度 (中频) -->
-        <section class="dashboard-section">
-            <div class="section-header">
-                <span class="refresh-badge">
-                    <span class="pulse-dot"></span> 1h 刷新
-                </span>
-            </div>
-
-            <div class="grid-market-depth" style="grid-template-columns: repeat(2, 1fr);">
-                <!-- 恐慌贪婪指数 (Move Here) -->
-                <div class="card card-hero card-glow" id="fear-greed-card" style="min-height: auto;">
+            <div class="dashboard-grid">
+                <!-- 恐慌贪婪指数 -->
+                <div class="card card-hero">
                     <div class="card-header">
                         <span>恐慌贪婪指数</span>
-                    </div>
-                    <div class="card-body flex-center" style="height: 320px;">
-                        <div id="fear-greed-gauge" class="chart-gauge" style="height: 100%;"></div>
-                        <div class="indicator-overlay" id="fear-greed-info">
-                            <p class="loading">
-                                <i data-lucide="loader-2" class="loading-spinner"></i>
-                                加载中...
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 市场概况 -->
-                <div class="card card-summary">
-                    <div class="card-header">
-                        <span>市场热度</span>
+                        <button class="info-btn" data-tooltip="基于价格动量、波动率、RSI等指标计算">
+                            <i data-lucide="info"></i>
+                        </button>
                     </div>
                     <div class="card-body">
-                        <div id="market-overview" class="market-stats-grid">
+                        <div id="cn-fear-greed" class="fear-greed-container">
                             <div class="loading">
                                 <i data-lucide="loader-2" class="loading-spinner"></i>
                                 加载中...
@@ -109,7 +96,7 @@
                         <span>领涨板块</span>
                     </div>
                     <div class="card-body">
-                        <div id="sector-list" class="data-list compact">
+                        <div id="cn-gainers" class="leaders-list">
                             <div class="loading">
                                 <i data-lucide="loader-2" class="loading-spinner"></i>
                                 加载中...
@@ -124,7 +111,55 @@
                         <span>领跌板块</span>
                     </div>
                     <div class="card-body">
-                        <div id="sector-list-bottom" class="data-list compact">
+                        <div id="cn-losers" class="leaders-list">
+                            <div class="loading">
+                                <i data-lucide="loader-2" class="loading-spinner"></i>
+                                加载中...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 市场热度 -->
+                <div class="card">
+                    <div class="card-header">
+                        <span>市场热度</span>
+                    </div>
+                    <div class="card-body">
+                        <div id="market-cn-heat" class="market-heat-container">
+                            <div class="loading">
+                                <i data-lucide="loader-2" class="loading-spinner"></i>
+                                加载中...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 红利低波 -->
+                <div class="card">
+                    <div class="card-header">
+                        <span>红利低波策略</span>
+                        <button class="info-btn" data-tooltip="高股息率+低波动率股票筛选">
+                            <i data-lucide="info"></i>
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div id="cn-dividend" class="dividend-container">
+                            <div class="loading">
+                                <i data-lucide="loader-2" class="loading-spinner"></i>
+                                加载中...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 国债收益率 -->
+                <div class="card">
+                    <div class="card-header">
+                        <span>国债收益率</span>
+                    </div>
+                    <div class="card-body">
+                        <div id="cn-bonds" class="bonds-container">
                             <div class="loading">
                                 <i data-lucide="loader-2" class="loading-spinner"></i>
                                 加载中...
@@ -135,26 +170,181 @@
             </div>
         </section>
 
+        <!-- 美股市场板块 -->
+        <section class="tab-content" id="market-us">
+            <div class="section-header">
+                <h2>美股纳指标普</h2>
+                <div class="refresh-info">
+                    <span class="refresh-badge">
+                        <span class="pulse-dot"></span>
+                        <span id="us-refresh-interval">1分钟</span> 刷新
+                    </span>
+                </div>
+            </div>
 
+            <div class="dashboard-grid">
+                <!-- 美股恐慌贪婪指数 -->
+                <div class="card card-hero">
+                    <div class="card-header">
+                        <span>恐慌贪婪指数</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="fear-greed-row">
+                            <div class="fg-section">
+                                <div class="fg-title">CNN指数</div>
+                                <div id="us-cnn-fear" class="fear-greed-container active">
+                                    <div class="loading">
+                                        <i data-lucide="loader-2" class="loading-spinner"></i>
+                                        加载中...
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="fg-section">
+                                <div class="fg-title">自定义指数</div>
+                                <div id="us-custom-fear" class="fear-greed-container active">
+                                    <div class="loading">
+                                        <i data-lucide="loader-2" class="loading-spinner"></i>
+                                        加载中...
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 美股领涨领跌板块 -->
+                <div class="card">
+                    <div class="card-header">
+                        <span>领涨领跌板块</span>
+                        <div class="card-tabs">
+                            <button class="card-tab active" data-target="us-gainers">纳斯达克</button>
+                            <button class="card-tab" data-target="us-sp500">标普500</button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="us-gainers" class="leaders-list active">
+                            <div class="placeholder">
+                                <i data-lucide="globe"></i>
+                                <p>美股数据接口开发中...</p>
+                            </div>
+                        </div>
+                        <div id="us-sp500" class="leaders-list">
+                            <div class="placeholder">
+                                <i data-lucide="globe"></i>
+                                <p>美股数据接口开发中...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 美股市场热度 -->
+                <div class="card">
+                    <div class="card-header">
+                        <span>市场热度</span>
+                    </div>
+                    <div class="card-body">
+                        <div id="market-us-heat" class="market-heat-container">
+                            <div class="placeholder">
+                                <i data-lucide="activity"></i>
+                                <p>美股热度指标开发中...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 美债收益率 -->
+                <div class="card">
+                    <div class="card-header">
+                        <span>美债收益率</span>
+                    </div>
+                    <div class="card-body">
+                        <div id="us-treasury" class="bonds-container">
+                            <div class="placeholder">
+                                <i data-lucide="trending-down"></i>
+                                <p>美债数据接口开发中...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 有色金属板块 -->
+        <section class="tab-content" id="metals">
+            <div class="section-header">
+                <h2>有色金属</h2>
+                <div class="refresh-info">
+                    <span class="refresh-badge">
+                        <span class="pulse-dot"></span>
+                        <span id="metals-refresh-interval">5分钟</span> 刷新
+                    </span>
+                </div>
+            </div>
+
+            <div class="dashboard-grid metals-grid">
+                <!-- 金银比 -->
+                <div class="card card-hero">
+                    <div class="card-header">
+                        <span>金银比</span>
+                        <button class="info-btn" data-tooltip="黄金价格除以白银价格的比值，用于贵金属投资决策">
+                            <i data-lucide="info"></i>
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div id="gold-silver-ratio" class="gold-silver-container">
+                            <div class="loading">
+                                <i data-lucide="loader-2" class="loading-spinner"></i>
+                                加载中...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 金属现货价格 -->
+                <div class="card card-wide">
+                    <div class="card-header">
+                        <span>金属现货价格</span>
+                    </div>
+                    <div class="card-body">
+                        <div id="metal-prices" class="metal-prices-container">
+                            <div class="placeholder">
+                                <i data-lucide="bar-chart-3"></i>
+                                <p>金属现货价格接口开发中...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
     </main>
 
+    <!-- 底部信息 -->
     <footer class="footer">
-        <div class="container">
-            <div class="footer-content">
+        <div class="footer-content">
+            <div class="footer-left">
                 <p>
-                    <i data-lucide="database" class="footer-icon"></i>
-                    Powered by <a href="https://github.com/akfamily/akshare" target="_blank" rel="noopener">AKShare</a>
+                    <i data-lucide="database"></i>
+                    Powered by <a href="https://github.com/akfamily/akshare" target="_blank">AKShare</a>
                 </p>
-                <p class="update-time" id="update-time"></p>
+            </div>
+            <div class="footer-right">
+                <p>最后更新: <span id="footer-update-time">--</span></p>
             </div>
         </div>
     </footer>
 
-    <!-- ECharts -->
-    <script src="js/echarts.min.js"></script>
-    <script src="js/app.js"></script>
+    <!-- 工具提示 -->
+    <div id="tooltip" class="tooltip"></div>
+
+    <!-- 脚本 -->
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/charts.js"></script>
+    <script src="js/mobile.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/main.js"></script>
     <script>
-        // Initialize Lucide icons
+        // 初始化图标
         lucide.createIcons();
     </script>
 </body>

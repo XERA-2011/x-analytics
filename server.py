@@ -4,10 +4,11 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from analytics.sentiment import SentimentAnalysis
-from analytics.market import MarketAnalysis
-from analytics.cache import cache
-from analytics.scheduler import scheduler, setup_default_warmup_jobs, initial_warmup
+from analytics.core import cache, scheduler, settings
+from analytics.core.scheduler import setup_default_jobs, initial_warmup
+from analytics.api.market_cn import router as cn_market_router
+from analytics.api.metals import router as metals_router
+from analytics.api.market_us import router as us_market_router
 import os
 
 
@@ -26,7 +27,7 @@ async def lifespan(app: FastAPI):
         warmup_thread.start()
 
         # 设置并启动调度器
-        setup_default_warmup_jobs()
+        setup_default_jobs()
         scheduler.start()
     else:
         print("⚠️ Redis 未连接，将以无缓存模式运行")
@@ -39,10 +40,9 @@ async def lifespan(app: FastAPI):
 
 
 # 创建 FastAPI 应用
-# root_path 用于支持通过反向代理访问时 Swagger UI 正常工作
 app = FastAPI(
-    title="x-analytics API",
-    description="A 股数据分析服务，基于 AKShare 构建，支持 Redis 缓存加速",
+    title="x-analytics API v2.0",
+    description="三大板块金融数据分析服务：沪港深市场、美股市场、有色金属",
     version="2.0.0",
     root_path="/analytics",
     lifespan=lifespan,
@@ -57,64 +57,33 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# -----------------------------------------------------------------------------
+# 注册路由模块
+# -----------------------------------------------------------------------------
+app.include_router(cn_market_router)
+app.include_router(metals_router)
+app.include_router(us_market_router)
+
 
 # -----------------------------------------------------------------------------
-# 业务 API 接口
+# 兼容性API接口 (保持向后兼容)
 # -----------------------------------------------------------------------------
-@app.get("/api/sentiment/fear-greed", tags=["情绪分析"], summary="获取市场恐慌贪婪指数")
-def get_fear_greed_index(symbol: str = "sh000001", days: int = 14):
-    """自定义恐慌贪婪指数（支持缓存）"""
-    return SentimentAnalysis.calculate_fear_greed_custom(symbol=symbol, days=days)
-
-
 @app.get(
-    "/api/market/overview",
-    tags=["市场分析"],
-    summary="获取市场概览(指数/成交/涨跌分布)",
+    "/api/sentiment/fear-greed", tags=["兼容性接口"], summary="获取市场恐慌贪婪指数"
 )
-def get_market_overview():
-    """获取主要指数行情、市场广度和两市成交额（支持缓存）"""
-    return MarketAnalysis.get_market_overview_v2()
+def get_fear_greed_index_compat(symbol: str = "sh000001", days: int = 14):
+    """兼容旧版本的恐慌贪婪指数接口"""
+    from analytics.modules.market_cn import CNFearGreedIndex
+
+    return CNFearGreedIndex.calculate(symbol=symbol, days=days)
 
 
-@app.get("/api/market/sector-top", tags=["市场分析"], summary="获取领涨行业")
-def get_sector_top(n: int = 5):
-    """获取领涨行业板块 Top N（支持缓存）"""
-    return MarketAnalysis.get_sector_top(n=n)
+@app.get("/api/commodity/gold-silver", tags=["兼容性接口"], summary="获取金银比及价格")
+def get_gold_silver_ratio_compat():
+    """兼容旧版本的金银比接口"""
+    from analytics.modules.metals import GoldSilverAnalysis
 
-
-@app.get("/api/market/sector-bottom", tags=["市场分析"], summary="获取领跌行业")
-def get_sector_bottom(n: int = 5):
-    """获取领跌行业板块 Top N（支持缓存）"""
-    return MarketAnalysis.get_sector_bottom(n=n)
-
-
-# -----------------------------------------------------------------------------
-# 指数 & 基金 & 个股 API (新增)
-# -----------------------------------------------------------------------------
-
-
-
-
-
-
-@app.get("/api/commodity/gold-silver", tags=["商品分析"], summary="获取金银比及价格")
-def get_gold_silver_ratio():
-    """获取黄金、白银价格及金银比（Gold-Silver Ratio）"""
-    from analytics.precious_metal import PreciousMetalAnalysis
-
-    return PreciousMetalAnalysis.get_gold_silver_ratio()
-
-
-
-
-
-@app.get("/api/stock/search", tags=["个股分析"], summary="搜索个股")
-def search_stock(keyword: str):
-    """搜索 A 股股票 (代码或名称)"""
-    from analytics.stock import StockAnalysis
-
-    return StockAnalysis.search(keyword=keyword)
+    return GoldSilverAnalysis.get_gold_silver_ratio()
 
 
 # -----------------------------------------------------------------------------
@@ -142,19 +111,16 @@ def get_cache_stats():
 @app.post("/api/cache/warmup", tags=["系统"], summary="手动触发缓存预热")
 def trigger_warmup():
     """立即执行一次缓存预热"""
-    from analytics.scheduler import initial_warmup
-
     # 非阻塞执行
     warmup_thread = threading.Thread(target=initial_warmup, daemon=True)
     warmup_thread.start()
-
     return {"status": "warmup_started", "message": "缓存预热已在后台启动"}
 
 
 @app.delete("/api/cache/clear", tags=["系统"], summary="清除所有缓存")
 def clear_cache():
     """清除所有 x-analytics 相关缓存"""
-    deleted = cache.delete_pattern("xanalytics:*")
+    deleted = cache.delete_pattern(f"{settings.CACHE_PREFIX}:*")
     return {"status": "ok", "deleted_keys": deleted}
 
 

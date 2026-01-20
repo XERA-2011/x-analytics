@@ -755,3 +755,31 @@ body {
         gap: 12px;
     }
 }
+
+/* Fear Greed Dual Layout */
+.fear-greed-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+}
+
+.fg-section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.fg-title {
+    font-size: 0.9rem;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+    padding-left: 4px;
+}
+
+@media (max-width: 768px) {
+    .fear-greed-row {
+        grid-template-columns: 1fr;
+    }
+}
