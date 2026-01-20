@@ -15,7 +15,7 @@ from .scheduler import scheduler
 
 __all__ = [
     "StockAnalysis",
-    "IndexAnalysis", 
+    "IndexAnalysis",
     "FundAnalysis",
     "SentimentAnalysis",
     "MarketAnalysis",
@@ -24,4 +24,3 @@ __all__ = [
     "warmup_cache",
     "scheduler",
 ]
-

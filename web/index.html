@@ -4,43 +4,63 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>x-analytics | 市场感知控制台</title>
-    <!-- Fonts -->
+    <title>x-analytics</title>
+    <meta name="description" content="实时监控 A 股市场情绪、行业板块和基金表现的智能分析平台">
+
+    <!-- Fonts (Fira Code + Fira Sans for data dashboard) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Fira+Sans:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
 
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+
     <link rel="stylesheet" href="css/style.css">
-    <!-- ECharts (Local) -->
-    <script src="js/echarts.min.js"></script>
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
 </head>
 
 <body>
+    <!-- Floating Navbar -->
+    <header class="navbar">
+        <div class="navbar-content">
+            <div class="navbar-brand">
+                <div class="brand-icon">
+                    <i data-lucide="activity" class="brand-icon-svg"></i>
+                </div>
+                <span class="brand-text">x-analytics</span>
+            </div>
+            <div class="navbar-status">
+                <span class="status-dot"></span>
+                <span class="status-text">实时连接</span>
+            </div>
+        </div>
+    </header>
+
     <main class="dashboard-container">
 
         <!-- Section 1: 核心监控 (高频) -->
         <section class="dashboard-section">
             <div class="section-header">
-                <div class="header-left">
-                    <span class="section-title">⚡ 核心监控</span>
-                    <span class="refresh-badge refresh-5min">
-                        <span class="pulse-dot"></span> 5min 刷新
-                    </span>
-                </div>
+                <span class="refresh-badge">
+                    <span class="pulse-dot"></span> 5min 刷新
+                </span>
             </div>
 
             <div class="grid-core-monitor">
                 <!-- 恐慌贪婪指数 (左侧大图) -->
-                <div class="card card-hero" id="fear-greed-card">
+                <div class="card card-hero card-glow" id="fear-greed-card">
                     <div class="card-header">
-                        <span class="icon">🎯</span> 恐慌贪婪指数
+                        <span>恐慌贪婪指数</span>
                     </div>
                     <div class="card-body flex-center">
                         <div id="fear-greed-gauge" class="chart-gauge"></div>
                         <div class="indicator-overlay" id="fear-greed-info">
-                            <p class="loading">加载中...</p>
+                            <p class="loading">
+                                <i data-lucide="loader-2" class="loading-spinner"></i>
+                                加载中...
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -48,11 +68,14 @@
                 <!-- 主要指数对比 (右侧列表) -->
                 <div class="card card-list">
                     <div class="card-header">
-                        <span class="icon">📊</span> 核心指数
+                        <span>核心指数</span>
                     </div>
                     <div class="card-body">
                         <div id="index-list" class="data-list grid-2-cols">
-                            <div class="loading">加载中...</div>
+                            <div class="loading">
+                                <i data-lucide="loader-2" class="loading-spinner"></i>
+                                加载中...
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -62,21 +85,23 @@
         <!-- Section 2: 市场深度 (中频) -->
         <section class="dashboard-section">
             <div class="section-header">
-                <div class="header-left">
-                    <span class="section-title">📈 市场深度</span>
-                    <span class="refresh-badge refresh-1hour">1h 刷新</span>
-                </div>
+                <span class="refresh-badge">
+                    <span class="pulse-dot"></span> 1h 刷新
+                </span>
             </div>
 
             <div class="grid-market-depth">
                 <!-- 市场概况 -->
                 <div class="card card-summary">
                     <div class="card-header">
-                        <span class="icon">🌡️</span> 市场热度
+                        <span>市场热度</span>
                     </div>
                     <div class="card-body">
                         <div id="market-overview" class="market-stats-grid">
-                            <div class="loading">加载中...</div>
+                            <div class="loading">
+                                <i data-lucide="loader-2" class="loading-spinner"></i>
+                                加载中...
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -84,11 +109,14 @@
                 <!-- 领涨板块 -->
                 <div class="card">
                     <div class="card-header">
-                        <span class="icon">🔥</span> 领涨板块
+                        <span>领涨板块</span>
                     </div>
                     <div class="card-body">
                         <div id="sector-list" class="data-list compact">
-                            <div class="loading">加载中...</div>
+                            <div class="loading">
+                                <i data-lucide="loader-2" class="loading-spinner"></i>
+                                加载中...
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -96,11 +124,14 @@
                 <!-- 领跌板块 -->
                 <div class="card">
                     <div class="card-header">
-                        <span class="icon">❄️</span> 领跌板块
+                        <span>领跌板块</span>
                     </div>
                     <div class="card-body">
                         <div id="sector-list-bottom" class="data-list compact">
-                            <div class="loading">加载中...</div>
+                            <div class="loading">
+                                <i data-lucide="loader-2" class="loading-spinner"></i>
+                                加载中...
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -110,21 +141,23 @@
         <!-- Section 3: 机会发现 (低频) -->
         <section class="dashboard-section">
             <div class="section-header">
-                <div class="header-left">
-                    <span class="section-title">💰 机会发现</span>
-                    <span class="refresh-badge refresh-12hour">12h 刷新</span>
-                </div>
+                <span class="refresh-badge">
+                    <span class="pulse-dot"></span> 12h 刷新
+                </span>
             </div>
 
             <div class="grid-opportunities">
                 <!-- 基金排行 -->
                 <div class="card card-wide">
                     <div class="card-header">
-                        <span class="icon">🏆</span> 热门基金 Top 10
+                        <span>热门基金 Top 10</span>
                     </div>
                     <div class="card-body">
                         <div id="fund-list" class="fund-grid">
-                            <div class="loading">加载中...</div>
+                            <div class="loading">
+                                <i data-lucide="loader-2" class="loading-spinner"></i>
+                                加载中...
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -134,12 +167,23 @@
 
     <footer class="footer">
         <div class="container">
-            <p>Powered by <a href="https://github.com/akfamily/akshare" target="_blank">AKShare</a></p>
-            <p class="update-time" id="update-time"></p>
+            <div class="footer-content">
+                <p>
+                    <i data-lucide="database" class="footer-icon"></i>
+                    Powered by <a href="https://github.com/akfamily/akshare" target="_blank" rel="noopener">AKShare</a>
+                </p>
+                <p class="update-time" id="update-time"></p>
+            </div>
         </div>
     </footer>
 
+    <!-- ECharts -->
+    <script src="js/echarts.min.js"></script>
     <script src="js/app.js"></script>
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+    </script>
 </body>
 
 </html>
