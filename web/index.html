@@ -34,7 +34,10 @@
 
     <main class="dashboard-container">
 
-        <!-- Section 1: 核心监控 (高频) -->
+
+
+
+        <!-- Section 1.6: 金银比 (高频) -->
         <section class="dashboard-section">
             <div class="section-header">
                 <span class="refresh-badge">
@@ -43,39 +46,13 @@
             </div>
 
             <div class="grid-core-monitor" style="grid-template-columns: 1fr;">
-                <!-- 主要指数对比 (右侧列表 -> 全宽列表) -->
+                <!-- 金银比 -->
                 <div class="card card-list">
                     <div class="card-header">
-                        <span>核心指数</span>
+                        <span>🥇 金银比</span>
                     </div>
                     <div class="card-body">
-                        <div id="index-list" class="data-list grid-2-cols">
-                            <div class="loading">
-                                <i data-lucide="loader-2" class="loading-spinner"></i>
-                                加载中...
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Section 1.5: 全球市场 (高频) -->
-        <section class="dashboard-section">
-            <div class="section-header">
-                <span class="refresh-badge">
-                    <span class="pulse-dot"></span> 5min 刷新
-                </span>
-            </div>
-
-            <div class="grid-core-monitor" style="grid-template-columns: 1fr;">
-                <!-- 全球主要市场指数 -->
-                <div class="card card-list">
-                    <div class="card-header">
-                        <span>🌍 全球市场</span>
-                    </div>
-                    <div class="card-body">
-                        <div id="global-index-list" class="data-list grid-3-cols">
+                        <div id="gold-silver-ratio" class="gold-silver-container">
                             <div class="loading">
                                 <i data-lucide="loader-2" class="loading-spinner"></i>
                                 加载中...
@@ -158,31 +135,7 @@
             </div>
         </section>
 
-        <!-- Section 3: 机会发现 (低频) -->
-        <section class="dashboard-section">
-            <div class="section-header">
-                <span class="refresh-badge">
-                    <span class="pulse-dot"></span> 12h 刷新
-                </span>
-            </div>
 
-            <div class="grid-opportunities">
-                <!-- 基金排行 -->
-                <div class="card card-wide">
-                    <div class="card-header">
-                        <span>热门基金 Top 10</span>
-                    </div>
-                    <div class="card-body">
-                        <div id="fund-list" class="fund-grid">
-                            <div class="loading">
-                                <i data-lucide="loader-2" class="loading-spinner"></i>
-                                加载中...
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
     </main>
 
     <footer class="footer">

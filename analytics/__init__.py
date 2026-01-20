@@ -6,8 +6,6 @@ x-analytics 核心分析模块
 """
 
 from .stock import StockAnalysis
-from .index import IndexAnalysis
-from .fund import FundAnalysis
 from .sentiment import SentimentAnalysis
 from .market import MarketAnalysis
 from .cache import cache, cached, warmup_cache
@@ -15,8 +13,6 @@ from .scheduler import scheduler
 
 __all__ = [
     "StockAnalysis",
-    "IndexAnalysis",
-    "FundAnalysis",
     "SentimentAnalysis",
     "MarketAnalysis",
     "cache",

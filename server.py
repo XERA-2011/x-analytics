@@ -92,45 +92,21 @@ def get_sector_bottom(n: int = 5):
 # -----------------------------------------------------------------------------
 # 指数 & 基金 & 个股 API (新增)
 # -----------------------------------------------------------------------------
-@app.get("/api/index/compare", tags=["指数分析"], summary="获取主要指数对比")
-def get_index_compare():
-    """获取主要指数对比 (上证/深证/创业板等)"""
-    from analytics.index import IndexAnalysis
-
-    # 暂时不加缓存装饰器，因为 compare_indices 内部涉及多个网络请求，如果要缓存建议在内部加
-    # 暂时不加缓存装饰器，因为 compare_indices 内部涉及多个网络请求，如果要缓存建议在内部加
-    data = IndexAnalysis.compare_indices()
-    return data
 
 
-@app.get("/api/index/global", tags=["指数分析"], summary="获取全球主要市场指数")
-def get_global_indices():
-    """获取全球主要市场指数 (日经225, 纳斯达克, 标普500, 恒生指数, 恒生科技等)"""
-    from analytics.global_index import GlobalIndexAnalysis
-
-    return GlobalIndexAnalysis.get_global_indices()
 
 
-@app.get("/api/fund/top", tags=["基金分析"], summary="获取基金涨幅榜")
-def get_fund_top(n: int = 10):
-    """获取场外基金日涨幅榜 Top N"""
-    from analytics.fund import FundAnalysis
 
-    # 同样由内部或 Redis 缓存控制
-    # 同样由内部或 Redis 缓存控制
-    data = FundAnalysis.get_top_funds(top_n=n)
-    if not data:
-        return []
 
-    # 已经是 list[dict]
-    return [
-        {
-            "基金代码": item["基金代码"],
-            "基金简称": item["基金简称"],
-            "日增长率": item["日增长率"],
-        }
-        for item in data
-    ]
+@app.get("/api/commodity/gold-silver", tags=["商品分析"], summary="获取金银比及价格")
+def get_gold_silver_ratio():
+    """获取黄金、白银价格及金银比（Gold-Silver Ratio）"""
+    from analytics.precious_metal import PreciousMetalAnalysis
+
+    return PreciousMetalAnalysis.get_gold_silver_ratio()
+
+
+
 
 
 @app.get("/api/stock/search", tags=["个股分析"], summary="搜索个股")

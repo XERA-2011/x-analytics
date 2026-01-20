@@ -276,22 +276,16 @@ def setup_default_warmup_jobs():
         non_trading_interval_minutes=240,
     )
 
-    # 主要指数对比
-    from .index import IndexAnalysis
+
+
+
+
+    # 金银比
+    from .precious_metal import PreciousMetalAnalysis
 
     scheduler.add_warmup_job(
-        job_id="warmup:index:compare",
-        func=lambda: warmup_cache(IndexAnalysis.compare_indices),
-        trading_interval_minutes=5,
-        non_trading_interval_minutes=240,
-    )
-
-    # 全球主要市场指数
-    from .global_index import GlobalIndexAnalysis
-
-    scheduler.add_warmup_job(
-        job_id="warmup:index:global",
-        func=lambda: warmup_cache(GlobalIndexAnalysis.get_global_indices),
+        job_id="warmup:commodity:gold_silver",
+        func=lambda: warmup_cache(PreciousMetalAnalysis.get_gold_silver_ratio),
         trading_interval_minutes=5,
         non_trading_interval_minutes=240,
     )
@@ -322,20 +316,6 @@ def setup_default_warmup_jobs():
         func=lambda: warmup_cache(MarketAnalysis.get_sector_bottom),
         trading_interval_minutes=60,
         non_trading_interval_minutes=240,
-    )
-
-    # =========================================================================
-    # 12小时刷新组：基金排行
-    # =========================================================================
-    from .fund import FundAnalysis
-
-    scheduler.add_warmup_job(
-        job_id="warmup:fund:top",
-        func=lambda: warmup_cache(
-            FundAnalysis.get_top_funds, indicator="近1年", top_n=10
-        ),
-        trading_interval_minutes=720,  # 12小时
-        non_trading_interval_minutes=720,
     )
 
     # =========================================================================
@@ -419,24 +399,6 @@ def initial_warmup():
         success_count += 1
     warmup_with_retry(MarketAnalysis.get_sector_bottom, "领跌板块")
 
-    # 指数对比
-    try:
-        from .index import IndexAnalysis
 
-        if warmup_with_retry(IndexAnalysis.compare_indices, "指数对比"):
-            success_count += 1
-    except ImportError:
-        print("  ⚠️ 指数分析模块未找到，跳过")
-
-    # 基金排行
-    try:
-        from .fund import FundAnalysis
-
-        if warmup_with_retry(
-            FundAnalysis.get_top_funds, "基金排行", 3, indicator="近1年", top_n=10
-        ):
-            success_count += 1
-    except ImportError:
-        print("  ⚠️ 基金分析模块未找到，跳过")
 
     print(f"🔥 初始缓存预热完成 ({success_count}/{total_count} 成功)")

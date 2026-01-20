@@ -138,68 +138,48 @@ async function loadFearGreedIndex() {
     window.addEventListener('resize', () => chart.resize());
 }
 
-// 2. Core Indices (High Frequency)
-async function loadIndexCompare() {
-    const el = document.getElementById('index-list');
-    const data = await fetchAPI('/index/compare');
 
-    if (!data || data.length === 0) {
-        el.innerHTML = '<div class="loading">暂无数据</div>';
-        return;
-    }
 
-    el.innerHTML = data.map(item => {
-        let change = parseFloat(item['1日涨跌'].replace('%', ''));
-        let changeStr = item['1日涨跌'];
-        const colorClass = formatters.colorClass(change);
 
-        // Add trend icon
-        // const trendIcon = change > 0 ? "trending-up" : (change < 0 ? "trending-down" : "minus");
 
-        return `
-        <div class="list-item index-item">
-            <div class="item-name">${item['指数名称']}</div>
-            <div class="index-value-group">
-                <span class="item-value font-mono">${item['最新点位']}</span>
-                <span class="item-change font-mono ${colorClass} bg-${change > 0 ? 'up' : 'down'}-soft">${changeStr}</span>
-            </div>
-        </div>
-        `;
-    }).join('');
-
-    // Lucide icons are not needed inside list items for performance, keeping it clean
-}
-
-// 2.5. Global Market Indices (High Frequency)
-async function loadGlobalIndices() {
-    const el = document.getElementById('global-index-list');
+// 2.6. Gold Silver Ratio (High Frequency)
+async function loadGoldSilverRatio() {
+    const el = document.getElementById('gold-silver-ratio');
     if (!el) return;
 
-    const data = await fetchAPI('/index/global');
+    const data = await fetchAPI('/commodity/gold-silver');
 
-    if (!data || data.length === 0) {
+    if (!data || data.error) {
         el.innerHTML = '<div class="loading">暂无数据</div>';
         return;
     }
 
-    el.innerHTML = data.map(item => {
-        const change = item.change_pct;
-        const colorClass = formatters.colorClass(change);
-        const sign = change >= 0 ? '+' : '';
+    const gold = data.gold;
+    const silver = data.silver;
+    const ratio = data.ratio;
 
-        return `
-        <div class="list-item index-item">
-            <div class="item-name">
-                <span style="margin-right: 6px;">${item.flag}</span>
-                ${item.name}
-            </div>
-            <div class="index-value-group">
-                <span class="item-value font-mono">${item.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                <span class="item-change font-mono ${colorClass} bg-${change >= 0 ? 'up' : 'down'}-soft">${sign}${change.toFixed(2)}%</span>
-            </div>
+    const goldChangeClass = formatters.colorClass(gold.change_pct);
+    const silverChangeClass = formatters.colorClass(silver.change_pct);
+    const goldSign = gold.change_pct >= 0 ? '+' : '';
+    const silverSign = silver.change_pct >= 0 ? '+' : '';
+
+    el.innerHTML = `
+        <div class="gold-silver-item">
+            <div class="item-label">🥇 黄金</div>
+            <div class="item-price">$${gold.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+            <span class="item-change ${goldChangeClass} bg-${gold.change_pct >= 0 ? 'up' : 'down'}-soft">${goldSign}${gold.change_pct.toFixed(2)}%</span>
         </div>
-        `;
-    }).join('');
+        <div class="gold-silver-item">
+            <div class="item-label">🥈 白银</div>
+            <div class="item-price">$${silver.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+            <span class="item-change ${silverChangeClass} bg-${silver.change_pct >= 0 ? 'up' : 'down'}-soft">${silverSign}${silver.change_pct.toFixed(2)}%</span>
+        </div>
+        <div class="gold-silver-item ratio">
+            <div class="item-label">📊 金银比</div>
+            <div class="item-price">${ratio}</div>
+            <div class="item-desc">${data.ratio_interpretation}</div>
+        </div>
+    `;
 }
 
 // 3. Market Overview (Medium Frequency)
@@ -266,30 +246,7 @@ async function loadSectorList(endpoint, elementId) {
 async function loadSectorTop() { await loadSectorList('/market/sector-top?n=5', 'sector-list'); }
 async function loadSectorBottom() { await loadSectorList('/market/sector-bottom?n=5', 'sector-list-bottom'); }
 
-// 5. Fund Rankings (Low Frequency)
-async function loadFundTop() {
-    const el = document.getElementById('fund-list');
-    const data = await fetchAPI('/fund/top?n=12'); // Increased to 12
 
-    if (!data || data.length === 0) {
-        el.innerHTML = '<div class="loading">暂无数据</div>';
-        return;
-    }
-
-    el.innerHTML = data.map(item => `
-        <div class="fund-card">
-            <div class="fund-info" style="overflow: hidden; max-width: 70%;">
-                <h4 style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                    ${item['基金简称']}
-                </h4>
-                <span class="font-mono">${item['基金代码']}</span>
-            </div>
-            <div class="fund-rate text-up font-mono">
-                +${item['日增长率']}%
-            </div>
-        </div>
-    `).join('');
-}
 
 // ============================================
 // Initialization & Loop
@@ -307,15 +264,12 @@ async function init() {
 
     // Initial Load - Sequential to avoid race conditions affecting layout
     await loadFearGreedIndex();
-    await loadIndexCompare();
-    await loadGlobalIndices();
+    await loadGoldSilverRatio();
     await loadMarketOverview();
 
-    // Parallel Load for lower priority
     Promise.all([
         loadSectorTop(),
-        loadSectorBottom(),
-        loadFundTop()
+        loadSectorBottom()
     ]).then(() => {
         // Refresh icons once everything is loaded
         if (window.lucide) lucide.createIcons();
@@ -330,8 +284,7 @@ async function init() {
     // 5-min Group
     setInterval(async () => {
         await loadFearGreedIndex();
-        await loadIndexCompare();
-        await loadGlobalIndices();
+        await loadGoldSilverRatio();
     }, 5 * MINUTE);
 
     // 1-hour Group
@@ -340,11 +293,6 @@ async function init() {
         await loadSectorTop();
         await loadSectorBottom();
     }, 1 * HOUR);
-
-    // 12-hour Group
-    setInterval(() => {
-        loadFundTop();
-    }, 12 * HOUR);
 }
 
 document.addEventListener('DOMContentLoaded', init);
