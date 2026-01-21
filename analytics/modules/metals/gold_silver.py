@@ -103,23 +103,28 @@ class GoldSilverAnalysis:
         current_ratio: float, history: List[Dict[str, Any]]
     ) -> Dict[str, Any]:
         """分析金银比水平"""
-        # 简化版分析
+        # 基于历史均值 65.0 左右的正态分布逻辑调整
+        # > 90: 极高 (偏离均值 +25)
+        # 80-90: 偏高 (偏离均值 +15)
+        # 55-80: 正常 (涵盖均值 65)
+        # 45-55: 偏低
+        # < 45: 极低
 
         if current_ratio > 90:
             level = "极高"
-            comment = "白银相对被低估"
-        elif current_ratio > 85:
+            comment = "处于历史高位区域"
+        elif current_ratio > 80:
             level = "偏高"
-            comment = "白银相对便宜"
-        elif current_ratio < 65:
+            comment = "高于历史均值"
+        elif current_ratio < 45:
             level = "极低"
-            comment = "黄金相对被低估"
-        elif current_ratio < 75:
+            comment = "处于历史低位区域"
+        elif current_ratio < 55:
             level = "偏低"
-            comment = "黄金相对便宜"
+            comment = "低于历史均值"
         else:
             level = "正常"
-            comment = "处于合理区间"
+            comment = "处于合理波动区间"
 
         return {"level": level, "comment": comment}
 
@@ -127,32 +132,48 @@ class GoldSilverAnalysis:
     def _get_investment_advice(
         ratio: float, analysis: Dict[str, Any]
     ) -> Dict[str, Any]:
-        """获取投资建议"""
+        """获取投资建议 (仅供参考)"""
         level = analysis.get("level", "正常")
-        if level in ["极高", "偏高"]:
+        
+        if level in ["极高"]:
             return {
                 "preferred_metal": "白银",
-                "strategy": "关注白银",
-                "reasoning": "金银比高企，白银胜率较高",
+                "strategy": "关注白银修复机会",
+                "reasoning": "金银比处于历史高位，统计上白银跑赢黄金概率较高 (仅供参考)",
             }
-        elif level in ["极低", "偏低"]:
+        elif level in ["偏高"]:
+            return {
+                "preferred_metal": "白银",
+                "strategy": "适当关注白银",
+                "reasoning": "金银比偏高，白银相对黄金性价比提升",
+            }
+        elif level in ["极低"]:
             return {
                 "preferred_metal": "黄金",
-                "strategy": "关注黄金",
-                "reasoning": "金银比低位，黄金性价比较高",
+                "strategy": "关注黄金避险属性",
+                "reasoning": "金银比处于历史低位，统计上黄金跑赢白银概率较高 (仅供参考)",
+            }
+        elif level in ["偏低"]:
+            return {
+                "preferred_metal": "黄金",
+                "strategy": "适当关注黄金",
+                "reasoning": "金银比偏低，黄金相对白银性价比提升",
             }
         else:
             return {
                 "preferred_metal": "均衡",
-                "strategy": "均衡配置",
-                "reasoning": "金银比正常",
+                "strategy": "均衡配置策略",
+                "reasoning": "金银比处于正常区间，建议维持均衡配置",
             }
 
     @staticmethod
     def _get_explanation() -> str:
         return """
 金银比(Gold-Silver Ratio)说明：
-• 定义：黄金价格与白银价格的比值
-• 核心逻辑：比值过高暗示白银低估，比值过低暗示黄金低估
-• 数据来源：COMEX期货价格 (美元/盎司)
+• 定义：1盎司黄金价格 ÷ 1盎司白银价格
+• 核心逻辑：
+  - 均值回归：历史长期均值约 65.0
+  - 高位 (>80)：暗示白银相对黄金超卖，或有补涨需求
+  - 低位 (<55)：暗示白银投机情绪过热，黄金避险性价比提升
+• 策略参考：利用比值偏离均值的机会，进行相对价值配置
         """.strip()
