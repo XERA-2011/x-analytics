@@ -55,6 +55,7 @@ class CNMarketHeat:
             heat_data["heat_level"] = CNMarketHeat._get_heat_level(heat_score)
 
             heat_data["update_time"] = get_beijing_time().strftime("%Y-%m-%d %H:%M:%S")
+            heat_data["explanation"] = CNMarketHeat._get_explanation()
 
             return heat_data
 
@@ -258,3 +259,22 @@ class CNMarketHeat:
             return "略活跃"
         else:
             return "不活跃"
+
+    @staticmethod
+    def _get_explanation() -> str:
+        """获取市场热度说明"""
+        return """
+市场热度指数说明：
+• 指数范围：0-100，数值越高表示市场越火热
+• 计算因子：
+  1. 成交额 (30%)：两市总成交额，反映资金参与度
+  2. 涨跌比 (25%)：上涨家数/下跌家数，反映市场情绪
+  3. 强势股 (20%)：涨幅>3%的股票比例，反映赚钱效应
+  4. 活跃度 (15%)：成交额>1亿的股票比例
+  5. 换手率 (10%)：市场平均换手率
+• 极热(80+)：市场情绪亢奋，注意风险
+• 较热(65-80)：赚钱效应明显
+• 中等(45-65)：市场正常波动
+• 较冷(20-45)：市场情绪低迷
+• 极冷(0-20)：市场极度冰点
+        """.strip()

@@ -12,19 +12,20 @@ class USMarketController {
 
     async loadUSFearGreed() {
         try {
-            // Load CNN
-            const cnnData = await api.getUSFearGreed();
-            this.renderUSFearGreed(cnnData, 'us-cnn-fear');
+            // Load both datasets in parallel
+            const [cnnData, customData] = await Promise.all([
+                api.getUSFearGreed().catch(e => ({ error: 'CNN数据加载失败' })),
+                api.getUSCustomFearGreed().catch(e => ({ error: 'Custom数据加载失败' }))
+            ]);
 
-            // Load Custom
-            const customData = await api.getUSCustomFearGreed();
-            this.renderUSFearGreed(customData, 'us-custom-fear');
+            this.renderUSFearGreed(cnnData, customData);
 
             if (window.lucide) lucide.createIcons();
 
         } catch (error) {
             console.error('加载美股恐慌指数失败:', error);
             utils.renderError('us-cnn-fear', '美股恐慌指数加载失败');
+            utils.renderError('us-custom-fear', '美股恐慌指数加载失败');
         }
     }
 
@@ -124,6 +125,72 @@ class USMarketController {
             safe_haven_demand: '避险'
         };
         return names[key] || key;
+    }
+
+    renderUSFearGreed(cnnData, customData) {
+        // Render CNN
+        const cnnContainer = document.getElementById('us-cnn-fear');
+        if (cnnContainer) {
+            if (!cnnData || cnnData.error) {
+                utils.renderError('us-cnn-fear', cnnData ? cnnData.error : '暂无数据');
+            } else {
+                // Bind CNN Info Button
+                const infoBtn1 = document.getElementById('info-us-cnn');
+                if (infoBtn1 && cnnData.explanation) {
+                    infoBtn1.onclick = () => utils.showInfoModal('恐慌贪婪指数 (CNN)', cnnData.explanation);
+                }
+
+                // Robust data extraction
+                const score = cnnData.score !== undefined ? cnnData.score : (cnnData.current_value !== undefined ? cnnData.current_value : 50);
+                const level = cnnData.level || cnnData.current_level || '中性';
+                const change = cnnData.change_pct !== undefined ? cnnData.change_pct : (cnnData.change_1d || 0);
+
+                cnnContainer.innerHTML = `
+                    <div class="fg-gauge" id="us-cnn-gauge"></div>
+                    <div class="fg-info">
+                        <div class="fg-score class-${utils.getScoreClass(score)}">${score}</div>
+                        <div class="fg-level">${level}</div>
+                        <div class="fg-desc">变动: ${utils.formatChange(change).text}</div>
+                    </div>
+                `;
+                if (window.charts) {
+                    setTimeout(() => {
+                        charts.createFearGreedGauge('us-cnn-gauge', { score, level });
+                    }, 100);
+                }
+            }
+        }
+
+        // Render Custom
+        const customContainer = document.getElementById('us-custom-fear');
+        if (customContainer) {
+            if (!customData || customData.error) {
+                utils.renderError('us-custom-fear', customData ? customData.error : '暂无数据');
+            } else {
+                // Bind Custom Info Button
+                const infoBtn2 = document.getElementById('info-us-custom');
+                if (infoBtn2 && customData.explanation) {
+                    infoBtn2.onclick = () => utils.showInfoModal('恐慌贪婪指数 (Custom)', customData.explanation);
+                }
+
+                const score = customData.score !== undefined ? customData.score : 50;
+                const level = customData.level || '中性';
+
+                customContainer.innerHTML = `
+                    <div class="fg-gauge" id="us-custom-gauge"></div>
+                    <div class="fg-info">
+                        <div class="fg-score class-${utils.getScoreClass(score)}">${score}</div>
+                        <div class="fg-level">${level}</div>
+                        <div class="fg-desc">${customData.description || ''}</div>
+                    </div>
+                `;
+                if (window.charts) {
+                    setTimeout(() => {
+                        charts.createFearGreedGauge('us-custom-gauge', customData);
+                    }, 100);
+                }
+            }
+        }
     }
 
     renderUSMarketHeat(data) {

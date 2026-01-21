@@ -73,6 +73,12 @@ class CNMarketController {
             return;
         }
 
+        // Bind Info Button
+        const infoBtn = document.getElementById('info-cn-fear');
+        if (infoBtn && data.explanation) {
+            infoBtn.onclick = () => utils.showInfoModal('恐慌贪婪指数 (CN)', data.explanation);
+        }
+
         container.innerHTML = `
             <div class="fg-gauge" id="cn-fear-greed-gauge"></div>
             <div class="fg-info">
@@ -129,6 +135,12 @@ class CNMarketController {
         if (data.error) {
             utils.renderError('market-cn-heat', data.error);
             return;
+        }
+
+        // Bind Info Button
+        const infoBtn = document.getElementById('info-cn-heat');
+        if (infoBtn && data.explanation) {
+            infoBtn.onclick = () => utils.showInfoModal('市场热度指数', data.explanation);
         }
 
         const html = `

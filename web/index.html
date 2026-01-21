@@ -59,13 +59,26 @@
             </div>
 
             <div class="grid">
-                <!-- Fear & Greed -->
+                <!-- Fear & Greed + Market Heat -->
                 <div class="card hero">
                     <div class="card-header">
-                        <div class="card-title"><i data-lucide="activity" width="16"></i> 恐慌贪婪</div>
+                        <div class="card-title"><i data-lucide="activity" width="16"></i> 恐慌贪婪 & 市场</div>
+                        <button class="info-btn" id="info-cn-fear" title="说明"><i data-lucide="info"
+                                width="16"></i></button>
                     </div>
                     <!-- fg-container -->
                     <div id="cn-fear-greed" class="fg-container">
+                        <div class="loading">Loading...</div>
+                    </div>
+
+                    <div class="divider"></div>
+
+                    <div class="card-header" style="margin-bottom: 12px; padding-bottom: 0; border-bottom: none;">
+                        <div class="card-title" style="font-size: 14px;">市场热度</div>
+                        <button class="info-btn" id="info-cn-heat" title="说明"><i data-lucide="info"
+                                width="14"></i></button>
+                    </div>
+                    <div id="market-cn-heat" class="heat-grid">
                         <div class="loading">Loading...</div>
                     </div>
                 </div>
@@ -90,20 +103,10 @@
                     </div>
                 </div>
 
-                <!-- Market Heat -->
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-title">市场热度</div>
-                    </div>
-                    <div id="market-cn-heat" class="heat-grid">
-                        <div class="loading">Loading...</div>
-                    </div>
-                </div>
-
                 <!-- Dividend -->
                 <div class="card">
                     <div class="card-header">
-                        <div class="card-title">红利策略</div>
+                        <div class="card-title">红利低波</div>
                     </div>
                     <div id="cn-dividend" class="list-container">
                         <div class="loading">Loading...</div>
@@ -135,6 +138,8 @@
                 <div class="card hero">
                     <div class="card-header">
                         <div class="card-title">恐慌贪婪 (CNN)</div>
+                        <button class="info-btn" id="info-us-cnn" title="说明"><i data-lucide="info"
+                                width="16"></i></button>
                     </div>
                     <div id="us-cnn-fear" class="fg-container">
                         <div class="loading">Loading...</div>
@@ -145,6 +150,8 @@
                 <div class="card">
                     <div class="card-header">
                         <div class="card-title">恐慌贪婪 (Custom)</div>
+                        <button class="info-btn" id="info-us-custom" title="说明"><i data-lucide="info"
+                                width="16"></i></button>
                     </div>
                     <div id="us-custom-fear" class="fg-container">
                         <div class="loading">Loading...</div>
@@ -197,6 +204,8 @@
                 <div class="card hero">
                     <div class="card-header">
                         <div class="card-title">金银比</div>
+                        <button class="info-btn" id="info-metals-ratio" title="说明"><i data-lucide="info"
+                                width="16"></i></button>
                     </div>
                     <div id="gold-silver-ratio" class="fg-container">
                         <div class="loading">Loading...</div>

@@ -296,6 +296,30 @@ class Utils {
         }
     }
 
+    // Modal
+    static showInfoModal(title, content) {
+        // Remove existing modal if any
+        const existingModal = document.querySelector('.modal-overlay');
+        if (existingModal) existingModal.remove();
+
+        const html = `
+            <div class="modal-overlay" onclick="if(event.target===this) this.remove()">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <div class="modal-title">${title}</div>
+                        <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">
+                            <i data-lucide="x" width="20"></i>
+                        </button>
+                    </div>
+                    <div class="modal-body">${content}</div>
+                </div>
+            </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', html);
+        if (window.lucide) lucide.createIcons();
+    }
+
     // 颜色工具
     static color = {
         // 根据数值获取颜色
