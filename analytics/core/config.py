@@ -35,47 +35,52 @@ class Settings:
     }
 
     # 刷新间隔配置 (秒)
+    # 核心原则：预热间隔 < 物理 TTL，确保缓存永不为空
     REFRESH_INTERVALS = {
         "trading_hours": {
-            "market_cn": 1800,  # 30分钟 (原30秒)
-            "market_us": 3600,  # 1小时 (原1分钟)
-            "metals": 3600,     # 1小时 (原5分钟)
+            "market_cn": 1800,   # 30分钟
+            "market_us": 1800,   # 30分钟 (改小，确保覆盖)
+            "metals": 1800,      # 30分钟 (改小，确保覆盖)
         },
         "non_trading_hours": {
-            "market_cn": 7200,  # 2小时
-            "market_us": 7200,  # 2小时
-            "metals": 7200,     # 2小时
+            "market_cn": 3600,   # 1小时 (改小，原2小时)
+            "market_us": 3600,   # 1小时 (改小，原2小时)
+            "metals": 3600,      # 1小时 (改小，原2小时)
         },
     }
 
-    # 缓存过期时间 (秒) - 统一配置
+    # 缓存过期时间 (秒) - 逻辑 TTL
+    # 物理 TTL = TTL × STALE_TTL_RATIO，在此期间数据仍可返回
     CACHE_TTL = {
-        # === 高频数据 (改为低频) ===
+        # === 所有数据统一 2 小时逻辑 TTL ===
+        # 物理 TTL = 2h × 4 = 8小时，预热间隔最长1小时，绝对安全
         "market_overview": 7200,     # 2小时
         "sector_rank": 7200,         # 2小时
         "sector_top": 7200,          # 2小时
         "sector_bottom": 7200,       # 2小时
         "board_cons": 7200,          # 2小时
         "fear_greed": 7200,          # 2小时
-        "leaders": 3600,             # 1小时 (原1分钟)
+        "leaders": 7200,             # 2小时 (原1小时)
         
-        # === 金属市场 (全天) ===
-        "metals": 7200,              # 2小时 (原5分钟)
+        # === 金属市场 ===
+        "metals": 7200,              # 2小时
         "gold_silver": 7200,         # 2小时
         
         # === 衍生数据 ===
-        "qvix": 3600,                # 1小时
+        "qvix": 7200,                # 2小时 (原1小时)
         "dividend": 7200,            # 2小时
-        "bonds": 3600,               # 1小时
-        "market_heat": 3600,         # 1小时
-        "north_funds": 3600,         # 1小时
+        "bonds": 7200,               # 2小时 (原1小时)
+        "market_heat": 7200,         # 2小时 (原1小时)
+        "north_funds": 7200,         # 2小时 (原1小时)
         
         # === 股票数据 ===
-        "stock_spot": 3600,          # 1小时
+        "stock_spot": 7200,          # 2小时 (原1小时)
     }
 
-    # Stale TTL 倍率 (stale_ttl = ttl * ratio)
-    STALE_TTL_RATIO = 2
+    # Stale TTL 倍率：物理 TTL = TTL × STALE_TTL_RATIO
+    # 设为 4 表示：逻辑过期后，数据仍在 Redis 中保留 3 倍 TTL 时间
+    # 例：TTL=2h, 物理TTL=8h, 即使预热失败数次，数据仍可返回
+    STALE_TTL_RATIO = 4
 
     # API 限流配置
     RATE_LIMIT = {"requests_per_minute": 60, "burst_size": 10}

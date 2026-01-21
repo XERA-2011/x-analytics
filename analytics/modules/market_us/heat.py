@@ -18,7 +18,7 @@ class USMarketHeat:
     @cached(
         "market_us:sector_performance",
         ttl=settings.CACHE_TTL.get("market_heat", 3600),
-        stale_ttl=7200,
+        stale_ttl=settings.CACHE_TTL.get("market_heat", 3600) * settings.STALE_TTL_RATIO,
     )
     def get_sector_performance() -> List[Dict[str, Any]]:
         """

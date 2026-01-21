@@ -24,7 +24,7 @@ class GoldSilverAnalysis:
     HISTORICAL_AVG = 65.0     # 50年历史均值
 
     @staticmethod
-    @cached("metals:gold_silver_ratio", ttl=settings.CACHE_TTL["metals"], stale_ttl=600)
+    @cached("metals:gold_silver_ratio", ttl=settings.CACHE_TTL["metals"], stale_ttl=settings.CACHE_TTL["metals"] * settings.STALE_TTL_RATIO)
     def get_gold_silver_ratio() -> Dict[str, Any]:
         """
         获取金银比数据和分析 (COMEX 美元计价)

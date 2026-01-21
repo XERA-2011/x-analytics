@@ -14,7 +14,7 @@ class USMarketLeaders:
     """美股主要指数与领涨板块分析"""
 
     @staticmethod
-    @cached("market_us:indices", ttl=settings.CACHE_TTL["market_heat"], stale_ttl=300)
+    @cached("market_us:indices", ttl=settings.CACHE_TTL["market_heat"], stale_ttl=settings.CACHE_TTL["market_heat"] * settings.STALE_TTL_RATIO)
     def get_leaders() -> Dict[str, Any]:
         """
         获取美股三大指数 (纳斯达克, 标普500, 道琼斯)

@@ -16,7 +16,7 @@ class USFearGreedIndex:
     """美股恐慌贪婪指数"""
 
     @staticmethod
-    @cached("market_us:fear_greed", ttl=settings.CACHE_TTL["fear_greed"], stale_ttl=300)
+    @cached("market_us:fear_greed", ttl=settings.CACHE_TTL["fear_greed"], stale_ttl=settings.CACHE_TTL["fear_greed"] * settings.STALE_TTL_RATIO)
     def get_cnn_fear_greed() -> Dict[str, Any]:
         """
         获取CNN恐慌贪婪指数
@@ -115,7 +115,7 @@ class USFearGreedIndex:
     @cached(
         "market_us:custom_fear_greed",
         ttl=settings.CACHE_TTL.get("fear_greed", 3600),
-        stale_ttl=300,
+        stale_ttl=settings.CACHE_TTL.get("fear_greed", 3600) * settings.STALE_TTL_RATIO,
     )
     def calculate_custom_index() -> Dict[str, Any]:
         """

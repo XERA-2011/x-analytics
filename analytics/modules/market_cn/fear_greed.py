@@ -17,7 +17,7 @@ class CNFearGreedIndex:
     """中国市场恐慌贪婪指数计算"""
 
     @staticmethod
-    @cached("market_cn:fear_greed", ttl=settings.CACHE_TTL["fear_greed"], stale_ttl=300)
+    @cached("market_cn:fear_greed", ttl=settings.CACHE_TTL["fear_greed"], stale_ttl=settings.CACHE_TTL["fear_greed"] * settings.STALE_TTL_RATIO)
     def calculate(symbol: str = "sh000001", days: int = 14) -> Dict[str, Any]:
         """
         计算恐慌贪婪指数

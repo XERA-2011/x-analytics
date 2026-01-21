@@ -18,7 +18,7 @@ class CNMarketLeaders:
     """中国市场领涨领跌股票"""
 
     @staticmethod
-    @cached("market_cn:leaders_top", ttl=settings.CACHE_TTL["leaders"], stale_ttl=180)
+    @cached("market_cn:leaders_top", ttl=settings.CACHE_TTL["leaders"], stale_ttl=settings.CACHE_TTL["leaders"] * settings.STALE_TTL_RATIO)
     def get_top_gainers(limit: int = 10) -> Dict[str, Any]:
         """
         获取领涨板块
@@ -88,7 +88,7 @@ class CNMarketLeaders:
 
     @staticmethod
     @cached(
-        "market_cn:leaders_bottom", ttl=settings.CACHE_TTL["leaders"], stale_ttl=180
+        "market_cn:leaders_bottom", ttl=settings.CACHE_TTL["leaders"], stale_ttl=settings.CACHE_TTL["leaders"] * settings.STALE_TTL_RATIO
     )
     def get_top_losers(limit: int = 10) -> Dict[str, Any]:
         """
@@ -147,7 +147,7 @@ class CNMarketLeaders:
 
     @staticmethod
     @cached(
-        "market_cn:sector_leaders", ttl=settings.CACHE_TTL["leaders"], stale_ttl=300
+        "market_cn:sector_leaders", ttl=settings.CACHE_TTL["leaders"], stale_ttl=settings.CACHE_TTL["leaders"] * settings.STALE_TTL_RATIO
     )
     def get_sector_leaders() -> Dict[str, Any]:
         """

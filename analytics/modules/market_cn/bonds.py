@@ -15,7 +15,7 @@ class CNBonds:
     """中国国债分析"""
 
     @staticmethod
-    @cached("market_cn:bonds", ttl=settings.CACHE_TTL["bonds"], stale_ttl=600)
+    @cached("market_cn:bonds", ttl=settings.CACHE_TTL["bonds"], stale_ttl=settings.CACHE_TTL["bonds"] * settings.STALE_TTL_RATIO)
     def get_treasury_yields() -> Dict[str, Any]:
         """
         获取国债收益率数据 (混合数据源)
@@ -154,7 +154,7 @@ class CNBonds:
             }
 
     @staticmethod
-    @cached("market_cn:bond_analysis", ttl=settings.CACHE_TTL["bonds"], stale_ttl=600)
+    @cached("market_cn:bond_analysis", ttl=settings.CACHE_TTL["bonds"], stale_ttl=settings.CACHE_TTL["bonds"] * settings.STALE_TTL_RATIO)
     def get_bond_market_analysis() -> Dict[str, Any]:
         """
         获取债券市场分析

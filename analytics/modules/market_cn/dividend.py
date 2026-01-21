@@ -16,7 +16,7 @@ class CNDividendStrategy:
     """红利低波策略"""
 
     @staticmethod
-    @cached("market_cn:dividend", ttl=settings.CACHE_TTL["dividend"], stale_ttl=1800)
+    @cached("market_cn:dividend", ttl=settings.CACHE_TTL["dividend"], stale_ttl=settings.CACHE_TTL["dividend"] * settings.STALE_TTL_RATIO)
     def get_dividend_stocks(limit: int = 20) -> Dict[str, Any]:
         """
         获取红利低波股票池
@@ -102,7 +102,7 @@ class CNDividendStrategy:
 
     @staticmethod
     @cached(
-        "market_cn:dividend_etf", ttl=settings.CACHE_TTL["dividend"], stale_ttl=1800
+        "market_cn:dividend_etf", ttl=settings.CACHE_TTL["dividend"], stale_ttl=settings.CACHE_TTL["dividend"] * settings.STALE_TTL_RATIO
     )
     def get_dividend_etfs() -> Dict[str, Any]:
         """

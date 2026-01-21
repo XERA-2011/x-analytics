@@ -26,7 +26,7 @@ class MetalSpotPrice:
 
     @staticmethod
     @cached(
-        "metals:spot_price", ttl=settings.CACHE_TTL.get("metals", 300), stale_ttl=600
+        "metals:spot_price", ttl=settings.CACHE_TTL.get("metals", 300), stale_ttl=settings.CACHE_TTL.get("metals", 300) * settings.STALE_TTL_RATIO
     )
     def get_spot_prices() -> List[Dict[str, Any]]:
         """

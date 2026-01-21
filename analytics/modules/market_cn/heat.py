@@ -16,7 +16,7 @@ class CNMarketHeat:
     """中国市场热度分析"""
 
     @staticmethod
-    @cached("market_cn:heat", ttl=settings.CACHE_TTL["market_heat"], stale_ttl=300)
+    @cached("market_cn:heat", ttl=settings.CACHE_TTL["market_heat"], stale_ttl=settings.CACHE_TTL["market_heat"] * settings.STALE_TTL_RATIO)
     def get_market_heat() -> Dict[str, Any]:
         """
         获取市场热度指标
