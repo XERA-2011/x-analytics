@@ -12,6 +12,8 @@ from typing import Dict, Any, List
 
 from .cache import cached
 from .core.config import settings
+from .core.data_provider import data_provider
+from .core.utils import akshare_call_with_retry
 
 
 class MarketAnalysis:
@@ -150,7 +152,8 @@ class MarketAnalysis:
         缓存: 60分钟 TTL + 120分钟 Stale
         """
         try:
-            df = ak.stock_board_industry_name_em()
+            # 使用共享数据提供层（带重试和节流）
+            df = data_provider.get_board_industry_name()
             if "涨跌幅" in df.columns:
                 df = df.sort_values("涨跌幅", ascending=False).head(n)
 
@@ -169,7 +172,8 @@ class MarketAnalysis:
     def _get_board_cons(board_code: str) -> List[Dict]:
         """获取板块成分股（带缓存）"""
         try:
-            cons = ak.stock_board_industry_cons_em(symbol=board_code)
+            # 使用带重试的调用
+            cons = akshare_call_with_retry(ak.stock_board_industry_cons_em, symbol=board_code)
             if not cons.empty and "涨跌幅" in cons.columns:
                 return cons[["名称", "涨跌幅"]].to_dict(orient="records")
         except Exception as e:
@@ -189,7 +193,8 @@ class MarketAnalysis:
         缓存: 60分钟 TTL + 120分钟 Stale
         """
         try:
-            df = ak.stock_board_industry_name_em()
+            # 使用共享数据提供层（带重试和节流）
+            df = data_provider.get_board_industry_name()
             if "涨跌幅" in df.columns:
                 # 获取跌幅榜前 N
                 df_bottom = df.sort_values("涨跌幅", ascending=True).head(n)

@@ -133,6 +133,7 @@ def akshare_call_with_retry(
         Exception: 所有重试失败后抛出最后一个异常
     """
     import time
+    import random
     from .throttler import throttler
 
     last_exception = None
@@ -146,19 +147,27 @@ def akshare_call_with_retry(
             return func(*args, **kwargs)
         except Exception as e:
             last_exception = e
-            error_msg = str(e)
+            error_msg = str(e).lower()
 
             # 检查是否是连接类错误（需要重试）
+            connection_error_keywords = [
+                "connection",
+                "timeout",
+                "disconnected",
+                "reset",
+                "refused",
+                "aborted",
+                "remotedisconnected",  # 新增：针对您遇到的错误
+                "closed",              # 新增：连接关闭
+                "eof",                 # 新增：意外结束
+                "broken pipe",         # 新增：管道断开
+                "network",             # 新增：网络相关
+                "temporary failure",   # 新增：临时故障
+            ]
+            
             is_connection_error = any(
-                keyword in error_msg.lower()
-                for keyword in [
-                    "connection",
-                    "timeout",
-                    "disconnected",
-                    "reset",
-                    "refused",
-                    "aborted",
-                ]
+                keyword in error_msg
+                for keyword in connection_error_keywords
             )
 
             if not is_connection_error:
@@ -166,15 +175,18 @@ def akshare_call_with_retry(
                 raise
 
             if attempt < max_retries - 1:
-                # 指数退避: 1s, 2s, 4s
-                delay = base_delay * (2 ** attempt)
+                # 指数退避 + 随机抖动，避免同时重试造成更大压力
+                jitter = random.uniform(0.5, 1.5)
+                delay = base_delay * (2 ** attempt) * jitter
+                func_name = getattr(func, '__name__', str(func))
                 print(
-                    f"⚠️ API调用失败 (尝试 {attempt + 1}/{max_retries}): {error_msg}"
+                    f"⚠️ API调用失败 [{func_name}] (尝试 {attempt + 1}/{max_retries}): {str(e)[:100]}"
                 )
                 print(f"   {delay:.1f}秒后重试...")
                 time.sleep(delay)
             else:
-                print(f"❌ API调用失败 (已重试{max_retries}次): {error_msg}")
+                func_name = getattr(func, '__name__', str(func))
+                print(f"❌ API调用失败 [{func_name}] (已重试{max_retries}次): {str(e)[:150]}")
 
     raise last_exception  # type: ignore
 
