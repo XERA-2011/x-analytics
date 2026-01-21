@@ -6,7 +6,7 @@
 import time
 import random
 import threading
-from typing import Optional
+from typing import Optional, List
 
 
 class RequestThrottler:
@@ -39,7 +39,7 @@ class RequestThrottler:
         self.max_rpm = max_requests_per_minute
         self.min_delay = min_delay
         self.max_delay = max_delay
-        self._requests: list[float] = []
+        self._requests: List[float] = []
         self._request_lock = threading.Lock()
 
     @classmethod

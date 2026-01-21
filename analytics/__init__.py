@@ -26,12 +26,12 @@ try:
     from .stock import StockAnalysis
 except ImportError:
     # 如果旧模块不存在，创建兼容性类
-    class SentimentAnalysis:
+    class SentimentAnalysis:  # type: ignore[no-redef]
         @staticmethod
         def calculate_fear_greed_custom(*args, **kwargs):
             return CNFearGreedIndex.calculate(*args, **kwargs)
 
-    class MarketAnalysis:
+    class MarketAnalysis:  # type: ignore[no-redef]
         @staticmethod
         def get_market_overview_v2():
             return {"error": "旧版本接口已废弃，请使用新版本API"}
@@ -44,7 +44,7 @@ except ImportError:
         def get_sector_bottom(*args, **kwargs):
             return CNMarketLeaders.get_sector_leaders()
 
-    class StockAnalysis:
+    class StockAnalysis:  # type: ignore[no-redef]
         @staticmethod
         def search(*args, **kwargs):
             return {"error": "股票搜索功能已迁移到新版本API"}

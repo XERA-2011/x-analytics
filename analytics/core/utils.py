@@ -2,8 +2,9 @@
 工具函数模块
 """
 
-import pytz
-from datetime import datetime
+import pytz  # type: ignore[import-untyped]
+from datetime import datetime, time as dt_time
+from typing import Any, Tuple, cast, overload, Optional
 from .config import settings
 
 
@@ -26,7 +27,7 @@ def is_trading_hours(market: str) -> bool:
     if market not in settings.TRADING_HOURS:
         return False
 
-    config = settings.TRADING_HOURS[market]
+    config: Dict[str, Any] = settings.TRADING_HOURS[market]
     now = get_beijing_time()
 
     # 检查是否为工作日
@@ -37,8 +38,8 @@ def is_trading_hours(market: str) -> bool:
 
     # 处理中国市场 (上午 + 下午两个时段)
     if market == "market_cn":
-        morning_start, morning_end = config["morning"]
-        afternoon_start, afternoon_end = config["afternoon"]
+        morning_start, morning_end = cast(Tuple[dt_time, dt_time], config["morning"])
+        afternoon_start, afternoon_end = cast(Tuple[dt_time, dt_time], config["afternoon"])
         return (
             morning_start <= current_time <= morning_end
             or afternoon_start <= current_time <= afternoon_end
@@ -46,12 +47,12 @@ def is_trading_hours(market: str) -> bool:
 
     # 处理跨午夜的市场 (如美股)
     elif config.get("cross_midnight", False):
-        session_start, session_end = config["session"]
+        session_start, session_end = cast(Tuple[dt_time, dt_time], config["session"])
         return current_time >= session_start or current_time <= session_end
 
     # 处理普通时段
     else:
-        session_start, session_end = config["session"]
+        session_start, session_end = cast(Tuple[dt_time, dt_time], config["session"])
         return session_start <= current_time <= session_end
 
 
@@ -86,8 +87,14 @@ def format_percentage(value: float, precision: int = 2) -> str:
     return f"{value:.{precision}f}%"
 
 
-def safe_float(value, default: float = 0.0) -> float:
-    """安全转换为浮点数"""
+@overload
+def safe_float(value: Any, default: float = 0.0) -> float: ...
+
+@overload
+def safe_float(value: Any, default: None) -> Optional[float]: ...
+
+def safe_float(value: Any, default: Optional[float] = 0.0) -> Optional[float]:
+    """安全转换为浮点数，支持 None 默认值"""
     try:
         return float(value) if value is not None else default
     except (ValueError, TypeError):

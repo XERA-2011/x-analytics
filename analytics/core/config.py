@@ -4,6 +4,7 @@
 
 import os
 from datetime import time
+from typing import Dict, Tuple, Any
 
 
 class Settings:
@@ -14,7 +15,7 @@ class Settings:
     CACHE_PREFIX = "xanalytics"
 
     # 交易时间配置 (北京时间)
-    TRADING_HOURS = {
+    TRADING_HOURS: Dict[str, Dict[str, Any]] = {
         "market_cn": {
             "morning": (time(9, 30), time(11, 30)),
             "afternoon": (time(13, 0), time(15, 0)),

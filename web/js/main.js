@@ -214,6 +214,7 @@ class App {
                 await controller.loadData();
             } else {
                 console.error('No controller found for tab:', this.currentTab);
+                utils.showNotification(`模块 "${this.currentTab}" 未找到`, 'error');
             }
 
             this.updateGlobalTime();

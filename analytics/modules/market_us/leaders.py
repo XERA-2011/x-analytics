@@ -42,7 +42,7 @@ class USMarketLeaders:
                         current_price = safe_float(latest["close"])
                         prev_close = safe_float(prev["close"])
                         
-                        change_pct = 0
+                        change_pct: float = 0.0
                         if prev_close > 0:
                             change_pct = (current_price - prev_close) / prev_close * 100
                             

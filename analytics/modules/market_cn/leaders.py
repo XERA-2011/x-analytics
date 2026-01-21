@@ -3,12 +3,15 @@
 获取实时涨跌幅排行榜
 """
 
+import logging
 import akshare as ak
 from typing import Dict, Any
 from ...core.cache import cached
 from ...core.config import settings
 from ...core.utils import safe_float, get_beijing_time
 from ...core.data_provider import data_provider
+
+logger = logging.getLogger(__name__)
 
 
 class CNMarketLeaders:
@@ -32,6 +35,18 @@ class CNMarketLeaders:
 
             if df.empty:
                 raise ValueError("无法获取行业板块数据")
+
+            # DataFrame schema 校验
+            required_columns = {"板块名称", "涨跌幅"}
+            missing_columns = required_columns - set(df.columns)
+            if missing_columns:
+                raise ValueError(f"数据缺少必要列: {missing_columns}")
+
+            # 检查可选字段（警告但不报错）
+            optional_columns = {"上涨家数", "下跌家数", "总市值", "领涨股票", "领涨股票-涨跌幅", "换手率"}
+            missing_optional = optional_columns - set(df.columns)
+            if missing_optional:
+                logger.warning(f"板块数据缺少可选列 (AKShare 接口可能已更新): {missing_optional}")
 
             # 按涨跌幅排序，取前N个
             top_sectors = df.nlargest(limit, "涨跌幅")
@@ -63,7 +78,7 @@ class CNMarketLeaders:
             }
 
         except Exception as e:
-            print(f"❌ 获取领涨板块失败: {e}")
+            logger.error(f"获取领涨板块失败: {e}")
             return {
                 "error": str(e),
                 "sectors": [],
@@ -122,7 +137,7 @@ class CNMarketLeaders:
             }
 
         except Exception as e:
-            print(f"❌ 获取领跌板块失败: {e}")
+            logger.error(f"获取领跌板块失败: {e}")
             return {
                 "error": str(e),
                 "sectors": [],
@@ -183,7 +198,7 @@ class CNMarketLeaders:
             }
 
         except Exception as e:
-            print(f"❌ 获取行业板块数据失败: {e}")
+            logger.error(f"获取行业板块数据失败: {e}")
             return {
                 "error": str(e),
                 "top_sectors": [],

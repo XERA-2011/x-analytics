@@ -206,8 +206,8 @@ def make_cache_key(prefix: str, *args, **kwargs) -> str:
     params_str = json.dumps(
         {"args": args, "kwargs": kwargs}, sort_keys=True, default=str
     )
-    # 使用 SHA256 替代 MD5，取前 12 位以减少碰撞风险
-    params_hash = hashlib.sha256(params_str.encode()).hexdigest()[:12]
+    # 使用 SHA256 替代 MD5，取前 16 位以减少碰撞风险
+    params_hash = hashlib.sha256(params_str.encode()).hexdigest()[:16]
     return f"{settings.CACHE_PREFIX}:{CACHE_VERSION}:{prefix}:{params_hash}"
 
 
@@ -257,6 +257,7 @@ def cached(key_prefix: str, ttl: int = 60, stale_ttl: Optional[int] = None):
                         # 数据陈旧 (但未物理过期)
                         should_refresh = True
                         return_stale = True
+                        stale_data = real_data  # 保存陈旧数据以供后续使用
                 else:
                     # 旧版格式或无元数据，假设新鲜（或依赖 Redis 物理过期）
                     # 为了兼容，如果正好遇到旧数据，直接返回
@@ -267,6 +268,7 @@ def cached(key_prefix: str, ttl: int = 60, stale_ttl: Optional[int] = None):
                 # 无缓存
                 should_refresh = True
                 return_stale = False
+                stale_data = None  # 无陈旧数据可用
 
             # 3. 需要刷新数据
             if should_refresh:
@@ -321,12 +323,12 @@ def cached(key_prefix: str, ttl: int = 60, stale_ttl: Optional[int] = None):
                                 pass
                     else:
                         # 未获取到锁
-                        if return_stale:
+                        if return_stale and stale_data is not None:
                             print(f"🔒 正在刷新中，返回陈旧数据: {key_prefix}")
-                            if isinstance(real_data, dict):
-                                real_data["_cached"] = True
-                                real_data["_stale"] = True
-                            return real_data
+                            if isinstance(stale_data, dict):
+                                stale_data["_cached"] = True
+                                stale_data["_stale"] = True
+                            return stale_data
                         else:
                             # Cache Miss 且获取锁失败 (超时)
                             print(f"⚠️ 获取锁超时，强制执行: {key_prefix}")

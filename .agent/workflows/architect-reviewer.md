@@ -38,3 +38,20 @@ Before starting a big feature, ask for an architectural plan.
 ## Reference
 See `.agent/skills/` for the specific standards of this project.
 - [Frontend Development Standards](../skills/frontend_development/SKILL.md)
+- [Python Development Standards](../skills/python_development/SKILL.md)
+
+---
+
+## 📚 Lessons Learned Reminder
+
+> After resolving major issues or discovering new best practices, check if the following files need updates:
+> - `.agent/skills/python_development/SKILL.md`
+> - `.agent/skills/frontend_development/SKILL.md`
+> - `.agent/workflows/*.md`
+
+---
+
+## ⚙️ Language Policy
+
+> **All content in `.agent/` directory MUST be written in English.**
+> This ensures consistency and optimal AI comprehension.

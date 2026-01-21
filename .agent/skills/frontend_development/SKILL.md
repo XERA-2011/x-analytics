@@ -114,4 +114,18 @@ Complex logic must be split by business domain into separate modules under `web/
 - **`api.js`**: All network requests.
 - **`charts.js`**: ECharts wrappers and theme configuration.
 
+---
 
+## 📚 Lessons Learned Reminder
+
+> After resolving major issues or discovering new best practices, check if the following files need updates:
+> - `.agent/skills/python_development/SKILL.md` - Python development guidelines
+> - `.agent/skills/frontend_development/SKILL.md` - Frontend development guidelines
+> - `.agent/workflows/*.md` - Workflow configurations
+
+---
+
+## ⚙️ Language Policy
+
+> **All content in `.agent/` directory MUST be written in English.**
+> This ensures consistency and optimal AI comprehension.

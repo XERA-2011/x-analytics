@@ -6,7 +6,7 @@
 import requests
 import akshare as ak
 from datetime import datetime
-from typing import Dict, Any
+from typing import Dict, Any, List
 from ...core.cache import cached
 from ...core.config import settings
 from ...core.utils import safe_float, get_beijing_time
@@ -67,7 +67,7 @@ class USFearGreedIndex:
                             pass
 
                     # 构建历史数据结构 (兼容前端)
-                    history = []
+                    history: List[Dict[str, Any]] = []
                     # CNN API返回的数据中包含历史趋势字段: previous_close, 1_week_ago, etc
                     # 我们可以伪造一个简单的history列表，或者尝试解析 graph_data (如果API返回)
 
@@ -193,8 +193,8 @@ class USFearGreedIndex:
 
     @staticmethod
     def _calculate_composite_score(indicators: Dict[str, Any]) -> float:
-        total_score = 0
-        total_weight = 0
+        total_score: float = 0.0
+        total_weight: float = 0.0
         for indicator in indicators.values():
             score = safe_float(indicator.get("score", 50))
             weight = safe_float(indicator.get("weight", 0))

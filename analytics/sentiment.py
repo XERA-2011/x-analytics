@@ -71,7 +71,7 @@ class SentimentAnalysis:
 
             # --- 3. 市场广度: 涨跌家数比 (权重 25%) ---
             # 反映市场参与度
-            score_breadth = 50  # 默认中性
+            score_breadth: float = 50.0  # 默认中性
             try:
                 up_down = ak.stock_zh_a_spot_em()
                 if not up_down.empty:
@@ -86,7 +86,7 @@ class SentimentAnalysis:
 
             # --- 4. 市场恐慌: 波动率 QVIX (权重 25%) ---
             # 反映期权市场对未来的恐慌预期
-            score_qvix = 50  # 默认中性
+            score_qvix: float = 50.0  # 默认中性
             try:
                 # 获取 50ETF 期权波动率作为代表
                 qvix_df = ak.index_option_50etf_qvix()

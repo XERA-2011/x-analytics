@@ -38,6 +38,12 @@ class CNFearGreedIndex:
             if index_data.empty:
                 raise ValueError(f"无法获取指数数据: {symbol}")
 
+            # DataFrame schema 校验
+            required_columns = {"close", "high", "low"}
+            missing_columns = required_columns - set(index_data.columns)
+            if missing_columns:
+                raise ValueError(f"数据缺少必要列: {missing_columns}")
+
             # 取最近的数据
             recent_data = index_data.tail(days)
             if len(recent_data) < days:
@@ -180,8 +186,8 @@ class CNFearGreedIndex:
     @staticmethod
     def _calculate_composite_score(indicators: Dict[str, Any]) -> float:
         """计算综合得分"""
-        total_score = 0
-        total_weight = 0
+        total_score: float = 0.0
+        total_weight: float = 0.0
 
         for indicator in indicators.values():
             score = safe_float(indicator.get("score", 50))

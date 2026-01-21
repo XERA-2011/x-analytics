@@ -49,3 +49,50 @@ Direct calls to `akshare` are **FORBIDDEN** in production code. You MUST use the
    - ❌ Do NOT create debug scripts in the project root.
    - ✅ Create `tests/debug_market.py` instead of `debug_market.py`.
 2. **File Naming**: Debug scripts should be prefixed with `debug_` or `test_`.
+
+## 6. Python 3.9 Compatibility
+
+> ⚠️ **CRITICAL**: Docker environment uses **Python 3.9**. Python 3.10+ syntax is FORBIDDEN!
+
+### Forbidden Syntax
+```python
+# ❌ Python 3.10+ syntax (will crash Docker)
+def func(x: str | None) -> dict[str, Any]: ...
+
+# ✅ Python 3.9 compatible syntax
+from typing import Optional, Dict, List, Any
+def func(x: Optional[str]) -> Dict[str, Any]: ...
+```
+
+### Replacement Rules
+| Python 3.10+ | Python 3.9 Compatible | Import |
+|-------------|----------------------|--------|
+| `X \| Y` | `Union[X, Y]` | `from typing import Union` |
+| `X \| None` | `Optional[X]` | `from typing import Optional` |
+| `dict[K, V]` | `Dict[K, V]` | `from typing import Dict` |
+| `list[T]` | `List[T]` | `from typing import List` |
+
+### Pre-commit Check Commands
+```bash
+# Scan for incompatible syntax before committing
+grep -rn ": dict\[" analytics/ --include="*.py"
+grep -rn ": list\[" analytics/ --include="*.py"
+grep -rn " | None" analytics/ --include="*.py"
+```
+
+---
+
+## 📚 Lessons Learned Reminder
+
+> After resolving major issues or discovering new best practices, check if the following files need updates:
+> - `.agent/skills/python_development/SKILL.md` - Python development guidelines
+> - `.agent/skills/frontend_development/SKILL.md` - Frontend development guidelines
+> - `.agent/workflows/*.md` - Workflow configurations
+> - `.shared/*/docs/guidelines.md` - Project guidelines
+
+---
+
+## ⚙️ Language Policy
+
+> **All content in `.agent/` directory MUST be written in English.**
+> This ensures consistency and optimal AI comprehension.

@@ -67,7 +67,7 @@ class USMarketHeat:
                 except Exception as e_inner:
                     print(f"获取 {item['symbol']} 失败: {e_inner}")
 
-            results.sort(key=lambda x: x["change_pct"], reverse=True)
+            results.sort(key=lambda x: x.get("change_pct", 0.0), reverse=True)  # type: ignore
             return results
 
         except Exception as e:

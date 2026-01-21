@@ -123,15 +123,24 @@ class CNBonds:
             # 获取历史走势（最近30天）
             history_data = CNBonds._get_yield_history(df_primary)
 
+            # 安全计算利差（处理 None 值）
+            ten_y = yield_curve.get("10y")
+            two_y = yield_curve.get("2y")
+            spread_10y_2y = (
+                round(ten_y - two_y, 4)
+                if ten_y is not None and two_y is not None
+                else None
+            )
+
             return {
                 "yield_curve": yield_curve,
                 "yield_changes": yield_changes,
                 "curve_analysis": curve_analysis,
                 "history": history_data,
                 "key_rates": {
-                    "10y": yield_curve["10y"],
-                    "2y": yield_curve["2y"],
-                    "spread_10y_2y": round(yield_curve["10y"] - yield_curve["2y"], 4),
+                    "10y": ten_y,
+                    "2y": two_y,
+                    "spread_10y_2y": spread_10y_2y,
                 },
                 "update_time": get_beijing_time().strftime("%Y-%m-%d %H:%M:%S"),
             }
@@ -228,12 +237,26 @@ class CNBonds:
         return mapping.get(period, period)
 
     @staticmethod
-    def _analyze_yield_curve(yield_curve: Dict[str, float]) -> Dict[str, Any]:
+    def _analyze_yield_curve(yield_curve: Dict[str, Any]) -> Dict[str, Any]:
         """分析收益率曲线形态"""
         try:
+            # 安全获取收益率值
+            ten_y = yield_curve.get("10y")
+            two_y = yield_curve.get("2y")
+            three_m = yield_curve.get("3m")
+
+            # 检查必要数据是否存在
+            if ten_y is None or two_y is None:
+                return {
+                    "shape": "未知",
+                    "comment": "关键数据缺失，无法分析曲线形态",
+                    "spread_10y_2y": None,
+                    "spread_10y_3m": None,
+                }
+
             # 计算关键利差
-            spread_10y_2y = yield_curve["10y"] - yield_curve["2y"]
-            spread_10y_3m = yield_curve["10y"] - yield_curve["3m"]
+            spread_10y_2y = ten_y - two_y
+            spread_10y_3m = ten_y - three_m if three_m is not None else None
 
             # 判断曲线形态
             if spread_10y_2y > 1.0:
@@ -253,7 +276,7 @@ class CNBonds:
                 "shape": curve_shape,
                 "comment": shape_comment,
                 "spread_10y_2y": round(spread_10y_2y, 4),
-                "spread_10y_3m": round(spread_10y_3m, 4),
+                "spread_10y_3m": round(spread_10y_3m, 4) if spread_10y_3m is not None else None,
             }
 
         except Exception as e:

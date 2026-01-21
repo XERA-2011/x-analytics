@@ -34,7 +34,7 @@ class MetalsController {
         const silverChange = utils.formatChange(silver.change_pct);
 
         const html = `
-            <div style="display: flex; flex-direction: column; gap: 16px; width: 100%; max-width: 400px;">
+            <div style="display: flex; flex-direction: column; gap: 16px; width: 100%; max-width: 400px; margin: 0 auto;">
                 <!-- 1. 比值核心展示 -->
                 <div style="text-align: center;">
                     <div class="fg-score" style="color: ${utils.getRatioColor(ratio.current)}; font-size: 42px;">${ratio.current}</div>

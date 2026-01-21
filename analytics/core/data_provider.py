@@ -7,7 +7,7 @@ import akshare as ak
 import pandas as pd
 import threading
 import time
-from typing import Optional, Callable, Any
+from typing import Optional, Callable, Any, Dict
 from .throttler import throttler
 
 
@@ -33,7 +33,7 @@ class SharedDataProvider:
             memory_cache_ttl: 内存缓存过期时间 (秒)
         """
         self.memory_cache_ttl = memory_cache_ttl
-        self._cache: dict[str, dict] = {}
+        self._cache: Dict[str, Dict[str, Any]] = {}
         self._cache_lock = threading.Lock()
 
     @classmethod
