@@ -329,21 +329,35 @@ def cached(key_prefix: str, ttl: int = 60, stale_ttl: Optional[int] = None):
                             result = func(*args, **kwargs)
 
                             if result is not None:
-                                # 重新获取当前时间，确保 TTL 是相对于计算完成时间的
-                                current_now = time.time()
+                                # 检查是否为错误结果，避免缓存失败的数据
+                                is_error_result = False
+                                if isinstance(result, dict) and "error" in result:
+                                    # 检查是否有有效数据（根据常见的响应结构）
+                                    has_valid_data = False
+                                    for data_key in ["sectors", "stocks", "data", "indices", "items"]:
+                                        if data_key in result and result[data_key]:
+                                            has_valid_data = True
+                                            break
+                                    if not has_valid_data:
+                                        is_error_result = True
+                                        print(f"⚠️ 检测到错误结果，跳过缓存: {key_prefix} - {result.get('error', 'Unknown')}")
+                                
+                                if not is_error_result:
+                                    # 重新获取当前时间，确保 TTL 是相对于计算完成时间的
+                                    current_now = time.time()
 
-                                # 构造带元数据的缓存结构
-                                # 物理 TTL = ttl + (stale_ttl if set else 0)
-                                physical_ttl = ttl + (stale_ttl if stale_ttl else 0)
+                                    # 构造带元数据的缓存结构
+                                    # 物理 TTL = ttl + (stale_ttl if set else 0)
+                                    physical_ttl = ttl + (stale_ttl if stale_ttl else 0)
 
-                                cache_value = {
-                                    "_meta": {
-                                        "expire_at": current_now + ttl,
-                                        "ttl": ttl,
-                                    },
-                                    "data": result,
-                                }
-                                cache.set(cache_key, cache_value, physical_ttl)
+                                    cache_value = {
+                                        "_meta": {
+                                            "expire_at": current_now + ttl,
+                                            "ttl": ttl,
+                                        },
+                                        "data": result,
+                                    }
+                                    cache.set(cache_key, cache_value, physical_ttl)
 
                                 if isinstance(result, dict):
                                     result["_cached"] = False
@@ -399,6 +413,17 @@ def warmup_cache(func: Callable, *args, **kwargs) -> bool:
         # 直接调用原函数
         result = func._original(*args, **kwargs)
         if result is not None:
+            # 检查是否为错误结果，避免缓存失败的数据
+            if isinstance(result, dict) and "error" in result:
+                has_valid_data = False
+                for data_key in ["sectors", "stocks", "data", "indices", "items"]:
+                    if data_key in result and result[data_key]:
+                        has_valid_data = True
+                        break
+                if not has_valid_data:
+                    print(f"⚠️ 预热检测到错误结果，跳过缓存: {func.__name__} - {result.get('error', 'Unknown')}")
+                    return False
+            
             now = time.time()
             prefix = getattr(func, "_cache_prefix", None)  # type: Optional[str]
             ttl = getattr(func, "_cache_ttl", None)  # type: Optional[int]

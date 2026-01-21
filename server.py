@@ -127,6 +127,20 @@ def clear_cache():
     return {"status": "ok", "deleted_keys": deleted}
 
 
+@app.delete("/api/cache/clear/{pattern}", tags=["系统"], summary="清除指定模式缓存")
+def clear_cache_pattern(pattern: str):
+    """
+    清除匹配指定模式的缓存
+    
+    示例: 
+    - leaders: 清除领涨/领跌板块缓存
+    - market: 清除所有市场相关缓存
+    - sentiment: 清除情绪指标缓存
+    """
+    deleted = cache.delete_pattern(f"{settings.CACHE_PREFIX}:*{pattern}*")
+    return {"status": "ok", "pattern": pattern, "deleted_keys": deleted}
+
+
 @app.get("/api/scheduler/status", tags=["系统"], summary="获取调度器状态")
 def get_scheduler_status():
     """获取后台调度器运行状态和任务列表"""
