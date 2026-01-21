@@ -199,12 +199,6 @@ class CNBonds:
                 "spread_10y_2y": spread_10y_2y,
             }
 
-            # 3. 投资建议
-            investment_advice = CNBonds._get_investment_advice(
-                ten_year_yield, spread_10y_2y
-            )
-            analysis["investment_advice"] = investment_advice
-
             analysis["update_time"] = get_beijing_time().strftime("%Y-%m-%d %H:%M:%S")
 
             return analysis
@@ -291,39 +285,3 @@ class CNBonds:
         except Exception as e:
             print(f"⚠️ 获取历史数据失败: {e}")
             return []
-
-    @staticmethod
-    def _get_investment_advice(ten_year_yield: float, spread: float) -> Dict[str, Any]:
-        """获取投资建议"""
-        advice = {
-            "overall_rating": "中性",
-            "duration_preference": "中等久期",
-            "allocation_suggestion": "均衡配置",
-            "risk_warning": "",
-            "opportunities": [],
-        }
-
-        try:
-            # 基于收益率水平的建议
-            if ten_year_yield > 3.5:
-                advice["overall_rating"] = "积极"
-                advice["opportunities"].append("高收益率提供较好的配置价值")
-                advice["allocation_suggestion"] = "可适当增加债券配置"
-            elif ten_year_yield < 2.0:
-                advice["overall_rating"] = "谨慎"
-                advice["risk_warning"] = "收益率较低，配置价值有限"
-                advice["allocation_suggestion"] = "建议降低债券配置比例"
-
-            # 基于期限利差的建议
-            if spread < 0:
-                advice["duration_preference"] = "短久期"
-                advice["risk_warning"] = "收益率曲线倒挂，经济衰退风险上升"
-            elif spread > 1.5:
-                advice["duration_preference"] = "长久期"
-                advice["opportunities"].append("陡峭的收益率曲线有利于长久期债券")
-
-            return advice
-
-        except Exception as e:
-            print(f"⚠️ 生成投资建议失败: {e}")
-            return advice

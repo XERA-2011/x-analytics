@@ -93,3 +93,25 @@ For series data (Yield Curves) that exceeds screen width.
 - **Class Coupling**: JS render functions must use classes defined in `styles.css`.
 - **Injection**: Use `innerHTML` with template literals for list rendering; ensure content is escaped if user-generated (not applicable for internal API data).
 
+## 6. JavaScript Architecture
+### Modular Design (Controller Pattern)
+Complex logic must be split by business domain into separate modules under `web/js/modules/`:
+- **Modules**: Separate files for distinct business logic (e.g., `market-cn.js`, `metals.js`).
+  - Each module exports a Controller class (e.g., `CNMarketController`).
+  - Controllers handle data fetching (`loadData`) and rendering (`render*`).
+  - Modules **must not** hardcode global event listeners; they should focus on their specific DOM section.
+
+### App Shell (`main.js`)
+- Acts as the central orchestrator.
+- **Responsibilities**:
+  - Global Event Listeners (Keyboard shortcuts, window resize).
+  - Tab Switching logic.
+  - Instantiating Controllers in `this.modules`.
+  - Routing `refreshCurrentTab()` calls to the active controller.
+
+### Shared Utilities
+- **`utils.js`**: Pure functions (formatting, DOM helpers).
+- **`api.js`**: All network requests.
+- **`charts.js`**: ECharts wrappers and theme configuration.
+
+

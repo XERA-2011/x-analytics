@@ -71,6 +71,11 @@ class Utils {
         }
     }
 
+    // 格式化日期 (For Footer)
+    static formatDate(timestamp) {
+        return this.formatTime(timestamp);
+    }
+
     // 格式化相对时间
     static formatRelativeTime(timestamp) {
         if (!timestamp) return '--';
@@ -91,6 +96,25 @@ class Utils {
         } catch (error) {
             return timestamp;
         }
+    }
+
+    // Fear & Greed Score Class
+    static getScoreClass(score) {
+        if (score >= 75) return 'extreme-greed';
+        if (score >= 55) return 'greed';
+        if (score <= 25) return 'extreme-fear';
+        if (score <= 45) return 'fear';
+        return 'neutral';
+    }
+
+    // Gold/Silver Ratio Color
+    static getRatioColor(ratio) {
+        if (!ratio) return 'var(--text-primary)';
+        // 80+ is high (Silver cheap) -> Good for Silver
+        if (ratio > 85) return 'var(--accent-green)';
+        // 60- is low (Gold cheap) -> Good for Gold
+        if (ratio < 65) return 'var(--accent-red)';
+        return 'var(--text-primary)';
     }
 
     // 防抖函数
@@ -262,6 +286,15 @@ class Utils {
             }
         }
     };
+
+    // Error Rendering
+    static renderError(containerId, message) {
+        const container = document.getElementById(containerId);
+        if (container) {
+            container.innerHTML = `<div class="loading error"><i data-lucide="alert-circle" width="16"></i> ${message}</div>`;
+            if (window.lucide) lucide.createIcons();
+        }
+    }
 
     // 颜色工具
     static color = {
