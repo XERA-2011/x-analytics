@@ -10,6 +10,7 @@ from analytics.api.market_cn import router as cn_market_router
 from analytics.api.metals import router as metals_router
 from analytics.api.market_us import router as us_market_router
 from analytics.core.patch import apply_patches
+from analytics.core.security import SecurityMiddleware
 import os
 
 # 应用 API 伪装补丁 (在最早的时机)
@@ -20,6 +21,13 @@ async def lifespan(app: FastAPI):
     """应用生命周期管理"""
     # 启动时
     print("🚀 x-analytics 服务启动中...")
+    
+    # 安全配置检查
+    admin_token = os.getenv("ADMIN_TOKEN")
+    if admin_token:
+        print("🔐 管理 API 保护已启用")
+    else:
+        print("⚠️ 警告: ADMIN_TOKEN 未设置，管理 API 将被禁用")
 
     # 检查 Redis 连接
     if cache.connected:
@@ -49,15 +57,27 @@ app = FastAPI(
     version="2.0.0",
     root_path="/analytics",
     lifespan=lifespan,
+    # 安全：隐藏 OpenAPI 文档（生产环境可取消注释）
+    # docs_url=None,
+    # redoc_url=None,
 )
 
-# CORS 配置
+# -----------------------------------------------------------------------------
+# 安全中间件 (顺序重要：先添加的后执行)
+# -----------------------------------------------------------------------------
+
+# 1. 安全中间件（限流 + Token 验证 + 安全头）
+app.add_middleware(SecurityMiddleware)
+
+# 2. CORS 配置 - 限制跨域访问
+#    由于前端和 API 在同一域名下，不需要开放 CORS
+#    如需开放特定域名，在 allow_origins 中添加
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=[],  # 空列表 = 仅同源请求
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "DELETE"],
+    allow_headers=["X-Admin-Token"],  # 仅允许必要的自定义头
 )
 
 # -----------------------------------------------------------------------------
