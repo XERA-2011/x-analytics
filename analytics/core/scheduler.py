@@ -62,29 +62,12 @@ class SmartScheduler:
         def smart_warmup():
             """智能预热函数"""
             try:
-                # 获取当前刷新间隔
-                interval = get_refresh_interval(market)
-
-                # 检查是否应该执行
+                # 直接执行预热函数
+                # 执行频率由 APScheduler 的 IntervalTrigger 控制
+                # 不再在此处做分钟过滤（之前的逻辑有 BUG：任务触发时间与整点对不上）
                 now = get_beijing_time()
-                minute = now.minute
-
-                # 根据间隔决定是否执行
-                if interval >= 3600:  # 1小时以上
-                    # 只在整点执行
-                    if minute == 0:
-                        func(**kwargs)
-                elif interval >= 1800:  # 30分钟以上
-                    # 在 0, 30 分执行
-                    if minute % 30 == 0:
-                        func(**kwargs)
-                elif interval >= 300:  # 5分钟以上
-                    # 在 0, 5, 10... 分执行
-                    if minute % 5 == 0:
-                        func(**kwargs)
-                else:
-                    # 高频执行
-                    func(**kwargs)
+                print(f"🔄 执行预热任务: {job_id} @ {now.strftime('%H:%M:%S')}")
+                func(**kwargs)
 
             except Exception as e:
                 print(f"❌ 预热任务失败 [{job_id}]: {e}")
