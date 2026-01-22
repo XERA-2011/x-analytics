@@ -114,13 +114,27 @@ def get_gold_silver_ratio_compat():
 # -----------------------------------------------------------------------------
 @app.get("/api/health", tags=["系统"], summary="服务健康检查")
 def health_check():
+    # 隐藏 Redis URL 中的密码
+    redis_host = None
+    if cache.connected and cache.redis_url:
+        # 从 redis://:password@host:port/db 中提取 host:port
+        import re
+        match = re.search(r'@([^/]+)', cache.redis_url)
+        if match:
+            redis_host = match.group(1)
+        else:
+            # 无密码格式: redis://host:port/db
+            match = re.search(r'redis://([^/]+)', cache.redis_url)
+            if match:
+                redis_host = match.group(1)
+    
     return {
         "status": "ok",
         "service": "x-analytics",
         "version": "2.0.0",
         "cache": {
             "connected": cache.connected,
-            "url": cache.redis_url if cache.connected else None,
+            "host": redis_host,
         },
     }
 
