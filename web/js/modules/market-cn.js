@@ -232,6 +232,12 @@ class CNMarketController {
             return;
         }
 
+        // Bind Info Button
+        const infoBtn = document.getElementById('info-cn-dividend');
+        if (infoBtn && data.description) {
+            infoBtn.onclick = () => utils.showInfoModal('红利低波动策略', data.description);
+        }
+
         const stats = data.strategy_stats || {};
 
         const signal = stats.signal || { text: '暂无信号', color: '#909399' };
