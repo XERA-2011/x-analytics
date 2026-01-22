@@ -11,7 +11,7 @@ import pandas as pd
 from datetime import datetime
 from typing import Dict, Any
 
-from .cache import cached
+from .core.cache import cached
 from .core.config import settings
 
 

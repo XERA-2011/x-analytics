@@ -10,7 +10,7 @@ import akshare as ak
 from datetime import datetime
 from typing import Dict, Any, List
 
-from .cache import cached
+from .core.cache import cached
 from .core.config import settings
 from .core.data_provider import data_provider
 from .core.utils import akshare_call_with_retry

@@ -10,7 +10,7 @@ import pandas as pd
 from typing import Optional, List, Dict, Any, cast
 from datetime import datetime, timedelta
 
-from .cache import cached
+from .core.cache import cached
 
 
 class StockAnalysis:

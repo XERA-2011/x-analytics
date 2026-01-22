@@ -9,7 +9,7 @@ Desc: 贵金属分析模块
 import akshare as ak
 from typing import Dict, Any
 
-from .cache import cached
+from .core.cache import cached
 from .core.config import settings
 
 

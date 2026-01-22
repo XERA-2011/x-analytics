@@ -258,7 +258,7 @@ def setup_default_warmup_jobs():
 
     在 server.py 启动时调用
     """
-    from .cache import warmup_cache
+    from .core.cache import warmup_cache
     from .market import MarketAnalysis
     from .sentiment import SentimentAnalysis
 
@@ -366,7 +366,7 @@ def warmup_with_retry(func, name: str, max_retries: int = 3, *args, **kwargs) ->
         是否预热成功
     """
     import time
-    from .cache import warmup_cache
+    from .core.cache import warmup_cache
 
     for attempt in range(max_retries):
         try:
