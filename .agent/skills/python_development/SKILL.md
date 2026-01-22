@@ -1,6 +1,6 @@
 ---
 name: Python Development Standards
-description: Guidelines for Python coding, testing, and debugging in x-analytics
+description: "⚠️ MANDATORY: Read before modifying ANY .py files. Contains Python 3.9 syntax requirements, caching patterns, and anti-scraping rules."
 ---
 
 # Development Standards

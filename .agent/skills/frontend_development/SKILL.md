@@ -1,6 +1,6 @@
 ---
 name: Frontend Development Standards
-description: Guidelines for responsive web development in x-analytics
+description: "⚠️ MANDATORY: Read before modifying ANY .js/.html/.css files. Contains critical mobile-first layout, color conventions (CN=red-up, US=green-up), and JS architecture rules."
 ---
 
 # Frontend Design Standards
