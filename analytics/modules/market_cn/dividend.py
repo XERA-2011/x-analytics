@@ -77,6 +77,7 @@ class CNDividendStrategy:
                     "total_constituents": len(cons_codes),
                     "update_time": get_beijing_time().strftime("%Y-%m-%d %H:%M:%S"),
                     "note": "实时行情暂不可用，仅显示成分股基础信息",
+                    "description": CNDividendStrategy._get_strategy_description(),
                 }
             
             # 3. 筛选成分股行情
@@ -106,6 +107,7 @@ class CNDividendStrategy:
                     "count": len(stocks),
                     "total_constituents": len(cons_codes),
                     "update_time": get_beijing_time().strftime("%Y-%m-%d %H:%M:%S"),
+                    "description": CNDividendStrategy._get_strategy_description(),
                 }
             
             # 4. 添加权重列

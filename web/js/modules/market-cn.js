@@ -224,18 +224,27 @@ class CNMarketController {
     }
 
     renderCNDividend(data) {
+
         const container = document.getElementById('cn-dividend');
         if (!container) return;
+
+        // Bind Info Button - Priority Binding
+        const infoBtn = document.getElementById('info-cn-dividend');
+        if (infoBtn) {
+            infoBtn.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                // Fallback description if missing
+                const desc = data.description || '暂无说明 (Description missing in data)';
+                utils.showInfoModal('红利低波动策略', desc);
+            };
+        } else {
+            console.error('CRITICAL: info-cn-dividend button NOT FOUND');
+        }
 
         if (data.error || !data.stocks) {
             utils.renderError('cn-dividend', data.error || '暂无数据');
             return;
-        }
-
-        // Bind Info Button
-        const infoBtn = document.getElementById('info-cn-dividend');
-        if (infoBtn && data.description) {
-            infoBtn.onclick = () => utils.showInfoModal('红利低波动策略', data.description);
         }
 
         const stats = data.strategy_stats || {};
