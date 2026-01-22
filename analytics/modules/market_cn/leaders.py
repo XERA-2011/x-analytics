@@ -221,16 +221,28 @@ class CNMarketLeaders:
             return "休市"
 
     @staticmethod
-    def _get_heat_label(turnover: float) -> Dict[str, str]:
-        """根据换手率获取热度标签"""
-        if turnover >= 5:
-            return {"level": "极热", "color": "red"}
-        elif turnover >= 3:
-            return {"level": "较热", "color": "orange"}
-        elif turnover >= 1:
-            return {"level": "适中", "color": "gray"}
+    def _get_heat_label(turnover: float, is_gainer: bool = True) -> Dict[str, str]:
+        """根据换手率获取热度标签，领涨和领跌使用不同用词"""
+        if is_gainer:
+            # 领涨板块用词
+            if turnover >= 5:
+                return {"level": "极热", "color": "red"}
+            elif turnover >= 3:
+                return {"level": "较热", "color": "orange"}
+            elif turnover >= 1:
+                return {"level": "适中", "color": "gray"}
+            else:
+                return {"level": "冷门", "color": "blue"}
         else:
-            return {"level": "冷门", "color": "blue"}
+            # 领跌板块用词
+            if turnover >= 5:
+                return {"level": "恐慌", "color": "red"}
+            elif turnover >= 3:
+                return {"level": "剧烈", "color": "orange"}
+            elif turnover >= 1:
+                return {"level": "温和", "color": "gray"}
+            else:
+                return {"level": "低迷", "color": "blue"}
 
     @staticmethod
     def _generate_tip(is_gainer: bool, heat_level: str, strength_ratio: float, change_pct: float) -> str:
@@ -296,8 +308,8 @@ class CNMarketLeaders:
         down_count = sector.get("down_count", 0)
         change_pct = sector.get("change_pct", 0)
         
-        # 热度标签
-        heat = CNMarketLeaders._get_heat_label(turnover)
+        # 热度标签 (根据领涨/领跌使用不同用词)
+        heat = CNMarketLeaders._get_heat_label(turnover, is_gainer)
         
         # 强弱比 (上涨家数占比)
         total = up_count + down_count
@@ -308,6 +320,7 @@ class CNMarketLeaders:
         
         return {
             "heat": heat,
+            "turnover": round(turnover, 2),  # 换手率数值
             "strength_ratio": round(strength_ratio * 100),
             "tip": tip,
         }

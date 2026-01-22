@@ -75,12 +75,20 @@ class CNMarketController {
             this.sectorExplanation = gainers.explanation || '';
             this.renderCNLeaders(gainers, losers);
 
-            // Bind info button event
+            // Bind info button events (both gainers and losers use same explanation)
             const infoBtn = document.getElementById('info-cn-sectors');
-            if (infoBtn && this.sectorExplanation) {
-                infoBtn.onclick = () => {
-                    utils.showInfoModal('板块分析说明', this.sectorExplanation);
-                };
+            const infoBtnLosers = document.getElementById('info-cn-sectors-losers');
+            if (this.sectorExplanation) {
+                if (infoBtn) {
+                    infoBtn.onclick = () => {
+                        utils.showInfoModal('板块分析说明', this.sectorExplanation);
+                    };
+                }
+                if (infoBtnLosers) {
+                    infoBtnLosers.onclick = () => {
+                        utils.showInfoModal('板块分析说明', this.sectorExplanation);
+                    };
+                }
             }
         } catch (error) {
             console.error('加载领涨领跌板块失败:', error);
@@ -182,12 +190,13 @@ class CNMarketController {
             const analysis = sector.analysis || {};
             const heat = analysis.heat || {};
             const tip = analysis.tip || '';
-            const strengthRatio = analysis.strength_ratio || 0;
+            // 使用 analysis.turnover 或回退到 sector.turnover
+            const turnover = analysis.turnover ?? sector.turnover ?? 0;
 
-            // 生成分析标签 HTML
+            // 生成分析标签 HTML (显示标签 + 换手率)
             const analysisHtml = tip ? `
                 <div class="sector-analysis">
-                    <span class="heat-tag heat-${heat.color || 'gray'}">${heat.level || ''}</span>
+                    <span class="heat-tag heat-${heat.color || 'gray'}">${heat.level || ''} ${turnover}%</span>
                     <span class="analysis-tip">${tip}</span>
                 </div>
             ` : '';
