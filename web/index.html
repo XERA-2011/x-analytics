@@ -87,6 +87,10 @@
                 <div class="card">
                     <div class="card-header">
                         <div class="card-title">领涨板块</div>
+                        <div class="sort-btns">
+                            <button class="sort-btn active" data-sort="pct" data-target="gainers">涨幅</button>
+                            <button class="sort-btn" data-sort="cap" data-target="gainers">市值</button>
+                        </div>
                     </div>
                     <div id="cn-gainers" class="list-container">
                         <div class="loading">Loading...</div>
@@ -97,6 +101,10 @@
                 <div class="card">
                     <div class="card-header">
                         <div class="card-title">领跌板块</div>
+                        <div class="sort-btns">
+                            <button class="sort-btn active" data-sort="pct" data-target="losers">跌幅</button>
+                            <button class="sort-btn" data-sort="cap" data-target="losers">市值</button>
+                        </div>
                     </div>
                     <div id="cn-losers" class="list-container">
                         <div class="loading">Loading...</div>
@@ -106,7 +114,7 @@
                 <!-- Dividend -->
                 <div class="card">
                     <div class="card-header">
-                        <div class="card-title">红利低波</div>
+                        <div class="card-title">红利低波动</div>
                     </div>
                     <div id="cn-dividend" class="list-container">
                         <div class="loading">Loading...</div>

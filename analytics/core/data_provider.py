@@ -25,12 +25,12 @@ class SharedDataProvider:
     _instance: Optional["SharedDataProvider"] = None
     _lock = threading.Lock()
 
-    def __init__(self, memory_cache_ttl: int = 30):
+    def __init__(self, memory_cache_ttl: int = 300):
         """
         初始化数据提供层
 
         Args:
-            memory_cache_ttl: 内存缓存过期时间 (秒)
+            memory_cache_ttl: 内存缓存过期时间 (秒)，默认5分钟以减少API调用频率
         """
         self.memory_cache_ttl = memory_cache_ttl
         self._cache: Dict[str, Dict[str, Any]] = {}

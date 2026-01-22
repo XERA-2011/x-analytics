@@ -1,6 +1,24 @@
 class CNMarketController {
+    constructor() {
+        // Store fetched data for re-sorting
+        this.gainersData = [];
+        this.losersData = [];
+        this.currentSort = {
+            gainers: 'pct',
+            losers: 'pct'
+        };
+        this._sortButtonsBound = false;
+    }
+
     async loadData() {
         console.log('📊 加载沪港深市场数据...');
+
+        // Setup sort buttons immediately (only once)
+        if (!this._sortButtonsBound) {
+            this.setupSortButtons();
+            this._sortButtonsBound = true;
+        }
+
         const promises = [
             this.loadCNFearGreed(),
             this.loadCNLeaders(),
@@ -9,6 +27,29 @@ class CNMarketController {
             this.loadCNBonds()
         ];
         await Promise.allSettled(promises);
+    }
+
+    setupSortButtons() {
+        const sortBtns = document.querySelectorAll('.sort-btn[data-target="gainers"], .sort-btn[data-target="losers"]');
+        sortBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const target = btn.dataset.target; // 'gainers' or 'losers'
+                const sortBy = btn.dataset.sort;   // 'pct' or 'cap'
+
+                // Update active state for sibling buttons
+                const siblings = document.querySelectorAll(`.sort-btn[data-target="${target}"]`);
+                siblings.forEach(s => s.classList.remove('active'));
+                btn.classList.add('active');
+
+                // Update current sort and re-render
+                this.currentSort[target] = sortBy;
+                if (target === 'gainers') {
+                    this.renderSectorList('cn-gainers', this.gainersData, '领涨', sortBy);
+                } else {
+                    this.renderSectorList('cn-losers', this.losersData, '领跌', sortBy);
+                }
+            });
+        });
     }
 
     async loadCNFearGreed() {
@@ -27,6 +68,9 @@ class CNMarketController {
                 api.getCNTopGainers(),
                 api.getCNTopLosers()
             ]);
+            // Store data for re-sorting
+            this.gainersData = gainers.sectors || [];
+            this.losersData = losers.sectors || [];
             this.renderCNLeaders(gainers, losers);
         } catch (error) {
             console.error('加载领涨领跌板块失败:', error);
@@ -96,11 +140,11 @@ class CNMarketController {
     }
 
     renderCNLeaders(gainers, losers) {
-        this.renderSectorList('cn-gainers', gainers.sectors || [], '领涨');
-        this.renderSectorList('cn-losers', losers.sectors || [], '领跌');
+        this.renderSectorList('cn-gainers', gainers.sectors || [], '领涨', this.currentSort.gainers);
+        this.renderSectorList('cn-losers', losers.sectors || [], '领跌', this.currentSort.losers);
     }
 
-    renderSectorList(containerId, sectors, label = '领涨') {
+    renderSectorList(containerId, sectors, label = '领涨', sortBy = 'pct') {
         const container = document.getElementById(containerId);
         if (!container) return;
 
@@ -109,7 +153,21 @@ class CNMarketController {
             return;
         }
 
-        const html = sectors.map(sector => {
+        // Sort sectors based on sortBy parameter
+        const sortedSectors = [...sectors].sort((a, b) => {
+            if (sortBy === 'cap') {
+                // Sort by market cap (descending)
+                return (b.total_market_cap || 0) - (a.total_market_cap || 0);
+            } else {
+                // Sort by change_pct (descending for gainers, ascending for losers)
+                if (label === '领跌') {
+                    return (a.change_pct || 0) - (b.change_pct || 0);
+                }
+                return (b.change_pct || 0) - (a.change_pct || 0);
+            }
+        });
+
+        const html = sortedSectors.map(sector => {
             const change = utils.formatChange(sector.change_pct);
             return `
                 <div class="list-item">
@@ -176,35 +234,40 @@ class CNMarketController {
 
         const stats = data.strategy_stats || {};
 
+        // 统计区：显示成分股数量、平均PE、涨跌统计
         const statsHtml = `
             <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding-bottom: 12px; margin-bottom: 12px; border-bottom: 1px solid var(--border-light); text-align: center;">
                 <div>
-                    <div class="item-sub">均股息</div>
-                    <div class="heat-val">${utils.formatPercentage(stats.avg_dividend_yield)}</div>
+                    <div class="item-sub">成分股</div>
+                    <div class="heat-val">${data.total_constituents || 50}</div>
                 </div>
                 <div>
                     <div class="item-sub">均PE</div>
                     <div class="heat-val">${utils.formatNumber(stats.avg_pe_ratio)}</div>
                 </div>
                 <div>
-                    <div class="item-sub">低波股</div>
-                    <div class="heat-val">${stats.low_volatility_count || 0}</div>
+                    <div class="item-sub">涨/跌</div>
+                    <div class="heat-val">${stats.up_count || 0}/${stats.down_count || 0}</div>
                 </div>
             </div>
         `;
 
-        const listHtml = data.stocks.slice(0, 10).map(stock => `
-            <div class="list-item">
-                <div class="item-main">
-                    <span class="item-title">${stock.name}</span>
-                    <span class="item-sub">${stock.code}</span>
+        // 成分股列表：显示权重和实时涨跌
+        const listHtml = data.stocks.slice(0, 10).map(stock => {
+            const change = utils.formatChange(stock.change_pct);
+            return `
+                <div class="list-item">
+                    <div class="item-main">
+                        <span class="item-title">${stock.name}</span>
+                        <span class="item-sub">${stock.code} | 权重 ${utils.formatNumber(stock.weight)}%</span>
+                    </div>
+                    <div style="text-align: right;">
+                        <div class="item-value">${utils.formatNumber(stock.price)}</div>
+                        <div class="item-change ${change.class}">${change.text}</div>
+                    </div>
                 </div>
-                <div>
-                    <div class="item-value" style="color: var(--accent-red)">${utils.formatPercentage(stock.estimated_dividend_yield)}</div>
-                    <div class="item-change">PE ${utils.formatNumber(stock.pe_ratio)}</div>
-                </div>
-            </div>
-        `).join('');
+            `;
+        }).join('');
 
         container.innerHTML = statsHtml + listHtml;
     }

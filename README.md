@@ -15,6 +15,9 @@ docker-compose up -d --build
 # 重启
 docker-compose restart x-analytics
 
+# 清空整个 Redis 数据库
+docker exec x-analytics-redis redis-cli FLUSHDB
+
 # 查看日志
 docker-compose logs -f x-analytics
 
@@ -22,6 +25,6 @@ docker-compose logs -f x-analytics
 open http://localhost:8080/          # Web 仪表盘
 open http://localhost:8080/docs      # API 文档
 
-# 停止
-docker-compose down
+# 停止并清空缓存
+docker-compose down -v
 ```

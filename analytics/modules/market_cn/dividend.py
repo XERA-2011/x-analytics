@@ -1,100 +1,158 @@
 """
-中国市场红利低波策略
-筛选高股息、低波动率的优质股票
+中证红利低波动指数 (H30269)
+获取指数成分股及实时行情
 """
 
 import akshare as ak
-import numpy as np
-from typing import Dict, Any, List
+import pandas as pd
+from typing import Dict, Any, List, Optional
 from ...core.cache import cached
 from ...core.config import settings
 from ...core.utils import safe_float, get_beijing_time
 from ...core.data_provider import data_provider
 
 
+# 中证红利低波动指数代码
+INDEX_CODE = "H30269"
+INDEX_NAME = "中证红利低波动"
+
+
 class CNDividendStrategy:
-    """红利低波策略"""
+    """中证红利低波动指数分析"""
 
     @staticmethod
     @cached("market_cn:dividend", ttl=settings.CACHE_TTL["dividend"], stale_ttl=settings.CACHE_TTL["dividend"] * settings.STALE_TTL_RATIO)
     def get_dividend_stocks(limit: int = 20) -> Dict[str, Any]:
         """
-        获取红利低波股票池
+        获取中证红利低波动指数成分股
 
         Args:
             limit: 返回股票数量
 
         Returns:
-            红利低波股票数据
+            成分股数据（含实时行情）
         """
         try:
-            # 使用共享数据提供层获取股票数据 (与 heat.py 共享)
-            df = data_provider.get_stock_zh_a_spot()
-
-            if df.empty:
-                raise ValueError("无法获取股票数据")
-
-            # 筛选条件
-            filtered_df = df[
-                (~df["名称"].str.contains("ST", na=False))  # 排除ST股票
-                & (df["市盈率-动态"] > 0)  # 排除亏损股票
-                & (df["市盈率-动态"] < 50)  # 排除高估值股票
-                & (df["成交额"] > 10000000)  # 成交额大于1000万
-            ].copy()
-
-            # 计算股息率（简化处理，使用市盈率倒数估算）
-            filtered_df["estimated_dividend_yield"] = (
-                1 / filtered_df["市盈率-动态"] * 100
+            # 1. 获取指数成分股和权重
+            print(f"📊 获取{INDEX_NAME}指数成分股...")
+            cons_df = ak.index_stock_cons_weight_csindex(symbol=INDEX_CODE)
+            
+            if cons_df.empty:
+                raise ValueError(f"无法获取{INDEX_NAME}成分股数据")
+            
+            # 提取成分股代码和权重
+            cons_codes = cons_df["成分券代码"].tolist()
+            cons_weights = dict(zip(cons_df["成分券代码"], cons_df["权重"]))
+            cons_names = dict(zip(cons_df["成分券代码"], cons_df["成分券名称"]))
+            
+            print(f"✅ 获取到 {len(cons_codes)} 只成分股")
+            
+            # 2. 尝试获取 A 股实时行情数据（可能因限流失败）
+            try:
+                spot_df = data_provider.get_stock_zh_a_spot()
+                if spot_df.empty:
+                    spot_df = None
+            except Exception as e:
+                print(f"⚠️ 获取实时行情失败，使用基础数据: {e}")
+                spot_df = None
+            
+            # 如果无法获取行情，返回基础成分股信息
+            if spot_df is None:
+                print("⚠️ 无法获取实时行情，返回基础成分股信息")
+                stocks = []
+                for code in cons_codes[:limit]:
+                    code_str = str(code).zfill(6)
+                    stocks.append({
+                        "code": code_str,
+                        "name": cons_names.get(code, cons_names.get(code_str, "--")),
+                        "weight": safe_float(cons_weights.get(code, cons_weights.get(code_str, 0))),
+                        "price": None,
+                        "change_pct": None,
+                    })
+                return {
+                    "index_code": INDEX_CODE,
+                    "index_name": INDEX_NAME,
+                    "stocks": stocks,
+                    "count": len(stocks),
+                    "total_constituents": len(cons_codes),
+                    "update_time": get_beijing_time().strftime("%Y-%m-%d %H:%M:%S"),
+                    "note": "实时行情暂不可用，仅显示成分股基础信息",
+                }
+            
+            # 3. 筛选成分股行情
+            # 转换代码格式 (AKShare 返回的是纯数字，spot_df 的代码也是纯数字字符串)
+            spot_df["代码_clean"] = spot_df["代码"].astype(str).str.zfill(6)
+            cons_codes_clean = [str(c).zfill(6) for c in cons_codes]
+            
+            filtered_df = spot_df[spot_df["代码_clean"].isin(cons_codes_clean)].copy()
+            
+            if filtered_df.empty:
+                # 如果匹配失败，返回基础信息
+                print("⚠️ 无法匹配实时行情，返回基础成分股信息")
+                stocks = []
+                for code in cons_codes[:limit]:
+                    code_str = str(code).zfill(6)
+                    stocks.append({
+                        "code": code_str,
+                        "name": cons_names.get(code, cons_names.get(code_str, "--")),
+                        "weight": safe_float(cons_weights.get(code, cons_weights.get(code_str, 0))),
+                        "price": None,
+                        "change_pct": None,
+                    })
+                return {
+                    "index_code": INDEX_CODE,
+                    "index_name": INDEX_NAME,
+                    "stocks": stocks,
+                    "count": len(stocks),
+                    "total_constituents": len(cons_codes),
+                    "update_time": get_beijing_time().strftime("%Y-%m-%d %H:%M:%S"),
+                }
+            
+            # 4. 添加权重列
+            filtered_df["权重"] = filtered_df["代码_clean"].map(
+                lambda x: safe_float(cons_weights.get(x, cons_weights.get(x.lstrip("0"), 0)))
             )
-
-            # 计算波动率（使用涨跌幅的绝对值作为简化指标）
-            filtered_df["volatility_proxy"] = abs(filtered_df["涨跌幅"])
-
-            # 计算综合评分
-            # 股息率权重60%，低波动率权重40%
-            filtered_df["dividend_score"] = (
-                filtered_df["estimated_dividend_yield"] * 0.6
-                - filtered_df["volatility_proxy"] * 0.4
-            )
-
-            # 按综合评分排序
-            top_stocks = filtered_df.nlargest(limit, "dividend_score")
-
-            # 格式化数据
-            stocks = []
-            for _, row in top_stocks.iterrows():
+            
+            # 按权重排序
+            filtered_df = filtered_df.sort_values("权重", ascending=False)
+            
+            # 5. 格式化数据
+            stocks: List[Dict[str, Any]] = []
+            for _, row in filtered_df.head(limit).iterrows():
+                code = str(row["代码"]).zfill(6)
                 stock = {
-                    "code": str(row["代码"]),
+                    "code": code,
                     "name": str(row["名称"]),
-                    "price": safe_float(row["最新价"]),
-                    "change_pct": safe_float(row["涨跌幅"]),
-                    "pe_ratio": safe_float(row["市盈率-动态"]),
-                    "pb_ratio": safe_float(row.get("市净率", 0)),
-                    "estimated_dividend_yield": round(
-                        safe_float(row["estimated_dividend_yield"]), 2
-                    ),
-                    "volatility_proxy": round(safe_float(row["volatility_proxy"]), 2),
-                    "dividend_score": round(safe_float(row["dividend_score"]), 2),
+                    "weight": safe_float(row.get("权重", 0)),
+                    "price": safe_float(row.get("最新价")),
+                    "change_pct": safe_float(row.get("涨跌幅")),
+                    "pe_ratio": safe_float(row.get("市盈率-动态")),
+                    "pb_ratio": safe_float(row.get("市净率")),
                     "market_cap": safe_float(row.get("总市值", 0)),
-                    "turnover": safe_float(row["成交额"]),
+                    "turnover": safe_float(row.get("成交额", 0)),
                 }
                 stocks.append(stock)
-
-            # 计算策略统计
-            strategy_stats = CNDividendStrategy._calculate_strategy_stats(stocks)
-
+            
+            # 6. 计算统计数据
+            strategy_stats = CNDividendStrategy._calculate_strategy_stats(stocks, filtered_df)
+            
             return {
+                "index_code": INDEX_CODE,
+                "index_name": INDEX_NAME,
                 "stocks": stocks,
                 "count": len(stocks),
+                "total_constituents": len(cons_codes),
                 "strategy_stats": strategy_stats,
                 "update_time": get_beijing_time().strftime("%Y-%m-%d %H:%M:%S"),
                 "description": CNDividendStrategy._get_strategy_description(),
             }
 
         except Exception as e:
-            print(f"❌ 获取红利低波股票失败: {e}")
+            print(f"❌ 获取{INDEX_NAME}成分股失败: {e}")
             return {
                 "error": str(e),
+                "index_code": INDEX_CODE,
+                "index_name": INDEX_NAME,
                 "stocks": [],
                 "count": 0,
                 "update_time": get_beijing_time().strftime("%Y-%m-%d %H:%M:%S"),
@@ -114,38 +172,18 @@ class CNDividendStrategy:
         try:
             # 红利相关ETF代码列表
             dividend_etfs = [
+                {"code": "515180", "name": "红利低波ETF", "index": "中证红利低波动"},
+                {"code": "512890", "name": "红利低波50ETF", "index": "红利低波动50"},
                 {"code": "510880", "name": "红利ETF", "index": "上证红利指数"},
-                {"code": "159915", "name": "创业板ETF", "index": "创业板指数"},
-                {"code": "512090", "name": "MSCI易方达", "index": "MSCI中国A股"},
-                {"code": "515450", "name": "高股息ETF", "index": "中证红利指数"},
-                {"code": "515180", "name": "红利低波ETF", "index": "红利低波动指数"},
+                {"code": "515450", "name": "红利低波100ETF", "index": "红利低波动100"},
+                {"code": "159905", "name": "深红利ETF", "index": "深证红利指数"},
             ]
 
-            # 获取ETF实时数据
-            etf_data = []
-            for etf in dividend_etfs:
-                try:
-                    # 这里简化处理，实际应该调用具体的ETF数据接口
-                    etf_info = {
-                        "code": etf["code"],
-                        "name": etf["name"],
-                        "index": etf["index"],
-                        "price": 0,  # 实际应该获取实时价格
-                        "change_pct": 0,  # 实际应该获取涨跌幅
-                        "volume": 0,  # 实际应该获取成交量
-                        "nav": 0,  # 实际应该获取净值
-                        "premium_rate": 0,  # 实际应该获取溢价率
-                    }
-                    etf_data.append(etf_info)
-                except Exception as e:
-                    print(f"⚠️ 获取ETF {etf['code']} 数据失败: {e}")
-                    continue
-
             return {
-                "etfs": etf_data,
-                "count": len(etf_data),
+                "etfs": dividend_etfs,
+                "count": len(dividend_etfs),
                 "update_time": get_beijing_time().strftime("%Y-%m-%d %H:%M:%S"),
-                "note": "ETF数据为示例，实际使用需要接入具体数据源",
+                "note": "跟踪红利低波相关指数的ETF",
             }
 
         except Exception as e:
@@ -158,40 +196,33 @@ class CNDividendStrategy:
             }
 
     @staticmethod
-    def _calculate_strategy_stats(stocks: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def _calculate_strategy_stats(stocks: List[Dict[str, Any]], df: Optional[pd.DataFrame] = None) -> Dict[str, Any]:
         """计算策略统计数据"""
         if not stocks:
             return {}
 
         try:
             # 计算平均指标
-            avg_dividend_yield = np.mean(
-                [s["estimated_dividend_yield"] for s in stocks]
-            )
-            avg_pe_ratio = np.mean([s["pe_ratio"] for s in stocks if s["pe_ratio"] > 0])
-            avg_volatility = np.mean([s["volatility_proxy"] for s in stocks])
-
-            # 计算分布
-            high_dividend_count = len(
-                [s for s in stocks if s["estimated_dividend_yield"] > 3]
-            )
-            low_pe_count = len([s for s in stocks if s["pe_ratio"] < 15])
-            low_volatility_count = len([s for s in stocks if s["volatility_proxy"] < 2])
-
+            pe_values = [s["pe_ratio"] for s in stocks if s.get("pe_ratio") and s["pe_ratio"] > 0]
+            avg_pe_ratio = sum(pe_values) / len(pe_values) if pe_values else 0
+            
+            # 计算涨跌统计
+            changes = [s["change_pct"] for s in stocks if s.get("change_pct") is not None]
+            up_count = len([c for c in changes if c > 0])
+            down_count = len([c for c in changes if c < 0])
+            avg_change = sum(changes) / len(changes) if changes else 0
+            
+            # 权重TOP5
+            top_weights = sorted(stocks, key=lambda x: x.get("weight", 0), reverse=True)[:5]
+            total_weight_top5 = sum(s.get("weight", 0) for s in top_weights)
+            
             return {
-                "avg_dividend_yield": round(avg_dividend_yield, 2),
                 "avg_pe_ratio": round(avg_pe_ratio, 2),
-                "avg_volatility": round(avg_volatility, 2),
-                "high_dividend_count": high_dividend_count,
-                "low_pe_count": low_pe_count,
-                "low_volatility_count": low_volatility_count,
-                "high_dividend_ratio": round(
-                    high_dividend_count / len(stocks) * 100, 1
-                ),
-                "low_pe_ratio": round(low_pe_count / len(stocks) * 100, 1),
-                "low_volatility_ratio": round(
-                    low_volatility_count / len(stocks) * 100, 1
-                ),
+                "avg_change_pct": round(avg_change, 2),
+                "up_count": up_count,
+                "down_count": down_count,
+                "top5_weight": round(total_weight_top5, 2),
+                "low_volatility_count": len(stocks),  # 指数成分股本身就是低波动筛选后的
             }
 
         except Exception as e:
@@ -202,11 +233,11 @@ class CNDividendStrategy:
     def _get_strategy_description() -> str:
         """获取策略说明"""
         return """
-红利低波策略说明：
-• 筛选标准：高股息率(>3%) + 低波动率 + 合理估值(PE<50)
-• 排除条件：ST股票、亏损股票、成交额过小股票
-• 评分方法：股息率权重60% + 低波动率权重40%
-• 投资理念：追求稳定的股息收入，降低组合波动率
-• 适合投资者：风险偏好较低，追求稳定收益的长期投资者
-• 注意事项：股息率为估算值，实际投资需参考公司分红政策
+中证红利低波动指数 (H30269) 说明：
+• 编制机构：中证指数有限公司
+• 成分股数量：50 只
+• 选样方法：从沪深市场中选取股息率高、波动率低的股票
+• 加权方式：股息率加权
+• 调整频率：每年 12 月调整一次
+• 投资价值：适合追求稳定分红收益、偏好低波动的长期投资者
         """.strip()
