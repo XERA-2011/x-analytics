@@ -10,6 +10,7 @@ from typing import List, Dict, Any
 from ...core.cache import cached
 from ...core.config import settings
 from ...core.utils import safe_float, get_beijing_time, akshare_call_with_retry
+from ...core.logger import logger
 
 
 class MetalSpotPrice:
@@ -38,7 +39,7 @@ class MetalSpotPrice:
             df = akshare_call_with_retry(ak.futures_global_spot_em)
 
             if df.empty:
-                print("❌ 无法获取期货数据")
+                logger.info("❌ 无法获取期货数据")
                 return []
 
             for metal in MetalSpotPrice.METALS:
@@ -56,7 +57,7 @@ class MetalSpotPrice:
                         row = df[df["代码"].str.startswith(prefix, na=False)].head(1)
 
                     if row.empty:
-                        print(f"⚠️ 未找到 {name} ({code})")
+                        logger.warning(f" 未找到 {name} ({code})")
                         continue
 
                     data = row.iloc[0]
@@ -73,11 +74,11 @@ class MetalSpotPrice:
                     })
 
                 except Exception as e_inner:
-                    print(f"获取 {metal['name']} 失败: {e_inner}")
+                    logger.warning(f"获取 {metal['name']} 失败: {e_inner}")
 
             return results
 
         except Exception as e:
-            print(f"❌ 获取金属价格失败: {e}")
+            logger.error(f" 获取金属价格失败: {e}")
             return []
 

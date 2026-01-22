@@ -10,6 +10,7 @@ from typing import Dict, Any, List
 from ...core.cache import cached
 from ...core.config import settings
 from ...core.utils import safe_float, get_beijing_time
+from ...core.logger import logger
 
 
 class USFearGreedIndex:
@@ -86,13 +87,13 @@ class USFearGreedIndex:
                         "explanation": USFearGreedIndex._get_cnn_explanation(),
                     }
 
-            print(f"CNN API返回状态码: {response.status_code}")
+            logger.warning(f"CNN API返回状态码: {response.status_code}")
             return USFearGreedIndex._get_fallback_data(
                 f"API Error: {response.status_code}"
             )
 
         except Exception as e:
-            print(f"❌ 获取CNN恐慌贪婪指数失败: {e}")
+            logger.error(f" 获取CNN恐慌贪婪指数失败: {e}")
             return USFearGreedIndex._get_fallback_data(str(e))
 
     @staticmethod
@@ -148,7 +149,7 @@ class USFearGreedIndex:
             }
 
         except Exception as e:
-            print(f"❌ 计算自定义恐慌贪婪指数失败: {e}")
+            logger.error(f" 计算自定义恐慌贪婪指数失败: {e}")
             return {
                 "error": str(e),
                 "score": 50,
@@ -178,18 +179,83 @@ class USFearGreedIndex:
         except Exception:
             return {"value": 20, "score": 50, "weight": 0.3}
 
+
     @staticmethod
     def _get_sp500_data() -> Dict[str, Any]:
-        # 简化处理
-        return {"momentum_pct": 2.5, "score": 75, "weight": 0.25}
+        """获取标普500动量数据"""
+        try:
+            # 使用 AkShare 获取标普500指数数据
+            df = ak.stock_us_index_daily_em(symbol="GSPC")
+            if df.empty or len(df) < 20:
+                return {"momentum_pct": 0, "score": 50, "weight": 0.25, "note": "数据不足"}
+            
+            # 计算20日动量
+            recent = df.tail(20)
+            momentum_pct = (
+                (recent["收盘"].iloc[-1] - recent["收盘"].iloc[0])
+                / recent["收盘"].iloc[0]
+                * 100
+            )
+            
+            # 动量转换为分数 (涨5%=75, 涨10%=100, 跌5%=25)
+            score = min(100, max(0, 50 + momentum_pct * 5))
+            
+            return {
+                "momentum_pct": round(momentum_pct, 2),
+                "score": round(score, 1),
+                "weight": 0.25,
+            }
+        except Exception as e:
+            logger.warning(f" 获取标普500数据失败: {e}")
+            return {"momentum_pct": 0, "score": 50, "weight": 0.25, "note": "获取失败"}
 
     @staticmethod
     def _get_market_breadth() -> Dict[str, Any]:
-        return {"advance_decline_ratio": 1.2, "score": 60, "weight": 0.2}
+        """
+        获取市场广度数据
+        注: 美股涨跌家数难以直接获取，使用道琼斯/纳斯达克相对表现代替
+        """
+        try:
+            # 获取道琼斯和纳斯达克
+            dji = ak.stock_us_index_daily_em(symbol="DJI")
+            ndx = ak.stock_us_index_daily_em(symbol="NDX")
+            
+            if dji.empty or ndx.empty:
+                return {"advance_decline_ratio": 1.0, "score": 50, "weight": 0.2, "note": "数据不足"}
+            
+            # 比较近5日表现
+            dji_change = (dji["收盘"].iloc[-1] - dji["收盘"].iloc[-5]) / dji["收盘"].iloc[-5] * 100
+            ndx_change = (ndx["收盘"].iloc[-1] - ndx["收盘"].iloc[-5]) / ndx["收盘"].iloc[-5] * 100
+            
+            # 如果大盘股(道琼斯)和成长股(纳斯达克)同涨=贪婪, 同跌=恐慌
+            avg_change = (dji_change + ndx_change) / 2
+            score = min(100, max(0, 50 + avg_change * 5))
+            
+            return {
+                "dji_5d_change": round(dji_change, 2),
+                "ndx_5d_change": round(ndx_change, 2),
+                "score": round(score, 1),
+                "weight": 0.2,
+            }
+        except Exception as e:
+            logger.warning(f" 获取市场广度数据失败: {e}")
+            return {"advance_decline_ratio": 1.0, "score": 50, "weight": 0.2, "note": "获取失败"}
 
     @staticmethod
     def _get_safe_haven_demand() -> Dict[str, Any]:
-        return {"treasury_demand": 0.5, "score": 50, "weight": 0.25}
+        """
+        获取避险需求数据
+        注: 简化处理，使用VIX反向作为避险需求代理
+        高VIX = 高避险需求 = 恐慌 = 低分数
+        """
+        # 此指标已在 VIX 中部分体现，给予中性默认值
+        # 未来可接入黄金/美债ETF数据
+        return {
+            "treasury_demand": 0.5,
+            "score": 50,
+            "weight": 0.25,
+            "note": "使用默认值(VIX已涵盖避险情绪)",
+        }
 
     @staticmethod
     def _calculate_composite_score(indicators: Dict[str, Any]) -> float:

@@ -10,6 +10,7 @@ import pandas as pd
 from typing import List, Dict, Any
 from ...core.cache import cached
 from ...core.config import settings
+from ...core.logger import logger
 
 
 class USTreasury:
@@ -74,5 +75,5 @@ class USTreasury:
             ]
 
         except Exception as e:
-            print(f"获取美债收益率失败: {e}")
+            logger.error(f"获取美债收益率失败: {e}")
             return []

@@ -12,6 +12,7 @@ from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.interval import IntervalTrigger
 from functools import lru_cache
 import akshare as ak
+from .core.logger import logger
 
 
 # -----------------------------------------------------------------------------
@@ -21,14 +22,14 @@ import akshare as ak
 def _get_trading_days_cache(year: int) -> set:
     """获取指定年份的交易日历（缓存）"""
     try:
-        print(f"📅正在获取 {year} 年交易日历...")
+        logger.info(f"获取 {year} 年交易日历...")
         tool_trade_date_hist_sina_df = ak.tool_trade_date_hist_sina()
         # 筛选年份
         df = tool_trade_date_hist_sina_df
         trade_dates = set(df["trade_date"].dt.strftime("%Y-%m-%d").tolist())
         return trade_dates
     except Exception as e:
-        print(f"⚠️ 获取交易日历失败: {e}")
+        logger.warning(f"获取交易日历失败: {e}")
         return set()
 
 
@@ -152,7 +153,7 @@ class CacheScheduler:
                     # print(f"🔄 执行预热任务: {job_id}")
                     func(**kwargs)
                 except Exception as e:
-                    print(f"❌ 预热任务失败 [{job_id}]: {e}")
+                    logger.error(f"预热任务失败 [{job_id}]: {e}")
 
         # 使用交易时段的间隔注册任务
         # 调度器会以较高频率触发，我们在 smart_warmup 里进行过滤
@@ -163,8 +164,8 @@ class CacheScheduler:
             replace_existing=True,
         )
         self._jobs.append(job_id)
-        print(
-            f"✅ 注册预热任务: {job_id} (交易时段: {trading_interval_minutes}m, 非交易: {non_trading_interval_minutes}m)"
+        logger.info(
+            f"注册预热任务: {job_id} (交易时段: {trading_interval_minutes}m, 非交易: {non_trading_interval_minutes}m)"
         )
 
     def add_simple_job(
@@ -182,10 +183,10 @@ class CacheScheduler:
 
         def job_wrapper():
             try:
-                print(f"🔄 执行任务: {job_id}")
+                logger.debug(f"执行任务: {job_id}")
                 func(**kwargs)
             except Exception as e:
-                print(f"❌ 任务失败 [{job_id}]: {e}")
+                logger.error(f"任务失败 [{job_id}]: {e}")
 
         self.scheduler.add_job(
             job_wrapper,
@@ -194,21 +195,21 @@ class CacheScheduler:
             replace_existing=True,
         )
         self._jobs.append(job_id)
-        print(f"✅ 注册任务: {job_id} (间隔: {interval_minutes}分钟)")
+        logger.info(f"注册任务: {job_id} (间隔: {interval_minutes}分钟)")
 
     def start(self):
         """启动调度器"""
         if not self._started:
             self.scheduler.start()
             self._started = True
-            print("🚀 缓存调度器已启动")
+            logger.info("缓存调度器已启动")
 
     def shutdown(self, wait: bool = True):
         """关闭调度器"""
         if self._started:
             self.scheduler.shutdown(wait=wait)
             self._started = False
-            print("🛑 缓存调度器已关闭")
+            logger.info("缓存调度器已关闭")
 
     def get_status(self) -> dict:
         """获取调度器状态"""
@@ -236,7 +237,7 @@ class CacheScheduler:
                 job.func()
                 return True
             except Exception as e:
-                print(f"❌ 手动执行任务失败 [{job_id}]: {e}")
+                logger.error(f"手动执行任务失败 [{job_id}]: {e}")
         return False
 
 
@@ -339,7 +340,7 @@ def setup_default_warmup_jobs():
     # =========================================================================
     def pre_market_warmup():
         if is_trading_day():
-            print("🌅 执行开盘前(9:25)强制预热...")
+            logger.info("执行开盘前(9:25)强制预热...")
             # 触发一次初始预热逻辑（这也包含核心指标）
             initial_warmup()
 
@@ -349,7 +350,7 @@ def setup_default_warmup_jobs():
         id="warmup:special:pre_market",
         replace_existing=True,
     )
-    print("✅ 注册特殊任务: 开盘前强制预热 (09:25)")
+    logger.info("注册特殊任务: 开盘前强制预热 (09:25)")
 
 
 def warmup_with_retry(func, name: str, max_retries: int = 3, *args, **kwargs) -> bool:
@@ -375,11 +376,11 @@ def warmup_with_retry(func, name: str, max_retries: int = 3, *args, **kwargs) ->
         except Exception as e:
             if attempt < max_retries - 1:
                 wait_time = 2**attempt  # 指数退避: 1s, 2s, 4s
-                print(f"  ⚠️ {name}预热失败 (尝试 {attempt + 1}/{max_retries}): {e}")
-                print(f"     {wait_time}秒后重试...")
+                logger.warning(f"{name}预热失败 (尝试 {attempt + 1}/{max_retries}): {e}")
+                logger.info(f"{wait_time}秒后重试...")
                 time.sleep(wait_time)
             else:
-                print(f"  ❌ {name}预热失败 (已重试{max_retries}次): {e}")
+                logger.error(f"{name}预热失败 (已重试{max_retries}次): {e}")
                 return False
     return False
 
@@ -391,7 +392,7 @@ def initial_warmup():
     from .market import MarketAnalysis
     from .sentiment import SentimentAnalysis
 
-    print("🔥 开始初始缓存预热...")
+    logger.info("开始初始缓存预热...")
 
     success_count = 0
     total_count = 5
@@ -415,4 +416,4 @@ def initial_warmup():
         success_count += 1
     warmup_with_retry(MarketAnalysis.get_sector_bottom, "领跌板块")
 
-    print(f"🔥 初始缓存预热完成 ({success_count}/{total_count} 成功)")
+    logger.info(f"初始缓存预热完成 ({success_count}/{total_count} 成功)")

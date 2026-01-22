@@ -10,6 +10,7 @@ from ...core.cache import cached
 from ...core.config import settings
 from ...core.utils import get_beijing_time
 from ...core.data_provider import data_provider
+from ...core.logger import logger
 
 
 class CNMarketHeat:
@@ -26,13 +27,13 @@ class CNMarketHeat:
         """
         try:
             # 使用共享数据提供层获取股票数据 (避免重复请求)
-            print("📊 获取股票行情数据...")
+            logger.info("📊 获取股票行情数据...")
             df = data_provider.get_stock_zh_a_spot()
 
             if df.empty:
                 raise ValueError("无法获取股票行情数据")
 
-            print(f"✅ 获取到 {len(df)} 只股票数据")
+            logger.info(f" 获取到 {len(df)} 只股票数据")
 
             # 获取市场概况数据
             heat_data = {}
@@ -60,7 +61,7 @@ class CNMarketHeat:
             return heat_data
 
         except Exception as e:
-            print(f"❌ 获取市场热度失败: {e}")
+            logger.error(f" 获取市场热度失败: {e}")
             return {
                 "error": str(e),
                 "heat_score": 50,
@@ -98,7 +99,7 @@ class CNMarketHeat:
             }
 
         except Exception as e:
-            print(f"⚠️ 获取成交额数据失败: {e}")
+            logger.warning(f" 获取成交额数据失败: {e}")
             return {"turnover_error": str(e)}
 
     @staticmethod
@@ -140,7 +141,7 @@ class CNMarketHeat:
             }
 
         except Exception as e:
-            print(f"⚠️ 获取市场广度数据失败: {e}")
+            logger.warning(f" 获取市场广度数据失败: {e}")
             return {"breadth_error": str(e)}
 
     @staticmethod
@@ -170,7 +171,7 @@ class CNMarketHeat:
             }
 
         except Exception as e:
-            print(f"⚠️ 获取活跃度数据失败: {e}")
+            logger.warning(f" 获取活跃度数据失败: {e}")
             return {"activity_error": str(e)}
 
     @staticmethod
@@ -207,7 +208,7 @@ class CNMarketHeat:
             return max(0, min(100, score))
 
         except Exception as e:
-            print(f"⚠️ 计算热度指数失败: {e}")
+            logger.warning(f" 计算热度指数失败: {e}")
             return 50
 
     @staticmethod

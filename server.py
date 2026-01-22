@@ -11,6 +11,7 @@ from analytics.api.metals import router as metals_router
 from analytics.api.market_us import router as us_market_router
 from analytics.core.patch import apply_patches
 from analytics.core.security import SecurityMiddleware
+from analytics.core.logger import logger
 import os
 
 # 应用 API 伪装补丁 (在最早的时机)
@@ -20,18 +21,18 @@ apply_patches()
 async def lifespan(app: FastAPI):
     """应用生命周期管理"""
     # 启动时
-    print("🚀 x-analytics 服务启动中...")
+    logger.info("🚀 x-analytics 服务启动中...")
     
     # 安全配置检查
     admin_token = os.getenv("ADMIN_TOKEN")
     if admin_token:
-        print("🔐 管理 API 保护已启用")
+        logger.info("🔐 管理 API 保护已启用")
     else:
-        print("⚠️ 警告: ADMIN_TOKEN 未设置，管理 API 将被禁用")
+        logger.warning("ADMIN_TOKEN 未设置，管理 API 将被禁用")
 
     # 检查 Redis 连接
     if cache.connected:
-        print(f"✅ Redis 已连接: {cache.redis_url}")
+        logger.info(f"✅ Redis 已连接: {cache.redis_url}")
 
         # 启动后台初始预热（非阻塞）
         warmup_thread = threading.Thread(target=initial_warmup, daemon=True)
@@ -41,12 +42,12 @@ async def lifespan(app: FastAPI):
         setup_default_jobs()
         scheduler.start()
     else:
-        print("⚠️ Redis 未连接，将以无缓存模式运行")
+        logger.warning("Redis 未连接，将以无缓存模式运行")
 
     yield
 
     # 关闭时
-    print("🛑 x-analytics 服务关闭中...")
+    logger.info("🛑 x-analytics 服务关闭中...")
     scheduler.shutdown(wait=False)
 
 

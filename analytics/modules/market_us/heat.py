@@ -9,6 +9,7 @@ import akshare as ak
 from typing import List, Dict, Any
 from ...core.cache import cached
 from ...core.config import settings
+from ...core.logger import logger
 
 
 class USMarketHeat:
@@ -65,11 +66,11 @@ class USMarketHeat:
                             }
                         )
                 except Exception as e_inner:
-                    print(f"获取 {item['symbol']} 失败: {e_inner}")
+                    logger.warning(f"获取 {item['symbol']} 失败: {e_inner}")
 
             results.sort(key=lambda x: x.get("change_pct", 0.0), reverse=True)  # type: ignore
             return results
 
         except Exception as e:
-            print(f"获取美股板块数据失败: {e}")
+            logger.error(f"获取美股板块数据失败: {e}")
             return []

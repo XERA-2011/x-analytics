@@ -9,6 +9,7 @@ from typing import Dict, Any, List
 from ...core.cache import cached
 from ...core.config import settings
 from ...core.utils import safe_float, get_beijing_time, akshare_call_with_retry
+from ...core.logger import logger
 
 
 class GoldSilverAnalysis:
@@ -95,7 +96,7 @@ class GoldSilverAnalysis:
             }
 
         except Exception as e:
-            print(f"❌ 获取金银比失败: {e}")
+            logger.error(f" 获取金银比失败: {e}")
             return {"error": str(e), "ratio": {"current": 0}}
 
     @staticmethod

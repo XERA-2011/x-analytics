@@ -10,8 +10,7 @@ from ...core.cache import cached
 from ...core.config import settings
 from ...core.utils import safe_float, get_beijing_time
 from ...core.data_provider import data_provider
-
-logger = logging.getLogger(__name__)
+from ...core.logger import logger
 
 
 class CNMarketLeaders:

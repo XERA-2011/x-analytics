@@ -9,6 +9,7 @@ from typing import Dict, Any, List
 from ...core.cache import cached
 from ...core.config import settings
 from ...core.utils import safe_float, get_beijing_time
+from ...core.logger import logger
 
 
 class CNBonds:
@@ -21,7 +22,7 @@ class CNBonds:
         获取国债收益率数据 (混合数据源)
         """
         try:
-            print("📊 获取国债收益率数据(主源)...")
+            logger.info("📊 获取国债收益率数据(主源)...")
             
             # 1. 主数据源: 中债国债收益率曲线 (覆盖大部分期限)
             # 动态计算日期范围 (取最近3个月)
@@ -42,10 +43,10 @@ class CNBonds:
                         df_primary["日期"] = pd.to_datetime(df_primary["日期"])
                         df_primary = df_primary.sort_values("日期")
             except Exception as e:
-                print(f"⚠️ 主数据源获取失败: {e}")
+                logger.warning(f" 主数据源获取失败: {e}")
 
             # 2. 补充数据源: Investing (用于补充 2年期 等缺失数据)
-            print("📊 获取国债收益率数据(补充源)...")
+            logger.info("📊 获取国债收益率数据(补充源)...")
             df_sec = pd.DataFrame()
             try:
                 # 该接口虽然经常被封, 但包含关键的 2Y 数据
@@ -53,7 +54,7 @@ class CNBonds:
                 from ...core.utils import akshare_call_with_retry
                 df_sec = akshare_call_with_retry(ak.bond_zh_us_rate, max_retries=2)
             except Exception as e:
-                print(f"⚠️ 补充数据源获取失败: {e}")
+                logger.warning(f" 补充数据源获取失败: {e}")
 
             if df_primary.empty and df_sec.empty:
                 raise ValueError("所有国债数据源均不可用")
@@ -115,7 +116,7 @@ class CNBonds:
                 else:
                     yield_changes[key] = 0 # 或 None, 前端处理 0 也可以(无变化)
 
-            print(f"✅ 国债数据整合完成")
+            logger.info(f" 国债数据整合完成")
 
             # 分析收益率曲线形态
             curve_analysis = CNBonds._analyze_yield_curve(yield_curve)
@@ -146,7 +147,7 @@ class CNBonds:
             }
 
         except Exception as e:
-            print(f"❌ 获取国债收益率失败: {e}")
+            logger.error(f" 获取国债收益率失败: {e}")
             return {
                 "error": str(e),
                 "yield_curve": {},
@@ -213,7 +214,7 @@ class CNBonds:
             return analysis
 
         except Exception as e:
-            print(f"❌ 债券市场分析失败: {e}")
+            logger.error(f" 债券市场分析失败: {e}")
             return {
                 "error": str(e),
                 "update_time": get_beijing_time().strftime("%Y-%m-%d %H:%M:%S"),
@@ -280,7 +281,7 @@ class CNBonds:
             }
 
         except Exception as e:
-            print(f"⚠️ 分析收益率曲线失败: {e}")
+            logger.warning(f" 分析收益率曲线失败: {e}")
             return {"shape": "未知", "comment": "分析失败"}
 
     @staticmethod
@@ -306,5 +307,5 @@ class CNBonds:
             return history
 
         except Exception as e:
-            print(f"⚠️ 获取历史数据失败: {e}")
+            logger.warning(f" 获取历史数据失败: {e}")
             return []

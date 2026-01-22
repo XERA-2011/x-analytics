@@ -10,6 +10,7 @@ from ...core.cache import cached
 from ...core.config import settings
 from ...core.utils import safe_float, get_beijing_time
 from ...core.data_provider import data_provider
+from ...core.logger import logger
 
 
 # 中证红利低波动指数代码
@@ -34,7 +35,7 @@ class CNDividendStrategy:
         """
         try:
             # 1. 获取指数成分股和权重
-            print(f"📊 获取{INDEX_NAME}指数成分股...")
+            logger.info(f" 获取{INDEX_NAME}指数成分股...")
             cons_df = ak.index_stock_cons_weight_csindex(symbol=INDEX_CODE)
             
             if cons_df.empty:
@@ -45,7 +46,7 @@ class CNDividendStrategy:
             cons_weights = dict(zip(cons_df["成分券代码"], cons_df["权重"]))
             cons_names = dict(zip(cons_df["成分券代码"], cons_df["成分券名称"]))
             
-            print(f"✅ 获取到 {len(cons_codes)} 只成分股")
+            logger.info(f" 获取到 {len(cons_codes)} 只成分股")
             
             # 2. 尝试获取 A 股实时行情数据（可能因限流失败）
             try:
@@ -53,12 +54,12 @@ class CNDividendStrategy:
                 if spot_df.empty:
                     spot_df = None
             except Exception as e:
-                print(f"⚠️ 获取实时行情失败，使用基础数据: {e}")
+                logger.warning(f" 获取实时行情失败，使用基础数据: {e}")
                 spot_df = None
             
             # 如果无法获取行情，返回基础成分股信息
             if spot_df is None:
-                print("⚠️ 无法获取实时行情，返回基础成分股信息")
+                logger.info("⚠️ 无法获取实时行情，返回基础成分股信息")
                 stocks = []
                 for code in cons_codes[:limit]:
                     code_str = str(code).zfill(6)
@@ -89,7 +90,7 @@ class CNDividendStrategy:
             
             if filtered_df.empty:
                 # 如果匹配失败，返回基础信息
-                print("⚠️ 无法匹配实时行情，返回基础成分股信息")
+                logger.info("⚠️ 无法匹配实时行情，返回基础成分股信息")
                 stocks = []
                 for code in cons_codes[:limit]:
                     code_str = str(code).zfill(6)
@@ -159,7 +160,7 @@ class CNDividendStrategy:
             }
 
         except Exception as e:
-            print(f"❌ 获取{INDEX_NAME}成分股失败: {e}")
+            logger.error(f" 获取{INDEX_NAME}成分股失败: {e}")
             return {
                 "error": str(e),
                 "index_code": INDEX_CODE,
@@ -198,7 +199,7 @@ class CNDividendStrategy:
             }
 
         except Exception as e:
-            print(f"❌ 获取红利ETF失败: {e}")
+            logger.error(f" 获取红利ETF失败: {e}")
             return {
                 "error": str(e),
                 "etfs": [],
@@ -277,7 +278,7 @@ class CNDividendStrategy:
             }
 
         except Exception as e:
-            print(f"⚠️ 计算策略统计失败: {e}")
+            logger.warning(f" 计算策略统计失败: {e}")
             return {}
 
     @staticmethod

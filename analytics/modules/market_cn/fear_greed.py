@@ -11,6 +11,7 @@ from typing import Dict, Any
 from ...core.cache import cached
 from ...core.config import settings
 from ...core.utils import safe_float, get_beijing_time
+from ...core.logger import logger
 
 
 class CNFearGreedIndex:
@@ -72,7 +73,7 @@ class CNFearGreedIndex:
             }
 
         except Exception as e:
-            print(f"❌ 计算恐慌贪婪指数失败: {e}")
+            logger.error(f" 计算恐慌贪婪指数失败: {e}")
             return {
                 "error": str(e),
                 "score": 50,  # 默认中性
@@ -158,7 +159,7 @@ class CNFearGreedIndex:
             }
 
         except Exception as e:
-            print(f"⚠️ 计算指标时出错: {e}")
+            logger.warning(f" 计算指标时出错: {e}")
             # 返回默认值
             indicators = {
                 "price_momentum": {"value": 0, "score": 50, "weight": 0.25},

@@ -8,6 +8,7 @@ from typing import Dict, Any, List, Tuple
 from ...core.cache import cached
 from ...core.config import settings
 from ...core.utils import safe_float, get_beijing_time
+from ...core.logger import logger
 
 
 class USMarketLeaders:
@@ -29,7 +30,7 @@ class USMarketLeaders:
         ]
 
         try:
-            print("📊 获取美股主要指数...")
+            logger.info("📊 获取美股主要指数...")
             
             for item in indices_map:
                 try:
@@ -61,7 +62,7 @@ class USMarketLeaders:
                             "change_pct": 0
                         })
                 except Exception as e:
-                    print(f"⚠️ 获取指数 {item['name']} 失败: {e}")
+                    logger.warning(f" 获取指数 {item['name']} 失败: {e}")
                     indices_data.append({
                         "name": item["name"], 
                         "code": item["code"],
@@ -71,7 +72,7 @@ class USMarketLeaders:
 
             # 如果全部失败，使用后备数据 (演示用)
             if all(item["price"] == 0 for item in indices_data):
-                 print("⚠️ 使用后备指数数据")
+                 logger.info("⚠️ 使用后备指数数据")
                  indices_data = [
                     {"name": "纳斯达克", "code": ".IXIC", "price": 17800.50, "change_pct": 1.25},
                     {"name": "标普500", "code": ".INX", "price": 5400.20, "change_pct": 0.85},
@@ -84,5 +85,5 @@ class USMarketLeaders:
             }
 
         except Exception as e:
-            print(f"❌ 获取美股指数失败: {e}")
+            logger.error(f" 获取美股指数失败: {e}")
             return {"error": str(e)}
