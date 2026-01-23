@@ -35,23 +35,20 @@
         <!-- Tabs -->
         <nav class="tabs">
             <button class="tab-btn active" data-tab="market-cn">
-                <i data-lucide="trending-up" width="16"></i> 沪港深
+                <i data-lucide="trending-up" width="16"></i> 中国市场
             </button>
             <button class="tab-btn" data-tab="market-us">
-                <i data-lucide="dollar-sign" width="16"></i> 美股
+                <i data-lucide="dollar-sign" width="16"></i> 美国市场
             </button>
             <button class="tab-btn" data-tab="metals">
                 <i data-lucide="coins" width="16"></i> 金属
-            </button>
-            <button class="tab-btn" data-tab="macro">
-                <i data-lucide="bar-chart-3" width="16"></i> 宏观
             </button>
         </nav>
 
         <!-- CN Market -->
         <section class="tab-content active" id="market-cn">
             <div class="section-header">
-                <h2 class="section-title">沪港深指数</h2>
+                <h2 class="section-title">中国市场</h2>
                 <button class="refresh-btn" onclick="window.app.refreshCurrentTab()" title="点击刷新"><i
                         data-lucide="refresh-cw" width="14"></i> 刷新</button>
             </div>
@@ -77,6 +74,25 @@
                                 width="14"></i></button>
                     </div>
                     <div id="market-cn-heat" class="heat-grid">
+                        <div class="loading">Loading...</div>
+                    </div>
+
+                    <div class="divider"></div>
+
+                    <div class="card-header" style="margin-bottom: 12px; padding-bottom: 0; border-bottom: none;">
+                        <div class="card-title">LPR 利率</div>
+                        <button class="info-btn" id="info-lpr" title="说明"><i data-lucide="info" width="14"></i></button>
+                    </div>
+                    <div id="macro-lpr">
+                        <div class="loading">Loading...</div>
+                    </div>
+
+                    <div class="divider"></div>
+
+                    <div class="card-header" style="margin-bottom: 12px; padding-bottom: 0; border-bottom: none;">
+                        <div class="card-title">国债收益率</div>
+                    </div>
+                    <div id="cn-bonds">
                         <div class="loading">Loading...</div>
                     </div>
                 </div>
@@ -129,22 +145,16 @@
                     </div>
                 </div>
 
-                <!-- Bonds -->
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-title">国债收益率</div>
-                    </div>
-                    <div id="cn-bonds">
-                        <div class="loading">Loading...</div>
-                    </div>
-                </div>
+
+
+
             </div>
         </section>
 
         <!-- US Market -->
         <section class="tab-content" id="market-us">
             <div class="section-header">
-                <h2 class="section-title">美股市场</h2>
+                <h2 class="section-title">美国市场</h2>
                 <button class="refresh-btn" onclick="window.app.refreshCurrentTab()" title="点击刷新"><i
                         data-lucide="refresh-cw" width="14"></i> 刷新</button>
             </div>
@@ -239,59 +249,7 @@
             </div>
         </section>
 
-        <!-- Macro 宏观数据 -->
-        <section class="tab-content" id="macro">
-            <div class="section-header">
-                <h2 class="section-title">宏观数据</h2>
-                <button class="refresh-btn" onclick="window.app.refreshCurrentTab()" title="点击刷新"><i
-                        data-lucide="refresh-cw" width="14"></i> 刷新</button>
-            </div>
 
-            <div class="grid">
-                <!-- LPR 利率 -->
-                <div class="card hero">
-                    <div class="card-header">
-                        <div class="card-title">LPR 利率</div>
-                        <button class="info-btn" id="info-lpr" title="说明"><i data-lucide="info" width="14"></i></button>
-                    </div>
-                    <div id="macro-lpr" class="lpr-container">
-                        <div class="loading">Loading...</div>
-                    </div>
-                </div>
-
-                <!-- 北向资金 -->
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-title">北向资金</div>
-                        <button class="info-btn" id="info-north" title="说明"><i data-lucide="info"
-                                width="14"></i></button>
-                    </div>
-                    <div id="macro-north-funds">
-                        <div class="loading">Loading...</div>
-                    </div>
-                </div>
-
-                <!-- ETF 资金流向 -->
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-title">ETF 涨跌榜</div>
-                    </div>
-                    <div id="macro-etf-flow" class="list-container">
-                        <div class="loading">Loading...</div>
-                    </div>
-                </div>
-
-                <!-- 经济日历 -->
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-title">经济日历</div>
-                    </div>
-                    <div id="macro-calendar" class="list-container">
-                        <div class="loading">Loading...</div>
-                    </div>
-                </div>
-            </div>
-        </section>
     </main>
 
     <footer>
@@ -307,7 +265,6 @@
     <script src="js/modules/market-cn.js"></script>
     <script src="js/modules/market-us.js"></script>
     <script src="js/modules/metals.js"></script>
-    <script src="js/modules/macro.js"></script>
     <script src="js/main.js"></script>
     <script>lucide.createIcons();</script>
 </body>

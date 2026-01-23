@@ -45,7 +45,7 @@ def is_trading_hours(market: str) -> bool:
             or afternoon_start <= current_time <= afternoon_end
         )
 
-    # 处理跨午夜的市场 (如美股)
+    # 处理跨午夜的市场 (如美国市场)
     elif config.get("cross_midnight", False):
         session_start, session_end = cast(Tuple[dt_time, dt_time], config["session"])
         return current_time >= session_start or current_time <= session_end

@@ -245,6 +245,7 @@ from ..modules.market_cn import (
     CNMarketHeat,
     CNDividendStrategy,
     CNBonds,
+    LPRAnalysis,
 )
 from ..modules.market_us import (
     USFearGreedIndex,
@@ -260,7 +261,7 @@ def setup_default_jobs():
     print("🔧 设置默认预热任务...")
 
     # =========================================================================
-    # 沪港深市场 (CN Market)
+    # 中国市场 (CN Market)
     # =========================================================================
     
     # 1. 恐慌贪婪指数 (30分/4小时)
@@ -305,9 +306,14 @@ def setup_default_jobs():
         func=lambda: warmup_cache(CNBonds.get_bond_market_analysis),
         interval_minutes=240
     )
+    scheduler.add_simple_job(
+        job_id="warmup:cn:lpr",
+        func=lambda: warmup_cache(LPRAnalysis.get_lpr_rates),
+        interval_minutes=240
+    )
 
     # =========================================================================
-    # 美股市场 (US Market)
+    # 美国市场 (US Market)
     # =========================================================================
 
     # 1. CNN 恐慌指数
@@ -404,6 +410,7 @@ def initial_warmup():
         # 后台继续预热次要数据 (如果需要，可以另起线程，但 initial_warmup 本身已经在 thread 中运行)
         warmup_cache(CNDividendStrategy.get_dividend_stocks)
         warmup_cache(CNBonds.get_bond_market_analysis)
+        warmup_cache(LPRAnalysis.get_lpr_rates)
         warmup_cache(USTreasury.get_us_bond_yields)
 
     except Exception as e:

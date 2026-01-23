@@ -22,7 +22,7 @@ class Settings:
             "weekdays_only": True,
         },
         "market_us": {
-            # 美股交易时间 (北京时间 21:30-04:00)
+            # 美国市场交易时间 (北京时间 21:30-04:00)
             "session": (time(21, 30), time(4, 0)),
             "weekdays_only": True,
             "cross_midnight": True,

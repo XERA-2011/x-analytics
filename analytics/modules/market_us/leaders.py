@@ -1,5 +1,5 @@
 """
-美股市场领涨领跌分析
+美国市场领涨领跌分析
 """
 
 import akshare as ak
@@ -11,13 +11,13 @@ from ...core.logger import logger
 
 
 class USMarketLeaders:
-    """美股主要指数与领涨板块分析"""
+    """美国市场主要指数与领涨板块分析"""
 
     @staticmethod
     @cached("market_us:indices", ttl=settings.CACHE_TTL["market_heat"], stale_ttl=settings.CACHE_TTL["market_heat"] * settings.STALE_TTL_RATIO)
     def get_leaders() -> Dict[str, Any]:
         """
-        获取美股三大指数 (纳斯达克, 标普500, 道琼斯)
+        获取美国市场三大指数 (纳斯达克, 标普500, 道琼斯)
         """
         indices_data = []
         
@@ -29,7 +29,7 @@ class USMarketLeaders:
         ]
 
         try:
-            logger.info("📊 获取美股主要指数...")
+            logger.info("📊 获取美国市场主要指数...")
             
             for item in indices_map:
                 try:
@@ -84,5 +84,5 @@ class USMarketLeaders:
             }
 
         except Exception as e:
-            logger.error(f" 获取美股指数失败: {e}")
+            logger.error(f" 获取美国市场指数失败: {e}")
             return {"error": str(e)}

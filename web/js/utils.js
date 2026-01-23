@@ -42,10 +42,10 @@ class Utils {
         // 根据市场确定颜色方案
         let className = '';
         if (market === 'us') {
-            // 美股: 绿涨红跌
+            // 美国市场: 绿涨红跌
             className = num > 0 ? 'text-up-us' : num < 0 ? 'text-down-us' : '';
         } else {
-            // 沪港深/金属: 红涨绿跌
+            // 中国市场/金属: 红涨绿跌
             className = num > 0 ? 'text-up' : num < 0 ? 'text-down' : '';
         }
 

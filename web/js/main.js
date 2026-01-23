@@ -11,8 +11,7 @@ class App {
         this.modules = {
             'market-cn': new CNMarketController(),
             'market-us': new USMarketController(),
-            'metals': new MetalsController(),
-            'macro': new MacroController()
+            'metals': new MetalsController()
         };
 
         this.init();
@@ -66,10 +65,6 @@ class App {
                     case '3':
                         event.preventDefault();
                         this.switchTab('metals');
-                        break;
-                    case '4':
-                        event.preventDefault();
-                        this.switchTab('macro');
                         break;
                 }
             }
@@ -176,7 +171,7 @@ class App {
 
     async loadInitialData() {
         const urlTab = utils.getUrlParam('tab');
-        if (urlTab && ['market-cn', 'market-us', 'metals', 'macro'].includes(urlTab)) {
+        if (urlTab && ['market-cn', 'market-us', 'metals'].includes(urlTab)) {
             this.switchTab(urlTab); // This calls refreshCurrentTab inside
         } else {
             // Default load

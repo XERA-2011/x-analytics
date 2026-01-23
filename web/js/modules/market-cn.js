@@ -11,7 +11,7 @@ class CNMarketController {
     }
 
     async loadData() {
-        console.log('📊 加载沪港深市场数据...');
+        console.log('📊 加载中国市场数据...');
 
         // Setup sort buttons immediately (only once)
         if (!this._sortButtonsBound) {
@@ -24,9 +24,59 @@ class CNMarketController {
             this.loadCNLeaders(),
             this.loadCNMarketHeat(),
             this.loadCNDividend(),
-            this.loadCNBonds()
+            this.loadCNBonds(),
+            this.loadLPR()
         ];
         await Promise.allSettled(promises);
+    }
+
+    async loadLPR() {
+        try {
+            const data = await api.getLPR();
+            this.renderLPR(data);
+        } catch (error) {
+            console.error('加载 LPR 失败:', error);
+            utils.renderError('macro-lpr', 'LPR 数据加载失败');
+        }
+    }
+
+    renderLPR(data) {
+        const container = document.getElementById('macro-lpr');
+        if (!container) return;
+
+        if (data.error || !data.current) {
+            utils.renderError('macro-lpr', data.error || '暂无数据');
+            return;
+        }
+
+        // Bind info button
+        const infoBtn = document.getElementById('info-lpr');
+        if (infoBtn) {
+            infoBtn.onclick = () => utils.showInfoModal('LPR 利率', data.description || 'LPR 贷款市场报价利率，每月 20 日公布');
+        }
+
+        const { current } = data;
+        const change1y = current.lpr_1y_change;
+        const change5y = current.lpr_5y_change;
+
+        const html = `
+            <div class="heat-grid" style="grid-template-columns: 1fr 1fr;">
+                <div class="heat-cell">
+                    <div class="item-sub">1年期 LPR</div>
+                    <div class="fg-score" style="font-size: 28px;">${current.lpr_1y}%</div>
+                    ${change1y !== 0 ? `<div class="item-sub ${change1y < 0 ? 'text-down' : 'text-up'}">${change1y > 0 ? '+' : ''}${change1y}bp</div>` : '<div class="item-sub">持平</div>'}
+                </div>
+                <div class="heat-cell">
+                    <div class="item-sub">5年期 LPR</div>
+                    <div class="fg-score" style="font-size: 28px;">${current.lpr_5y}%</div>
+                    ${change5y !== 0 ? `<div class="item-sub ${change5y < 0 ? 'text-down' : 'text-up'}">${change5y > 0 ? '+' : ''}${change5y}bp</div>` : '<div class="item-sub">持平</div>'}
+                </div>
+            </div>
+            <div style="text-align: center; font-size: 11px; color: var(--text-tertiary); margin-top: 8px;">
+                最新报价日期: ${current.date}
+            </div>
+        `;
+        container.innerHTML = html;
     }
 
     setupSortButtons() {

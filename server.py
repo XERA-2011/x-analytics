@@ -9,7 +9,7 @@ from analytics.core.scheduler import setup_default_jobs, initial_warmup
 from analytics.api.market_cn import router as cn_market_router
 from analytics.api.metals import router as metals_router
 from analytics.api.market_us import router as us_market_router
-from analytics.api.macro import router as macro_router
+from analytics.api.market_us import router as us_market_router
 from analytics.core.patch import apply_patches
 from analytics.core.security import SecurityMiddleware
 from analytics.core.logger import logger
@@ -55,7 +55,7 @@ async def lifespan(app: FastAPI):
 # 创建 FastAPI 应用
 app = FastAPI(
     title="x-analytics API",
-    description="三大板块金融数据分析服务：沪港深市场、美股市场、有色金属",
+    description="三大板块金融数据分析服务：中国市场、美国市场、有色金属",
     version="2.0.0",
     root_path="/analytics",
     lifespan=lifespan,
@@ -88,7 +88,7 @@ app.add_middleware(
 app.include_router(cn_market_router)
 app.include_router(metals_router)
 app.include_router(us_market_router)
-app.include_router(macro_router)
+app.include_router(us_market_router)
 
 
 # -----------------------------------------------------------------------------

@@ -2,7 +2,7 @@
 # -*- coding:utf-8 -*-
 """
 Date: 2026/01/20
-Desc: 美股板块热度
+Desc: 美国市场板块热度
 """
 
 import akshare as ak
@@ -13,7 +13,7 @@ from ...core.logger import logger
 
 
 class USMarketHeat:
-    """美股板块热度分析"""
+    """美国市场板块热度分析"""
 
     @staticmethod
     @cached(
@@ -23,7 +23,7 @@ class USMarketHeat:
     )
     def get_sector_performance() -> List[Dict[str, Any]]:
         """
-        获取美股板块表现 (基于 SPDR Sector ETFs)
+        获取美国市场板块表现 (基于 SPDR Sector ETFs)
         """
         sectors = [
             {"symbol": "XLK", "name": "科技", "en_name": "Technology"},
@@ -44,7 +44,7 @@ class USMarketHeat:
         try:
             for item in sectors:
                 try:
-                    # 获取单只美股历史数据 (日频)
+                    # 获取单只美国市场股票历史数据 (日频)
                     df = ak.stock_us_daily(symbol=item["symbol"], adjust="qfq")
                     if not df.empty:
                         latest = df.iloc[-1]
@@ -72,5 +72,5 @@ class USMarketHeat:
             return results
 
         except Exception as e:
-            logger.error(f"获取美股板块数据失败: {e}")
+            logger.error(f"获取美国市场板块数据失败: {e}")
             return []

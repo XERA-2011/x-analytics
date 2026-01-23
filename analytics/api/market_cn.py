@@ -1,5 +1,5 @@
 """
-沪港深市场API路由
+中国市场API路由
 """
 
 from fastapi import APIRouter, HTTPException
@@ -10,9 +10,10 @@ from ..modules.market_cn import (
     CNMarketHeat,
     CNDividendStrategy,
     CNBonds,
+    LPRAnalysis,
 )
 
-router = APIRouter(prefix="/market-cn", tags=["沪港深市场"])
+router = APIRouter(prefix="/market-cn", tags=["中国市场"])
 
 
 @router.get("/fear-greed", summary="获取恐慌贪婪指数")
@@ -94,3 +95,10 @@ def get_bond_analysis() -> Dict[str, Any]:
         return CNBonds.get_bond_market_analysis()
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/lpr", summary="获取 LPR 利率")
+def get_lpr_rates() -> Dict[str, Any]:
+    """获取贷款市场报价利率 (LPR)"""
+    return LPRAnalysis.get_lpr_rates()
+

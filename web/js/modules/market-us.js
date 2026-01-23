@@ -1,6 +1,6 @@
 class USMarketController {
     async loadData() {
-        console.log('📊 加载美股市场数据...');
+        console.log('📊 加载美国市场数据...');
         const promises = [
             this.loadUSFearGreed(),
             this.loadUSLeaders(),
@@ -23,9 +23,9 @@ class USMarketController {
             if (window.lucide) lucide.createIcons();
 
         } catch (error) {
-            console.error('加载美股恐慌指数失败:', error);
-            utils.renderError('us-cnn-fear', '美股恐慌指数加载失败');
-            utils.renderError('us-custom-fear', '美股恐慌指数加载失败');
+            console.error('加载美国市场恐慌指数失败:', error);
+            utils.renderError('us-cnn-fear', '美国市场恐慌指数加载失败');
+            utils.renderError('us-custom-fear', '美国市场恐慌指数加载失败');
         }
     }
 
@@ -34,8 +34,8 @@ class USMarketController {
             const data = await api.getUSMarketHeat();
             this.renderUSMarketHeat(data);
         } catch (error) {
-            console.error('加载美股热度失败:', error);
-            utils.renderError('market-us-heat', '美股热度加载失败');
+            console.error('加载美国市场热度失败:', error);
+            utils.renderError('market-us-heat', '美国市场热度加载失败');
         }
     }
 
@@ -53,13 +53,13 @@ class USMarketController {
         try {
             const data = await api.getUSMarketLeaders();
             if (data.error) {
-                console.error('加载美股领涨板块API返回错误:', data.error);
+                console.error('加载美国市场领涨板块API返回错误:', data.error);
                 utils.renderError('us-gainers', '排行数据暂时不可用');
                 return;
             }
             this.renderUSLeaders(data);
         } catch (error) {
-            console.error('加载美股领涨板块失败:', error);
+            console.error('加载美国市场领涨板块失败:', error);
             utils.renderError('us-gainers', '排行榜加载失败');
         }
     }

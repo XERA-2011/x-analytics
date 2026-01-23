@@ -82,7 +82,7 @@ class API {
         this.activeRequests.clear();
     }
 
-    // 沪港深市场 API
+    // 中国市场 API
     async getCNFearGreed(symbol = 'sh000001', days = 14) {
         return this.request(`/market-cn/fear-greed?symbol=${symbol}&days=${days}`);
     }
@@ -119,7 +119,7 @@ class API {
         return this.request('/market-cn/bonds/analysis');
     }
 
-    // 美股市场 API
+    // 美国市场 API
     async getUSFearGreed() {
         return this.request('/market-us/fear-greed');
     }
@@ -151,7 +151,7 @@ class API {
 
     // 宏观数据 API
     async getLPR() {
-        return this.request('/macro/lpr');
+        return this.request('/market-cn/lpr');
     }
 
     async getNorthFunds() {

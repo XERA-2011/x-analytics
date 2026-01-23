@@ -2,20 +2,20 @@
 # -*- coding:utf-8 -*-
 """
 Date: 2026/01/20
-Desc: 美股市场 API 路由
+Desc: 美国市场 API 路由
 """
 
 from fastapi import APIRouter, HTTPException
 from typing import Dict, Any, List
 from ..modules.market_us import USFearGreedIndex, USMarketHeat, USTreasury, USMarketLeaders
 
-router = APIRouter(prefix="/market-us", tags=["美股市场"])
+router = APIRouter(prefix="/market-us", tags=["美国市场"])
 
 
 @router.get("/fear-greed", summary="获取CNN恐慌贪婪指数")
 def get_fear_greed() -> Dict[str, Any]:
     """
-    获取美股恐慌贪婪指数 (CNN Fear & Greed Index)
+    获取美国市场恐慌贪婪指数 (CNN Fear & Greed Index)
     """
     try:
         # 优先使用实时抓取的 CNN 数据
@@ -25,10 +25,10 @@ def get_fear_greed() -> Dict[str, Any]:
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/fear-greed/custom", summary="获取自定义美股恐慌贪婪指数")
+@router.get("/fear-greed/custom", summary="获取自定义美国市场恐慌贪婪指数")
 def get_custom_fear_greed() -> Dict[str, Any]:
     """
-    获取自定义美股恐慌贪婪指数 (基于VIX等)
+    获取自定义美国市场恐慌贪婪指数 (基于VIX等)
     """
     try:
         return USFearGreedIndex.calculate_custom_index()
@@ -36,10 +36,10 @@ def get_custom_fear_greed() -> Dict[str, Any]:
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/market-heat", summary="获取美股板块热度")
+@router.get("/market-heat", summary="获取美国市场板块热度")
 def get_market_heat() -> List[Dict[str, Any]]:
     """
-    获取美股各板块涨跌幅 (基于 SPDR Sector ETFs)
+    获取美国市场各板块涨跌幅 (基于 SPDR Sector ETFs)
     """
     try:
         return USMarketHeat.get_sector_performance()
@@ -58,10 +58,10 @@ def get_bond_yields() -> List[Dict[str, Any]]:
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/leaders", summary="获取美股领涨板块")
+@router.get("/leaders", summary="获取美国市场领涨板块")
 def get_market_leaders() -> Dict[str, Any]:
     """
-    获取美股领涨股票 (知名美股)
+    获取美国市场领涨股票 (知名美国市场)
     """
     try:
         return USMarketLeaders.get_leaders()

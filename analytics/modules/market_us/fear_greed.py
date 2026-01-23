@@ -1,5 +1,5 @@
 """
-美股恐慌贪婪指数
+美国市场恐慌贪婪指数
 获取CNN Fear & Greed Index和自定义计算
 """
 
@@ -14,7 +14,7 @@ from ...core.logger import logger
 
 
 class USFearGreedIndex:
-    """美股恐慌贪婪指数"""
+    """美国市场恐慌贪婪指数"""
 
     @staticmethod
     @cached("market_us:fear_greed", ttl=settings.CACHE_TTL["fear_greed"], stale_ttl=settings.CACHE_TTL["fear_greed"] * settings.STALE_TTL_RATIO)
@@ -120,7 +120,7 @@ class USFearGreedIndex:
     )
     def calculate_custom_index() -> Dict[str, Any]:
         """
-        计算自定义美股恐慌贪婪指数
+        计算自定义美国市场恐慌贪婪指数
         基于VIX、标普500等指标
         """
         try:
@@ -213,7 +213,7 @@ class USFearGreedIndex:
     def _get_market_breadth() -> Dict[str, Any]:
         """
         获取市场广度数据
-        注: 美股涨跌家数难以直接获取，使用道琼斯/纳斯达克相对表现代替
+        注: 美国市场涨跌家数难以直接获取，使用道琼斯/纳斯达克相对表现代替
         """
         try:
             # 获取道琼斯和纳斯达克
@@ -297,6 +297,6 @@ CNN恐慌贪婪指数说明：
     @staticmethod
     def _get_custom_explanation() -> str:
         return """
-自定义美股恐慌贪婪指数说明：
+自定义美国市场恐慌贪婪指数说明：
 • 基于VIX、标普500动量、市场广度、避险需求综合计算
         """.strip()
