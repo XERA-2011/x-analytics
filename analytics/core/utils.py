@@ -4,7 +4,7 @@
 
 import pytz  # type: ignore[import-untyped]
 from datetime import datetime, time as dt_time
-from typing import Any, Tuple, cast, overload, Optional
+from typing import Any, Dict, Tuple, cast, overload, Optional
 from .config import settings
 
 

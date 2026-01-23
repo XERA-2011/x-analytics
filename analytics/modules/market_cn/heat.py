@@ -3,7 +3,6 @@
 包括成交额、换手率、活跃度等指标
 """
 
-import akshare as ak
 import pandas as pd
 from typing import Dict, Any
 from ...core.cache import cached

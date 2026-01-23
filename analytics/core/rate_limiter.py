@@ -5,7 +5,7 @@ API 限流器
 
 import time
 import threading
-from typing import Dict, Optional
+from typing import Dict
 from collections import defaultdict
 
 

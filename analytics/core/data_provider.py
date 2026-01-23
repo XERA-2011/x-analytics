@@ -8,7 +8,6 @@ import pandas as pd
 import threading
 import time
 from typing import Optional, Callable, Any, Dict
-from .throttler import throttler
 
 
 class SharedDataProvider:

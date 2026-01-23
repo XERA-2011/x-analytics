@@ -13,7 +13,7 @@ from apscheduler.triggers.interval import IntervalTrigger
 from functools import lru_cache
 import akshare as ak
 from .config import settings
-from .utils import get_refresh_interval, get_beijing_time
+from .utils import get_beijing_time
 
 
 class SmartScheduler:

@@ -4,7 +4,7 @@
 
 import os
 from datetime import time
-from typing import Dict, Tuple, Any
+from typing import Dict, Any
 
 
 class Settings:

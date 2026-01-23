@@ -116,7 +116,7 @@ class CNBonds:
                 else:
                     yield_changes[key] = 0 # 或 None, 前端处理 0 也可以(无变化)
 
-            logger.info(f" 国债数据整合完成")
+            logger.info(" 国债数据整合完成")
 
             # 分析收益率曲线形态
             curve_analysis = CNBonds._analyze_yield_curve(yield_curve)

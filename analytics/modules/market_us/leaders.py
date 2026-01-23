@@ -3,8 +3,7 @@
 """
 
 import akshare as ak
-import pandas as pd
-from typing import Dict, Any, List, Tuple
+from typing import Dict, Any
 from ...core.cache import cached
 from ...core.config import settings
 from ...core.utils import safe_float, get_beijing_time

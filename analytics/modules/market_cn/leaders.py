@@ -3,8 +3,6 @@
 获取实时涨跌幅排行榜
 """
 
-import logging
-import akshare as ak
 from typing import Dict, Any
 from ...core.cache import cached
 from ...core.config import settings

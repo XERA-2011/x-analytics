@@ -9,7 +9,7 @@ import akshare as ak
 from typing import List, Dict, Any
 from ...core.cache import cached
 from ...core.config import settings
-from ...core.utils import safe_float, get_beijing_time, akshare_call_with_retry
+from ...core.utils import safe_float, akshare_call_with_retry
 from ...core.logger import logger
 
 

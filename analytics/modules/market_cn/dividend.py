@@ -120,7 +120,7 @@ class CNDividendStrategy:
             filtered_df = filtered_df.sort_values("权重", ascending=False)
             
             # 5. 格式化数据
-            stocks: List[Dict[str, Any]] = []
+            result_stocks: List[Dict[str, Any]] = []
             for _, row in filtered_df.head(limit).iterrows():
                 pe = safe_float(row.get("市盈率-动态"))
                 pb = safe_float(row.get("市净率"))
@@ -143,16 +143,16 @@ class CNDividendStrategy:
                     "market_cap": safe_float(row.get("总市值", 0)),
                     "turnover": safe_float(row.get("成交额", 0)),
                 }
-                stocks.append(stock)
+                result_stocks.append(stock)
             
             # 6. 计算统计数据
-            strategy_stats = CNDividendStrategy._calculate_strategy_stats(stocks, filtered_df)
+            strategy_stats = CNDividendStrategy._calculate_strategy_stats(result_stocks, filtered_df)
             
             return {
                 "index_code": INDEX_CODE,
                 "index_name": INDEX_NAME,
-                "stocks": stocks,
-                "count": len(stocks),
+                "stocks": result_stocks,
+                "count": len(result_stocks),
                 "total_constituents": len(cons_codes),
                 "strategy_stats": strategy_stats,
                 "update_time": get_beijing_time().strftime("%Y-%m-%d %H:%M:%S"),
