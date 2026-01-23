@@ -310,6 +310,16 @@ def cached(key_prefix: str, ttl: int = 60, stale_ttl: Optional[int] = None):
                                     if not has_valid_data:
                                         is_error_result = True
                                         print(f"⚠️ 检测到错误结果，跳过缓存: {key_prefix} - {result.get('error', 'Unknown')}")
+                                        
+                                        # 关键修改：如果有陈旧数据且由于错误导致此次刷新失败，则降级返回陈旧数据
+                                        # 这样能保证"永远都有数据"（只要缓存里有老数据）
+                                        if stale_data is not None:
+                                            print(f"🛡️ 启用故障降级，返回陈旧数据: {key_prefix}")
+                                            if isinstance(stale_data, dict):
+                                                stale_data["_cached"] = True
+                                                stale_data["_stale"] = True
+                                                stale_data["_fallback"] = True
+                                            return stale_data
 
                                 if not is_error_result:
                                     # 重新获取当前时间，确保 TTL 是相对于计算完成时间的
@@ -354,6 +364,13 @@ def cached(key_prefix: str, ttl: int = 60, stale_ttl: Optional[int] = None):
                 except Exception as e:
                     print(f"❌ 缓存刷新异常: {e}")
                     # 异常降级
+                    if stale_data is not None:
+                        print(f"🛡️ 刷新异常，返回陈旧数据: {key_prefix}")
+                        if isinstance(stale_data, dict):
+                            stale_data["_cached"] = True
+                            stale_data["_stale"] = True
+                            stale_data["_fallback"] = True
+                        return stale_data
                     return func(*args, **kwargs)
 
             return None  # Should not reach here
