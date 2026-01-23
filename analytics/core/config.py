@@ -78,9 +78,9 @@ class Settings:
     }
 
     # Stale TTL 倍率：物理 TTL = TTL × STALE_TTL_RATIO
-    # 设为 4 表示：逻辑过期后，数据仍在 Redis 中保留 3 倍 TTL 时间
-    # 例：TTL=2h, 物理TTL=8h, 即使预热失败数次，数据仍可返回
-    STALE_TTL_RATIO = 4
+    # 设为 8 表示：逻辑过期后，数据仍在 Redis 中保留 7 倍 TTL 时间
+    # 例：TTL=2h, 物理TTL=16h, 覆盖 12+ 小时无访问场景
+    STALE_TTL_RATIO = 8
 
     # API 限流配置
     RATE_LIMIT = {"requests_per_minute": 60, "burst_size": 10}

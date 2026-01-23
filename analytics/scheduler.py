@@ -274,7 +274,7 @@ def setup_default_warmup_jobs():
             SentimentAnalysis.calculate_fear_greed_custom, symbol="sh000001", days=14
         ),
         trading_interval_minutes=60,
-        non_trading_interval_minutes=240,
+        non_trading_interval_minutes=120,
     )
 
     # 金银比
@@ -284,7 +284,7 @@ def setup_default_warmup_jobs():
         job_id="warmup:commodity:gold_silver",
         func=lambda: warmup_cache(PreciousMetalAnalysis.get_gold_silver_ratio),
         trading_interval_minutes=5,
-        non_trading_interval_minutes=240,
+        non_trading_interval_minutes=120,
     )
 
     # =========================================================================
@@ -296,7 +296,7 @@ def setup_default_warmup_jobs():
         job_id="warmup:market:overview",
         func=lambda: warmup_cache(MarketAnalysis.get_market_overview_v2),
         trading_interval_minutes=30,
-        non_trading_interval_minutes=240,
+        non_trading_interval_minutes=120,
     )
 
     # 领涨板块
@@ -304,7 +304,7 @@ def setup_default_warmup_jobs():
         job_id="warmup:market:sector_top",
         func=lambda: warmup_cache(MarketAnalysis.get_sector_top),
         trading_interval_minutes=60,
-        non_trading_interval_minutes=240,
+        non_trading_interval_minutes=120,
     )
 
     # 领跌板块
@@ -312,7 +312,7 @@ def setup_default_warmup_jobs():
         job_id="warmup:market:sector_bottom",
         func=lambda: warmup_cache(MarketAnalysis.get_sector_bottom),
         trading_interval_minutes=60,
-        non_trading_interval_minutes=240,
+        non_trading_interval_minutes=120,
     )
 
     # =========================================================================
