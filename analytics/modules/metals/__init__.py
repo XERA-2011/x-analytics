@@ -5,5 +5,6 @@
 
 from .gold_silver import GoldSilverAnalysis
 from .spot_price import MetalSpotPrice
+from .fear_greed import GoldFearGreedIndex
 
-__all__ = ["GoldSilverAnalysis", "MetalSpotPrice"]
+__all__ = ["GoldSilverAnalysis", "MetalSpotPrice", "GoldFearGreedIndex"]

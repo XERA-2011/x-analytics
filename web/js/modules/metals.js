@@ -11,6 +11,10 @@ class MetalsController {
             const spotData = await api.getMetalSpotPrices();
             this.renderMetalSpotPrices(spotData);
 
+            // Load Gold Fear Greed
+            const fearData = await api.getGoldFearGreed();
+            this.renderGoldFearGreed(fearData);
+
         } catch (error) {
             console.error('加载金属数据失败:', error);
             utils.renderError('gold-silver-ratio', '金属数据加载失败');
@@ -27,8 +31,8 @@ class MetalsController {
         }
 
         const ratio = data.ratio;
-        const gold = data.gold;
-        const silver = data.silver;
+        // const gold = data.gold; // Unused
+        // const silver = data.silver; // Unused
 
         // Bind Info Button
         const infoBtn = document.getElementById('info-metals-ratio');
@@ -75,6 +79,79 @@ class MetalsController {
         `;
 
         container.innerHTML = html;
+    }
+
+    renderGoldFearGreed(data) {
+        const container = document.getElementById('gold-fear-greed');
+        const indicatorsContainer = document.getElementById('gold-indicators');
+
+        if (!container) return;
+
+        if (data.error) {
+            utils.renderError('gold-fear-greed', data.error);
+            if (indicatorsContainer) indicatorsContainer.innerHTML = '';
+            return;
+        }
+
+        // Bind Info Button
+        const infoBtn = document.getElementById('info-gold-fear');
+        if (infoBtn && data.explanation) {
+            infoBtn.onclick = () => utils.showInfoModal('黄金恐慌贪婪指数', data.explanation);
+        }
+
+        // Render Score
+        const score = data.score;
+        let colorClass = 'text-secondary';
+        if (score >= 75) colorClass = 'text-up'; // Greed
+        else if (score <= 25) colorClass = 'text-down'; // Fear
+
+        const html = `
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; width: 100%;">
+                <div style="font-size: 48px; font-weight: 700; line-height: 1; margin-bottom: 8px;" class="${colorClass}">${score}</div>
+                
+                <div style="font-size: 14px; font-weight: 600; margin-bottom: 4px;">${data.level}</div>
+                <div style="font-size: 12px; color: var(--text-secondary); text-align: center; max-width: 80%;">${data.description}</div>
+            </div>
+        `;
+        container.innerHTML = html;
+
+        // Render Indicators
+        if (indicatorsContainer && data.indicators) {
+            this.renderGoldIndicators(indicatorsContainer, data.indicators);
+        }
+    }
+
+    renderGoldIndicators(container, indicators) {
+        const items = Object.values(indicators);
+
+        const html = items.map(item => {
+            // Determine color based on score
+            // Low score = Fear (Green/Down), High score = Greed (Red/Up)
+            // But this is just "contribution to fear/greed", so let's just use neutral or heat colors suitable for the theme
+
+            // Using heat-cell style
+            // item.name, item.value, item.score
+
+            let valueText = item.value;
+            // Add % if likely percentage
+            if (['momentum', 'trend', 'volatility', 'rsi'].some(k => item.name.toLowerCase().includes(k))) {
+                // Heuristic: already formatted in backend likely? No, backend sends float
+                // But check name. Actually backend sends `value`.
+            }
+
+            return `
+                <div class="heat-cell" style="display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 12px; background: var(--bg-secondary); border-radius: 8px;">
+                    <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px;">${item.name}</div>
+                    <div style="font-size: 16px; font-weight: 600;">${item.value}</div>
+                    <div style="font-size: 10px; color: var(--text-secondary); opacity: 0.7;">Score: ${item.score}</div>
+                </div>
+            `;
+        }).join('');
+
+        container.innerHTML = html;
+        container.style.display = 'grid';
+        container.style.gridTemplateColumns = '1fr 1fr';
+        container.style.gap = '8px';
     }
 
     renderMetalSpotPrices(data) {

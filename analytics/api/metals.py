@@ -7,9 +7,18 @@ Desc: 有色金属API路由
 
 from fastapi import APIRouter, HTTPException
 from typing import Dict, Any, List
-from ..modules.metals import GoldSilverAnalysis, MetalSpotPrice
+from ..modules.metals import GoldSilverAnalysis, MetalSpotPrice, GoldFearGreedIndex
 
 router = APIRouter(prefix="/metals", tags=["有色金属"])
+
+
+@router.get("/fear-greed", summary="获取黄金恐慌贪婪指数")
+def get_gold_fear_greed() -> Dict[str, Any]:
+    """获取黄金恐慌贪婪指数 (Custom)"""
+    try:
+        return GoldFearGreedIndex.calculate()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/gold-silver-ratio", summary="获取金银比")
