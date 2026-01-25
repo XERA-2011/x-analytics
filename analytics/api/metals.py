@@ -21,6 +21,16 @@ def get_gold_fear_greed() -> Dict[str, Any]:
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.get("/silver-fear-greed", summary="获取白银恐慌贪婪指数")
+def get_silver_fear_greed() -> Dict[str, Any]:
+    """获取白银恐慌贪婪指数 (Custom)"""
+    try:
+        from ..modules.metals.fear_greed import SilverFearGreedIndex
+        return SilverFearGreedIndex.calculate()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.get("/gold-silver-ratio", summary="获取金银比")
 def get_gold_silver_ratio() -> Dict[str, Any]:
     """获取金银比及投资分析"""

@@ -149,6 +149,10 @@ class API {
         return this.request('/metals/fear-greed');
     }
 
+    async getSilverFearGreed() {
+        return this.request('/metals/silver-fear-greed');
+    }
+
     async getMetalSpotPrices() {
         return this.request('/metals/spot-prices');
     }

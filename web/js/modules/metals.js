@@ -15,6 +15,10 @@ class MetalsController {
             const fearData = await api.getGoldFearGreed();
             this.renderGoldFearGreed(fearData);
 
+            // Load Silver Fear Greed
+            const silverFearData = await api.getSilverFearGreed();
+            this.renderSilverFearGreed(silverFearData);
+
         } catch (error) {
             console.error('加载金属数据失败:', error);
             utils.renderError('gold-silver-ratio', '金属数据加载失败');
@@ -82,21 +86,30 @@ class MetalsController {
     }
 
     renderGoldFearGreed(data) {
-        const container = document.getElementById('gold-fear-greed');
-        const indicatorsContainer = document.getElementById('gold-indicators');
+        this.renderMetalFearGreed(data, 'gold');
+    }
+
+    renderSilverFearGreed(data) {
+        this.renderMetalFearGreed(data, 'silver');
+    }
+
+    renderMetalFearGreed(data, metal) {
+        const container = document.getElementById(`${metal}-fear-greed`);
+        const indicatorsContainer = document.getElementById(`${metal}-indicators`);
 
         if (!container) return;
 
         if (data.error) {
-            utils.renderError('gold-fear-greed', data.error);
+            utils.renderError(`${metal}-fear-greed`, data.error);
             if (indicatorsContainer) indicatorsContainer.innerHTML = '';
             return;
         }
 
         // Bind Info Button
-        const infoBtn = document.getElementById('info-gold-fear');
+        const infoBtn = document.getElementById(`info-${metal}-fear`);
         if (infoBtn && data.explanation) {
-            infoBtn.onclick = () => utils.showInfoModal('黄金恐慌贪婪指数', data.explanation);
+            const title = metal === 'gold' ? '黄金恐慌贪婪指数' : '白银恐慌贪婪指数';
+            infoBtn.onclick = () => utils.showInfoModal(title, data.explanation);
         }
 
         // Render Score
@@ -117,11 +130,11 @@ class MetalsController {
 
         // Render Indicators
         if (indicatorsContainer && data.indicators) {
-            this.renderGoldIndicators(indicatorsContainer, data.indicators);
+            this.renderMetalIndicators(indicatorsContainer, data.indicators);
         }
     }
 
-    renderGoldIndicators(container, indicators) {
+    renderMetalIndicators(container, indicators) {
         const items = Object.values(indicators);
 
         const html = items.map(item => {
