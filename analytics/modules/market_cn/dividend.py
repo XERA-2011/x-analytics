@@ -8,7 +8,7 @@ import pandas as pd
 from typing import Dict, Any, List, Optional
 from ...core.cache import cached
 from ...core.config import settings
-from ...core.utils import safe_float, get_beijing_time
+from ...core.utils import safe_float, get_beijing_time, akshare_call_with_retry
 from ...core.data_provider import data_provider
 from ...core.logger import logger
 
@@ -36,7 +36,7 @@ class CNDividendStrategy:
         try:
             # 1. 获取指数成分股和权重
             logger.info(f" 获取{INDEX_NAME}指数成分股...")
-            cons_df = ak.index_stock_cons_weight_csindex(symbol=INDEX_CODE)
+            cons_df = akshare_call_with_retry(ak.index_stock_cons_weight_csindex, symbol=INDEX_CODE)
             
             if cons_df.empty:
                 raise ValueError(f"无法获取{INDEX_NAME}成分股数据")

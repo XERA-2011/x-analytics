@@ -10,7 +10,7 @@ import numpy as np
 from typing import Dict, Any
 from ...core.cache import cached
 from ...core.config import settings
-from ...core.utils import safe_float, get_beijing_time
+from ...core.utils import safe_float, get_beijing_time, akshare_call_with_retry
 from ...core.logger import logger
 
 
@@ -35,7 +35,7 @@ class CNFearGreedIndex:
 
 
             # 获取指数行情数据
-            index_data = ak.stock_zh_index_daily(symbol=symbol)
+            index_data = akshare_call_with_retry(ak.stock_zh_index_daily, symbol=symbol)
             if index_data.empty:
                 raise ValueError(f"无法获取指数数据: {symbol}")
 

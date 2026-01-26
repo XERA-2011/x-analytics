@@ -244,27 +244,30 @@ def is_trading_day(d: Optional[date] = None) -> bool:
     return True
 
 
-from .cache import warmup_cache
-from ..modules.market_cn import (
-    CNFearGreedIndex,
-    CNMarketLeaders,
-    CNMarketHeat,
-    CNDividendStrategy,
-    CNBonds,
-    LPRAnalysis,
-)
-from ..modules.market_us import (
-    USFearGreedIndex,
-    USMarketHeat,
-    USTreasury,
-    USMarketLeaders
-)
-from ..modules.metals import GoldSilverAnalysis, MetalSpotPrice, GoldFearGreedIndex
+
 
 
 def setup_default_jobs():
     """设置默认的预热任务"""
     print("🔧 设置默认预热任务...")
+    
+    from .cache import warmup_cache
+    from ..modules.market_cn import (
+        CNFearGreedIndex,
+        CNMarketLeaders,
+        CNMarketHeat,
+        CNDividendStrategy,
+        CNBonds,
+        LPRAnalysis,
+    )
+    from ..modules.market_us import (
+        USFearGreedIndex,
+        USMarketHeat,
+        USTreasury,
+        USMarketLeaders
+    )
+    from ..modules.metals import GoldSilverAnalysis, MetalSpotPrice, GoldFearGreedIndex
+
 
     # =========================================================================
     # 中国市场 (CN Market)
@@ -408,6 +411,24 @@ def setup_default_jobs():
 def initial_warmup():
     """启动时立即执行一次预热"""
     logger.info("🔥 开始初始缓存预热...")
+    
+    from .cache import warmup_cache
+    from ..modules.market_cn import (
+        CNFearGreedIndex,
+        CNMarketLeaders,
+        CNMarketHeat,
+        CNDividendStrategy,
+        CNBonds,
+        LPRAnalysis,
+    )
+    from ..modules.market_us import (
+        USFearGreedIndex,
+        USMarketHeat,
+        USTreasury,
+        USMarketLeaders
+    )
+    from ..modules.metals import GoldSilverAnalysis, MetalSpotPrice, GoldFearGreedIndex
+
     
     try:
         # 使用线程池或简单顺序执行 (这里为了简单使用顺序，因 warmup_cache 内部有锁且 Server 是异步启动)

@@ -10,6 +10,7 @@ import pandas as pd
 from typing import List, Dict, Any
 from ...core.cache import cached
 from ...core.config import settings
+from ...core.utils import akshare_call_with_retry
 from ...core.logger import logger
 
 
@@ -28,7 +29,7 @@ class USTreasury:
         关注: 2年期, 10年期, 30年期, 10Y-2Y倒挂
         """
         try:
-            df = ak.bond_zh_us_rate(start_date="20240101")
+            df = akshare_call_with_retry(ak.bond_zh_us_rate, start_date="20240101")
 
             # 过滤无效数据: 确保10年期收益率存在
             if not df.empty and "美国国债收益率10年" in df.columns:

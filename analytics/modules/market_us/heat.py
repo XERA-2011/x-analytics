@@ -9,6 +9,7 @@ import akshare as ak
 from typing import List, Dict, Any
 from ...core.cache import cached
 from ...core.config import settings
+from ...core.utils import akshare_call_with_retry
 from ...core.logger import logger
 
 
@@ -45,7 +46,7 @@ class USMarketHeat:
             for item in sectors:
                 try:
                     # 获取单只美国市场股票历史数据 (日频)
-                    df = ak.stock_us_daily(symbol=item["symbol"], adjust="qfq")
+                    df = akshare_call_with_retry(ak.stock_us_daily, symbol=item["symbol"], adjust="qfq")
                     if not df.empty:
                         latest = df.iloc[-1]
                         change_pct = 0.0

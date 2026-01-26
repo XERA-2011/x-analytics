@@ -5,7 +5,7 @@
 """
 
 import akshare as ak
-from typing import Dict, Any, List
+from typing import Dict, Any
 from ...core.cache import cached
 from ...core.config import settings
 from ...core.utils import safe_float, get_beijing_time, akshare_call_with_retry

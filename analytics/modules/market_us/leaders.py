@@ -6,7 +6,7 @@ import akshare as ak
 from typing import Dict, Any
 from ...core.cache import cached
 from ...core.config import settings
-from ...core.utils import safe_float, get_beijing_time
+from ...core.utils import safe_float, get_beijing_time, akshare_call_with_retry
 from ...core.logger import logger
 
 
@@ -33,7 +33,7 @@ class USMarketLeaders:
             
             for item in indices_map:
                 try:
-                    df = ak.index_us_stock_sina(symbol=item["code"])
+                    df = akshare_call_with_retry(ak.index_us_stock_sina, symbol=item["code"])
                     if not df.empty and len(df) >= 2:
                         # 获取最新和前一日数据
                         latest = df.iloc[-1]

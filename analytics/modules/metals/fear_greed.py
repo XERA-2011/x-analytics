@@ -7,10 +7,10 @@ import akshare as ak
 import pandas as pd
 import numpy as np
 
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any
 from ...core.cache import cached
 from ...core.config import settings
-from ...core.utils import safe_float, get_beijing_time, akshare_call_with_retry
+from ...core.utils import get_beijing_time, akshare_call_with_retry
 from ...core.logger import logger
 
 
@@ -116,7 +116,8 @@ class BaseMetalFearGreedIndex:
             # 3. 价格动量 (Momentum) vs 均线 - 权重 30%
             current_price = close_prices.iloc[-1]
             ma50 = close_prices.rolling(window=50).mean().iloc[-1]
-            if pd.isna(ma50): ma50 = close_prices.mean()
+            if pd.isna(ma50):
+                ma50 = close_prices.mean()
                 
             bias = (current_price - ma50) / ma50 * 100
             score_mom = 50 + bias * 4
@@ -167,10 +168,14 @@ class BaseMetalFearGreedIndex:
 
     @staticmethod
     def _get_level_description(score: float) -> tuple:
-        if score >= 75: return "极度贪婪", "市场情绪极度高涨，注意回调风险"
-        if score >= 55: return "贪婪", "买盘积极，趋势向好"
-        if score >= 45: return "中性", "多空平衡，方向不明"
-        if score >= 25: return "恐慌", "抛压较重，市场悲观"
+        if score >= 75:
+            return "极度贪婪", "市场情绪极度高涨，注意回调风险"
+        if score >= 55:
+            return "贪婪", "买盘积极，趋势向好"
+        if score >= 45:
+            return "中性", "多空平衡，方向不明"
+        if score >= 25:
+            return "恐慌", "抛压较重，市场悲观"
         return "极度恐慌", "非理性抛售，可能存在超跌反弹机会"
 
     @staticmethod

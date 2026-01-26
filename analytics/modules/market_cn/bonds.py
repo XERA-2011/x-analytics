@@ -8,7 +8,7 @@ import pandas as pd
 from typing import Dict, Any, List
 from ...core.cache import cached
 from ...core.config import settings
-from ...core.utils import safe_float, get_beijing_time
+from ...core.utils import safe_float, get_beijing_time, akshare_call_with_retry
 from ...core.logger import logger
 
 
@@ -34,7 +34,7 @@ class CNBonds:
 
             df_primary = pd.DataFrame()
             try:
-                df_primary = ak.bond_china_yield(start_date=start_str, end_date=end_str)
+                df_primary = akshare_call_with_retry(ak.bond_china_yield, start_date=start_str, end_date=end_str)
                 # 过滤只保留国债
                 if not df_primary.empty and "曲线名称" in df_primary.columns:
                     df_primary = df_primary[df_primary["曲线名称"] == "中债国债收益率曲线"]
@@ -51,7 +51,6 @@ class CNBonds:
             try:
                 # 该接口虽然经常被封, 但包含关键的 2Y 数据
                 # 这里不抛出异常，失败了就只用主源
-                from ...core.utils import akshare_call_with_retry
                 df_sec = akshare_call_with_retry(ak.bond_zh_us_rate, max_retries=2)
             except Exception as e:
                 logger.warning(f" 补充数据源获取失败: {e}")

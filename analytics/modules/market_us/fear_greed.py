@@ -9,7 +9,7 @@ from datetime import datetime
 from typing import Dict, Any, List
 from ...core.cache import cached
 from ...core.config import settings
-from ...core.utils import safe_float, get_beijing_time
+from ...core.utils import safe_float, get_beijing_time, akshare_call_with_retry
 from ...core.logger import logger
 
 
@@ -160,7 +160,7 @@ class USFearGreedIndex:
     @staticmethod
     def _get_vix_data() -> Dict[str, Any]:
         try:
-            df = ak.index_vix()
+            df = akshare_call_with_retry(ak.index_vix)
             if df.empty:
                 return {"value": 20, "score": 50, "weight": 0.3}
             latest_vix = safe_float(df.iloc[-1]["VIX"])
@@ -185,7 +185,7 @@ class USFearGreedIndex:
         """获取标普500动量数据"""
         try:
             # 使用 AkShare 获取标普500指数数据
-            df = ak.stock_us_index_daily_em(symbol="GSPC")
+            df = akshare_call_with_retry(ak.stock_us_index_daily_em, symbol="GSPC")
             if df.empty or len(df) < 20:
                 return {"momentum_pct": 0, "score": 50, "weight": 0.25, "note": "数据不足"}
             
@@ -217,8 +217,8 @@ class USFearGreedIndex:
         """
         try:
             # 获取道琼斯和纳斯达克
-            dji = ak.stock_us_index_daily_em(symbol="DJI")
-            ndx = ak.stock_us_index_daily_em(symbol="NDX")
+            dji = akshare_call_with_retry(ak.stock_us_index_daily_em, symbol="DJI")
+            ndx = akshare_call_with_retry(ak.stock_us_index_daily_em, symbol="NDX")
             
             if dji.empty or ndx.empty:
                 return {"advance_decline_ratio": 1.0, "score": 50, "weight": 0.2, "note": "数据不足"}
