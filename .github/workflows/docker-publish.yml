@@ -47,12 +47,27 @@ jobs:
           username: ${{ secrets.ALIYUN_CR_USERNAME }}
           password: ${{ secrets.ALIYUN_CR_PASSWORD }}
 
-      # 构建并推送到两个仓库
-      - name: Build and push Docker image
+      # 设置 Docker Buildx 缓存
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # 1. 优先推送到 GitHub Container Registry (核心仓库)
+      - name: Build and push to GitHub Container Registry
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          tags: |
-            ${{ env.GHCR_REGISTRY }}/${{ env.GHCR_IMAGE }}:latest
-            ${{ env.ALIYUN_REGISTRY }}/${{ env.ALIYUN_IMAGE }}:latest
+          tags: ${{ env.GHCR_REGISTRY }}/${{ env.GHCR_IMAGE }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # 2. 尝试推送到阿里云 (国内加速，允许失败)
+      #    由于使用了缓存，这一步应该非常快（复用上一步的层）
+      - name: Push to Aliyun Container Registry (Best Effort)
+        uses: docker/build-push-action@v5
+        continue-on-error: true
+        with:
+          context: .
+          push: true
+          tags: ${{ env.ALIYUN_REGISTRY }}/${{ env.ALIYUN_IMAGE }}:latest
+          cache-from: type=gha
