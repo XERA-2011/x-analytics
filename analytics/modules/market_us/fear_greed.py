@@ -245,17 +245,23 @@ class USFearGreedIndex:
     def _get_safe_haven_demand() -> Dict[str, Any]:
         """
         获取避险需求数据
-        注: 简化处理，使用VIX反向作为避险需求代理
-        高VIX = 高避险需求 = 恐慌 = 低分数
+        使用 VIX 作为主要参考指标
         """
-        # 此指标已在 VIX 中部分体现，给予中性默认值
-        # 未来可接入黄金/美债ETF数据
-        return {
-            "treasury_demand": 0.5,
-            "score": 50,
-            "weight": 0.25,
-            "note": "使用默认值(VIX已涵盖避险情绪)",
-        }
+        try:
+            vix_data = USFearGreedIndex._get_vix_data()
+            vix_score = vix_data.get("score", 50)
+            
+            # VIX越高(恐慌)，避险需求越高，这应该贡献给"恐慌"分数(低分)
+            # 所以直接复用 VIX 的分数即可
+            
+            return {
+                "treasury_demand": 0, # 暂时无法获取美债数据
+                "score": vix_score,
+                "weight": 0.25,
+                "note": "基于VIX推算",
+            }
+        except Exception:
+             return {"score": 50, "weight": 0.25, "note": "获取失败"}
 
     @staticmethod
     def _calculate_composite_score(indicators: Dict[str, Any]) -> float:

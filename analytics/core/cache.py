@@ -36,6 +36,7 @@ class RedisCache:
         self.redis_url = redis_url or settings.REDIS_URL
         self._redis: Optional[redis.Redis] = None
         self._connected = False
+        self._inflight_tasks = set() # Track keys currently being refreshed locally
 
     @classmethod
     def get_instance(cls) -> "RedisCache":
@@ -274,132 +275,96 @@ def cached(key_prefix: str, ttl: int = 60, stale_ttl: Optional[int] = None):
 
             # 3. 需要刷新数据
             if should_refresh:
-                lock_key = f"refresh:{cache_key}"
+                # 使用后台线程进行异步刷新，确保不阻塞当前请求
+                # 这种模式保证了：
+                # 1. 用户请求永远立即返回 (要么是数据，要么是 warming_up)
+                # 2. 只有在此进程中未运行任务时才启动新线程 (减少开销)
+                # 3. 利用 Redis 锁确保分布式环境下的单一执行
                 
-                # 缓存优先策略：用户请求永远不阻塞等待锁
-                # 只有预热任务（有陈旧数据）才尝试非阻塞获取锁刷新
-                if not return_stale:
-                    # Cache Miss: 立即返回"预热中"，不阻塞用户
-                    print(f"⏳ 缓存预热中，返回空响应: {key_prefix}")
+                if cache_key not in cache._inflight_tasks:
+                    
+                    def async_refresh_task():
+                        # 标记开始
+                        cache._inflight_tasks.add(cache_key)
+                        lock_key = f"refresh:{cache_key}"
+                        lock = None
+                        try:
+                            # 尝试获取分布式锁 (非阻塞)
+                            lock = cache.lock(lock_key, timeout=60, blocking_timeout=0)
+                            if lock.acquire(blocking=False):
+                                try:
+                                    # Double check (虽然是非阻塞，但在获取锁的过程中可能已有别人更新)
+                                    # 仅针对 Cold Start 需要 check，Stale Refresh 无所谓
+                                    if not return_stale:
+                                        fresh_data = cache.get(cache_key)
+                                        if fresh_data and "_meta" in fresh_data and time.time() < fresh_data["_meta"]["expire_at"]:
+                                            return
+
+                                    print(f"⚡ [Async] 开始计算: {key_prefix}")
+                                    result = func(*args, **kwargs)
+
+                                    if result is not None:
+                                        # 结果校验
+                                        is_error = False
+                                        if isinstance(result, dict) and "error" in result:
+                                             # 简单的有效性检查
+                                             is_valid = False
+                                             for k in ["sectors", "stocks", "data", "indices", "items"]:
+                                                 if k in result and result[k]:
+                                                     is_valid = True
+                                                     break
+                                             if not is_valid:
+                                                 is_error = True
+                                        
+                                        if not is_error:
+                                            # 写入缓存
+                                            current_now = time.time()
+                                            
+                                            # 物理 TTL
+                                            p_ttl = ttl + (stale_ttl if stale_ttl else 0)
+                                            
+                                            val = {
+                                                "_meta": {
+                                                    "expire_at": current_now + ttl,
+                                                    "ttl": ttl
+                                                },
+                                                "data": result
+                                            }
+                                            cache.set(cache_key, val, p_ttl)
+                                            print(f"✅ [Async] 缓存更新完成: {key_prefix}")
+                                        else:
+                                            print(f"⚠️ [Async] 计算结果无效，忽略: {key_prefix}")
+
+                                finally:
+                                    try:
+                                        lock.release()
+                                    except:
+                                        pass
+                            else:
+                                # 未获取到锁，说明其他节点正在计算
+                                pass
+                        except Exception as e:
+                            print(f"❌ [Async] 后台刷新任务异常: {e}")
+                        finally:
+                            # 标记结束
+                            if cache_key in cache._inflight_tasks:
+                                cache._inflight_tasks.remove(cache_key)
+
+                    # 启动后台线程
+                    threading.Thread(target=async_refresh_task, daemon=True).start()
+
+                # 主线程立即返回
+                if return_stale:
+                    if isinstance(stale_data, dict):
+                        stale_data["_cached"] = True
+                        stale_data["_stale"] = True
+                    return stale_data
+                else:
                     return {
                         "error": "warming_up",
-                        "message": "数据预热中，请稍后刷新",
-                        "_warming_up": True,
-                        "_cached": False,
+                        "message": "数据正在后台计算中，请稍后刷新",
+                        "_warming_up": True
                     }
-
-                # 有陈旧数据：尝试非阻塞刷新 (SWR 模式)
-                try:
-                    lock = cache.lock(lock_key, timeout=30, blocking_timeout=0)
-                    acquired = lock.acquire(blocking=False)
-
-                    if acquired:
-                        try:
-                            # 再次检查缓存 (双重检查) - 仅针对 Cache Miss 的情况
-                            if not return_stale:
-                                retry_data = cache.get(cache_key)
-                                if retry_data and "_meta" in retry_data:
-                                    if now < retry_data["_meta"]["expire_at"]:
-                                        return retry_data["data"]
-
-                            # 执行原函数
-                            print(f"⚡ 计算新数据: {key_prefix}")
-                            result = func(*args, **kwargs)
-
-                            if result is not None:
-                                # 检查是否为错误结果，避免缓存失败的数据
-                                is_error_result = False
-                                if isinstance(result, dict) and "error" in result:
-                                    # 检查是否有有效数据（根据常见的响应结构）
-                                    has_valid_data = False
-                                    for data_key in ["sectors", "stocks", "data", "indices", "items"]:
-                                        if data_key in result and result[data_key]:
-                                            has_valid_data = True
-                                            break
-                                    if not has_valid_data:
-                                        is_error_result = True
-                                        print(f"⚠️ 检测到错误结果，跳过缓存: {key_prefix} - {result.get('error', 'Unknown')}")
-                                        
-                                        # 关键修改：如果有陈旧数据且由于错误导致此次刷新失败，则降级返回陈旧数据
-                                        # 这样能保证"永远都有数据"（只要缓存里有老数据）
-                                        if stale_data is not None:
-                                            print(f"🛡️ 启用故障降级，返回陈旧数据: {key_prefix}")
-                                            if isinstance(stale_data, dict):
-                                                stale_data["_cached"] = True
-                                                stale_data["_stale"] = True
-                                                stale_data["_fallback"] = True
-                                            return stale_data
-
-                                if not is_error_result:
-                                    # 重新获取当前时间，确保 TTL 是相对于计算完成时间的
-                                    current_now = time.time()
-
-                                    # 构造带元数据的缓存结构
-                                    # 物理 TTL = ttl + (stale_ttl if set else 0)
-                                    physical_ttl = ttl + (stale_ttl if stale_ttl else 0)
-
-                                    cache_value = {
-                                        "_meta": {
-                                            "expire_at": current_now + ttl,
-                                            "ttl": ttl,
-                                        },
-                                        "data": result,
-                                    }
-                                    cache.set(cache_key, cache_value, physical_ttl)
-
-                                if isinstance(result, dict):
-                                    result["_cached"] = False
-                                return result
-
-                        finally:
-                            try:
-                                lock.release()
-                            except redis.RedisError:
-                                pass
-                    else:
-                        # 未获取到锁，返回陈旧数据（SWR 模式）
-                        print(f"🔒 正在刷新中，返回陈旧数据: {key_prefix}")
-                        if isinstance(stale_data, dict):
-                            stale_data["_cached"] = True
-                            stale_data["_stale"] = True
-                        return stale_data
-
-                except Exception as e:
-                    print(f"❌ 缓存刷新异常: {e}")
-                    # 异常降级
-                    if stale_data is not None:
-                        print(f"🛡️ 刷新异常，返回陈旧数据: {key_prefix}")
-                        if isinstance(stale_data, dict):
-                            stale_data["_cached"] = True
-                            stale_data["_stale"] = True
-                            stale_data["_fallback"] = True
-                        
-                        # 关键：延长陈旧数据的寿命，避免下一次请求物理过期
-                        # 我们重新写入陈旧数据，给予新的 TTL
-                        try:
-                             # 物理 TTL = ttl + stale_ttl (完整周期重置)
-                             physical_ttl = ttl + (stale_ttl if stale_ttl else 0)
-                             # 注意：这里我们得重新构造存储结构，因为 stale_data 只是 payload
-                             current_now = time.time()
-                             cache_value = {
-                                "_meta": {
-                                    "expire_at": current_now + ttl, # 逻辑上依然是过期的，促使下次尽快刷新
-                                    # 或者：我们可以让它逻辑上也稍微"新鲜"一小会儿（例如1分钟），防止高并发下的瞬时重试风暴
-                                    # 但 SWR 模式下，锁已经控制了并发，所以保持逻辑过期没事，只要物理不过期
-                                    "ttl": ttl,
-                                },
-                                "data": stale_data,
-                            }
-                             # 只有当 stale_ttl 存在时才有意义去延长物理时间
-                             if stale_ttl:
-                                 # 稍微延长物理时间，确保下次还能拿到
-                                 cache.set(cache_key, cache_value, physical_ttl)
-                                 print(f"♻️ 已延长陈旧数据物理寿命: {key_prefix}")
-                        except Exception as extend_err:
-                            print(f"⚠️ 延长陈旧数据寿命失败: {extend_err}")
-
-                        return stale_data
-                    return func(*args, **kwargs)
 
             return None  # Should not reach here
 

@@ -76,15 +76,9 @@ class CNMarketHeat:
             total_turnover = df["成交额"].sum() / 100000000
 
             # 获取历史平均成交额（最近5天）
-            try:
-                # 这里简化处理，使用当前数据估算
-                avg_turnover_5d = total_turnover * 0.8  # 简化估算
-                turnover_ratio = (
-                    total_turnover / avg_turnover_5d if avg_turnover_5d > 0 else 1
-                )
-            except Exception:
-                avg_turnover_5d = total_turnover
-                turnover_ratio = 1
+            # 如果无法获取历史数据，不要瞎猜
+            avg_turnover_5d = total_turnover # 暂且认为就是当日
+            turnover_ratio = 1.0
 
             return {
                 "total_turnover": round(total_turnover, 2),

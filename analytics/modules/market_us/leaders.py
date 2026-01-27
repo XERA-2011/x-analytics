@@ -69,14 +69,10 @@ class USMarketLeaders:
                         "change_pct": 0
                     })
 
-            # 如果全部失败，使用后备数据 (演示用)
+            # 如果全部失败，返回错误而非假数据
             if all(item["price"] == 0 for item in indices_data):
-                 logger.info("⚠️ 使用后备指数数据")
-                 indices_data = [
-                    {"name": "纳斯达克", "code": ".IXIC", "price": 17800.50, "change_pct": 1.25},
-                    {"name": "标普500", "code": ".INX", "price": 5400.20, "change_pct": 0.85},
-                    {"name": "道琼斯", "code": ".DJI", "price": 39500.80, "change_pct": 0.50}
-                 ]
+                 logger.error("❌ 所有美国指数数据获取失败")
+                 return {"error": "无法获取美国指数实时数据"}
 
             return {
                 "indices": indices_data,

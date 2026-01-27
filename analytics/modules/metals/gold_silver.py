@@ -19,6 +19,11 @@ class GoldSilverAnalysis:
     GOLD_CODE = "GC00Y"   # COMEX黄金主力
     SILVER_CODE = "SI00Y"  # COMEX白银主力
 
+    # 历史统计值 (近50年)
+    HISTORICAL_HIGH = 123.8  # 2020年3月创下的历史高点
+    HISTORICAL_LOW = 14.0    # 1980年创下的历史低点
+    HISTORICAL_AVG = 65.0    # 长期均值
+
     # 阈值常量 (用于分析金银比水平)
     # 核心逻辑：基于50年历史均值(65.0)的标准差偏离
     RATIO_LEVEL_EXTREME_HIGH = 90.0  # 极高 (> +25)

@@ -5,14 +5,31 @@ class API {
         this.baseURL = '/analytics';
         this.timeout = 15000; // 增加到15秒超时
         this.activeRequests = new Map(); // 跟踪活跃请求
+        this.cache = new Map(); // 前端缓存
+        this.cacheTTL = 60000; // 缓存有效期 60秒
     }
 
     // 通用请求方法
     async request(endpoint, options = {}) {
         const url = `${this.baseURL}${endpoint}`;
-        const requestKey = `${options.method || 'GET'}:${endpoint}`;
+        const method = options.method || 'GET';
+        const requestKey = `${method}:${endpoint}`;
 
-        // 如果相同的请求正在进行，等待它完成
+        // 1. 检查缓存 (仅针对 GET 请求)
+        if (method === 'GET') {
+            const cached = this.cache.get(requestKey);
+            if (cached) {
+                const now = Date.now();
+                if (now - cached.timestamp < this.cacheTTL) {
+                    console.debug(`[Cache] Hit: ${endpoint}`);
+                    return cached.data;
+                } else {
+                    this.cache.delete(requestKey); // 过期删除
+                }
+            }
+        }
+
+        // 2. 如果相同的请求正在进行，等待它完成
         if (this.activeRequests.has(requestKey)) {
             try {
                 return await this.activeRequests.get(requestKey);
@@ -35,6 +52,15 @@ class API {
 
         try {
             const result = await requestPromise;
+
+            // 3. 写入缓存 (仅针对 GET 请求且成功响应)
+            if (method === 'GET') {
+                this.cache.set(requestKey, {
+                    timestamp: Date.now(),
+                    data: result
+                });
+            }
+
             return result;
         } finally {
             this.activeRequests.delete(requestKey);

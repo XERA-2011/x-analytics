@@ -1,97 +1,70 @@
 """
-API 限流器
-基于内存的简单限流实现，防止 API 滥用
+API Rate Limiter
+Redis-based distributed rate limiting with fail-open policy.
 """
 
 import time
-import threading
-from typing import Dict
-from collections import defaultdict
-
+from typing import Optional
+from .cache import cache
+from .logger import logger
 
 class RateLimiter:
     """
-    基于滑动窗口的内存限流器
+    Redis-based Fixed Window Rate Limiter
     
-    使用方法:
-        limiter = RateLimiter(requests_per_minute=60)
-        if not limiter.is_allowed(client_ip):
-            raise HTTPException(429, "Too Many Requests")
+    Falls back to allowing requests (Fail Open) if Redis is unavailable.
     """
     
-    def __init__(self, requests_per_minute: int = 60, cleanup_interval: int = 60):
-        """
-        初始化限流器
-        
-        Args:
-            requests_per_minute: 每分钟允许的请求数
-            cleanup_interval: 清理过期记录的间隔（秒）
-        """
+    def __init__(self, requests_per_minute: int = 60, namespace: str = "global"):
         self.requests_per_minute = requests_per_minute
-        self.window_size = 60  # 1分钟窗口
-        self._requests: Dict[str, list] = defaultdict(list)
-        self._lock = threading.Lock()
-        self._last_cleanup = time.time()
-        self.cleanup_interval = cleanup_interval
+        self.namespace = namespace
     
+    def _get_key(self, client_id: str) -> str:
+        # Fixed window: 1-minute buckets
+        timestamp = int(time.time() // 60)
+        return f"rate_limit:{self.namespace}:{client_id}:{timestamp}"
+
     def is_allowed(self, client_id: str) -> bool:
-        """
-        检查客户端是否允许请求
-        
-        Args:
-            client_id: 客户端标识（通常是 IP 地址）
+        """Check if request is allowed"""
+        if not cache.connected:
+            return True # Fail open
             
-        Returns:
-            True 允许请求，False 拒绝请求
-        """
-        now = time.time()
-        window_start = now - self.window_size
-        
-        with self._lock:
-            # 清理过期记录
-            if now - self._last_cleanup > self.cleanup_interval:
-                self._cleanup(window_start)
-                self._last_cleanup = now
+        try:
+            key = self._get_key(client_id)
             
-            # 获取该客户端的请求记录
-            requests = self._requests[client_id]
+            # Atomic INCR + EXPIRE
+            # Using pipeline to ensure atomicity of command submission
+            pipe = cache.redis.pipeline()
+            pipe.incr(key)
+            pipe.expire(key, 90) # Expire after 90s to keep it clean (window is 60s)
+            results = pipe.execute()
             
-            # 移除窗口外的请求
-            requests[:] = [ts for ts in requests if ts > window_start]
+            count = results[0]
+            # If this is the first request (count=1), it means we just created the key
             
-            # 检查是否超过限制
-            if len(requests) >= self.requests_per_minute:
-                return False
+            return count <= self.requests_per_minute
             
-            # 记录本次请求
-            requests.append(now)
-            return True
-    
+        except Exception as e:
+            logger.error(f"Rate limiter error: {e}")
+            return True # Fail open
+
     def get_remaining(self, client_id: str) -> int:
-        """获取剩余可用请求数"""
-        now = time.time()
-        window_start = now - self.window_size
-        
-        with self._lock:
-            requests = self._requests.get(client_id, [])
-            valid_requests = [ts for ts in requests if ts > window_start]
-            return max(0, self.requests_per_minute - len(valid_requests))
-    
-    def _cleanup(self, cutoff_time: float) -> None:
-        """清理过期的请求记录"""
-        empty_keys = []
-        for client_id, requests in self._requests.items():
-            requests[:] = [ts for ts in requests if ts > cutoff_time]
-            if not requests:
-                empty_keys.append(client_id)
-        
-        for key in empty_keys:
-            del self._requests[key]
+        """Get remaining requests for current window"""
+        if not cache.connected:
+            return self.requests_per_minute
+
+        try:
+            key = self._get_key(client_id)
+            count_str = cache.redis.get(key)
+            count = int(count_str) if count_str else 0
+            return max(0, self.requests_per_minute - count)
+        except Exception:
+            return self.requests_per_minute
 
 
-# 全局限流器实例
-# 公开 API: 60 次/分钟
-public_limiter = RateLimiter(requests_per_minute=60)
+# Global Instances
+# Public API: 300 requests/minute
+public_limiter = RateLimiter(requests_per_minute=300, namespace="public")
 
-# 管理 API: 10 次/分钟
-admin_limiter = RateLimiter(requests_per_minute=10)
+# Admin API: 10 requests/minute
+admin_limiter = RateLimiter(requests_per_minute=10, namespace="admin")
