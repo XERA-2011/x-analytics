@@ -275,14 +275,14 @@ class CNMarketLeaders:
                 return "关注度低，启动初期"
         else:
             # 领跌板块提示
-            if heat_level == "极热":
+            if heat_level == "恐慌":
                 return "恐慌抛售，观望为宜"
-            elif heat_level == "较热":
+            elif heat_level == "剧烈":
                 if strength_ratio <= 0.2:
                     return "全面下跌，避开为主"
                 else:
                     return "跌幅较大，等待企稳"
-            elif heat_level == "适中":
+            elif heat_level == "温和":
                 if abs(change_pct) <= 1.5:
                     return "跌势趋缓，关注止跌信号"
                 else:
