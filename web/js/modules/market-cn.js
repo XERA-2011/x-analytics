@@ -425,6 +425,11 @@ class CNMarketController {
             return;
         }
 
+        if (data.status === 'warming_up') {
+            utils.renderWarmingUp('cn-bonds');
+            return;
+        }
+
         const yieldCurve = data.yield_curve || {};
         const keyRates = data.key_rates;
 

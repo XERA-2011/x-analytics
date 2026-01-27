@@ -16,7 +16,7 @@ class CNBonds:
     """中国国债分析"""
 
     @staticmethod
-    @cached("market_cn:bonds", ttl=settings.CACHE_TTL["bonds"], stale_ttl=settings.CACHE_TTL["bonds"] * settings.STALE_TTL_RATIO)
+    @cached("market_cn:bonds_v2", ttl=settings.CACHE_TTL["bonds"], stale_ttl=settings.CACHE_TTL["bonds"] * settings.STALE_TTL_RATIO)
     def get_treasury_yields() -> Dict[str, Any]:
         """
         获取国债收益率数据 (混合数据源)
@@ -154,7 +154,7 @@ class CNBonds:
             }
 
     @staticmethod
-    @cached("market_cn:bond_analysis", ttl=settings.CACHE_TTL["bonds"], stale_ttl=settings.CACHE_TTL["bonds"] * settings.STALE_TTL_RATIO)
+    @cached("market_cn:bond_analysis_v2", ttl=settings.CACHE_TTL["bonds"], stale_ttl=settings.CACHE_TTL["bonds"] * settings.STALE_TTL_RATIO)
     def get_bond_market_analysis() -> Dict[str, Any]:
         """
         获取债券市场分析
@@ -166,18 +166,45 @@ class CNBonds:
             # 获取国债收益率数据
             yield_data = CNBonds.get_treasury_yields()
 
-            if "error" in yield_data:
-                raise ValueError("无法获取收益率数据")
+            # 检查上游数据状态
+            # 如果上游返回 "warming_up" 或 "error" 且没有实质数据，直接透传返回
+            if isinstance(yield_data, dict):
+                # 1. 检查是否是标准响应格式
+                if "status" in yield_data and yield_data["status"] != "ok":
+                    return yield_data
+                
+                # 2. 检查是否有数据
+                # 如果是 {status: ok, data: {...}} 格式
+                if "data" in yield_data and isinstance(yield_data["data"], dict):
+                    actual_data = yield_data["data"]
+                else:
+                    actual_data = yield_data
+
+                # 3. 验证关键数据字段是否存在
+                if "key_rates" not in actual_data and "yield_curve" not in actual_data:
+                    # 数据结构不符合预期，可能是在预热中但status错误，或者数据获取失败
+                    logger.warning(f"国债数据不完整: {yield_data.keys()}")
+                    return {
+                        "status": "warming_up",
+                        "message": "数据正在准备中...",
+                        "data": None
+                    }
+            else:
+                return {"error": "Invalid data format from get_treasury_yields"}
 
             # 分析市场状况 (基于基础数据扩展)
-            analysis = yield_data.copy()
+            analysis = actual_data.copy()
 
             # 1. 利率水平分析
-            ten_year_yield = yield_data["key_rates"]["10y"]
-            if ten_year_yield > 3.5:
+            # 使用 .get() 增加健壮性，防止 'key_rates' 不存在导致的 KeyError
+            key_rates = yield_data.get("key_rates", {})
+            ten_year_yield = key_rates.get("10y")
+            
+            # 如果关键数据缺失，给予默认值或处理
+            if ten_year_yield is not None and ten_year_yield > 3.5:
                 rate_level = "高位"
                 rate_comment = "收益率处于相对高位，债券配置价值较高"
-            elif ten_year_yield > 2.5:
+            elif ten_year_yield is not None and ten_year_yield > 2.5:
                 rate_level = "中位"
                 rate_comment = "收益率处于中等水平"
             else:
@@ -191,16 +218,19 @@ class CNBonds:
             }
 
             # 2. 期限利差分析
-            spread_10y_2y = yield_data["key_rates"]["spread_10y_2y"]
-            if spread_10y_2y > 0.8:
+            spread_10y_2y = key_rates.get("spread_10y_2y")
+            if spread_10y_2y is not None and spread_10y_2y > 0.8:
                 spread_status = "正常"
                 spread_comment = "收益率曲线形态正常，长短端利差合理"
-            elif spread_10y_2y > 0.2:
+            elif spread_10y_2y is not None and spread_10y_2y > 0.2:
                 spread_status = "平坦"
                 spread_comment = "收益率曲线趋于平坦，需关注经济预期变化"
-            else:
+            elif spread_10y_2y is not None:
                 spread_status = "倒挂"
                 spread_comment = "收益率曲线倒挂，可能预示经济衰退风险"
+            else:
+                spread_status = "未知"
+                spread_comment = "数据缺失，无法分析期限利差"
 
             analysis["spread_analysis"] = {
                 "status": spread_status,
@@ -292,11 +322,12 @@ class CNBonds:
 
             history = []
             for _, row in recent_df.iterrows():
+                date_val = row.get("日期", row.name)
+                date_str = date_val.strftime("%Y-%m-%d") if hasattr(date_val, "strftime") else str(date_val)
+                
                 history.append(
                     {
-                        "date": row.name.strftime("%Y-%m-%d")
-                        if hasattr(row.name, "strftime")
-                        else str(row.name),
+                        "date": date_str,
                         "10y": safe_float(row.get("中国国债收益率10年", 0)),
                         "2y": safe_float(row.get("中国国债收益率2年", 0)),
                         "1y": safe_float(row.get("中国国债收益率1年", 0)),

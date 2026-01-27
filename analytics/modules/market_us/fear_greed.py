@@ -5,6 +5,8 @@
 
 import requests
 import akshare as ak
+import pandas as pd
+import numpy as np
 from datetime import datetime
 from typing import Dict, Any, List, Optional
 from ...core.cache import cached
@@ -160,44 +162,84 @@ class USFearGreedIndex:
 
     @staticmethod
     def _get_vix_data() -> Dict[str, Any]:
+        """
+        获取 VIX 数据
+        策略: 优先尝试 API (.VIX), 失败则计算标普500历史波动率作为替代
+        """
         try:
-            df = akshare_call_with_retry(ak.index_vix)
-            if df.empty:
-                return {"error": "VIX数据为空", "weight": 0.3}
-            latest_vix = safe_float(df.iloc[-1]["VIX"])
-            if latest_vix is None:
-                return {"error": "VIX数据解析失败", "weight": 0.3}
-            if latest_vix > 30:
-                vix_score = max(0, 100 - (latest_vix - 30) * 3)
-            elif latest_vix > 20:
-                vix_score = 70 - (latest_vix - 20) * 2
-            else:
-                vix_score = 70 + (20 - latest_vix) * 1.5
-            vix_score = min(100, max(0, vix_score))
-            return {
-                "value": round(latest_vix, 2),
-                "score": round(vix_score, 1),
-                "weight": 0.3,
-            }
+            # 1. 优先尝试直接获取 VIX 数据
+            try:
+                df = akshare_call_with_retry(ak.stock_us_daily, symbol=".VIX")
+                if not df.empty:
+                    latest_vix = safe_float(df.iloc[-1]["close"])
+                    if latest_vix is not None:
+                        return USFearGreedIndex._format_vix_score(latest_vix)
+            except Exception as e:
+                logger.warning(f"⚠️ VIX API 获取失败 (将使用计算回退): {e}")
+
+            # 2. 回退模式: 计算标普500的历史波动率 (Realized Volatility)
+            # 逻辑: VIX ≈ 预期波动率，历史波动率是其良好近似
+            logger.info("🔄 使用标普500波动率计算 VIX 替代值...")
+            
+            # 获取标普500数据 (多取一些数据以计算滚动窗口)
+            df_sp500 = akshare_call_with_retry(ak.stock_us_daily, symbol=".INX")
+            
+            if df_sp500.empty or len(df_sp500) < 30:
+                return {"error": "数据不足无法计算VIX", "weight": 0.3}
+
+            # 计算对数收益率
+            df_sp500["close"] = pd.to_numeric(df_sp500["close"], errors="coerce")
+            df_sp500["log_ret"] = np.log(df_sp500["close"] / df_sp500["close"].shift(1))
+            
+            # 计算20日滚动波动率 (年化)
+            # window=20 (约一个月交易日), x 100 (百分比), x sqrt(252) (年化)
+            rolling_vol = df_sp500["log_ret"].rolling(window=20).std() * np.sqrt(252) * 100
+            
+            latest_vol = safe_float(rolling_vol.iloc[-1])
+            
+            if latest_vol is None:
+                return {"error": "波动率计算失败", "weight": 0.3}
+
+            return USFearGreedIndex._format_vix_score(latest_vol, is_estimated=True)
+
         except Exception as e:
-            logger.warning(f"⚠️ 获取VIX数据失败: {e}")
+            logger.warning(f"⚠️ 获取/计算 VIX 数据失败: {e}")
             return {"error": str(e), "weight": 0.3}
+
+    @staticmethod
+    def _format_vix_score(vix_value: float, is_estimated: bool = False) -> Dict[str, Any]:
+        """格式化 VIX 分数"""
+        if vix_value > 30:
+            vix_score = max(0, 100 - (vix_value - 30) * 3)
+        elif vix_value > 20:
+            vix_score = 70 - (vix_value - 20) * 2
+        else:
+            vix_score = 70 + (20 - vix_value) * 1.5
+        vix_score = min(100, max(0, vix_score))
+        
+        return {
+            "value": round(vix_value, 2),
+            "score": round(vix_score, 1),
+            "weight": 0.3,
+            "is_estimated": is_estimated,
+            "note": "基于标普500波动率估算" if is_estimated else "API直接获取"
+        }
 
 
     @staticmethod
     def _get_sp500_data() -> Dict[str, Any]:
         """获取标普500动量数据"""
         try:
-            # 使用 AkShare 获取标普500指数数据
-            df = akshare_call_with_retry(ak.stock_us_index_daily_em, symbol="GSPC")
+            # 使用 AkShare 获取标普500指数数据 (代号 .INX)
+            df = akshare_call_with_retry(ak.stock_us_daily, symbol=".INX")
             if df.empty or len(df) < 20:
                 return {"error": "数据不足", "weight": 0.25}
             
-            # 计算20日动量
+            # 计算20日动量 (新接口返回英文列名: close)
             recent = df.tail(20)
             momentum_pct = (
-                (recent["收盘"].iloc[-1] - recent["收盘"].iloc[0])
-                / recent["收盘"].iloc[0]
+                (recent["close"].iloc[-1] - recent["close"].iloc[0])
+                / recent["close"].iloc[0]
                 * 100
             )
             
@@ -220,16 +262,16 @@ class USFearGreedIndex:
         注: 美国市场涨跌家数难以直接获取，使用道琼斯/纳斯达克相对表现代替
         """
         try:
-            # 获取道琼斯和纳斯达克
-            dji = akshare_call_with_retry(ak.stock_us_index_daily_em, symbol="DJI")
-            ndx = akshare_call_with_retry(ak.stock_us_index_daily_em, symbol="NDX")
+            # 获取道琼斯(.DJI)和纳斯达克(.IXIC)
+            dji = akshare_call_with_retry(ak.stock_us_daily, symbol=".DJI")
+            ndx = akshare_call_with_retry(ak.stock_us_daily, symbol=".IXIC") # 纳斯达克综合
             
             if dji.empty or ndx.empty:
                 return {"error": "数据不足", "weight": 0.2}
             
-            # 比较近5日表现
-            dji_change = (dji["收盘"].iloc[-1] - dji["收盘"].iloc[-5]) / dji["收盘"].iloc[-5] * 100
-            ndx_change = (ndx["收盘"].iloc[-1] - ndx["收盘"].iloc[-5]) / ndx["收盘"].iloc[-5] * 100
+            # 比较近5日表现 (新接口返回英文列名: close)
+            dji_change = (dji["close"].iloc[-1] - dji["close"].iloc[-5]) / dji["close"].iloc[-5] * 100
+            ndx_change = (ndx["close"].iloc[-1] - ndx["close"].iloc[-5]) / ndx["close"].iloc[-5] * 100
             
             # 如果大盘股(道琼斯)和成长股(纳斯达克)同涨=贪婪, 同跌=恐慌
             avg_change = (dji_change + ndx_change) / 2
