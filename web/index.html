@@ -217,6 +217,18 @@
             </div>
 
             <div class="grid">
+                <!-- US Gainers (Indices) -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">主要指数</div>
+                    </div>
+                    <div id="us-gainers" class="list-container">
+                        <div class="loading">Loading...</div>
+                    </div>
+                    <!-- Hidden placeholder for compat -->
+                    <div id="us-sp500" style="display:none;"></div>
+                </div>
+
                 <!-- US Fear & Greed -->
                 <div class="card hero">
                     <div class="card-header">
@@ -239,18 +251,6 @@
                     <div id="us-custom-fear" class="fg-container">
                         <div class="loading">Loading...</div>
                     </div>
-                </div>
-
-                <!-- US Gainers (Indices) -->
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-title">主要指数</div>
-                    </div>
-                    <div id="us-gainers" class="list-container">
-                        <div class="loading">Loading...</div>
-                    </div>
-                    <!-- Hidden placeholder for compat -->
-                    <div id="us-sp500" style="display:none;"></div>
                 </div>
 
                 <!-- US Heat -->
@@ -284,13 +284,11 @@
             </div>
 
             <div class="grid">
-                <div class="card hero">
+                <div class="card">
                     <div class="card-header">
-                        <div class="card-title">金银比</div>
-                        <button class="info-btn" id="info-metals-ratio" title="说明"><i data-lucide="help-circle"
-                                width="16"></i></button>
+                        <div class="card-title">主流金属</div>
                     </div>
-                    <div id="gold-silver-ratio" class="fg-container">
+                    <div id="metal-prices" class="list-container">
                         <div class="loading">Loading...</div>
                     </div>
                 </div>
@@ -337,11 +335,13 @@
                     </div>
                 </div>
 
-                <div class="card">
+                <div class="card hero">
                     <div class="card-header">
-                        <div class="card-title">主流金属</div>
+                        <div class="card-title">金银比</div>
+                        <button class="info-btn" id="info-metals-ratio" title="说明"><i data-lucide="help-circle"
+                                width="16"></i></button>
                     </div>
-                    <div id="metal-prices" class="list-container">
+                    <div id="gold-silver-ratio" class="fg-container">
                         <div class="loading">Loading...</div>
                     </div>
                 </div>
