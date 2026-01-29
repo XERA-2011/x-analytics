@@ -31,7 +31,10 @@ docker compose logs -f xanalytics
 python3 -m venv .venv
 
 # 激活环境
+# Mac/Linux:
 source .venv/bin/activate
+# Windows:
+.venv\Scripts\activate
 
 # 安装依赖
 pip install -r requirements.txt

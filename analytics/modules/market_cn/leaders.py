@@ -4,6 +4,7 @@
 """
 
 from typing import Dict, Any
+import time
 from ...core.cache import cached
 from ...core.config import settings
 from ...core.utils import safe_float, get_beijing_time
@@ -131,6 +132,8 @@ class CNMarketLeaders:
                             worst_stock = cons_df.nsmallest(1, "涨跌幅").iloc[0]
                             leading_stock = str(worst_stock["名称"])
                             leading_stock_pct = safe_float(worst_stock["涨跌幅"])
+                            # 礼貌请求，避免触发频控
+                            time.sleep(0.5)
                     except Exception as e:
                         logger.warning(f"获取板块 {row['板块名称']} 成分股失败: {e}")
 
