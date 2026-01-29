@@ -5,8 +5,6 @@
 
 from .fear_greed import CNFearGreedIndex
 from .leaders import CNMarketLeaders
-from .heat import CNMarketHeat
-from .dividend import CNDividendStrategy
 from .bonds import CNBonds
 from .lpr import LPRAnalysis
 from .indices import CNIndices
@@ -14,8 +12,6 @@ from .indices import CNIndices
 __all__ = [
     "CNFearGreedIndex",
     "CNMarketLeaders",
-    "CNMarketHeat",
-    "CNDividendStrategy",
     "CNBonds",
     "LPRAnalysis",
     "CNIndices",

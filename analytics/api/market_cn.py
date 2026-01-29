@@ -7,8 +7,7 @@ from typing import Dict, Any
 from ..modules.market_cn import (
     CNFearGreedIndex,
     CNMarketLeaders,
-    CNMarketHeat,
-    CNDividendStrategy,
+
     CNBonds,
     LPRAnalysis,
     CNIndices,
@@ -53,31 +52,10 @@ def get_sector_leaders() -> Dict[str, Any]:
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/heat", summary="获取市场热度")
-def get_market_heat() -> Dict[str, Any]:
-    """获取市场热度指标"""
-    try:
-        return CNMarketHeat.get_market_heat()
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/dividend/stocks", summary="获取红利低波股票")
-def get_dividend_stocks(limit: int = 20) -> Dict[str, Any]:
-    """获取红利低波策略股票池"""
-    try:
-        return CNDividendStrategy.get_dividend_stocks(limit=limit)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/dividend/etfs", summary="获取红利ETF")
-def get_dividend_etfs() -> Dict[str, Any]:
-    """获取红利相关ETF"""
-    try:
-        return CNDividendStrategy.get_dividend_etfs()
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/bonds/treasury", summary="获取国债收益率")

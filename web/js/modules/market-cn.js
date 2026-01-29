@@ -23,8 +23,8 @@ class CNMarketController {
             this.loadCNFearGreed(),
             this.loadCNIndices(),
             this.loadCNLeaders(),
-            this.loadCNMarketHeat(),
-            this.loadCNDividend(),
+
+
             this.loadCNBonds(),
             this.loadLPR()
         ];
@@ -195,25 +195,9 @@ class CNMarketController {
         }
     }
 
-    async loadCNMarketHeat() {
-        try {
-            const data = await api.getCNMarketHeat();
-            this.renderCNMarketHeat(data);
-        } catch (error) {
-            console.error('加载市场热度失败:', error);
-            utils.renderError('market-cn-heat', '市场热度加载失败');
-        }
-    }
 
-    async loadCNDividend() {
-        try {
-            const data = await api.getCNDividendStocks();
-            this.renderCNDividend(data);
-        } catch (error) {
-            console.error('加载红利低波数据失败:', error);
-            utils.renderError('cn-dividend', '红利低波数据加载失败');
-        }
-    }
+
+
 
     async loadCNBonds() {
         try {
@@ -331,136 +315,9 @@ class CNMarketController {
         container.innerHTML = html;
     }
 
-    renderCNMarketHeat(data) {
-        const container = document.getElementById('market-cn-heat');
-        if (!container) return;
 
-        if (data.error) {
-            // Disable grid layout for full-width error message
-            container.classList.remove('heat-grid');
-            utils.renderError('market-cn-heat', data.error);
-            return;
-        }
-        // Restore grid layout for normal data
-        container.classList.add('heat-grid');
 
-        // Bind Info Button
-        const infoBtn = document.getElementById('info-cn-heat');
-        if (infoBtn && data.explanation) {
-            infoBtn.onclick = () => utils.showInfoModal('市场热度指数', data.explanation);
-            infoBtn.style.display = 'flex';
-        }
 
-        const html = `
-            <div class="heat-cell">
-                <div class="fg-score">${data.heat_score}</div>
-                <div class="fg-level">${data.heat_level}</div>
-            </div>
-            <div class="heat-cell">
-                <div class="item-sub">成交额</div>
-                <div class="heat-val">${utils.formatNumber(data.total_turnover)}亿</div>
-            </div>
-            <div class="heat-cell">
-                <div class="item-sub">涨跌比</div>
-                <div class="heat-val">${data.rise_fall_ratio}</div>
-            </div>
-            <div class="heat-cell">
-                <div class="item-sub">强势股</div>
-                <div class="heat-val">${data.strong_stocks}</div>
-            </div>
-        `;
-
-        container.innerHTML = html;
-    }
-
-    renderCNDividend(data) {
-
-        const container = document.getElementById('cn-dividend');
-        if (!container) return;
-
-        // Bind Info Button - Priority Binding
-        const infoBtn = document.getElementById('info-cn-dividend');
-        if (infoBtn) {
-            infoBtn.onclick = (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                // Fallback description if missing
-                const desc = data.description || '暂无说明 (Description missing in data)';
-                utils.showInfoModal('红利低波动策略', desc);
-            };
-            infoBtn.style.display = 'flex';
-        } else {
-            console.error('CRITICAL: info-cn-dividend button NOT FOUND');
-        }
-
-        if (data.error || !data.stocks) {
-            utils.renderError('cn-dividend', data.error || '暂无数据');
-            return;
-        }
-
-        const stats = data.strategy_stats || {};
-
-        const signal = stats.signal || { text: '暂无信号', color: '#909399' };
-        const bankWeight = stats.bank_weight || 0;
-
-        // 统计区：信号、银行占比 + 核心指标
-        const statsHtml = `
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 0 4px;">
-                <div style="font-size: 12px; font-weight: 600; color: ${signal.color}; border: 1px solid ${signal.color}; padding: 2px 8px; border-radius: 4px;">
-                    ${signal.text}
-                </div>
-                <div style="font-size: 12px; color: var(--text-secondary); display: flex; align-items: center; gap: 4px;">
-                    <span style="width: 8px; height: 8px; border-radius: 50%; background-color: ${bankWeight > 40 ? '#F56C6C' : '#E6A23C'};"></span>
-                    银行仓位 ${bankWeight}%
-                </div>
-            </div>
-
-            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; padding-bottom: 12px; margin-bottom: 12px; border-bottom: 1px solid var(--border-light); text-align: center;">
-                <div>
-                    <div class="item-sub">加权ROE</div>
-                    <div class="heat-val" style="color: var(--accent-red)">${utils.formatPercentage(stats.avg_roe)}</div>
-                </div>
-                <div>
-                    <div class="item-sub">盈利收益</div>
-                    <div class="heat-val" style="color: var(--accent-red)">${utils.formatPercentage(stats.avg_earnings_yield)}</div>
-                </div>
-                <div>
-                    <div class="item-sub">加权PE</div>
-                    <div class="heat-val">${utils.formatNumber(stats.avg_pe_ratio)}</div>
-                </div>
-                <div>
-                    <div class="item-sub">涨/跌</div>
-                    <div class="heat-val">${stats.up_count || 0}/${stats.down_count || 0}</div>
-                </div>
-            </div>
-        `;
-
-        // 成分股列表：显示权重和实时涨跌，增加第二行价值指标
-        const listHtml = data.stocks.slice(0, 10).map(stock => {
-            const change = utils.formatChange(stock.change_pct);
-            return `
-                <div class="list-item" style="flex-wrap: wrap;">
-                    <div class="item-main">
-                        <span class="item-title">${stock.name}</span>
-                        <span class="item-sub">${stock.code}</span>
-                    </div>
-                    <div style="text-align: right;">
-                        <div class="item-value">${utils.formatNumber(stock.price)}</div>
-                        <div class="item-change ${change.class}">${change.text}</div>
-                    </div>
-                    <!-- 第二行：深度价值指标 -->
-                    <div style="width: 100%; display: flex; justify-content: space-between; margin-top: 4px; padding-top: 4px; border-top: 1px dashed var(--border-light); font-size: 11px; color: var(--text-tertiary);">
-                        <span>权重 ${utils.formatNumber(stock.weight)}%</span>
-                        <span>ROE: ${utils.formatNumber(stock.roe)}%</span>
-                        <span>E/P: ${utils.formatNumber(stock.earnings_yield)}%</span>
-                        <span>PB: ${utils.formatNumber(stock.pb_ratio)}</span>
-                    </div>
-                </div>
-            `;
-        }).join('');
-
-        container.innerHTML = statsHtml + listHtml;
-    }
 
     renderCNBonds(data) {
         const container = document.getElementById('cn-bonds');

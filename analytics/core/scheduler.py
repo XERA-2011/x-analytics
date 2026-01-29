@@ -255,8 +255,6 @@ def setup_default_jobs():
     from ..modules.market_cn import (
         CNFearGreedIndex,
         CNMarketLeaders,
-        CNMarketHeat,
-        CNDividendStrategy,
         CNBonds,
         LPRAnalysis,
     )
@@ -280,12 +278,7 @@ def setup_default_jobs():
         market="market_cn"
     )
 
-    # 2. 市场热度 (15分/1小时) -> 使用较短间隔
-    scheduler.add_market_job(
-        job_id="warmup:cn:heat",
-        func=lambda: warmup_cache(CNMarketHeat.get_market_heat),
-        market="market_cn"
-    )
+
 
     # 3. 领涨/领跌板块
     scheduler.add_market_job(
@@ -304,12 +297,7 @@ def setup_default_jobs():
         market="market_cn"
     )
 
-    # 4. 红利低波 & 国债 (低频: 4h)
-    scheduler.add_simple_job(
-        job_id="warmup:cn:dividend",
-        func=lambda: warmup_cache(CNDividendStrategy.get_dividend_stocks),
-        interval_minutes=240
-    )
+
     scheduler.add_simple_job(
         job_id="warmup:cn:bonds",
         func=lambda: warmup_cache(CNBonds.get_bond_market_analysis),
@@ -416,8 +404,6 @@ def initial_warmup():
     from ..modules.market_cn import (
         CNFearGreedIndex,
         CNMarketLeaders,
-        CNMarketHeat,
-        CNDividendStrategy,
         CNBonds,
         LPRAnalysis,
     )
@@ -436,7 +422,7 @@ def initial_warmup():
         
         # CN
         warmup_cache(CNFearGreedIndex.calculate, symbol="sh000001", days=14)
-        warmup_cache(CNMarketHeat.get_market_heat)
+
         warmup_cache(CNMarketLeaders.get_top_gainers)
         warmup_cache(CNMarketLeaders.get_top_losers)
         warmup_cache(CNMarketLeaders.get_sector_leaders)
@@ -457,7 +443,7 @@ def initial_warmup():
         logger.info("✅ 核心指标预热完成")
         
         # 后台继续预热次要数据
-        warmup_cache(CNDividendStrategy.get_dividend_stocks)
+
         warmup_cache(CNBonds.get_bond_market_analysis)
         warmup_cache(LPRAnalysis.get_lpr_rates)
         warmup_cache(USTreasury.get_us_bond_yields)

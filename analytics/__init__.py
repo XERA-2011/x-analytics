@@ -13,8 +13,6 @@ from .core.cache import cached, warmup_cache
 from .modules.market_cn import (
     CNFearGreedIndex,
     CNMarketLeaders,
-    CNMarketHeat,
-    CNDividendStrategy,
     CNBonds,
 )
 from .modules.metals import GoldSilverAnalysis
@@ -29,8 +27,6 @@ __all__ = [
     # 新版本业务模块
     "CNFearGreedIndex",
     "CNMarketLeaders",
-    "CNMarketHeat",
-    "CNDividendStrategy",
     "CNBonds",
     "GoldSilverAnalysis",
 ]
