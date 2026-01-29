@@ -5,6 +5,12 @@
 import os
 from datetime import time
 from typing import Dict, Any
+from dotenv import load_dotenv
+
+# 加载环境变量 (优先加载 .env.local, 然后 .env)
+# 这样在本地开发时可以自动读取配置，无需在命令行 export
+load_dotenv(".env.local")
+load_dotenv(".env")
 
 
 class Settings:
