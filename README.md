@@ -10,9 +10,9 @@
 
 ```bash
 # 1. 配置环境变量 (在本地终端或 .env 文件)
-export REDIS_URL="redis://:YourStrongRedisPassword@8.129.84.229:6379/0"
+export REDIS_URL="redis://:YourStrongRedisPassword@<YourServerIP>:6379/0"
 # 如果使用远程 Postgres:
-export DATABASE_URL="postgres://postgres:YourStrongPostgresPassword@8.129.84.229:5432/xanalytics"
+export DATABASE_URL="postgres://postgres:YourStrongPostgresPassword@<YourServerIP>:5432/xanalytics"
 
 # 2. 一键启动 (Redis + App)
 docker compose up -d --build
