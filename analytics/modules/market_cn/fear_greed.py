@@ -103,7 +103,7 @@ class CNFearGreedIndex:
         indicators = {}
 
         try:
-            # 1. 价格动量 (Price Momentum) - 权重25%
+            # 1. 价格动量 (Price Momentum) - 权重20% (原25%)
             price_change = (
                 (data["close"].iloc[-1] - data["close"].iloc[0])
                 / data["close"].iloc[0]
@@ -113,10 +113,10 @@ class CNFearGreedIndex:
             indicators["price_momentum"] = {
                 "value": round(price_change, 2),
                 "score": round(momentum_score, 1),
-                "weight": 0.25,
+                "weight": 0.20,
             }
 
-            # 2. 波动率 (Volatility) - 权重20%
+            # 2. 波动率 (Volatility) - 权重15% (原20%)
             returns = data["close"].pct_change().dropna()
             volatility = returns.std() * np.sqrt(252) * 100  # 年化波动率
             # 波动率越高，恐慌程度越高，分数越低
@@ -124,10 +124,10 @@ class CNFearGreedIndex:
             indicators["volatility"] = {
                 "value": round(volatility, 2),
                 "score": round(volatility_score, 1),
-                "weight": 0.20,
+                "weight": 0.15,
             }
 
-            # 3. 成交量 (Volume) - 权重15%
+            # 3. 成交量 (Volume) - 权重10% (原15%)
             if "volume" in data.columns:
                 avg_volume = data["volume"].tail(5).mean()
                 prev_avg_volume = data["volume"].head(5).mean()
@@ -140,13 +140,13 @@ class CNFearGreedIndex:
                 indicators["volume"] = {
                     "value": round(volume_change, 2),
                     "score": round(volume_score, 1),
-                    "weight": 0.15,
+                    "weight": 0.10,
                 }
             else:
                 # 成交量数据不可用，跳过该指标（不填充假数据）
                 logger.warning("⚠️ 成交量数据不可用，跳过 volume 指标")
 
-            # 4. RSI指标 - 权重20%
+            # 4. RSI指标 - 权重20% (不变)
             rsi = CNFearGreedIndex._calculate_rsi(data["close"])
             # RSI > 70 贪婪，RSI < 30 恐慌
             if rsi > 70:
@@ -162,7 +162,7 @@ class CNFearGreedIndex:
                 "weight": 0.20,
             }
 
-            # 5. 市场广度 (Market Breadth) - 权重20%
+            # 5. 市场广度 (Market Breadth) - 权重15% (原20%)
             # 这里简化处理，使用价格相对位置
             high_low_ratio = (data["close"].iloc[-1] - data["low"].min()) / (
                 data["high"].max() - data["low"].min()
@@ -171,6 +171,17 @@ class CNFearGreedIndex:
             indicators["market_breadth"] = {
                 "value": round(high_low_ratio, 3),
                 "score": round(breadth_score, 1),
+                "weight": 0.15,
+            }
+
+            # 6. 当日涨跌 (Daily Change) - 权重20% (新增)
+            # 增强对当日市场表现的敏感度
+            daily_chg_pct = (data["close"].iloc[-1] - data["close"].iloc[-2]) / data["close"].iloc[-2] * 100
+            daily_score = 50 + (daily_chg_pct * 10) # 1%涨幅 = +10分
+            daily_score = min(100, max(0, daily_score))
+            indicators["daily_change"] = {
+                "value": round(daily_chg_pct, 2),
+                "score": round(daily_score, 1),
                 "weight": 0.20,
             }
 

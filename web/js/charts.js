@@ -295,6 +295,129 @@ class Charts {
             }
         });
     }
+    // 渲染 Treemap (实例方法)
+    renderTreemap(containerId, data) {
+        const dom = document.getElementById(containerId);
+        if (!dom) return;
+
+        // Ensure container has height
+        if (dom.clientHeight === 0) {
+            dom.style.height = '400px';
+        }
+
+        // 销毁旧实例 (如果有)
+        const oldInstance = echarts.getInstanceByDom(dom);
+        if (oldInstance) {
+            oldInstance.dispose();
+        }
+
+        const chart = echarts.init(dom, "dark");
+
+        // 格式化数据结构
+        const treeData = data.map(item => ({
+            name: item.name,
+            value: item.value, // 市值 (数值)
+
+            // 自定义属性
+            change_pct: item.change_pct,
+            leading_stock: item.leading_stock,
+            stock_count: item.stock_count,
+            turnover: item.turnover,
+
+            itemStyle: {
+                color: item.change_pct >= 0
+                    ? `rgba(239, 68, 68, ${Math.min(0.3 + item.change_pct / 10, 1)})` // Red
+                    : `rgba(34, 197, 94, ${Math.min(0.3 + Math.abs(item.change_pct) / 10, 1)})` // Green
+            }
+        }));
+
+        const option = {
+            backgroundColor: "transparent",
+            tooltip: {
+                trigger: 'item',
+                formatter: function (info) {
+                    const d = info.data;
+                    const change = d.change_pct ?? 0;
+                    const color = change >= 0 ? "#ef4444" : "#22c55e";
+                    const capStr = d.value ? (d.value / 100000000).toFixed(0) : '--';
+
+                    return `
+                        <div style="min-width: 120px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; padding-bottom: 6px; border-bottom: 1px solid #404040;">
+                                <span style="font-weight: 700; font-size: 14px; color: #fff;">${d.name}</span>
+                                <span style="font-weight: 700; font-family: monospace; font-size: 14px; color:${color}">${change >= 0 ? '+' : ''}${change.toFixed(2)}%</span>
+                            </div>
+                            <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                                <tr style="line-height: 1.6;">
+                                    <td style="color: #9ca3af; padding-right: 12px;">市值</td>
+                                    <td style="text-align: right; font-family: monospace; color: #e5e7eb;">${capStr}亿</td>
+                                </tr>
+                                <tr style="line-height: 1.6;">
+                                    <td style="color: #9ca3af; padding-right: 12px;">家数</td>
+                                    <td style="text-align: right; font-family: monospace; color: #e5e7eb;">${d.stock_count}</td>
+                                </tr>
+                                <tr style="line-height: 1.6;">
+                                    <td style="color: #9ca3af; padding-right: 12px;">换手</td>
+                                    <td style="text-align: right; font-family: monospace; color: #e5e7eb;">${d.turnover}%</td>
+                                </tr>
+                                <tr style="line-height: 1.6;">
+                                    <td style="color: #9ca3af; padding-right: 12px;">领涨</td>
+                                    <td style="text-align: right; color: #e5e7eb; max-width: 65px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${d.leading_stock}</td>
+                                </tr>
+                            </table>
+                        </div>
+                    `;
+                },
+                backgroundColor: 'rgba(23, 23, 23, 0.95)',
+                borderColor: '#404040',
+                borderWidth: 1,
+                padding: [8, 10],
+                textStyle: { color: '#fff' },
+                extraCssText: 'backdrop-filter: blur(4px); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);'
+            },
+            series: [{
+                type: 'treemap',
+                width: '100%',
+                height: '100%',
+                roam: false,
+                nodeClick: false,
+                breadcrumb: { show: false },
+                label: {
+                    show: true,
+                    formatter: function (params) {
+                        const d = params.data;
+                        return `{name|${d.name}}\n{val|${d.change_pct.toFixed(2)}%}`;
+                    },
+                    rich: {
+                        name: {
+                            fontSize: 13,
+                            fontWeight: 'bold',
+                            color: '#fff',
+                            textShadowColor: 'rgba(0,0,0,0.8)',
+                            textShadowBlur: 3,
+                            padding: [0, 0, 4, 0]
+                        },
+                        val: {
+                            fontSize: 11,
+                            color: '#f5f5f5',
+                            textShadowColor: 'rgba(0,0,0,0.8)',
+                            textShadowBlur: 3
+                        }
+                    }
+                },
+                itemStyle: {
+                    borderColor: '#171717',
+                    borderWidth: 1,
+                    gapWidth: 1
+                },
+                data: treeData
+            }]
+        };
+
+        chart.setOption(option);
+        window.addEventListener("resize", () => chart.resize());
+        return chart;
+    }
 }
 
 // 创建全局图表实例

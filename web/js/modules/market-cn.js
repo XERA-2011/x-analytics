@@ -1,29 +1,14 @@
 class CNMarketController {
     constructor() {
-        // Store fetched data for re-sorting
-        this.gainersData = [];
-        this.losersData = [];
-        this.currentSort = {
-            gainers: 'pct',
-            losers: 'pct'
-        };
-        this._sortButtonsBound = false;
     }
 
     async loadData() {
         console.log('📊 加载中国市场数据...');
 
-        // Setup sort buttons immediately (only once)
-        if (!this._sortButtonsBound) {
-            this.setupSortButtons();
-            this._sortButtonsBound = true;
-        }
-
         const promises = [
             this.loadCNFearGreed(),
             this.loadCNIndices(),
-            this.loadCNLeaders(),
-
+            this.loadSectorHeatmap(), // 新增: 加载全市场热力图
 
             this.loadCNBonds(),
             this.loadLPR()
@@ -122,28 +107,7 @@ class CNMarketController {
         container.innerHTML = html;
     }
 
-    setupSortButtons() {
-        const sortBtns = document.querySelectorAll('.sort-btn[data-target="gainers"], .sort-btn[data-target="losers"]');
-        sortBtns.forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const target = btn.dataset.target; // 'gainers' or 'losers'
-                const sortBy = btn.dataset.sort;   // 'pct' or 'cap'
 
-                // Update active state for sibling buttons
-                const siblings = document.querySelectorAll(`.sort-btn[data-target="${target}"]`);
-                siblings.forEach(s => s.classList.remove('active'));
-                btn.classList.add('active');
-
-                // Update current sort and re-render
-                this.currentSort[target] = sortBy;
-                if (target === 'gainers') {
-                    this.renderSectorList('cn-gainers', this.gainersData, '领涨', sortBy);
-                } else {
-                    this.renderSectorList('cn-losers', this.losersData, '领跌', sortBy);
-                }
-            });
-        });
-    }
 
     async loadCNFearGreed() {
         try {
@@ -155,45 +119,7 @@ class CNMarketController {
         }
     }
 
-    async loadCNLeaders() {
-        try {
-            const [gainers, losers] = await Promise.all([
-                api.getCNTopGainers().catch(e => ({ error: '数据加载失败' })),
-                api.getCNTopLosers().catch(e => ({ error: '数据加载失败' }))
-            ]);
 
-            // Store data for re-sorting (check for error before accessing sectors)
-            this.gainersData = gainers.sectors || [];
-            this.losersData = losers.sectors || [];
-
-            // Store explanation for info button (分别存储领涨和领跌的说明)
-            this.gainersExplanation = gainers.explanation || '';
-            this.losersExplanation = losers.explanation || '';
-
-            this.renderCNLeaders(gainers, losers);
-
-            // Bind info button events (使用各自的说明)
-            const infoBtn = document.getElementById('info-cn-sectors');
-            const infoBtnLosers = document.getElementById('info-cn-sectors-losers');
-
-            if (this.gainersExplanation && infoBtn) {
-                infoBtn.onclick = () => {
-                    utils.showInfoModal('板块分析说明', this.gainersExplanation);
-                };
-                infoBtn.style.display = 'flex';
-            }
-            if (this.losersExplanation && infoBtnLosers) {
-                infoBtnLosers.onclick = () => {
-                    utils.showInfoModal('板块分析说明', this.losersExplanation);
-                };
-                infoBtnLosers.style.display = 'flex';
-            }
-        } catch (error) {
-            console.error('加载领涨领跌板块失败:', error);
-            utils.renderError('cn-gainers', '系统错误');
-            utils.renderError('cn-losers', '系统错误');
-        }
-    }
 
 
 
@@ -206,6 +132,41 @@ class CNMarketController {
         } catch (error) {
             console.error('加载国债数据失败:', error);
             utils.renderError('cn-bonds', '国债数据加载失败');
+        }
+    }
+
+    // =========================================================================
+    // 全市场热力图
+    // =========================================================================
+    async loadSectorHeatmap() {
+        try {
+            const data = await api.request("/market-cn/sectors/all");
+            this.renderSectorHeatmap(data);
+        } catch (error) {
+            console.error('加载全市场板块失败:', error);
+            utils.renderError('cn-sector-heatmap', '加载失败');
+        }
+    }
+
+    renderSectorHeatmap(data) {
+        if (!data || data.error || !data.sectors) {
+            utils.renderError('cn-sector-heatmap', data?.error || '暂无数据');
+            return;
+        }
+
+        // 更新时间
+        const timeEl = document.getElementById('cn-heatmap-time');
+        if (timeEl) timeEl.textContent = utils.formatTime(data.update_time);
+
+        // 渲染 ECharts Treemap
+        if (window.charts) {
+            window.charts.renderTreemap('cn-sector-heatmap', data.sectors);
+        }
+
+        // 绑定刷新按钮
+        const refreshBtn = document.getElementById('cn-heatmap-refresh');
+        if (refreshBtn) {
+            refreshBtn.onclick = () => this.loadSectorHeatmap();
         }
     }
 
@@ -244,76 +205,7 @@ class CNMarketController {
         }
     }
 
-    renderCNLeaders(gainers, losers) {
-        if (gainers.error) {
-            utils.renderError('cn-gainers', gainers.error);
-        } else {
-            this.renderSectorList('cn-gainers', gainers.sectors || [], '领涨', this.currentSort.gainers);
-        }
 
-        if (losers.error) {
-            utils.renderError('cn-losers', losers.error);
-        } else {
-            this.renderSectorList('cn-losers', losers.sectors || [], '领跌', this.currentSort.losers);
-        }
-    }
-
-    renderSectorList(containerId, sectors, label = '领涨', sortBy = 'pct') {
-        const container = document.getElementById(containerId);
-        if (!container) return;
-
-        if (!sectors || sectors.length === 0) {
-            utils.renderError(containerId, '暂无数据');
-            return;
-        }
-
-        // Sort sectors based on sortBy parameter
-        const sortedSectors = [...sectors].sort((a, b) => {
-            if (sortBy === 'cap') {
-                // Sort by market cap (descending)
-                return (b.total_market_cap || 0) - (a.total_market_cap || 0);
-            } else {
-                // Sort by change_pct (descending for gainers, ascending for losers)
-                if (label === '领跌') {
-                    return (a.change_pct || 0) - (b.change_pct || 0);
-                }
-                return (b.change_pct || 0) - (a.change_pct || 0);
-            }
-        });
-
-        const html = sortedSectors.map(sector => {
-            const change = utils.formatChange(sector.change_pct);
-            const analysis = sector.analysis || {};
-            const heat = analysis.heat || {};
-            const tip = analysis.tip || '';
-            // 使用 analysis.turnover 或回退到 sector.turnover
-            const turnover = analysis.turnover ?? sector.turnover ?? 0;
-
-            // 生成分析标签 HTML (显示标签 + 换手率)
-            const analysisHtml = tip ? `
-                <div class="sector-analysis">
-                    <span class="heat-tag heat-${heat.color || 'gray'}">${heat.level || ''} ${turnover}%</span>
-                    <span class="analysis-tip">${tip}</span>
-                </div>
-            ` : '';
-
-            return `
-                <div class="list-item sector-item">
-                    <div class="item-main">
-                        <span class="item-title">${sector.name}</span>
-                        <span class="item-sub">${sector.stock_count}家 | ${label}: ${sector.leading_stock || '--'}</span>
-                        ${analysisHtml}
-                    </div>
-                    <div style="text-align: right;">
-                        <div class="item-value">${utils.formatNumber(sector.total_market_cap / 100000000)}亿</div>
-                        <div class="item-change ${change.class}">${change.text}</div>
-                    </div>
-                </div>
-            `;
-        }).join('');
-
-        container.innerHTML = html;
-    }
 
 
 

@@ -35,6 +35,7 @@ Error > Misleading Data > Fake Data
 | Cached stale data (unlabeled) | Showing yesterday's price as current | Misleads trading decisions |
 | Mock data in production | `if DEBUG: return mock_data` | Can leak into production |
 | Placeholder text as data | `"Loading..."` that never updates | Infinite misleading state |
+| Stale high-volatility data | Using yesterday's price for Bitcoin/Gold | Misleads decision making (Time-Sensitive Integrity) |
 
 ### Required Data Handling
 
@@ -68,7 +69,6 @@ element.textContent = price != null ? formatNumber(price) : '--';
 ```
 
 ### Data Source Requirements
-### Data Source Requirements
 - **STRICT SOURCE POLICY**: All financial data MUST be fetched exclusively via the **AkShare** library.
 - **FORBIDDEN**: Direct web scraping, using `requests` to fetch third-party HTML/JSON endpoints directly, or reverse-engineering private APIs.
 - If AkShare does not provide specific data, you MUST:
@@ -84,6 +84,12 @@ element.textContent = price != null ? formatNumber(price) : '--';
 - New data that has not yet been fetched should display "Warming Up" status.
 - Warming Up state MUST have a timeout (max 60s), after which it becomes an error state.
 - **Never show stale data as current** - if cache expired, show warming_up, not old data.
+
+### Real-time Injection Strategy
+For 24/7 markets (Crypto, Metals) or high-volatility assets:
+- **Problem**: Daily historical data (OHLC) is often lagging by 1 day.
+- **Requirement**: You MUST inject the latest real-time price (via minute-level API) into the historical dataset before calculating indicators (RSI, Fear & Greed).
+- **Failure to do this** results in "Misleading Data" (e.g., showing "Greed" based on yesterday's high, while market crashed 10% today).
 
 ---
 

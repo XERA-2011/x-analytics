@@ -60,11 +60,21 @@ class HKFearGreed:
             bias_score = 50 + (bias_pct * 2.5)
             bias_score = max(0, min(100, bias_score))
 
-            # --- Indicator 3: Volatility (Optional, but let's keep it simple first) ---
+            # --- Indicator 3: Daily Change (Market Sentiment) ---
+            # 权重 30%: 让当日大跌能显著拉低分数
+            prev_close = df['close'].iloc[-2]
+            change_pct = ((current_price - prev_close) / prev_close) * 100
+            
+            # Map Change% to 0-100
+            # 0% = 50 (Neutral)
+            # +1% = 60, -1% = 40 (Sensitivity: 10 points per 1%)
+            # Max/Min clumping handled later
+            daily_score = 50 + (change_pct * 10)
+            daily_score = max(0, min(100, daily_score))
 
             # --- Final Score Calculation ---
-            # Weights: RSI (50%), Bias (50%)
-            final_score = (current_rsi * 0.5) + (bias_score * 0.5)
+            # Weights: RSI (35%), Bias (35%), Daily Change (30%)
+            final_score = (current_rsi * 0.35) + (bias_score * 0.35) + (daily_score * 0.30)
             final_score = round(final_score, 1)
 
             # Determine Level
@@ -99,10 +109,15 @@ class HKFearGreed:
                         "score": round(bias_score, 1),
                         "name": "均线偏离 (Bias)"
                     },
+                    "daily_change": {
+                        "value": f"{round(change_pct, 2)}%",
+                        "score": round(daily_score, 1),
+                        "name": "当日涨跌"
+                    },
                     "close": current_price,
                     "ma60": round(current_ma60, 2)
                 },
-                "description": f"基于恒生指数日线计算。RSI(14)为{round(current_rsi, 1)}，股价相对60日均线偏移{round(bias_pct, 1)}%。",
+                "description": f"HSI当日涨跌{round(change_pct, 2)}%，RSI(14)为{round(current_rsi, 1)}。",
                 "status": "success"
             }
 

@@ -178,17 +178,7 @@ class API {
         return this.request(`/market-cn/fear-greed?symbol=${symbol}&days=${days}`);
     }
 
-    async getCNTopGainers(limit = 10) {
-        return this.request(`/market-cn/leaders/gainers?limit=${limit}`);
-    }
 
-    async getCNTopLosers(limit = 10) {
-        return this.request(`/market-cn/leaders/losers?limit=${limit}`);
-    }
-
-    async getCNSectorLeaders() {
-        return this.request('/market-cn/leaders/sectors');
-    }
 
     async getCNMarketHeat() {
         return this.request('/market-cn/heat');

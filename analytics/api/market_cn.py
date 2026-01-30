@@ -54,31 +54,18 @@ async def get_fear_greed_history(days: int = 30) -> Dict[str, Any]:
         return {"status": "error", "message": str(e), "data": []}
 
 
-@router.get("/leaders/gainers", summary="获取领涨板块")
-def get_top_gainers(limit: int = 10) -> Dict[str, Any]:
-    """获取领涨板块排行"""
+
+
+
+
+@router.get("/sectors/all", summary="获取所有行业板块")
+def get_all_sectors() -> Dict[str, Any]:
+    """获取所有行业板块数据 (用于热力图)"""
     try:
-        return CNMarketLeaders.get_top_gainers(limit=limit)
+        return CNMarketLeaders.get_all_sectors()
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-
-@router.get("/leaders/losers", summary="获取领跌板块")
-def get_top_losers(limit: int = 10) -> Dict[str, Any]:
-    """获取领跌板块排行"""
-    try:
-        return CNMarketLeaders.get_top_losers(limit=limit)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.get("/leaders/sectors", summary="获取行业板块排行")
-def get_sector_leaders() -> Dict[str, Any]:
-    """获取行业板块涨跌排行"""
-    try:
-        return CNMarketLeaders.get_sector_leaders()
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
 
 
 

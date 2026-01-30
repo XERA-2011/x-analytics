@@ -10,7 +10,7 @@ import numpy as np
 from typing import Dict, Any, Optional
 from ...core.cache import cached
 from ...core.config import settings
-from ...core.utils import get_beijing_time, akshare_call_with_retry
+from ...core.utils import get_beijing_time, akshare_call_with_retry, safe_float
 from ...core.logger import logger
 
 
@@ -40,6 +40,43 @@ class BaseMetalFearGreedIndex:
             elif "time" in df.columns: # Sometimes it returns 'time'
                  df = df.rename(columns={"time": "date"})
                  df = df.sort_values(by="date")
+
+            # --- 注入实时数据 (Fix Stale Data) ---
+            try:
+                # 获取1分钟级数据，取最新一根K线的收盘价作为当前价格
+                # 这能确保即使在盘中，指标也能反映最新跌势
+                min_df = akshare_call_with_retry(ak.futures_zh_minute_sina, symbol=symbol, period="1")
+                if not min_df.empty:
+                    latest_price = safe_float(min_df.iloc[-1]["close"])
+                    # column is 'datetime', not 'day' for minute data
+                    latest_time = min_df.iloc[-1]["datetime"] 
+                    
+                    if latest_price is not None:
+                        # 检查 Daily 数据的最后一行日期
+                        last_date_str = str(df.iloc[-1]["date"])[:10] # YYYY-MM-DD
+                        current_date_str = str(latest_time)[:10]
+                        
+                        logger.info(f"[{name}] DailyLast: {last_date_str}, Realtime: {current_date_str}, Price: {latest_price}")
+                        print(f"✅ [Metals] {name} 实时注入成功: {current_date_str} Price={latest_price}")
+
+                        if last_date_str == current_date_str:
+                            # 如果日期相同，更新最后一行收盘价 (Overwrite)
+                            df.iloc[-1, df.columns.get_loc("close")] = latest_price
+                        else:
+                            # 如果日期不同 (Daily还没更新)，追加一行 (Append)
+                            new_row = df.iloc[-1].copy()
+                            new_row["date"] = current_date_str
+                            new_row["close"] = latest_price
+                            # 其他字段(open/high/low)暂时复用上一行或置为NaN，
+                            # 但计算RSI/Change只需要Close，所以问题不大
+                            df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
+                else:
+                     print(f"❌ [Metals] {name} 实时数据为空!")
+
+            except Exception as e_rt:
+                logger.warning(f"⚠️ 无法获取{name}实时数据，将使用昨日收盘价: {e_rt}")
+                print(f"❌ [Metals] {name} 实时获取异常: {e_rt}")
+            # -----------------------------------
             
             # 计算各项指标
             indicators = cls._calculate_indicators(df)
@@ -145,16 +182,17 @@ class BaseMetalFearGreedIndex:
                 "name": "均线偏离 (MA50)"
             }
             
-            # 4. 短期趋势 (5日涨跌) - 权重 20%
-            change_5d = (close_prices.iloc[-1] - close_prices.iloc[-6]) / close_prices.iloc[-6] * 100
-            score_trend = 50 + change_5d * 8
-            score_trend = min(100, max(0, score_trend))
+            # 4. 当日涨跌 (Daily Change) - 权重 20%
+            # 替代周趋势，增强日内敏感度
+            daily_change = (close_prices.iloc[-1] - close_prices.iloc[-2]) / close_prices.iloc[-2] * 100
+            score_daily = 50 + daily_change * 10 
+            score_daily = min(100, max(0, score_daily))
             
-            indicators["trend"] = {
-                "value": round(change_5d, 2),
-                "score": round(score_trend, 1),
+            indicators["daily_change"] = {
+                "value": round(daily_change, 2),
+                "score": round(score_daily, 1),
                 "weight": 0.20,
-                "name": "周趋势"
+                "name": "当日涨跌"
             }
             
         except Exception as e:
@@ -225,9 +263,9 @@ class GoldFearGreedIndex(BaseMetalFearGreedIndex):
     GOLD_SYMBOL = "au0"
 
     @staticmethod
-    @cached("metals:fear_greed", ttl=settings.CACHE_TTL["metals"], stale_ttl=settings.CACHE_TTL["metals"] * settings.STALE_TTL_RATIO)
+    @cached("metals:fear_greed_v2", ttl=settings.CACHE_TTL["metals"], stale_ttl=settings.CACHE_TTL["metals"] * settings.STALE_TTL_RATIO)
     def calculate() -> Dict[str, Any]:
-        return BaseMetalFearGreedIndex.calculate(GoldFearGreedIndex.GOLD_SYMBOL, "metals:fear_greed", "黄金")
+        return BaseMetalFearGreedIndex.calculate(GoldFearGreedIndex.GOLD_SYMBOL, "metals:fear_greed_v2", "黄金")
 
 
 class SilverFearGreedIndex(BaseMetalFearGreedIndex):
@@ -235,7 +273,7 @@ class SilverFearGreedIndex(BaseMetalFearGreedIndex):
     SILVER_SYMBOL = "ag0" # 沪银主力
 
     @staticmethod
-    @cached("metals:silver_fear_greed", ttl=settings.CACHE_TTL["metals"], stale_ttl=settings.CACHE_TTL["metals"] * settings.STALE_TTL_RATIO)
+    @cached("metals:silver_fear_greed_v2", ttl=settings.CACHE_TTL["metals"], stale_ttl=settings.CACHE_TTL["metals"] * settings.STALE_TTL_RATIO)
     def calculate() -> Dict[str, Any]:
-        return BaseMetalFearGreedIndex.calculate(SilverFearGreedIndex.SILVER_SYMBOL, "metals:silver_fear_greed", "白银")
+        return BaseMetalFearGreedIndex.calculate(SilverFearGreedIndex.SILVER_SYMBOL, "metals:silver_fear_greed_v2", "白银")
 

@@ -101,41 +101,25 @@
                     </div>
                 </div>
 
-                <!-- Gainers -->
-                <div class="card">
+                <!-- 全市场热力图 -->
+                <div class="card hero">
                     <div class="card-header">
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                            <div class="card-title">领涨板块</div>
-                            <button class="info-btn" id="info-cn-sectors" title="说明"><i data-lucide="help-circle"
-                                    width="14"></i></button>
-                        </div>
-                        <div class="sort-btns">
-                            <button class="sort-btn active" data-sort="pct" data-target="gainers">涨幅</button>
-                            <button class="sort-btn" data-sort="cap" data-target="gainers">市值</button>
+                        <h3>全行业热力图</h3>
+                        <div class="header-actions">
+                            <div class="flex items-center gap-2 mr-2 text-xs font-bold">
+                                <span style="color: #22c55e">跌</span>
+                                <span style="color: #ef4444">涨</span>
+                            </div>
+                            <span class="update-time" id="cn-heatmap-time">--:--:--</span>
+                            <span class="refresh-btn" id="cn-heatmap-refresh">↻</span>
                         </div>
                     </div>
-                    <div id="cn-gainers" class="list-container">
-                        <div class="loading">Loading...</div>
+                    <div class="card-body">
+                        <div id="cn-sector-heatmap" class="w-full" style="height: 800px;"></div>
                     </div>
                 </div>
 
-                <!-- Losers -->
-                <div class="card">
-                    <div class="card-header">
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                            <div class="card-title">领跌板块</div>
-                            <button class="info-btn" id="info-cn-sectors-losers" title="说明"><i data-lucide="help-circle"
-                                    width="14"></i></button>
-                        </div>
-                        <div class="sort-btns">
-                            <button class="sort-btn active" data-sort="pct" data-target="losers">跌幅</button>
-                            <button class="sort-btn" data-sort="cap" data-target="losers">市值</button>
-                        </div>
-                    </div>
-                    <div id="cn-losers" class="list-container">
-                        <div class="loading">Loading...</div>
-                    </div>
-                </div>
+
 
 
 

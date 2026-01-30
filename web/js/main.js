@@ -121,7 +121,7 @@ class App {
                 tab.classList.add('active');
 
                 // 更新内容显示
-                card.querySelectorAll('.leaders-list, .fear-greed-container, [id^="us-"], [id^="cn-"]').forEach(content => {
+                card.querySelectorAll('.fear-greed-container, [id^="us-"], [id^="cn-"]').forEach(content => {
                     content.classList.remove('active');
                 });
 

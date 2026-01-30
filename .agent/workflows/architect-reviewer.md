@@ -23,7 +23,7 @@ Before starting a big feature, ask for an architectural plan.
 > "Draft an architecture plan for the new 'User Portfolio' module."
 
 ## Checklist to Enforce
-### General
+
 ### Code Hygiene (The "Clean Freak" Standard)
 1.  **Type Safety**: Are all functions typed? (`mypy` compliant).
 2.  **Complexity**: Is Cyclomatic Complexity low? (No deeply nested `if/for`). Max indent level: 3.

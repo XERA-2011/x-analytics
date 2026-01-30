@@ -23,9 +23,11 @@ class Settings:
     REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 
     # Database 配置
-    # 默认使用本地 SQLite，生产环境通过环境变量覆盖为 PostgreSQL
-    # e.g. postgres://user:pass@host:5432/db
-    DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite://{os.path.join(BASE_DIR, 'db.sqlite3')}")
+    # 强制要求通过环境变量配置数据库连接 (e.g. postgres://user:pass@host:5432/db)
+    if not os.getenv("DATABASE_URL"):
+        raise ValueError("Critical: DATABASE_URL environment variable is not set. Please configure a valid database connection.")
+    
+    DATABASE_URL = os.getenv("DATABASE_URL")
     CACHE_PREFIX = "xanalytics"
 
     # 交易时间配置 (北京时间)

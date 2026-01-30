@@ -273,32 +273,7 @@ body {
     gap: 8px;
 }
 
-/* Sort Buttons */
-.sort-btns {
-    display: flex;
-    gap: 4px;
-}
 
-.sort-btn {
-    padding: 2px 8px;
-    font-size: 11px;
-    border-radius: 4px;
-    background: var(--bg-subtle);
-    color: var(--text-secondary);
-    cursor: pointer;
-    border: 1px solid var(--border-light);
-    transition: all 0.15s;
-}
-
-.sort-btn:hover {
-    border-color: var(--primary);
-}
-
-.sort-btn.active {
-    background: var(--primary);
-    color: var(--text-inverse);
-    border-color: var(--primary);
-}
 
 /* Data Components */
 
@@ -437,6 +412,18 @@ body {
     border-radius: 4px;
 }
 
+.card-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
 .bond-name {
     font-size: 11px;
     font-weight: 700;
@@ -487,6 +474,26 @@ body {
     flex: 1;
     /* Grow in flex containers */
 }
+
+/* Helper Classes */
+.w-full {
+    width: 100%;
+}
+
+.h-64 {
+    height: 16rem;
+}
+
+/* 256px */
+@media (min-width: 768px) {
+    .md\:h-96 {
+        height: 24rem;
+    }
+
+    /* 384px */
+}
+
+/* End Helper Classes */
 
 /* Ensure loading/error messages in grid layouts span full width */
 .heat-grid .loading {
@@ -609,19 +616,7 @@ footer {
     }
 }
 
-/* Sector Analysis Tags */
-.sector-item .item-main {
-    flex-direction: column;
-    align-items: flex-start;
-}
 
-.sector-analysis {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-top: 4px;
-    font-size: 12px;
-}
 
 .heat-tag {
     display: inline-flex;

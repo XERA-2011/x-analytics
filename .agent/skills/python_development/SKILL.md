@@ -34,6 +34,9 @@ Direct calls to `akshare` are **FORBIDDEN** in production code. You MUST use the
   def get_data(): ...
   ```
 - **Passive Mode**: In "Extreme Rate Limiting" mode, ensure code handles cache misses gracefully (return None/Loading) or triggers async separate from the user request if possible.
+- **Cache Invalidation**:
+  - If logic changes significantly, update the cache key version (e.g., `market:data_v2`) to force invalidation of persistent Redis data.
+  - Do NOT rely on manual Redis flushing in production.
 
 ## 4. Database & ORM
 - **Tortoise ORM**: Use Tortoise ORM for all database interactions.
@@ -49,8 +52,6 @@ Direct calls to `akshare` are **FORBIDDEN** in production code. You MUST use the
       print(f"❌ Error: {e}")
       return {"error": str(e), "data": []} # Graceful fallback
   ```
-- **Safe Conversions**: Use `safe_float(val, default=None)` for financial data. Avoid `float()` directly on API responses.
-
 - **Safe Conversions**: Use `safe_float(val, default=None)` for financial data. Avoid `float()` directly on API responses.
 
 ## 6. Code Hygiene & Readability (Strict)

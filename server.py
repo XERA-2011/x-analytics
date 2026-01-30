@@ -87,25 +87,6 @@ app.include_router(metals.router, prefix="/metals", tags=["Precious Metals"])
 app.include_router(market_hk.router, prefix="/market-hk", tags=["HK Market"])
 
 
-# -----------------------------------------------------------------------------
-# 兼容性API接口 (保持向后兼容)
-# -----------------------------------------------------------------------------
-@app.get(
-    "/api/sentiment/fear-greed", tags=["兼容性接口"], summary="获取市场恐慌贪婪指数"
-)
-def get_fear_greed_index_compat(symbol: str = "sh000001", days: int = 14):
-    """兼容旧版本的恐慌贪婪指数接口"""
-    from analytics.modules.market_cn import CNFearGreedIndex
-
-    return CNFearGreedIndex.calculate(symbol=symbol, days=days)
-
-
-@app.get("/api/commodity/gold-silver", tags=["兼容性接口"], summary="获取金银比及价格")
-def get_gold_silver_ratio_compat():
-    """兼容旧版本的金银比接口"""
-    from analytics.modules.metals import GoldSilverAnalysis
-
-    return GoldSilverAnalysis.get_gold_silver_ratio()
 
 
 # -----------------------------------------------------------------------------

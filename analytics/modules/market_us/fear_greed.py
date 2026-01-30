@@ -87,6 +87,7 @@ class USFearGreedIndex:
             indicators = {
                 "vix": vix_data,
                 "sp500_momentum": sp500_data,
+                "daily_change": USFearGreedIndex._get_daily_change(),
                 "market_breadth": USFearGreedIndex._get_market_breadth(),
                 "safe_haven": USFearGreedIndex._get_safe_haven_demand(),
             }
@@ -137,6 +138,9 @@ class USFearGreedIndex:
                     latest_vix = safe_float(df.iloc[-1]["close"])
                     if latest_vix is not None:
                         return USFearGreedIndex._format_vix_score(latest_vix)
+            except (IndexError, KeyError, ValueError) as e:
+                # 常见错误：Sina 接口返回格式异常导致 akshare 全局 split 失败 (IndexError)
+                logger.info(f"VIX API 暫不可用 (.VIX), 将切换至计算模式: {e}")
             except Exception as e:
                 logger.warning(f"⚠️ VIX API 获取失败 (将使用计算回退): {e}")
 
@@ -167,23 +171,61 @@ class USFearGreedIndex:
 
         except Exception as e:
             logger.warning(f"⚠️ 获取/计算 VIX 数据失败: {e}")
-            return {"error": str(e), "weight": 0.3}
+            return {"error": str(e), "weight": 0.25}
+
+    @staticmethod
+    def _get_daily_change() -> Dict[str, Any]:
+        """获取标普500单日涨跌幅 (Sentiment Sensitivity)"""
+        try:
+            df = akshare_call_with_retry(ak.stock_us_daily, symbol=".INX")
+            if df.empty or len(df) < 2:
+                return {"error": "数据不足", "weight": 0.20}
+            
+            # 计算单日涨跌
+            # new akshare returns 'close'
+            current = df["close"].iloc[-1]
+            prev = df["close"].iloc[-2]
+            
+            change_pct = (current - prev) / prev * 100
+            
+            # Map spread: -2% (Fear) to +2% (Greed)
+            # 0% = 50
+            # 1% = 60 (Sensitivity 10)
+            score = 50 + change_pct * 10
+            score = min(100, max(0, score))
+            
+            return {
+                "change_pct": round(change_pct, 2),
+                "score": round(score, 1),
+                "weight": 0.20,
+            }
+        except Exception as e:
+            return {"error": str(e), "weight": 0.20}
 
     @staticmethod
     def _format_vix_score(vix_value: float, is_estimated: bool = False) -> Dict[str, Any]:
         """格式化 VIX 分数"""
-        if vix_value > 30:
-            vix_score = max(0, 100 - (vix_value - 30) * 3)
-        elif vix_value > 20:
-            vix_score = 70 - (vix_value - 20) * 2
+        # VIX Score Mapping Formula (Calibrated to approximate CNN model)
+        # Baseline: VIX=20 is Neutral (Score 50)
+        # Sensitivity: ~2 points per 1 VIX unit
+        # VIX 12 (Low) -> 50 + (20-12)*2 = 66 (Greed) -> Matches CNN ~62
+        # VIX 30 (High) -> 50 + (20-30)*2.5 = 25 (Fear)
+        
+        diff = 20 - vix_value
+        if diff >= 0:
+            # VIX < 20: Greed side (Lower VIX = Higher Score)
+            vix_score = 50 + diff * 2.0
         else:
-            vix_score = 70 + (20 - vix_value) * 1.5
+            # VIX > 20: Fear side (Higher VIX = Lower Score)
+            # Higher sensitivity for high volatility
+            vix_score = 50 + diff * 2.5
+            
         vix_score = min(100, max(0, vix_score))
         
         return {
             "value": round(vix_value, 2),
             "score": round(vix_score, 1),
-            "weight": 0.3,
+            "weight": 0.25,
             "is_estimated": is_estimated,
             "note": "基于标普500波动率估算" if is_estimated else "API直接获取"
         }
@@ -212,11 +254,11 @@ class USFearGreedIndex:
             return {
                 "momentum_pct": round(momentum_pct, 2),
                 "score": round(score, 1),
-                "weight": 0.25,
+                "weight": 0.20,
             }
         except Exception as e:
             logger.warning(f"⚠️ 获取标普500数据失败: {e}")
-            return {"error": str(e), "weight": 0.25}
+            return {"error": str(e), "weight": 0.20}
 
     @staticmethod
     def _get_market_breadth() -> Dict[str, Any]:
@@ -244,11 +286,11 @@ class USFearGreedIndex:
                 "dji_5d_change": round(dji_change, 2),
                 "ndx_5d_change": round(ndx_change, 2),
                 "score": round(score, 1),
-                "weight": 0.2,
+                "weight": 0.15,
             }
         except Exception as e:
             logger.warning(f"⚠️ 获取市场广度数据失败: {e}")
-            return {"error": str(e), "weight": 0.2}
+            return {"error": str(e), "weight": 0.15}
 
     @staticmethod
     def _get_safe_haven_demand() -> Dict[str, Any]:
@@ -266,12 +308,12 @@ class USFearGreedIndex:
             return {
                 "treasury_demand": 0, # 暂时无法获取美债数据
                 "score": vix_score,
-                "weight": 0.25,
+                "weight": 0.20,
                 "note": "基于VIX推算",
             }
         except Exception as e:
             logger.warning(f"⚠️ 获取避险需求数据失败: {e}")
-            return {"error": str(e), "weight": 0.25}
+            return {"error": str(e), "weight": 0.20}
 
     @staticmethod
     def _calculate_composite_score(indicators: Dict[str, Any]) -> Optional[float]:
