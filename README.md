@@ -27,17 +27,20 @@ docker compose logs -f xanalytics
 
 #### 1. 环境准备 (虚拟环境)
 ```bash
-# 创建虚拟环境
-python3 -m venv .venv
+# 创建虚拟环境 (Windows 使用 python, Mac/Linux 使用 python3)
+python -m venv .venv
 
 # 激活环境
 # Mac/Linux:
 source .venv/bin/activate
-# Windows:
-.venv\Scripts\activate
+# Windows (PowerShell):
+.\.venv\Scripts\Activate.ps1
 
 # 安装依赖
 pip install -r requirements.txt
+
+# 退出环境
+deactivate
 ```
 
 #### 2. 配置环境变量
