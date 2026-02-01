@@ -341,17 +341,50 @@ class Charts {
                     const color = change >= 0 ? "#ef4444" : "#22c55e";
                     const capStr = d.value ? (d.value / 100000000).toFixed(0) : '--';
 
+                    // Calculate derived metrics
+
+                    // Estimated Traded Value
+                    const estAmount = (d.value && d.turnover) ? (d.value * (d.turnover / 100) / 100000000).toFixed(0) : '--';
+
+                    // Sentiment & Volume Analysis
+                    let analysis = "中性";
+                    let analysisColor = "#9ca3af";
+
+                    const t = d.turnover || 0;
+                    const c = change;
+                    const absC = Math.abs(c);
+
+                    if (absC < 0.8) {
+                        analysis = "横盘震荡";
+                        analysisColor = "#9ca3af";
+                    } else if (c > 0) {
+                        if (t > 5 && c > 4) { analysis = "严重超买"; analysisColor = "#dc2626"; } // Overbought
+                        else if (t > 3) { analysis = "放量上攻"; analysisColor = "#ef4444"; }
+                        else if (t < 1.2) { analysis = "缩量上涨"; analysisColor = "#f59e0b"; } // Warning (Yellow/Orange)
+                        else { analysis = "温和上涨"; analysisColor = "#ef4444"; }
+                    } else {
+                        if (t > 5 && c < -4) { analysis = "恐慌抛售"; analysisColor = "#16a34a"; }
+                        else if (t > 3) { analysis = "放量杀跌"; analysisColor = "#16a34a"; }
+                        else if (t < 1.2) { analysis = "无量下跌"; analysisColor = "#10b981"; } // Low Vol Fall
+                        else { analysis = "弱势调整"; analysisColor = "#22c55e"; }
+                    }
+
                     return `
-                        <div style="min-width: 120px;">
+                        <div style="min-width: 140px;">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; padding-bottom: 6px; border-bottom: 1px solid #404040;">
                                 <span style="font-weight: 700; font-size: 14px; color: #fff;">${d.name}</span>
                                 <span style="font-weight: 700; font-family: monospace; font-size: 14px; color:${color}">${change >= 0 ? '+' : ''}${change.toFixed(2)}%</span>
                             </div>
                             <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
                                 <tr style="line-height: 1.6;">
+                                    <td style="color: #9ca3af; padding-right: 12px;">情绪</td>
+                                    <td style="text-align: right; font-weight: bold; color: ${analysisColor};">${analysis}</td>
+                                </tr>
+                                <tr style="line-height: 1.6;">
                                     <td style="color: #9ca3af; padding-right: 12px;">市值</td>
                                     <td style="text-align: right; font-family: monospace; color: #e5e7eb;">${capStr}亿</td>
                                 </tr>
+
                                 <tr style="line-height: 1.6;">
                                     <td style="color: #9ca3af; padding-right: 12px;">家数</td>
                                     <td style="text-align: right; font-family: monospace; color: #e5e7eb;">${d.stock_count}</td>
@@ -359,6 +392,10 @@ class Charts {
                                 <tr style="line-height: 1.6;">
                                     <td style="color: #9ca3af; padding-right: 12px;">换手</td>
                                     <td style="text-align: right; font-family: monospace; color: #e5e7eb;">${d.turnover}%</td>
+                                </tr>
+                                <tr style="line-height: 1.6;">
+                                    <td style="color: #9ca3af; padding-right: 12px;">成交</td>
+                                    <td style="text-align: right; font-family: monospace; color: #e5e7eb;">${estAmount}亿</td>
                                 </tr>
                                 <tr style="line-height: 1.6;">
                                     <td style="color: #9ca3af; padding-right: 12px;">领涨</td>
