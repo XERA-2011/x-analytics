@@ -105,3 +105,20 @@ def get_indices() -> Dict[str, Any]:
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
+@router.get("/signals/overbought-oversold", summary="获取超买超卖信号")
+def get_cn_obo_signal(period: str = "daily") -> Dict[str, Any]:
+    """
+    获取A股超买超卖综合信号
+    
+    Args:
+        period: "daily" (日线) 或 "60min" (60分钟)
+    
+    Returns:
+        综合信号 (overbought/oversold/neutral) 及各指标详情
+    """
+    try:
+        from ..modules.signals.overbought_oversold import OverboughtOversoldSignal
+        return OverboughtOversoldSignal.get_cn_signal(period=period)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

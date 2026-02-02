@@ -251,6 +251,27 @@ class API {
         return this.request('/metals/spot-prices');
     }
 
+    // 超买超卖信号 API
+    async getCNOverboughtOversold(period = 'daily') {
+        return this.request(`/market-cn/signals/overbought-oversold?period=${period}`);
+    }
+
+    async getUSOverboughtOversold(period = 'daily') {
+        return this.request(`/market-us/signals/overbought-oversold?period=${period}`);
+    }
+
+    async getHKOverboughtOversold(period = 'daily') {
+        return this.request(`/market-hk/signals/overbought-oversold?period=${period}`);
+    }
+
+    async getGoldOverboughtOversold(period = 'daily') {
+        return this.request(`/metals/gold/signals/overbought-oversold?period=${period}`);
+    }
+
+    async getSilverOverboughtOversold(period = 'daily') {
+        return this.request(`/metals/silver/signals/overbought-oversold?period=${period}`);
+    }
+
     // 宏观数据 API
     async getLPR() {
         return this.request('/market-cn/lpr');

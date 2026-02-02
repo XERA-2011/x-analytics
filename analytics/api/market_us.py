@@ -67,3 +67,19 @@ def get_market_leaders() -> Dict[str, Any]:
         return USMarketLeaders.get_leaders()
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/signals/overbought-oversold", summary="获取超买超卖信号")
+def get_us_obo_signal(period: str = "daily") -> Dict[str, Any]:
+    """
+    获取美股超买超卖综合信号 (基于标普500)
+    
+    Args:
+        period: "daily" (日线)
+    """
+    try:
+        from ..modules.signals.overbought_oversold import OverboughtOversoldSignal
+        return OverboughtOversoldSignal.get_us_signal(period=period)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+

@@ -47,3 +47,34 @@ def get_spot_prices() -> Any:
         return MetalSpotPrice.get_spot_prices()
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/gold/signals/overbought-oversold", summary="获取黄金超买超卖信号")
+def get_gold_obo_signal(period: str = "daily") -> Dict[str, Any]:
+    """
+    获取黄金超买超卖综合信号
+    
+    Args:
+        period: "daily" (日线) 或 "60min" (60分钟)
+    """
+    try:
+        from ..modules.signals.overbought_oversold import OverboughtOversoldSignal
+        return OverboughtOversoldSignal.get_gold_signal(period=period)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/silver/signals/overbought-oversold", summary="获取白银超买超卖信号")
+def get_silver_obo_signal(period: str = "daily") -> Dict[str, Any]:
+    """
+    获取白银超买超卖综合信号
+    
+    Args:
+        period: "daily" (日线) 或 "60min" (60分钟)
+    """
+    try:
+        from ..modules.signals.overbought_oversold import OverboughtOversoldSignal
+        return OverboughtOversoldSignal.get_silver_signal(period=period)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+

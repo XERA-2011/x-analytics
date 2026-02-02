@@ -380,6 +380,39 @@ def setup_default_jobs():
     )
 
     # =========================================================================
+    # 超买超卖信号 (Overbought/Oversold Signals)
+    # =========================================================================
+    from ..modules.signals.overbought_oversold import OverboughtOversoldSignal
+    
+    # A股超买超卖 (每30分钟)
+    scheduler.add_market_job(
+        job_id="warmup:signals:cn",
+        func=lambda: warmup_cache(OverboughtOversoldSignal.get_cn_signal, period="daily"),
+        market="market_cn"
+    )
+    
+    # 美股超买超卖 (每30分钟)
+    scheduler.add_market_job(
+        job_id="warmup:signals:us",
+        func=lambda: warmup_cache(OverboughtOversoldSignal.get_us_signal, period="daily"),
+        market="market_us"
+    )
+    
+    # 黄金超买超卖 (每小时)
+    scheduler.add_market_job(
+        job_id="warmup:signals:gold",
+        func=lambda: warmup_cache(OverboughtOversoldSignal.get_gold_signal, period="daily"),
+        market="metals"
+    )
+    
+    # 白银超买超卖 (每小时)
+    scheduler.add_market_job(
+        job_id="warmup:signals:silver",
+        func=lambda: warmup_cache(OverboughtOversoldSignal.get_silver_signal, period="daily"),
+        market="metals"
+    )
+
+    # =========================================================================
     # 固定时间任务
     # =========================================================================
     
@@ -465,6 +498,22 @@ def initial_warmup():
         warmup_cache(HKFearGreed.get_data)
 
         logger.info("✅ 核心指标预热完成")
+        
+        # 超买超卖信号 (延迟执行，避免与核心数据预热同时请求导致 IP 被封)
+        import time
+        logger.info("⏳ 等待 60s 后预热超买超卖信号...")
+        time.sleep(60)
+        
+        from ..modules.signals.overbought_oversold import OverboughtOversoldSignal
+        warmup_cache(OverboughtOversoldSignal.get_cn_signal, period="daily")
+        time.sleep(5)  # 每个信号间隔 5s
+        warmup_cache(OverboughtOversoldSignal.get_us_signal, period="daily")
+        time.sleep(5)
+        warmup_cache(OverboughtOversoldSignal.get_gold_signal, period="daily")
+        time.sleep(5)
+        warmup_cache(OverboughtOversoldSignal.get_silver_signal, period="daily")
+        
+        logger.info("✅ 超买超卖信号预热完成")
         
         # 后台继续预热次要数据
 

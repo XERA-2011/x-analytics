@@ -9,7 +9,10 @@ TORTOISE_ORM = {
     "connections": {"default": DATABASE_URL},
     "apps": {
         "models": {
-            "models": ["analytics.models.sentiment"],
+            "models": [
+                "analytics.models.sentiment",
+                "analytics.models.signal_history",
+            ],
             "default_connection": "default",
         }
     },

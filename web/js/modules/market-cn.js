@@ -7,6 +7,7 @@ class CNMarketController {
 
         const promises = [
             this.loadCNFearGreed(),
+            this.loadCNOverboughtOversold(),
             this.loadCNIndices(),
             this.loadSectorHeatmap(), // 新增: 加载全市场热力图
 
@@ -119,10 +120,61 @@ class CNMarketController {
         }
     }
 
+    async loadCNOverboughtOversold() {
+        try {
+            const data = await api.getCNOverboughtOversold();
+            this.renderOverboughtOversold('cn-obo-signal', data);
+        } catch (error) {
+            console.error('加载超买超卖信号失败:', error);
+            // 不影响主流程，静默失败
+        }
+    }
 
+    renderOverboughtOversold(containerId, data) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
 
+        if (data.error || data._warming_up) {
+            container.innerHTML = `<div class="obo-loading">信号计算中...</div>`;
+            return;
+        }
 
+        const signalClass = data.signal === 'overbought' ? 'obo-overbought' :
+            data.signal === 'oversold' ? 'obo-oversold' : 'obo-neutral';
+        const signalText = data.level || '中性';
+        const strength = data.strength || 50;
 
+        // 生成简化的指标标签
+        const indicators = data.indicators || {};
+        const tags = [];
+        if (indicators.rsi && !indicators.rsi.error) {
+            tags.push(`RSI:${Math.round(indicators.rsi.value)}`);
+        }
+        if (indicators.macd && !indicators.macd.error) {
+            const macdSign = indicators.macd.histogram > 0 ? '+' : '-';
+            tags.push(`MACD:${macdSign}`);
+        }
+        if (indicators.bollinger && !indicators.bollinger.error) {
+            const bollPos = indicators.bollinger.position > 0.5 ? '▲' :
+                indicators.bollinger.position < -0.5 ? '▼' : '―';
+            tags.push(`布林:${bollPos}`);
+        }
+        if (indicators.kdj && !indicators.kdj.error) {
+            const kdjSignal = indicators.kdj.k > 80 ? '▲' : indicators.kdj.k < 20 ? '▼' : 'N';
+            tags.push(`KDJ:${kdjSignal}`);
+        }
+
+        container.innerHTML = `
+            <div class="obo-signal ${signalClass}">
+                <span class="obo-label">技术信号</span>
+                <span class="obo-level">${signalText}</span>
+                <span class="obo-strength">${strength.toFixed(1)}</span>
+            </div>
+            <div class="obo-tags">
+                ${tags.map(t => `<span class="heat-tag heat-gray">${t}</span>`).join('')}
+            </div>
+        `;
+    }
 
 
     async loadCNBonds() {
