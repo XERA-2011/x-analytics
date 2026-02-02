@@ -358,14 +358,24 @@ class Charts {
                         analysis = "横盘震荡";
                         analysisColor = "#9ca3af";
                     } else if (c > 0) {
-                        if (t > 5 && c > 4) { analysis = "严重超买"; analysisColor = "#dc2626"; } // Overbought
-                        else if (t > 3) { analysis = "放量上攻"; analysisColor = "#ef4444"; }
-                        else if (t < 1.2) { analysis = "缩量上涨"; analysisColor = "#f59e0b"; } // Warning (Yellow/Orange)
+                        // 上涨情况：综合考虑涨幅和换手率
+                        if (c > 8) {
+                            analysis = t > 2 ? "极度超买" : "逼空拉升";
+                            analysisColor = "#dc2626";
+                        }
+                        else if (t > 5 && c > 4) { analysis = "严重超买"; analysisColor = "#dc2626"; }
+                        else if (t > 3 || c > 4) { analysis = "放量上攻"; analysisColor = "#ef4444"; }
+                        else if (t < 1.2 && c < 2) { analysis = "缩量上涨"; analysisColor = "#f59e0b"; }
                         else { analysis = "温和上涨"; analysisColor = "#ef4444"; }
                     } else {
-                        if (t > 5 && c < -4) { analysis = "恐慌抛售"; analysisColor = "#16a34a"; }
-                        else if (t > 3) { analysis = "放量杀跌"; analysisColor = "#16a34a"; }
-                        else if (t < 1.2) { analysis = "无量下跌"; analysisColor = "#10b981"; } // Low Vol Fall
+                        // 下跌情况：综合考虑跌幅和换手率
+                        if (c < -8) {
+                            analysis = t > 2 ? "恐慌抛售" : "闷杀出局";
+                            analysisColor = "#16a34a";
+                        }
+                        else if (t > 5 && c < -4) { analysis = "恐慌抛售"; analysisColor = "#16a34a"; }
+                        else if (t > 3 || c < -4) { analysis = "放量杀跌"; analysisColor = "#16a34a"; }
+                        else if (t < 1.2 && c > -2) { analysis = "无量下跌"; analysisColor = "#10b981"; }
                         else { analysis = "弱势调整"; analysisColor = "#22c55e"; }
                     }
 

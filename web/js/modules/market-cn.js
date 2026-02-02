@@ -206,19 +206,36 @@ class CNMarketController {
             return;
         }
 
-        // 更新时间
-        const timeEl = document.getElementById('cn-heatmap-time');
-        if (timeEl) timeEl.textContent = utils.formatTime(data.update_time);
-
         // 渲染 ECharts Treemap
         if (window.charts) {
             window.charts.renderTreemap('cn-sector-heatmap', data.sectors);
         }
 
-        // 绑定刷新按钮
-        const refreshBtn = document.getElementById('cn-heatmap-refresh');
-        if (refreshBtn) {
-            refreshBtn.onclick = () => this.loadSectorHeatmap();
+        // 绑定说明按钮
+        const infoBtn = document.getElementById('info-cn-heatmap');
+        if (infoBtn) {
+            infoBtn.onclick = () => utils.showInfoModal('全行业热力图', `热力图展示 A 股全行业板块的实时涨跌情况，方块大小代表板块市值。
+
+**情绪分析逻辑**（基于换手率+涨跌幅）：
+
+📈 上涨情况：
+• 极度超买：涨幅>8% + 换手>2%
+• 逼空拉升：涨幅>8% + 换手<2%（庄家控盘）
+• 严重超买：涨幅>4% + 换手>5%
+• 放量上攻：涨幅>4% 或 换手>3%
+• 缩量上涨：涨幅<2% + 换手<1.2%
+• 温和上涨：其他上涨情况
+
+📉 下跌情况：
+• 恐慌抛售：跌幅>8% + 换手>2%
+• 闷杀出局：跌幅>8% + 换手<2%（无人接盘）
+• 放量杀跌：跌幅>4% 或 换手>3%
+• 无量下跌：跌幅<2% + 换手<1.2%
+• 弱势调整：其他下跌情况
+
+📊 其他：
+• 横盘震荡：涨跌幅<0.8%`);
+            infoBtn.style.display = 'flex';
         }
     }
 
