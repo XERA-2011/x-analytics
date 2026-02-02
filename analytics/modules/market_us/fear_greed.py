@@ -89,7 +89,6 @@ class USFearGreedIndex:
                 "sp500_momentum": sp500_data,
                 "daily_change": USFearGreedIndex._get_daily_change(),
                 "market_breadth": USFearGreedIndex._get_market_breadth(),
-                "safe_haven": USFearGreedIndex._get_safe_haven_demand(),
             }
 
             composite_score = USFearGreedIndex._calculate_composite_score(indicators)
@@ -197,10 +196,10 @@ class USFearGreedIndex:
             return {
                 "change_pct": round(change_pct, 2),
                 "score": round(score, 1),
-                "weight": 0.20,
+                "weight": 0.25,
             }
         except Exception as e:
-            return {"error": str(e), "weight": 0.20}
+            return {"error": str(e), "weight": 0.25}
 
     @staticmethod
     def _format_vix_score(vix_value: float, is_estimated: bool = False) -> Dict[str, Any]:
@@ -225,7 +224,7 @@ class USFearGreedIndex:
         return {
             "value": round(vix_value, 2),
             "score": round(vix_score, 1),
-            "weight": 0.25,
+            "weight": 0.30,
             "is_estimated": is_estimated,
             "note": "基于标普500波动率估算" if is_estimated else "API直接获取"
         }
@@ -254,7 +253,7 @@ class USFearGreedIndex:
             return {
                 "momentum_pct": round(momentum_pct, 2),
                 "score": round(score, 1),
-                "weight": 0.20,
+                "weight": 0.25,
             }
         except Exception as e:
             logger.warning(f"⚠️ 获取标普500数据失败: {e}")
@@ -286,33 +285,10 @@ class USFearGreedIndex:
                 "dji_5d_change": round(dji_change, 2),
                 "ndx_5d_change": round(ndx_change, 2),
                 "score": round(score, 1),
-                "weight": 0.15,
+                "weight": 0.20,
             }
         except Exception as e:
             logger.warning(f"⚠️ 获取市场广度数据失败: {e}")
-            return {"error": str(e), "weight": 0.15}
-
-    @staticmethod
-    def _get_safe_haven_demand() -> Dict[str, Any]:
-        """
-        获取避险需求数据
-        使用 VIX 作为主要参考指标
-        """
-        try:
-            vix_data = USFearGreedIndex._get_vix_data()
-            vix_score = vix_data.get("score", 50)
-            
-            # VIX越高(恐慌)，避险需求越高，这应该贡献给"恐慌"分数(低分)
-            # 所以直接复用 VIX 的分数即可
-            
-            return {
-                "treasury_demand": 0, # 暂时无法获取美债数据
-                "score": vix_score,
-                "weight": 0.20,
-                "note": "基于VIX推算",
-            }
-        except Exception as e:
-            logger.warning(f"⚠️ 获取避险需求数据失败: {e}")
             return {"error": str(e), "weight": 0.20}
 
     @staticmethod
@@ -371,5 +347,5 @@ CNN恐慌贪婪指数说明：
     def _get_custom_explanation() -> str:
         return """
 自定义美国市场恐慌贪婪指数说明：
-• 基于VIX、标普500动量、市场广度、避险需求综合计算
+• 计算因子：VIX(30%)、标普500动量(25%)、当日涨跌(25%)、市场广度(20%)
         """.strip()

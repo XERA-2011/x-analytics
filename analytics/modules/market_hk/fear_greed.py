@@ -6,6 +6,7 @@ from datetime import datetime
 from typing import Dict, Any
 from analytics.core.cache import cached
 from analytics.core.config import settings
+from analytics.core.logger import logger
 
 def calculate_rsi(series, period=14):
     delta = series.diff()
@@ -122,8 +123,10 @@ class HKFearGreed:
             }
 
         except Exception as e:
-            print(f"Error calculating HK Fear/Greed: {e}")
+            logger.error(f"❌ 计算港股恐慌贪婪指数失败: {e}")
             return {
                 "error": str(e),
+                "message": "无法计算港股恐慌贪婪指数",
                 "status": "error"
             }
+

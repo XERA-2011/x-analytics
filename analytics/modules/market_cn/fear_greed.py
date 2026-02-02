@@ -116,7 +116,7 @@ class CNFearGreedIndex:
                 "weight": 0.20,
             }
 
-            # 2. 波动率 (Volatility) - 权重15% (原20%)
+            # 2. 波动率 (Volatility) - 权重15%
             returns = data["close"].pct_change().dropna()
             volatility = returns.std() * np.sqrt(252) * 100  # 年化波动率
             # 波动率越高，恐慌程度越高，分数越低
@@ -127,7 +127,7 @@ class CNFearGreedIndex:
                 "weight": 0.15,
             }
 
-            # 3. 成交量 (Volume) - 权重10% (原15%)
+            # 3. 成交量 (Volume) - 权重15%
             if "volume" in data.columns:
                 avg_volume = data["volume"].tail(5).mean()
                 prev_avg_volume = data["volume"].head(5).mean()
@@ -140,7 +140,7 @@ class CNFearGreedIndex:
                 indicators["volume"] = {
                     "value": round(volume_change, 2),
                     "score": round(volume_score, 1),
-                    "weight": 0.10,
+                    "weight": 0.15,
                 }
             else:
                 # 成交量数据不可用，跳过该指标（不填充假数据）
@@ -162,7 +162,7 @@ class CNFearGreedIndex:
                 "weight": 0.20,
             }
 
-            # 5. 市场广度 (Market Breadth) - 权重15% (原20%)
+            # 5. 市场广度 (Market Breadth) - 权重10%
             # 这里简化处理，使用价格相对位置
             high_low_ratio = (data["close"].iloc[-1] - data["low"].min()) / (
                 data["high"].max() - data["low"].min()
@@ -171,7 +171,7 @@ class CNFearGreedIndex:
             indicators["market_breadth"] = {
                 "value": round(high_low_ratio, 3),
                 "score": round(breadth_score, 1),
-                "weight": 0.15,
+                "weight": 0.10,
             }
 
             # 6. 当日涨跌 (Daily Change) - 权重20% (新增)
@@ -259,7 +259,7 @@ class CNFearGreedIndex:
         return """
 恐慌贪婪指数说明：
 • 指数范围：0-100，数值越高表示市场越贪婪
-• 计算因子：价格动量(25%)、波动率(20%)、RSI(20%)、市场广度(20%)、成交量(15%)
+• 计算因子：价格动量(20%)、当日涨跌(20%)、RSI(20%)、波动率(15%)、成交量(15%)、市场广度(10%)
 • 极度恐慌(0-20)：可能是买入时机
 • 恐慌(20-35)：市场悲观，谨慎观望
 • 中性(35-65)：市场情绪平衡
