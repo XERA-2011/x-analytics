@@ -17,6 +17,37 @@ from ...core.logger import logger
 class CNFearGreedIndex:
     """中国市场恐慌贪婪指数计算"""
 
+    DEFAULT_WEIGHTS = {
+        "price_momentum": 0.20,
+        "volatility": 0.15,
+        "volume": 0.15,
+        "rsi": 0.20,
+        "price_position": 0.10,
+        "daily_change": 0.20,
+    }
+
+    DEFAULT_LEVELS = [
+        (80, "极度贪婪", "市场情绪极度乐观，注意风险"),
+        (65, "贪婪", "市场情绪偏向乐观，注意风险控制"),
+        (55, "轻微贪婪", "市场情绪略显乐观"),
+        (45, "中性", "市场情绪相对平衡"),
+        (35, "轻微恐慌", "市场情绪略显悲观"),
+        (20, "恐慌", "市场情绪偏向悲观"),
+        (0, "极度恐慌", "市场情绪极度悲观"),
+    ]
+
+    @staticmethod
+    def _get_weights() -> Dict[str, float]:
+        return settings.FEAR_GREED_CONFIG.get("cn", {}).get("weights", CNFearGreedIndex.DEFAULT_WEIGHTS)
+
+    @staticmethod
+    def _get_levels() -> list:
+        return settings.FEAR_GREED_CONFIG.get("cn", {}).get("levels", CNFearGreedIndex.DEFAULT_LEVELS)
+
+    @staticmethod
+    def _get_levels_payload() -> list:
+        return [{"min": t, "label": l, "description": d} for t, l, d in CNFearGreedIndex._get_levels()]
+
     @staticmethod
     @cached("market_cn:fear_greed", ttl=settings.CACHE_TTL["fear_greed"], stale_ttl=settings.CACHE_TTL["fear_greed"] * settings.STALE_TTL_RATIO)
     def calculate(symbol: str = "sh000001", days: int = 14) -> Dict[str, Any]:
@@ -31,6 +62,9 @@ class CNFearGreedIndex:
             包含指数值、等级、各项指标的字典
         """
         try:
+            if days < 2:
+                raise ValueError("days 需 >= 2，确保可计算当日涨跌与RSI")
+
             # 获取指数数据
 
 
@@ -44,6 +78,12 @@ class CNFearGreedIndex:
             missing_columns = required_columns - set(index_data.columns)
             if missing_columns:
                 raise ValueError(f"数据缺少必要列: {missing_columns}")
+
+            # 保证按时间升序
+            for date_col in ["date", "trade_date"]:
+                if date_col in index_data.columns:
+                    index_data = index_data.sort_values(date_col)
+                    break
 
             # 取最近的数据
             recent_data = index_data.tail(days)
@@ -87,6 +127,7 @@ class CNFearGreedIndex:
                 "days": days,
                 "update_time": get_beijing_time().strftime("%Y-%m-%d %H:%M:%S"),
                 "explanation": CNFearGreedIndex._get_explanation(),
+                "levels": CNFearGreedIndex._get_levels_payload(),
             }
 
         except Exception as e:
@@ -113,18 +154,20 @@ class CNFearGreedIndex:
             indicators["price_momentum"] = {
                 "value": round(price_change, 2),
                 "score": round(momentum_score, 1),
-                "weight": 0.20,
+                "weight": CNFearGreedIndex._get_weights()["price_momentum"],
             }
 
             # 2. 波动率 (Volatility) - 权重15%
             returns = data["close"].pct_change().dropna()
             volatility = returns.std() * np.sqrt(252) * 100  # 年化波动率
+            if pd.isna(volatility):
+                return {"error": "波动率数据不足"}
             # 波动率越高，恐慌程度越高，分数越低
             volatility_score = max(0, min(100, 100 - volatility * 2))
             indicators["volatility"] = {
                 "value": round(volatility, 2),
                 "score": round(volatility_score, 1),
-                "weight": 0.15,
+                "weight": CNFearGreedIndex._get_weights()["volatility"],
             }
 
             # 3. 成交量 (Volume) - 权重15%
@@ -140,7 +183,7 @@ class CNFearGreedIndex:
                 indicators["volume"] = {
                     "value": round(volume_change, 2),
                     "score": round(volume_score, 1),
-                    "weight": 0.15,
+                    "weight": CNFearGreedIndex._get_weights()["volume"],
                 }
             else:
                 # 成交量数据不可用，跳过该指标（不填充假数据）
@@ -148,6 +191,8 @@ class CNFearGreedIndex:
 
             # 4. RSI指标 - 权重20% (不变)
             rsi = CNFearGreedIndex._calculate_rsi(data["close"])
+            if rsi is None:
+                return {"error": "RSI 数据不足"}
             # RSI > 70 贪婪，RSI < 30 恐慌
             if rsi > 70:
                 rsi_score = 70 + (rsi - 70) * 1.5  # 贪婪区间
@@ -159,30 +204,39 @@ class CNFearGreedIndex:
             indicators["rsi"] = {
                 "value": round(rsi, 2),
                 "score": round(rsi_score, 1),
-                "weight": 0.20,
+                "weight": CNFearGreedIndex._get_weights()["rsi"],
             }
 
-            # 5. 市场广度 (Market Breadth) - 权重10%
-            # 这里简化处理，使用价格相对位置
-            high_low_ratio = (data["close"].iloc[-1] - data["low"].min()) / (
-                data["high"].max() - data["low"].min()
-            )
-            breadth_score = high_low_ratio * 100
-            indicators["market_breadth"] = {
+            # 5. 价格区间位置 (Price Position) - 权重10%
+            # 这里简化处理，使用价格区间相对位置（并非真实涨跌家数广度）
+            price_range = data["high"].max() - data["low"].min()
+            if price_range <= 0:
+                return {"error": "价格区间不足，无法计算区间位置"}
+            high_low_ratio = (data["close"].iloc[-1] - data["low"].min()) / price_range
+            breadth_score = max(0, min(100, high_low_ratio * 100))
+            indicators["price_position"] = {
                 "value": round(high_low_ratio, 3),
                 "score": round(breadth_score, 1),
-                "weight": 0.10,
+                "weight": CNFearGreedIndex._get_weights()["price_position"],
             }
+            # 兼容旧字段名
+            indicators["market_breadth"] = indicators["price_position"]
 
             # 6. 当日涨跌 (Daily Change) - 权重20% (新增)
             # 增强对当日市场表现的敏感度
-            daily_chg_pct = (data["close"].iloc[-1] - data["close"].iloc[-2]) / data["close"].iloc[-2] * 100
+            if len(data) < 2:
+                return {"error": "当日涨跌数据不足"}
+            daily_chg_pct = (
+                (data["close"].iloc[-1] - data["close"].iloc[-2])
+                / data["close"].iloc[-2]
+                * 100
+            )
             daily_score = 50 + (daily_chg_pct * 10) # 1%涨幅 = +10分
             daily_score = min(100, max(0, daily_score))
             indicators["daily_change"] = {
                 "value": round(daily_chg_pct, 2),
                 "score": round(daily_score, 1),
-                "weight": 0.20,
+                "weight": CNFearGreedIndex._get_weights()["daily_change"],
             }
 
         except Exception as e:
@@ -238,31 +292,33 @@ class CNFearGreedIndex:
     @staticmethod
     def _get_level_description(score: float) -> tuple:
         """根据分数获取等级和描述"""
-        if score >= 80:
-            return "极度贪婪", "市场情绪极度乐观，可能存在泡沫风险"
-        elif score >= 65:
-            return "贪婪", "市场情绪偏向乐观，注意风险控制"
-        elif score >= 55:
-            return "轻微贪婪", "市场情绪略显乐观"
-        elif score >= 45:
-            return "中性", "市场情绪相对平衡"
-        elif score >= 35:
-            return "轻微恐慌", "市场情绪略显悲观"
-        elif score >= 20:
-            return "恐慌", "市场情绪偏向悲观，可能存在机会"
-        else:
-            return "极度恐慌", "市场情绪极度悲观，可能是抄底时机"
+        for threshold, level, description in CNFearGreedIndex._get_levels():
+            if score >= threshold:
+                return level, description
+        return "未知", "无法判断情绪等级"
 
     @staticmethod
     def _get_explanation() -> str:
         """获取指数说明"""
+        weights = CNFearGreedIndex._get_weights()
+        levels = CNFearGreedIndex._get_levels()
+        level_lines = []
+        for i, (min_score, label, _) in enumerate(levels):
+            max_score = 100 if i == 0 else levels[i - 1][0] - 1
+            level_lines.append(f"• {label}({min_score}-{max_score})")
+        level_lines = "\n".join(level_lines)
         return """
 恐慌贪婪指数说明：
 • 指数范围：0-100，数值越高表示市场越贪婪
-• 计算因子：价格动量(20%)、当日涨跌(20%)、RSI(20%)、波动率(15%)、成交量(15%)、市场广度(10%)
-• 极度恐慌(0-20)：可能是买入时机
-• 恐慌(20-35)：市场悲观，谨慎观望
-• 中性(35-65)：市场情绪平衡
-• 贪婪(65-80)：市场乐观，注意风险
-• 极度贪婪(80-100)：可能存在泡沫，考虑减仓
-        """.strip()
+• 计算因子：价格动量({pm}%)、当日涨跌({dc}%)、RSI({rsi}%)、波动率({vol}%)、成交量({volu}%)、价格区间位置({pos}%)
+{levels}
+• 说明：此指标为技术指标合成，不构成投资建议
+        """.strip().format(
+            pm=int(weights["price_momentum"] * 100),
+            dc=int(weights["daily_change"] * 100),
+            rsi=int(weights["rsi"] * 100),
+            vol=int(weights["volatility"] * 100),
+            volu=int(weights["volume"] * 100),
+            pos=int(weights["price_position"] * 100),
+            levels=level_lines
+        )

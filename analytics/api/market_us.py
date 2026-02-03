@@ -12,10 +12,10 @@ from ..modules.market_us import USFearGreedIndex, USMarketHeat, USTreasury, USMa
 router = APIRouter(tags=["美国市场"])
 
 
-@router.get("/fear-greed", summary="获取CNN恐慌贪婪指数")
+@router.get("/fear-greed", summary="获取美国恐慌贪婪指数(替代CNN)")
 def get_fear_greed() -> Dict[str, Any]:
     """
-    获取美国市场恐慌贪婪指数 (CNN Fear & Greed Index)
+    获取美国市场恐慌贪婪指数 (自定义替代CNN)
     """
     try:
         # 优先使用实时抓取的 CNN 数据
@@ -82,4 +82,3 @@ def get_us_obo_signal(period: str = "daily") -> Dict[str, Any]:
         return OverboughtOversoldSignal.get_us_signal(period=period)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-

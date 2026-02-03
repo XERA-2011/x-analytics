@@ -29,8 +29,7 @@ class HKMarketController {
             return;
         }
 
-        const signalClass = data.signal === 'overbought' ? 'obo-overbought' :
-            data.signal === 'oversold' ? 'obo-oversold' : 'obo-neutral';
+        const signalClass = utils.getOboClass(data);
         const signalText = data.level || '中性';
         const strength = data.strength || 50;
 
@@ -127,8 +126,8 @@ class HKMarketController {
 
         // 绑定说明弹窗
         const infoBtn = document.getElementById('info-hk-fear');
-        if (infoBtn && data.description) {
-            infoBtn.onclick = () => utils.showInfoModal('港股恐慌贪婪指数', data.description);
+        if (infoBtn && (data.explanation || data.description)) {
+            infoBtn.onclick = () => utils.showInfoModal('港股恐慌贪婪指数', data.explanation || data.description);
             infoBtn.style.display = 'flex';
         }
 

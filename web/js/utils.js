@@ -107,6 +107,26 @@ class Utils {
         return 'neutral';
     }
 
+    // Overbought/Oversold signal class (uses backend levels when available)
+    static getOboClass(data) {
+        if (!data) return 'obo-neutral';
+        const levels = Array.isArray(data.levels) ? data.levels.slice() : null;
+        const strength = typeof data.strength === 'number' ? data.strength : 50;
+
+        if (levels && levels.length > 0) {
+            levels.sort((a, b) => b.min - a.min);
+            const matched = levels.find(l => strength >= l.min);
+            const signal = matched ? matched.signal : (data.signal || 'neutral');
+            if (signal === 'overbought') return 'obo-overbought';
+            if (signal === 'oversold') return 'obo-oversold';
+            return 'obo-neutral';
+        }
+
+        if (data.signal === 'overbought') return 'obo-overbought';
+        if (data.signal === 'oversold') return 'obo-oversold';
+        return 'obo-neutral';
+    }
+
     // Gold/Silver Ratio Color
     static getRatioColor(ratio) {
         if (!ratio) return 'var(--text-primary)';

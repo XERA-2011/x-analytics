@@ -7,6 +7,7 @@ from typing import Dict, Any
 from analytics.core.cache import cached
 from analytics.core.config import settings
 from analytics.core.logger import logger
+from analytics.core.utils import get_beijing_time
 
 def calculate_rsi(series, period=14):
     delta = series.diff()
@@ -17,6 +18,39 @@ def calculate_rsi(series, period=14):
     return 100 - (100 / (1 + rs))
 
 class HKFearGreed:
+    DEFAULT_WEIGHTS = {
+        "rsi": 0.35,
+        "bias": 0.35,
+        "daily_change": 0.30,
+    }
+
+    DEFAULT_LEVELS = [
+        (75, "极度贪婪", "市场情绪极度乐观"),
+        (55, "贪婪", "市场情绪偏向乐观"),
+        (45, "中性", "市场情绪平衡"),
+        (25, "恐慌", "市场情绪偏悲观"),
+        (0, "极度恐慌", "市场情绪极度悲观"),
+    ]
+
+    @staticmethod
+    def _get_weights() -> Dict[str, float]:
+        return settings.FEAR_GREED_CONFIG.get("hk", {}).get("weights", HKFearGreed.DEFAULT_WEIGHTS)
+
+    @staticmethod
+    def _get_levels() -> list:
+        return settings.FEAR_GREED_CONFIG.get("hk", {}).get("levels", HKFearGreed.DEFAULT_LEVELS)
+
+    @staticmethod
+    def _get_levels_payload() -> list:
+        return [{"min": t, "label": l, "description": d} for t, l, d in HKFearGreed._get_levels()]
+
+    @staticmethod
+    def _sort_by_date(df: pd.DataFrame) -> pd.DataFrame:
+        for date_col in ["date", "trade_date", "datetime"]:
+            if date_col in df.columns:
+                return df.sort_values(date_col)
+        return df
+
     @staticmethod
     @cached(
         "market_hk:fear_greed",
@@ -33,6 +67,7 @@ class HKFearGreed:
 
             # Ensure numeric
             df['close'] = pd.to_numeric(df['close'])
+            df = HKFearGreed._sort_by_date(df)
             
             # --- Indicator 1: RSI (14) ---
             # Measures Momentum: >70 Overbought (Greed), <30 Oversold (Fear)
@@ -51,6 +86,8 @@ class HKFearGreed:
             df['ma60'] = df['close'].rolling(window=60).mean()
             current_price = df['close'].iloc[-1]
             current_ma60 = df['ma60'].iloc[-1]
+            if pd.isna(current_ma60) or current_ma60 == 0:
+                current_ma60 = df['close'].rolling(window=60).mean().dropna().iloc[-1]
             
             # Calculate Bias%
             bias_pct = ((current_price - current_ma60) / current_ma60) * 100
@@ -75,30 +112,25 @@ class HKFearGreed:
 
             # --- Final Score Calculation ---
             # Weights: RSI (35%), Bias (35%), Daily Change (30%)
-            final_score = (current_rsi * 0.35) + (bias_score * 0.35) + (daily_score * 0.30)
+            weights = HKFearGreed._get_weights()
+            final_score = (
+                (current_rsi * weights["rsi"])
+                + (bias_score * weights["bias"])
+                + (daily_score * weights["daily_change"])
+            )
             final_score = round(final_score, 1)
 
             # Determine Level
-            if final_score <= 25:
-                level = "Extreme Fear"
-                level_cn = "极度恐慌"
-            elif final_score <= 45:
-                level = "Fear"
-                level_cn = "恐慌"
-            elif final_score <= 55:
-                level = "Neutral"
-                level_cn = "中性"
-            elif final_score <= 75:
-                level = "Greed"
-                level_cn = "贪婪"
-            else:
-                level = "Extreme Greed"
-                level_cn = "极度贪婪"
+            level_cn = "未知"
+            for threshold, label, _desc in HKFearGreed._get_levels():
+                if final_score >= threshold:
+                    level_cn = label
+                    break
 
             return {
                 "score": final_score,
                 "level": level_cn,
-                "update_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "update_time": get_beijing_time().strftime("%Y-%m-%d %H:%M:%S"),
                 "indicators": {
                     "rsi_14": {
                         "value": round(current_rsi, 2),
@@ -119,6 +151,8 @@ class HKFearGreed:
                     "ma60": round(current_ma60, 2)
                 },
                 "description": f"HSI当日涨跌{round(change_pct, 2)}%，RSI(14)为{round(current_rsi, 1)}。",
+                "explanation": HKFearGreed._get_explanation(),
+                "levels": HKFearGreed._get_levels_payload(),
                 "status": "success"
             }
 
@@ -130,3 +164,22 @@ class HKFearGreed:
                 "status": "error"
             }
 
+    @staticmethod
+    def _get_explanation() -> str:
+        weights = HKFearGreed._get_weights()
+        return """
+港股恐慌贪婪指数说明：
+• 指数范围：0-100，数值越高表示市场越贪婪
+• 计算因子：RSI({rsi}%)、均线偏离({bias}%)、当日涨跌({dc}%)
+• 分值解读：
+  - 0-25：极度恐慌
+  - 25-45：恐慌
+  - 45-55：中性
+  - 55-75：贪婪
+  - 75-100：极度贪婪
+• 说明：此指标为技术指标合成，不构成投资建议
+        """.strip().format(
+            rsi=int(weights["rsi"] * 100),
+            bias=int(weights["bias"] * 100),
+            dc=int(weights["daily_change"] * 100),
+        )

@@ -29,8 +29,7 @@ class USMarketController {
             return;
         }
 
-        const signalClass = data.signal === 'overbought' ? 'obo-overbought' :
-            data.signal === 'oversold' ? 'obo-oversold' : 'obo-neutral';
+        const signalClass = utils.getOboClass(data);
         const signalText = data.level || '中性';
         const strength = data.strength || 50;
 
@@ -120,7 +119,7 @@ class USMarketController {
             // Backend keys
             vix: 'VIX波动率',
             sp500_momentum: '标普动量',
-            market_breadth: '市场广度',
+            market_breadth: '市场分化',
             safe_haven: '避险需求',
 
             // Legacy/CNN concept keys
@@ -147,9 +146,10 @@ class USMarketController {
                 <div style="text-align: center; padding: 20px;">
                     <div style="margin-bottom: 12px; color: var(--text-secondary); font-size: 14px;">${message}</div>
                     <a href="https://edition.cnn.com/markets/fear-and-greed" target="_blank" class="btn-primary" style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 6px; background: var(--accent-blue); color: white; text-decoration: none; font-size: 13px;">
-                        访问 CNN 官网查看
+                        CNN 官网参考
                         <i data-lucide="external-link" width="14"></i>
                     </a>
+                    <div style="margin-top: 8px; font-size: 11px; color: var(--text-tertiary);">当前页面为自定义估算指数</div>
                 </div>
             `;
             if (window.lucide) lucide.createIcons();
@@ -198,11 +198,11 @@ class USMarketController {
             contentHtml += `</div>`;
         }
 
-        // Add permanent CNN link
+        // Add permanent CNN link (reference only)
         contentHtml += `
             <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-color); width: 100%; display: flex; justify-content: center;">
                 <a href="https://edition.cnn.com/markets/fear-and-greed" target="_blank" style="display: inline-flex; align-items: center; gap: 4px; color: var(--text-secondary); text-decoration: none; font-size: 11px; transition: color 0.2s;">
-                    View on CNN
+                    CNN 官网参考
                     <i data-lucide="external-link" width="10"></i>
                 </a>
             </div>

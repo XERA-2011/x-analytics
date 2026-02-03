@@ -22,14 +22,22 @@ from ...core.utils import get_beijing_time, akshare_call_with_retry, safe_float
 from ...core.logger import logger
 
 
-# 指标权重配置
-INDICATOR_WEIGHTS = {
+# 指标权重配置（可由配置覆盖）
+DEFAULT_INDICATOR_WEIGHTS = {
     "rsi": 0.30,
     "macd": 0.25,
     "bollinger": 0.20,
     "kdj": 0.15,
     "volume": 0.10,
 }
+
+DEFAULT_LEVELS = [
+    {"min": 75, "signal": "overbought", "level": "强烈超买", "description": "多项指标共振，市场处于强烈超买状态"},
+    {"min": 60, "signal": "overbought", "level": "超买", "description": "技术指标偏向超买"},
+    {"min": 40, "signal": "neutral", "level": "中性", "description": "技术指标未出现明显超买超卖信号"},
+    {"min": 25, "signal": "oversold", "level": "强烈超卖", "description": "多项指标共振，市场处于强烈超卖状态"},
+    {"min": 0, "signal": "oversold", "level": "超卖", "description": "技术指标偏向超卖"},
+]
 
 
 class OverboughtOversoldSignal:
@@ -108,6 +116,16 @@ class OverboughtOversoldSignal:
             if not config:
                 return {"error": f"不支持的市场: {market}"}
 
+            # 校验周期支持范围
+            if period != "daily" and not (
+                market in ("CN", "GOLD", "SILVER") and period == "60min"
+            ):
+                return {
+                    "error": f"{market} 暂不支持 {period} 周期",
+                    "market": market,
+                    "update_time": get_beijing_time().strftime("%Y-%m-%d %H:%M:%S"),
+                }
+
             # 获取K线数据
             df = OverboughtOversoldSignal._fetch_data(market, period)
             if df is None or df.empty:
@@ -140,6 +158,7 @@ class OverboughtOversoldSignal:
                 "strength": composite["strength"],
                 "level": composite["level"],
                 "description": composite["description"],
+                "levels": OverboughtOversoldSignal._get_levels(),
                 "indicators": indicators,
                 "update_time": get_beijing_time().strftime("%Y-%m-%d %H:%M:%S"),
             }
@@ -201,15 +220,26 @@ class OverboughtOversoldSignal:
 
             # 标准化列名
             df.columns = [c.lower() for c in df.columns]
-            
+
             # 确保数值类型
             for col in ["open", "high", "low", "close"]:
                 if col in df.columns:
                     df[col] = pd.to_numeric(df[col], errors="coerce")
-            
+
             if "volume" in df.columns:
                 df["volume"] = pd.to_numeric(df["volume"], errors="coerce")
-            
+
+            # 尝试按时间字段排序，保证末行是最新数据
+            for date_col in ["date", "trade_date", "datetime", "time"]:
+                if date_col in df.columns:
+                    df = df.sort_values(date_col)
+                    break
+
+            # CN 60min 可能不支持指数标的，做一次结构校验
+            if market == "CN" and period == "60min":
+                if not all(col in df.columns for col in ["open", "high", "low", "close"]):
+                    return None
+
             return df
 
         except Exception as e:
@@ -226,10 +256,10 @@ class OverboughtOversoldSignal:
         rsi_value = calculate_rsi(close, 14)
         rsi_signal, rsi_score = get_signal_from_rsi(rsi_value)
         indicators["rsi"] = {
-            "value": round(rsi_value, 2) if rsi_value else None,
+            "value": round(rsi_value, 2) if rsi_value is not None else None,
             "signal": rsi_signal,
             "score": rsi_score,
-            "weight": INDICATOR_WEIGHTS["rsi"],
+            "weight": OverboughtOversoldSignal._get_weights()["rsi"],
         }
 
         # 2. MACD
@@ -257,10 +287,10 @@ class OverboughtOversoldSignal:
                 "divergence_type": macd_data["divergence_type"],
                 "signal": macd_signal,
                 "score": macd_score,
-                "weight": INDICATOR_WEIGHTS["macd"],
+                "weight": OverboughtOversoldSignal._get_weights()["macd"],
             }
         else:
-            indicators["macd"] = {"error": macd_data["error"], "weight": INDICATOR_WEIGHTS["macd"]}
+            indicators["macd"] = {"error": macd_data["error"], "weight": OverboughtOversoldSignal._get_weights()["macd"]}
 
         # 3. 布林带
         boll_data = calculate_bollinger(close)
@@ -271,10 +301,10 @@ class OverboughtOversoldSignal:
                 "bandwidth": round(boll_data["bandwidth"], 2),
                 "signal": boll_signal,
                 "score": boll_score,
-                "weight": INDICATOR_WEIGHTS["bollinger"],
+                "weight": OverboughtOversoldSignal._get_weights()["bollinger"],
             }
         else:
-            indicators["bollinger"] = {"error": boll_data["error"], "weight": INDICATOR_WEIGHTS["bollinger"]}
+            indicators["bollinger"] = {"error": boll_data["error"], "weight": OverboughtOversoldSignal._get_weights()["bollinger"]}
 
         # 4. KDJ
         if all(col in df.columns for col in ["high", "low", "close"]):
@@ -287,12 +317,12 @@ class OverboughtOversoldSignal:
                     "j": round(kdj_data["j"], 2),
                     "signal": kdj_signal,
                     "score": kdj_score,
-                    "weight": INDICATOR_WEIGHTS["kdj"],
+                    "weight": OverboughtOversoldSignal._get_weights()["kdj"],
                 }
             else:
-                indicators["kdj"] = {"error": kdj_data["error"], "weight": INDICATOR_WEIGHTS["kdj"]}
+                indicators["kdj"] = {"error": kdj_data["error"], "weight": OverboughtOversoldSignal._get_weights()["kdj"]}
         else:
-            indicators["kdj"] = {"error": "缺少高低价数据", "weight": INDICATOR_WEIGHTS["kdj"]}
+            indicators["kdj"] = {"error": "缺少高低价数据", "weight": OverboughtOversoldSignal._get_weights()["kdj"]}
 
         # 5. 成交量异常
         if "volume" in df.columns:
@@ -313,12 +343,12 @@ class OverboughtOversoldSignal:
                     "ratio": vol_data["volume_ratio"],
                     "signal": vol_signal,
                     "score": vol_score,
-                    "weight": INDICATOR_WEIGHTS["volume"],
+                    "weight": OverboughtOversoldSignal._get_weights()["volume"],
                 }
             else:
-                indicators["volume"] = {"error": vol_data["error"], "weight": INDICATOR_WEIGHTS["volume"]}
+                indicators["volume"] = {"error": vol_data["error"], "weight": OverboughtOversoldSignal._get_weights()["volume"]}
         else:
-            indicators["volume"] = {"error": "无成交量数据", "weight": INDICATOR_WEIGHTS["volume"]}
+            indicators["volume"] = {"error": "无成交量数据", "weight": OverboughtOversoldSignal._get_weights()["volume"]}
 
         return indicators
 
@@ -351,27 +381,16 @@ class OverboughtOversoldSignal:
 
         composite_score = total_score / total_weight
 
-        # 判断信号
-        if composite_score >= 75:
-            signal = "overbought"
-            level = "强烈超买"
-            desc = "多项指标共振，市场处于强烈超买状态，回调风险较高"
-        elif composite_score >= 60:
-            signal = "overbought"
-            level = "超买"
-            desc = "技术指标偏向超买，建议谨慎追高"
-        elif composite_score <= 25:
-            signal = "oversold"
-            level = "强烈超卖"
-            desc = "多项指标共振，市场处于强烈超卖状态，可能存在反弹机会"
-        elif composite_score <= 40:
-            signal = "oversold"
-            level = "超卖"
-            desc = "技术指标偏向超卖，可关注企稳信号"
-        else:
-            signal = "neutral"
-            level = "中性"
-            desc = "技术指标未出现明显超买超卖信号"
+        # 判断信号（配置化）
+        signal = "neutral"
+        level = "中性"
+        desc = "技术指标未出现明显超买超卖信号"
+        for item in OverboughtOversoldSignal._get_levels():
+            if composite_score >= item["min"]:
+                signal = item["signal"]
+                level = item["level"]
+                desc = item["description"]
+                break
 
         return {
             "signal": signal,
@@ -379,3 +398,10 @@ class OverboughtOversoldSignal:
             "level": level,
             "description": desc,
         }
+    @staticmethod
+    def _get_weights() -> Dict[str, float]:
+        return settings.OVERBOUGHT_OVERSOLD_CONFIG.get("weights", DEFAULT_INDICATOR_WEIGHTS)
+
+    @staticmethod
+    def _get_levels() -> List[Dict[str, Any]]:
+        return settings.OVERBOUGHT_OVERSOLD_CONFIG.get("levels", DEFAULT_LEVELS)

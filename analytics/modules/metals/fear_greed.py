@@ -17,6 +17,33 @@ from ...core.logger import logger
 class BaseMetalFearGreedIndex:
     """金属恐慌贪婪指数基类"""
 
+    DEFAULT_WEIGHTS = {
+        "rsi": 0.30,
+        "volatility": 0.20,
+        "momentum": 0.30,
+        "daily_change": 0.20,
+    }
+
+    DEFAULT_LEVELS = [
+        (75, "极度贪婪", "市场情绪极度乐观"),
+        (55, "贪婪", "市场情绪偏向乐观"),
+        (45, "中性", "多空平衡，方向不明"),
+        (25, "恐慌", "市场情绪偏悲观"),
+        (0, "极度恐慌", "市场情绪极度悲观"),
+    ]
+
+    @staticmethod
+    def _get_weights() -> Dict[str, float]:
+        return settings.FEAR_GREED_CONFIG.get("metals", {}).get("weights", BaseMetalFearGreedIndex.DEFAULT_WEIGHTS)
+
+    @staticmethod
+    def _get_levels() -> list:
+        return settings.FEAR_GREED_CONFIG.get("metals", {}).get("levels", BaseMetalFearGreedIndex.DEFAULT_LEVELS)
+
+    @staticmethod
+    def _get_levels_payload() -> list:
+        return [{"min": t, "label": l, "description": d} for t, l, d in BaseMetalFearGreedIndex._get_levels()]
+
     @classmethod
     def calculate(cls, symbol: str, cache_key: str, name: str) -> Dict[str, Any]:
         """
@@ -110,7 +137,8 @@ class BaseMetalFearGreedIndex:
                 "description": description,
                 "indicators": indicators,
                 "update_time": get_beijing_time().strftime("%Y-%m-%d %H:%M:%S"),
-                "explanation": cls._get_explanation(name)
+                "explanation": cls._get_explanation(name),
+                "levels": cls._get_levels_payload(),
             }
 
         except Exception as e:
@@ -130,6 +158,8 @@ class BaseMetalFearGreedIndex:
             
             # 1. RSI (14) - 权重 30%
             rsi = BaseMetalFearGreedIndex._calculate_rsi(close_prices, 14)
+            if rsi is None:
+                return {}
             if rsi > 50:
                  score_rsi = 50 + (rsi - 50) * 1.33 
             else:
@@ -139,7 +169,7 @@ class BaseMetalFearGreedIndex:
             indicators["rsi"] = {
                 "value": round(rsi, 2),
                 "score": round(score_rsi, 1),
-                "weight": 0.30,
+                "weight": BaseMetalFearGreedIndex._get_weights()["rsi"],
                 "name": "RSI (14)"
             }
 
@@ -161,7 +191,7 @@ class BaseMetalFearGreedIndex:
                 "value": round(current_vol * 100, 2), # Show as %
                 "ratio": round(vol_ratio, 2),
                 "score": round(score_vol, 1),
-                "weight": 0.20,
+                "weight": BaseMetalFearGreedIndex._get_weights()["volatility"],
                 "name": "波动率趋势"
             }
             
@@ -178,7 +208,7 @@ class BaseMetalFearGreedIndex:
             indicators["momentum"] = {
                 "value": round(bias, 2), # Bias %
                 "score": round(score_mom, 1),
-                "weight": 0.30,
+                "weight": BaseMetalFearGreedIndex._get_weights()["momentum"],
                 "name": "均线偏离 (MA50)"
             }
             
@@ -191,7 +221,7 @@ class BaseMetalFearGreedIndex:
             indicators["daily_change"] = {
                 "value": round(daily_change, 2),
                 "score": round(score_daily, 1),
-                "weight": 0.20,
+                "weight": BaseMetalFearGreedIndex._get_weights()["daily_change"],
                 "name": "当日涨跌"
             }
             
@@ -232,29 +262,26 @@ class BaseMetalFearGreedIndex:
 
     @staticmethod
     def _get_level_description(score: float) -> tuple:
-        if score >= 75:
-            return "极度贪婪", "市场情绪极度高涨，注意回调风险"
-        if score >= 55:
-            return "贪婪", "买盘积极，趋势向好"
-        if score >= 45:
-            return "中性", "多空平衡，方向不明"
-        if score >= 25:
-            return "恐慌", "抛压较重，市场悲观"
-        return "极度恐慌", "非理性抛售，可能存在超跌反弹机会"
+        for threshold, level, description in BaseMetalFearGreedIndex._get_levels():
+            if score >= threshold:
+                return level, description
+        return "未知", "无法判断情绪等级"
 
     @staticmethod
     def _get_explanation(name: str) -> str:
+        weights = BaseMetalFearGreedIndex._get_weights()
         return f"""
 {name}恐慌贪婪指数模型：
 • 核心逻辑：基于价格行为(Price Action)量化市场情绪
 • 组成因子：
-  1. RSI (30%)：相对强弱指标，衡量超买超卖
-  2. 均线偏离 (30%)：当前价格与50日均线乖离率
-  3. 波动率 (20%)：近期波动率与历史波动率对比
-  4. 周趋势 (20%)：近5日价格动量
+  1. RSI ({int(weights["rsi"] * 100)}%)：相对强弱指标，衡量超买超卖
+  2. 均线偏离 ({int(weights["momentum"] * 100)}%)：当前价格与50日均线乖离率
+  3. 波动率 ({int(weights["volatility"] * 100)}%)：近期波动率与历史波动率对比
+  4. 当日涨跌 ({int(weights["daily_change"] * 100)}%)：当日价格变化
 • 分值解读：
-  - 0-25 (极度恐慌)：往往对应阶段性底部
-  - 75-100 (极度贪婪)：往往对应阶段性顶部
+  - 0-25 (极度恐慌)：市场情绪极度悲观
+  - 75-100 (极度贪婪)：市场情绪极度乐观
+• 说明：此指标为技术指标合成，不构成投资建议
 """.strip()
 
 
@@ -276,4 +303,3 @@ class SilverFearGreedIndex(BaseMetalFearGreedIndex):
     @cached("metals:silver_fear_greed_v2", ttl=settings.CACHE_TTL["metals"], stale_ttl=settings.CACHE_TTL["metals"] * settings.STALE_TTL_RATIO)
     def calculate() -> Dict[str, Any]:
         return BaseMetalFearGreedIndex.calculate(SilverFearGreedIndex.SILVER_SYMBOL, "metals:silver_fear_greed_v2", "白银")
-

@@ -139,8 +139,7 @@ class CNMarketController {
             return;
         }
 
-        const signalClass = data.signal === 'overbought' ? 'obo-overbought' :
-            data.signal === 'oversold' ? 'obo-oversold' : 'obo-neutral';
+        const signalClass = utils.getOboClass(data);
         const signalText = data.level || '中性';
         const strength = data.strength || 50;
 

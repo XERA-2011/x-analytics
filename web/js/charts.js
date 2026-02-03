@@ -46,15 +46,27 @@ class Charts {
             return null;
         }
 
-        // 根据分数确定颜色
+        // 根据分数确定颜色（优先使用后端 levels 配置）
+        const levels = Array.isArray(data.levels) ? data.levels.slice() : null;
         let color;
-        if (score >= 80) color = '#ef4444'; // 极度贪婪 - 红色
-        else if (score >= 65) color = '#f59e0b'; // 贪婪 - 橙色
-        else if (score >= 55) color = '#eab308'; // 轻微贪婪 - 黄色
-        else if (score >= 45) color = '#6b7280'; // 中性 - 灰色
-        else if (score >= 35) color = '#3b82f6'; // 轻微恐慌 - 蓝色
-        else if (score >= 20) color = '#8b5cf6'; // 恐慌 - 紫色
-        else color = '#10b981'; // 极度恐慌 - 绿色
+        const palette7 = ['#ef4444', '#f59e0b', '#eab308', '#6b7280', '#3b82f6', '#8b5cf6', '#10b981'];
+        const palette5 = ['#ef4444', '#f59e0b', '#6b7280', '#3b82f6', '#10b981'];
+
+        if (levels && levels.length > 0) {
+            levels.sort((a, b) => b.min - a.min);
+            const palette = levels.length === 5 ? palette5 : palette7;
+            let idx = levels.findIndex(l => score >= l.min);
+            if (idx === -1) idx = levels.length - 1;
+            color = palette[Math.min(idx, palette.length - 1)];
+        } else {
+            if (score >= 80) color = '#ef4444'; // 极度贪婪 - 红色
+            else if (score >= 65) color = '#f59e0b'; // 贪婪 - 橙色
+            else if (score >= 55) color = '#eab308'; // 轻微贪婪 - 黄色
+            else if (score >= 45) color = '#6b7280'; // 中性 - 灰色
+            else if (score >= 35) color = '#3b82f6'; // 轻微恐慌 - 蓝色
+            else if (score >= 20) color = '#8b5cf6'; // 恐慌 - 紫色
+            else color = '#10b981'; // 极度恐慌 - 绿色
+        }
 
         const option = {
             series: [{
