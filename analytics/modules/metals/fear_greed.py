@@ -1,6 +1,8 @@
 """
 黄金恐慌贪婪指数 (Custom)
-基于技术指标计算: RSI, 波动率, 动量, 均线偏离
+基于技术指标 + 基本面数据计算
+技术面: RSI, 波动率, 动量, 当日涨跌
+基本面: ETF持仓趋势, COMEX库存趋势
 """
 
 import akshare as ak
@@ -12,6 +14,7 @@ from ...core.cache import cached
 from ...core.config import settings
 from ...core.utils import get_beijing_time, akshare_call_with_retry, safe_float
 from ...core.logger import logger
+from .fundamentals import MetalFundamentals
 
 
 class BaseMetalFearGreedIndex:
@@ -105,10 +108,10 @@ class BaseMetalFearGreedIndex:
                 print(f"❌ [Metals] {name} 实时获取异常: {e_rt}")
             # -----------------------------------
             
-            # 计算各项指标
+            # 计算技术指标
             indicators = cls._calculate_indicators(df)
             
-            # 如果指标计算失败，返回错误
+            # 如果技术指标计算失败，返回错误
             if not indicators:
                 return {
                     "error": "无法计算技术指标",
@@ -116,8 +119,41 @@ class BaseMetalFearGreedIndex:
                     "update_time": get_beijing_time().strftime("%Y-%m-%d %H:%M:%S"),
                 }
             
-            # 计算综合得分
-            score = cls._calculate_composite_score(indicators)
+            # --- 添加基本面指标 ---
+            fallback_mode = False
+            fundamental_count = 0
+            
+            # ETF 持仓趋势 (仅黄金)
+            if name == "黄金":
+                holdings_data = MetalFundamentals.get_spdr_gold_holdings()
+                etf_score = MetalFundamentals.calculate_etf_holdings_score(holdings_data)
+                if etf_score:
+                    indicators["etf_holdings"] = etf_score
+                    fundamental_count += 1
+                else:
+                    logger.warning(f"⚠️ {name} ETF持仓数据不可用，使用纯技术面模式")
+            
+            # COMEX 库存趋势
+            if name == "黄金":
+                inventory_data = MetalFundamentals.get_comex_gold_inventory()
+            else:
+                inventory_data = MetalFundamentals.get_comex_silver_inventory()
+            
+            inventory_score = MetalFundamentals.calculate_inventory_score(inventory_data)
+            if inventory_score:
+                indicators["comex_inventory"] = inventory_score
+                fundamental_count += 1
+            else:
+                logger.warning(f"⚠️ {name} COMEX库存数据不可用，使用纯技术面模式")
+            
+            # 如果基本面数据全部不可用，标记为回退模式
+            if fundamental_count == 0:
+                fallback_mode = True
+                logger.info(f"📊 {name} 使用纯技术面模式计算恐慌贪婪指数")
+            # --------------------------
+            
+            # 计算综合得分 (自动处理权重重分配)
+            score = cls._calculate_composite_score(indicators, fallback_mode)
             
             # 如果无法计算综合得分，返回错误
             if score is None:
@@ -136,8 +172,9 @@ class BaseMetalFearGreedIndex:
                 "level": level,
                 "description": description,
                 "indicators": indicators,
+                "fallback_mode": fallback_mode,
                 "update_time": get_beijing_time().strftime("%Y-%m-%d %H:%M:%S"),
-                "explanation": cls._get_explanation(name),
+                "explanation": cls._get_explanation(name, fallback_mode),
                 "levels": cls._get_levels_payload(),
             }
 
@@ -241,8 +278,17 @@ class BaseMetalFearGreedIndex:
         return rsi.iloc[-1] if not pd.isna(rsi.iloc[-1]) else None
 
     @staticmethod
-    def _calculate_composite_score(indicators: Dict[str, Any]) -> Optional[float]:
-        """计算综合得分，如果没有有效指标返回 None"""
+    def _calculate_composite_score(indicators: Dict[str, Any], fallback_mode: bool = False) -> Optional[float]:
+        """
+        计算综合得分
+        
+        Args:
+            indicators: 各指标分数字典
+            fallback_mode: 是否为回退模式（无基本面数据时自动重新分配权重）
+        
+        Returns:
+            综合得分 0-100，如果无有效指标返回 None
+        """
         if not indicators:
             return None
         
@@ -258,6 +304,7 @@ class BaseMetalFearGreedIndex:
         if total_weight == 0 or valid_count == 0:
             return None
         
+        # 归一化：确保权重总和不影响最终分数范围
         return total_score / total_weight
 
     @staticmethod
@@ -268,20 +315,42 @@ class BaseMetalFearGreedIndex:
         return "未知", "无法判断情绪等级"
 
     @staticmethod
-    def _get_explanation(name: str) -> str:
+    def _get_explanation(name: str, fallback_mode: bool = False) -> str:
+        """
+        获取指标说明文本
+        
+        Args:
+            name: 金属名称
+            fallback_mode: 是否为纯技术面模式
+        """
         weights = BaseMetalFearGreedIndex._get_weights()
+        
+        # 技术面因子说明
+        tech_factors = f"""
+  【技术面】
+  1. RSI ({int(weights.get('rsi', 0.20) * 100)}%)：相对强弱指标，衡量超买超卖
+  2. 均线偏离 ({int(weights.get('momentum', 0.20) * 100)}%)：当前价格与50日均线乖离率
+  3. 波动率 ({int(weights.get('volatility', 0.15) * 100)}%)：近期波动率与历史波动率对比
+  4. 当日涨跌 ({int(weights.get('daily_change', 0.15) * 100)}%): 当日价格变化"""
+        
+        # 基本面因子说明 (仅在非回退模式显示)
+        fundamental_factors = ""
+        if not fallback_mode:
+            fundamental_factors = f"""
+  【基本面】
+  5. ETF持仓趋势 ({int(weights.get('etf_holdings', 0.15) * 100)}%)：SPDR GLD 持仓变化
+  6. COMEX库存 ({int(weights.get('comex_inventory', 0.15) * 100)}%)：交易所库存变化"""
+        
+        mode_note = "（当前：纯技术面模式）" if fallback_mode else "（技术面 + 基本面）"
+        
         return f"""
-{name}恐慌贪婪指数模型：
-• 核心逻辑：基于价格行为(Price Action)量化市场情绪
-• 组成因子：
-  1. RSI ({int(weights["rsi"] * 100)}%)：相对强弱指标，衡量超买超卖
-  2. 均线偏离 ({int(weights["momentum"] * 100)}%)：当前价格与50日均线乖离率
-  3. 波动率 ({int(weights["volatility"] * 100)}%)：近期波动率与历史波动率对比
-  4. 当日涨跌 ({int(weights["daily_change"] * 100)}%)：当日价格变化
+{name}恐慌贪婪指数模型 {mode_note}
+• 核心逻辑：量化市场情绪，综合价格行为与资金流向
+• 组成因子：{tech_factors}{fundamental_factors}
 • 分值解读：
   - 0-25 (极度恐慌)：市场情绪极度悲观
   - 75-100 (极度贪婪)：市场情绪极度乐观
-• 说明：此指标为技术指标合成，不构成投资建议
+• 说明：此指标综合技术与基本面分析，不构成投资建议
 """.strip()
 
 
@@ -290,16 +359,17 @@ class GoldFearGreedIndex(BaseMetalFearGreedIndex):
     GOLD_SYMBOL = "au0"
 
     @staticmethod
-    @cached("metals:fear_greed_v2", ttl=settings.CACHE_TTL["metals"], stale_ttl=settings.CACHE_TTL["metals"] * settings.STALE_TTL_RATIO)
+    @cached("metals:fear_greed_v3", ttl=settings.CACHE_TTL["metals"], stale_ttl=settings.CACHE_TTL["metals"] * settings.STALE_TTL_RATIO)
     def calculate() -> Dict[str, Any]:
-        return BaseMetalFearGreedIndex.calculate(GoldFearGreedIndex.GOLD_SYMBOL, "metals:fear_greed_v2", "黄金")
+        return BaseMetalFearGreedIndex.calculate(GoldFearGreedIndex.GOLD_SYMBOL, "metals:fear_greed_v3", "黄金")
 
 
 class SilverFearGreedIndex(BaseMetalFearGreedIndex):
     """白银市场恐慌贪婪指数计算"""
-    SILVER_SYMBOL = "ag0" # 沪银主力
+    SILVER_SYMBOL = "ag0"  # 沪银主力
 
     @staticmethod
-    @cached("metals:silver_fear_greed_v2", ttl=settings.CACHE_TTL["metals"], stale_ttl=settings.CACHE_TTL["metals"] * settings.STALE_TTL_RATIO)
+    @cached("metals:silver_fear_greed_v3", ttl=settings.CACHE_TTL["metals"], stale_ttl=settings.CACHE_TTL["metals"] * settings.STALE_TTL_RATIO)
     def calculate() -> Dict[str, Any]:
-        return BaseMetalFearGreedIndex.calculate(SilverFearGreedIndex.SILVER_SYMBOL, "metals:silver_fear_greed_v2", "白银")
+        return BaseMetalFearGreedIndex.calculate(SilverFearGreedIndex.SILVER_SYMBOL, "metals:silver_fear_greed_v3", "白银")
+

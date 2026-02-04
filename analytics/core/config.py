@@ -161,10 +161,14 @@ class Settings:
         },
         "metals": {
             "weights": {
-                "rsi": 0.30,
-                "volatility": 0.20,
-                "momentum": 0.30,
-                "daily_change": 0.20,
+                # 技术面因子 (70% 总计)
+                "rsi": 0.20,
+                "volatility": 0.15,
+                "momentum": 0.20,
+                "daily_change": 0.15,
+                # 基本面因子 (30% 总计)
+                "etf_holdings": 0.15,
+                "comex_inventory": 0.15,
             },
             "levels": [
                 (75, "极度贪婪", "市场情绪极度乐观"),
