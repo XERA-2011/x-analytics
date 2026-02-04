@@ -109,14 +109,17 @@
                         <h3>全行业热力图</h3>
                         <div class="header-actions">
                             <div class="flex items-center gap-2 mr-2 text-xs font-bold">
-                                <span style="color: #22c55e">跌</span>
                                 <span style="color: #ef4444">涨</span>
+                                <span style="color: #22c55e">跌</span>
                             </div>
                             <button class="info-btn" id="info-cn-heatmap" title="说明"><i data-lucide="help-circle"
                                     width="16"></i></button>
                         </div>
                     </div>
                     <div class="card-body">
+                        <!-- 涨跌幅排行榜 -->
+                        <div id="cn-sector-ranking" class="sector-ranking"></div>
+                        <!-- 热力图 -->
                         <div id="cn-sector-heatmap" class="w-full" style="height: 800px;"></div>
                     </div>
                 </div>

@@ -750,3 +750,122 @@ footer {
     color: var(--text-secondary);
     padding: 8px;
 }
+
+/* Sector Ranking */
+.sector-ranking {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.ranking-column {
+    display: flex;
+    flex-direction: column;
+}
+
+.ranking-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px dashed var(--border-light);
+}
+
+.ranking-header.up {
+    color: var(--accent-red);
+}
+
+.ranking-header.down {
+    color: var(--accent-green);
+}
+
+.ranking-item {
+    display: flex;
+    flex-direction: column;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.ranking-item:last-child {
+    border-bottom: none;
+}
+
+.ranking-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.ranking-left {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+    min-width: 0;
+}
+
+.ranking-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+    flex-shrink: 0;
+}
+
+.ranking-name {
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ranking-turnover {
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+
+.ranking-change {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.ranking-sentiment {
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.ranking-meta {
+    display: flex;
+    gap: 8px;
+    font-size: 11px;
+    color: var(--text-secondary);
+    margin-top: 2px;
+}
+
+.ranking-meta span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+@media (max-width: 480px) {
+    .sector-ranking {
+        gap: 12px;
+    }
+
+    .ranking-name {
+        font-size: 12px;
+    }
+
+    .ranking-change {
+        font-size: 12px;
+    }
+}

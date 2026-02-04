@@ -205,6 +205,9 @@ class CNMarketController {
             return;
         }
 
+        // 渲染涨跌幅排行榜
+        this.renderSectorRanking(data.sectors);
+
         // 渲染 ECharts Treemap
         if (window.charts) {
             window.charts.renderTreemap('cn-sector-heatmap', data.sectors);
@@ -236,6 +239,73 @@ class CNMarketController {
 • 横盘震荡：涨跌幅<0.8%（多空僵持，等待突破方向）`);
             infoBtn.style.display = 'flex';
         }
+    }
+
+    renderSectorRanking(sectors) {
+        const container = document.getElementById('cn-sector-ranking');
+        if (!container || !sectors || sectors.length === 0) return;
+
+        // 排序获取涨幅榜和跌幅榜
+        const sorted = [...sectors].sort((a, b) => b.change_pct - a.change_pct);
+        const gainers = sorted.slice(0, 5);
+        const losers = sorted.slice(-5).reverse();
+
+        // 情绪分析函数 (与 charts.js treemap tooltip 保持一致)
+        const getSentiment = (change, turnover) => {
+            const t = turnover || 0;
+            const c = change || 0;
+            const absC = Math.abs(c);
+
+            if (absC < 0.8) return { text: '横盘震荡', color: '#9ca3af' };
+
+            if (c > 0) {
+                if (c > 8) return t > 2 ? { text: '极度超买', color: '#dc2626' } : { text: '逼空拉升', color: '#dc2626' };
+                if (t > 5 && c > 4) return { text: '严重超买', color: '#dc2626' };
+                if (t > 3 || c > 4) return { text: '放量上攻', color: '#ef4444' };
+                if (t < 1.2 && c < 2) return { text: '缩量上涨', color: '#f59e0b' };
+                return { text: '温和上涨', color: '#ef4444' };
+            } else {
+                if (c < -8) return t > 2 ? { text: '恐慌抛售', color: '#16a34a' } : { text: '闷杀出局', color: '#16a34a' };
+                if (t > 5 && c < -4) return { text: '恐慌抛售', color: '#16a34a' };
+                if (t > 3 || c < -4) return { text: '放量杀跌', color: '#16a34a' };
+                if (t < 1.2 && c > -2) return { text: '无量下跌', color: '#10b981' };
+                return { text: '弱势调整', color: '#22c55e' };
+            }
+        };
+
+        const renderItem = (item, isGainer) => {
+            const changeVal = item.change_pct || 0;
+            const changeClass = isGainer ? 'text-up' : 'text-down';
+            const sign = changeVal > 0 ? '+' : '';
+            const turnover = item.turnover != null ? `换手${item.turnover.toFixed(1)}%` : '';
+            const sentiment = getSentiment(changeVal, item.turnover);
+
+            return `
+                <div class="ranking-item">
+                    <div class="ranking-row">
+                        <div class="ranking-left">
+                            <span class="ranking-name">${item.name}</span>
+                            <span class="ranking-turnover">${turnover}</span>
+                        </div>
+                        <div class="ranking-right">
+                            <span class="ranking-change ${changeClass}">${sign}${changeVal.toFixed(2)}%</span>
+                            <span class="ranking-sentiment" style="color:${sentiment.color}">${sentiment.text}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        };
+
+        container.innerHTML = `
+            <div class="ranking-column">
+                <div class="ranking-header up">📈 涨幅榜</div>
+                ${gainers.map(item => renderItem(item, true)).join('')}
+            </div>
+            <div class="ranking-column">
+                <div class="ranking-header down">📉 跌幅榜</div>
+                ${losers.map(item => renderItem(item, false)).join('')}
+            </div>
+        `;
     }
 
     renderCNFearGreed(data) {
