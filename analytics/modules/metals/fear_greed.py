@@ -1,8 +1,11 @@
 """
-黄金恐慌贪婪指数 (Custom)
-基于技术指标 + 基本面数据计算
-技术面: RSI, 波动率, 动量, 当日涨跌
-基本面: ETF持仓趋势, COMEX库存趋势
+黄金/白银恐慌贪婪指数 (纯技术面分析)
+
+技术指标:
+- RSI (30%): 相对强弱指标
+- 波动率 (20%): 当前波动率 vs 历史波动率
+- 动量 (30%): 价格与 MA50 偏离度
+- 当日涨跌 (20%): 实时价格变化
 """
 
 import akshare as ak
@@ -14,20 +17,21 @@ from ...core.cache import cached
 from ...core.config import settings
 from ...core.utils import get_beijing_time, akshare_call_with_retry, safe_float
 from ...core.logger import logger
-from .fundamentals import MetalFundamentals
 
 
 class BaseMetalFearGreedIndex:
-    """金属恐慌贪婪指数基类"""
+    """金属恐慌贪婪指数基类 (纯技术面)"""
 
-    DEFAULT_WEIGHTS = {
+    # 技术指标权重
+    WEIGHTS = {
         "rsi": 0.30,
         "volatility": 0.20,
         "momentum": 0.30,
         "daily_change": 0.20,
     }
 
-    DEFAULT_LEVELS = [
+    # 情绪等级
+    LEVELS = [
         (75, "极度贪婪", "市场情绪极度乐观"),
         (55, "贪婪", "市场情绪偏向乐观"),
         (45, "中性", "多空平衡，方向不明"),
@@ -35,83 +39,30 @@ class BaseMetalFearGreedIndex:
         (0, "极度恐慌", "市场情绪极度悲观"),
     ]
 
-    @staticmethod
-    def _get_weights() -> Dict[str, float]:
-        return settings.FEAR_GREED_CONFIG.get("metals", {}).get("weights", BaseMetalFearGreedIndex.DEFAULT_WEIGHTS)
-
-    @staticmethod
-    def _get_levels() -> list:
-        return settings.FEAR_GREED_CONFIG.get("metals", {}).get("levels", BaseMetalFearGreedIndex.DEFAULT_LEVELS)
-
-    @staticmethod
-    def _get_levels_payload() -> list:
-        return [{"min": t, "label": l, "description": d} for t, l, d in BaseMetalFearGreedIndex._get_levels()]
-
     @classmethod
-    def calculate(cls, symbol: str, cache_key: str, name: str) -> Dict[str, Any]:
-        """
-        计算恐慌贪婪指数
-        """
+    def calculate(cls, symbol: str, name: str) -> Dict[str, Any]:
+        """计算恐慌贪婪指数"""
         try:
-            # 获取历史数据 (用于计算指标)
-            # 使用 ak.futures_zh_daily_sina 获取沪金/沪银主力合约日线数据
+            # 获取历史日线数据
             df = akshare_call_with_retry(ak.futures_zh_daily_sina, symbol=symbol)
             
             if df.empty or len(df) < 60:
                 raise ValueError(f"无法获取足够的{name}历史数据")
             
             # 数据清洗
-            # futures_zh_daily 返回列: date, open, high, low, close, volume, ...
             df.columns = [c.lower() for c in df.columns]
-            
-            # 确保按日期升序
             if "date" in df.columns:
                 df = df.sort_values(by="date")
-            elif "time" in df.columns: # Sometimes it returns 'time'
-                 df = df.rename(columns={"time": "date"})
-                 df = df.sort_values(by="date")
+            elif "time" in df.columns:
+                df = df.rename(columns={"time": "date"})
+                df = df.sort_values(by="date")
 
-            # --- 注入实时数据 (Fix Stale Data) ---
-            try:
-                # 获取1分钟级数据，取最新一根K线的收盘价作为当前价格
-                # 这能确保即使在盘中，指标也能反映最新跌势
-                min_df = akshare_call_with_retry(ak.futures_zh_minute_sina, symbol=symbol, period="1")
-                if not min_df.empty:
-                    latest_price = safe_float(min_df.iloc[-1]["close"])
-                    # column is 'datetime', not 'day' for minute data
-                    latest_time = min_df.iloc[-1]["datetime"] 
-                    
-                    if latest_price is not None:
-                        # 检查 Daily 数据的最后一行日期
-                        last_date_str = str(df.iloc[-1]["date"])[:10] # YYYY-MM-DD
-                        current_date_str = str(latest_time)[:10]
-                        
-                        logger.info(f"[{name}] DailyLast: {last_date_str}, Realtime: {current_date_str}, Price: {latest_price}")
-                        print(f"✅ [Metals] {name} 实时注入成功: {current_date_str} Price={latest_price}")
-
-                        if last_date_str == current_date_str:
-                            # 如果日期相同，更新最后一行收盘价 (Overwrite)
-                            df.iloc[-1, df.columns.get_loc("close")] = latest_price
-                        else:
-                            # 如果日期不同 (Daily还没更新)，追加一行 (Append)
-                            new_row = df.iloc[-1].copy()
-                            new_row["date"] = current_date_str
-                            new_row["close"] = latest_price
-                            # 其他字段(open/high/low)暂时复用上一行或置为NaN，
-                            # 但计算RSI/Change只需要Close，所以问题不大
-                            df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
-                else:
-                     print(f"❌ [Metals] {name} 实时数据为空!")
-
-            except Exception as e_rt:
-                logger.warning(f"⚠️ 无法获取{name}实时数据，将使用昨日收盘价: {e_rt}")
-                print(f"❌ [Metals] {name} 实时获取异常: {e_rt}")
-            # -----------------------------------
+            # 注入实时数据
+            cls._inject_realtime_data(df, symbol, name)
             
             # 计算技术指标
             indicators = cls._calculate_indicators(df)
             
-            # 如果技术指标计算失败，返回错误
             if not indicators:
                 return {
                     "error": "无法计算技术指标",
@@ -119,63 +70,27 @@ class BaseMetalFearGreedIndex:
                     "update_time": get_beijing_time().strftime("%Y-%m-%d %H:%M:%S"),
                 }
             
-            # --- 添加基本面指标 ---
-            fallback_mode = False
-            fundamental_count = 0
+            # 计算综合得分
+            score = cls._calculate_composite_score(indicators)
             
-            # ETF 持仓趋势 (仅黄金)
-            if name == "黄金":
-                holdings_data = MetalFundamentals.get_spdr_gold_holdings()
-                etf_score = MetalFundamentals.calculate_etf_holdings_score(holdings_data)
-                if etf_score:
-                    indicators["etf_holdings"] = etf_score
-                    fundamental_count += 1
-                else:
-                    logger.warning(f"⚠️ {name} ETF持仓数据不可用，使用纯技术面模式")
-            
-            # COMEX 库存趋势
-            if name == "黄金":
-                inventory_data = MetalFundamentals.get_comex_gold_inventory()
-            else:
-                inventory_data = MetalFundamentals.get_comex_silver_inventory()
-            
-            inventory_score = MetalFundamentals.calculate_inventory_score(inventory_data)
-            if inventory_score:
-                indicators["comex_inventory"] = inventory_score
-                fundamental_count += 1
-            else:
-                logger.warning(f"⚠️ {name} COMEX库存数据不可用，使用纯技术面模式")
-            
-            # 如果基本面数据全部不可用，标记为回退模式
-            if fundamental_count == 0:
-                fallback_mode = True
-                logger.info(f"📊 {name} 使用纯技术面模式计算恐慌贪婪指数")
-            # --------------------------
-            
-            # 计算综合得分 (自动处理权重重分配)
-            score = cls._calculate_composite_score(indicators, fallback_mode)
-            
-            # 如果无法计算综合得分，返回错误
             if score is None:
                 return {
                     "error": "无法计算综合得分",
                     "message": "指标数据不足",
-                    "indicators": indicators,
                     "update_time": get_beijing_time().strftime("%Y-%m-%d %H:%M:%S"),
                 }
             
             # 等级描述
-            level, description = cls._get_level_description(score)
+            level, description = cls._get_level(score)
             
             return {
                 "score": round(score, 1),
                 "level": level,
                 "description": description,
                 "indicators": indicators,
-                "fallback_mode": fallback_mode,
                 "update_time": get_beijing_time().strftime("%Y-%m-%d %H:%M:%S"),
-                "explanation": cls._get_explanation(name, fallback_mode),
-                "levels": cls._get_levels_payload(),
+                "explanation": cls._get_explanation(name),
+                "levels": [{"min": t, "label": l, "description": d} for t, l, d in cls.LEVELS],
             }
 
         except Exception as e:
@@ -186,84 +101,100 @@ class BaseMetalFearGreedIndex:
                 "update_time": get_beijing_time().strftime("%Y-%m-%d %H:%M:%S")
             }
 
+    @classmethod
+    def _inject_realtime_data(cls, df: pd.DataFrame, symbol: str, name: str) -> None:
+        """注入实时数据"""
+        try:
+            min_df = akshare_call_with_retry(ak.futures_zh_minute_sina, symbol=symbol, period="1")
+            if min_df.empty:
+                return
+                
+            latest_price = safe_float(min_df.iloc[-1]["close"])
+            latest_time = min_df.iloc[-1]["datetime"]
+            
+            if latest_price is None:
+                return
+                
+            last_date_str = str(df.iloc[-1]["date"])[:10]
+            current_date_str = str(latest_time)[:10]
+            
+            logger.info(f"[{name}] DailyLast: {last_date_str}, Realtime: {current_date_str}, Price: {latest_price}")
+
+            if last_date_str == current_date_str:
+                df.iloc[-1, df.columns.get_loc("close")] = latest_price
+            else:
+                new_row = df.iloc[-1].copy()
+                new_row["date"] = current_date_str
+                new_row["close"] = latest_price
+                df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
+                
+        except Exception as e:
+            logger.warning(f"⚠️ 无法获取{name}实时数据: {e}")
+
     @staticmethod
     def _calculate_indicators(df: pd.DataFrame) -> Dict[str, Any]:
         """计算技术指标"""
         indicators = {}
         try:
-            close_prices = df["close"]
+            close = df["close"]
             
-            # 1. RSI (14) - 权重 30%
-            rsi = BaseMetalFearGreedIndex._calculate_rsi(close_prices, 14)
+            # 1. RSI (14)
+            rsi = BaseMetalFearGreedIndex._calculate_rsi(close, 14)
             if rsi is None:
                 return {}
-            if rsi > 50:
-                 score_rsi = 50 + (rsi - 50) * 1.33 
-            else:
-                 score_rsi = 50 - (50 - rsi) * 1.33
+            score_rsi = 50 + (rsi - 50) * 1.33 if rsi > 50 else 50 - (50 - rsi) * 1.33
             score_rsi = min(100, max(0, score_rsi))
             
             indicators["rsi"] = {
                 "value": round(rsi, 2),
                 "score": round(score_rsi, 1),
-                "weight": BaseMetalFearGreedIndex._get_weights()["rsi"],
+                "weight": BaseMetalFearGreedIndex.WEIGHTS["rsi"],
                 "name": "RSI (14)"
             }
 
-            # 2. 波动率 (Volatility) - 权重 20%
-            returns = close_prices.pct_change()
-            current_vol = returns.tail(20).std() * np.sqrt(252) # 当前20日年化波动
-            avg_vol = returns.tail(60).std() * np.sqrt(252)     # 过去60日年化波动
-            
-            if pd.isna(current_vol) or pd.isna(avg_vol) or avg_vol == 0:
-                vol_ratio = 1.0
-            else:
-                vol_ratio = current_vol / avg_vol
-            
-            # 高波动 -> 恐慌
-            score_vol = 50 - (vol_ratio - 1.0) * 60 
-            score_vol = min(100, max(0, score_vol))
+            # 2. 波动率
+            returns = close.pct_change()
+            current_vol = returns.tail(20).std() * np.sqrt(252)
+            avg_vol = returns.tail(60).std() * np.sqrt(252)
+            vol_ratio = current_vol / avg_vol if avg_vol and not pd.isna(avg_vol) else 1.0
+            score_vol = min(100, max(0, 50 - (vol_ratio - 1.0) * 60))
              
             indicators["volatility"] = {
-                "value": round(current_vol * 100, 2), # Show as %
+                "value": round(current_vol * 100, 2) if not pd.isna(current_vol) else 0,
                 "ratio": round(vol_ratio, 2),
                 "score": round(score_vol, 1),
-                "weight": BaseMetalFearGreedIndex._get_weights()["volatility"],
+                "weight": BaseMetalFearGreedIndex.WEIGHTS["volatility"],
                 "name": "波动率趋势"
             }
             
-            # 3. 价格动量 (Momentum) vs 均线 - 权重 30%
-            current_price = close_prices.iloc[-1]
-            ma50 = close_prices.rolling(window=50).mean().iloc[-1]
+            # 3. 价格动量 (MA50 偏离)
+            current_price = close.iloc[-1]
+            ma50 = close.rolling(window=50).mean().iloc[-1]
             if pd.isna(ma50):
-                ma50 = close_prices.mean()
-                
+                ma50 = close.mean()
             bias = (current_price - ma50) / ma50 * 100
-            score_mom = 50 + bias * 4
-            score_mom = min(100, max(0, score_mom))
+            score_mom = min(100, max(0, 50 + bias * 4))
             
             indicators["momentum"] = {
-                "value": round(bias, 2), # Bias %
+                "value": round(bias, 2),
                 "score": round(score_mom, 1),
-                "weight": BaseMetalFearGreedIndex._get_weights()["momentum"],
+                "weight": BaseMetalFearGreedIndex.WEIGHTS["momentum"],
                 "name": "均线偏离 (MA50)"
             }
             
-            # 4. 当日涨跌 (Daily Change) - 权重 20%
-            # 替代周趋势，增强日内敏感度
-            daily_change = (close_prices.iloc[-1] - close_prices.iloc[-2]) / close_prices.iloc[-2] * 100
-            score_daily = 50 + daily_change * 10 
-            score_daily = min(100, max(0, score_daily))
+            # 4. 当日涨跌
+            daily_change = (close.iloc[-1] - close.iloc[-2]) / close.iloc[-2] * 100
+            score_daily = min(100, max(0, 50 + daily_change * 10))
             
             indicators["daily_change"] = {
                 "value": round(daily_change, 2),
                 "score": round(score_daily, 1),
-                "weight": BaseMetalFearGreedIndex._get_weights()["daily_change"],
+                "weight": BaseMetalFearGreedIndex.WEIGHTS["daily_change"],
                 "name": "当日涨跌"
             }
             
         except Exception as e:
-            logger.warning(f"指标计算部分失败: {e}")
+            logger.warning(f"指标计算失败: {e}")
             return {}
             
         return indicators
@@ -278,98 +209,50 @@ class BaseMetalFearGreedIndex:
         return rsi.iloc[-1] if not pd.isna(rsi.iloc[-1]) else None
 
     @staticmethod
-    def _calculate_composite_score(indicators: Dict[str, Any], fallback_mode: bool = False) -> Optional[float]:
-        """
-        计算综合得分
-        
-        Args:
-            indicators: 各指标分数字典
-            fallback_mode: 是否为回退模式（无基本面数据时自动重新分配权重）
-        
-        Returns:
-            综合得分 0-100，如果无有效指标返回 None
-        """
+    def _calculate_composite_score(indicators: Dict[str, Any]) -> Optional[float]:
+        """计算综合得分"""
         if not indicators:
             return None
         
         total_score, total_weight = 0.0, 0.0
-        valid_count = 0
-        
-        for k, v in indicators.items():
+        for v in indicators.values():
             if "score" in v and "weight" in v:
                 total_score += v["score"] * v["weight"]
                 total_weight += v["weight"]
-                valid_count += 1
         
-        if total_weight == 0 or valid_count == 0:
-            return None
-        
-        # 归一化：确保权重总和不影响最终分数范围
-        return total_score / total_weight
+        return total_score / total_weight if total_weight > 0 else None
 
     @staticmethod
-    def _get_level_description(score: float) -> tuple:
-        for threshold, level, description in BaseMetalFearGreedIndex._get_levels():
+    def _get_level(score: float) -> tuple:
+        for threshold, level, description in BaseMetalFearGreedIndex.LEVELS:
             if score >= threshold:
                 return level, description
         return "未知", "无法判断情绪等级"
 
     @staticmethod
-    def _get_explanation(name: str, fallback_mode: bool = False) -> str:
-        """
-        获取指标说明文本
-        
-        Args:
-            name: 金属名称
-            fallback_mode: 是否为纯技术面模式
-        """
-        weights = BaseMetalFearGreedIndex._get_weights()
-        
-        # 技术面因子说明
-        tech_factors = f"""
-  【技术面】
-  1. RSI ({int(weights.get('rsi', 0.20) * 100)}%)：相对强弱指标，衡量超买超卖
-  2. 均线偏离 ({int(weights.get('momentum', 0.20) * 100)}%)：当前价格与50日均线乖离率
-  3. 波动率 ({int(weights.get('volatility', 0.15) * 100)}%)：近期波动率与历史波动率对比
-  4. 当日涨跌 ({int(weights.get('daily_change', 0.15) * 100)}%): 当日价格变化"""
-        
-        # 基本面因子说明 (仅在非回退模式显示)
-        fundamental_factors = ""
-        if not fallback_mode:
-            fundamental_factors = f"""
-  【基本面】
-  5. ETF持仓趋势 ({int(weights.get('etf_holdings', 0.15) * 100)}%)：SPDR GLD 持仓变化
-  6. COMEX库存 ({int(weights.get('comex_inventory', 0.15) * 100)}%)：交易所库存变化"""
-        
-        mode_note = "（当前：纯技术面模式）" if fallback_mode else "（技术面 + 基本面）"
-        
-        return f"""
-{name}恐慌贪婪指数模型 {mode_note}
-• 核心逻辑：量化市场情绪，综合价格行为与资金流向
-• 组成因子：{tech_factors}{fundamental_factors}
-• 分值解读：
-  - 0-25 (极度恐慌)：市场情绪极度悲观
-  - 75-100 (极度贪婪)：市场情绪极度乐观
-• 说明：此指标综合技术与基本面分析，不构成投资建议
-""".strip()
+    def _get_explanation(name: str) -> str:
+        w = BaseMetalFearGreedIndex.WEIGHTS
+        return f"""{name}恐慌贪婪指数 (技术面分析)
+• RSI ({int(w['rsi']*100)}%): 相对强弱，衡量超买超卖
+• 均线偏离 ({int(w['momentum']*100)}%): 价格与MA50乖离率
+• 波动率 ({int(w['volatility']*100)}%): 近期vs历史波动对比
+• 当日涨跌 ({int(w['daily_change']*100)}%): 实时价格变化
+• 分值: 0-25极度恐慌, 75-100极度贪婪"""
 
 
 class GoldFearGreedIndex(BaseMetalFearGreedIndex):
-    """黄金市场恐慌贪婪指数计算"""
-    GOLD_SYMBOL = "au0"
-
+    """黄金恐慌贪婪指数"""
+    
     @staticmethod
     @cached("metals:fear_greed_v3", ttl=settings.CACHE_TTL["metals"], stale_ttl=settings.CACHE_TTL["metals"] * settings.STALE_TTL_RATIO)
     def calculate() -> Dict[str, Any]:
-        return BaseMetalFearGreedIndex.calculate(GoldFearGreedIndex.GOLD_SYMBOL, "metals:fear_greed_v3", "黄金")
+        return BaseMetalFearGreedIndex.calculate("au0", "黄金")
 
 
 class SilverFearGreedIndex(BaseMetalFearGreedIndex):
-    """白银市场恐慌贪婪指数计算"""
-    SILVER_SYMBOL = "ag0"  # 沪银主力
-
+    """白银恐慌贪婪指数"""
+    
     @staticmethod
     @cached("metals:silver_fear_greed_v3", ttl=settings.CACHE_TTL["metals"], stale_ttl=settings.CACHE_TTL["metals"] * settings.STALE_TTL_RATIO)
     def calculate() -> Dict[str, Any]:
-        return BaseMetalFearGreedIndex.calculate(SilverFearGreedIndex.SILVER_SYMBOL, "metals:silver_fear_greed_v3", "白银")
-
+        return BaseMetalFearGreedIndex.calculate("ag0", "白银")
