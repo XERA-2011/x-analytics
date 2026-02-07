@@ -429,18 +429,6 @@ def setup_default_jobs():
     )
 
     # =========================================================================
-    # 基金数据 (Funds)
-    # =========================================================================
-    from ..modules.funds import FundRanking
-    
-    # 基金排行 (每天更新，4小时预热一次)
-    scheduler.add_simple_job(
-        job_id="warmup:funds:ranking",
-        func=FundRanking._refresh_all_caches,
-        interval_minutes=240
-    )
-
-    # =========================================================================
     # 数据库持久化任务
     # =========================================================================
     
@@ -526,12 +514,6 @@ def initial_warmup():
         warmup_cache(OverboughtOversoldSignal.get_silver_signal, period="daily")
         
         logger.info("✅ 超买超卖信号预热完成")
-        
-        # 基金数据
-        logger.info("⏳ 预热基金数据...")
-        from ..modules.funds import FundRanking
-        FundRanking._refresh_all_caches()
-        logger.info("✅ 基金数据预热完成")
         
         # 后台继续预热次要数据
 

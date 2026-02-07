@@ -46,9 +46,6 @@
             <button class="tab-btn" data-tab="metals">
                 金属
             </button>
-            <button class="tab-btn" data-tab="funds">
-                基金
-            </button>
         </nav>
 
         <!-- CN Market -->
@@ -320,33 +317,7 @@
             </div>
         </section>
 
-        <!-- Funds -->
-        <section class="tab-content" id="funds">
-            <div class="section-header">
-                <h2 class="section-title">基金</h2>
-                <button class="refresh-btn" onclick="window.app.refreshCurrentTab()" title="点击刷新"><i
-                        data-lucide="refresh-cw" width="14"></i> 刷新</button>
-            </div>
 
-            <div class="grid">
-                <div class="card hero">
-                    <div class="card-header">
-                        <div class="card-title">基金涨跌幅排行</div>
-                    </div>
-                    <div class="fund-filter">
-                        <button class="fund-type-btn active" data-type="全部">全部</button>
-                        <button class="fund-type-btn" data-type="股票型">股票型</button>
-                        <button class="fund-type-btn" data-type="混合型">混合型</button>
-                        <button class="fund-type-btn" data-type="债券型">债券型</button>
-                        <button class="fund-type-btn" data-type="指数型">指数型</button>
-                        <button class="fund-type-btn" data-type="QDII">QDII</button>
-                    </div>
-                    <div id="fund-ranking" class="list-container">
-                        <div class="loading">Loading...</div>
-                    </div>
-                </div>
-            </div>
-        </section>
 
     </main>
 
@@ -364,7 +335,6 @@
     <script src="js/modules/market-hk.js"></script>
     <script src="js/modules/market-us.js?v=7"></script>
     <script src="js/modules/metals.js"></script>
-    <script src="js/modules/funds.js"></script>
     <script src="js/main.js"></script>
     <script>lucide.createIcons();</script>
 </body>

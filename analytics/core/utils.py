@@ -149,29 +149,37 @@ def akshare_call_with_retry(
             last_exception = e
             error_msg = str(e).lower()
 
-            # 检查是否是连接类错误（需要重试）
-            connection_error_keywords = [
+            # 检查是否是可重试的错误（网络问题或 JSON 解析失败）
+            retryable_error_keywords = [
+                # 网络/连接相关
                 "connection",
                 "timeout",
                 "disconnected",
                 "reset",
                 "refused",
                 "aborted",
-                "remotedisconnected",  # 新增：针对您遇到的错误
-                "closed",              # 新增：连接关闭
-                "eof",                 # 新增：意外结束
-                "broken pipe",         # 新增：管道断开
-                "network",             # 新增：网络相关
-                "temporary failure",   # 新增：临时故障
+                "remotedisconnected",
+                "closed",
+                "eof",
+                "broken pipe",
+                "network",
+                "temporary failure",
+                # JSON 解析错误（响应被截断）
+                "object literal",      # 东财 API 返回不完整 JSON
+                "not terminated",      # JSON 字符串未正常结束
+                "json",                # 通用 JSON 错误
+                "decode",              # JSON decode 失败
+                "expecting",           # JSON 格式期望错误
+                "unterminated",        # 未结束的字符串
             ]
             
-            is_connection_error = any(
+            is_retryable_error = any(
                 keyword in error_msg
-                for keyword in connection_error_keywords
+                for keyword in retryable_error_keywords
             )
 
-            if not is_connection_error:
-                # 非连接错误，直接抛出
+            if not is_retryable_error:
+                # 非可重试错误，直接抛出
                 raise
 
             if attempt < max_retries - 1:

@@ -98,8 +98,7 @@ class Settings:
         "etf_flow": 7200,            # 2小时
         "calendar": 3600,            # 1小时
         
-        # === 基金数据 ===
-        "funds": 86400,              # 24小时 (基金净值每日更新)
+
     }
 
     # Stale TTL 倍率：物理 TTL = TTL × STALE_TTL_RATIO

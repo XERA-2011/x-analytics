@@ -278,9 +278,7 @@ class API {
     }
 
     // 基金 API
-    async getFundRanking(fundType = '全部', limit = 50) {
-        return this.request(`/funds/ranking?fund_type=${encodeURIComponent(fundType)}&limit=${limit}`);
-    }
+
 
     async getNorthFunds() {
         return this.request('/macro/north-funds');
