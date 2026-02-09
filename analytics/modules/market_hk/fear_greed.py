@@ -7,7 +7,7 @@ from typing import Dict, Any
 from analytics.core.cache import cached
 from analytics.core.config import settings
 from analytics.core.logger import logger
-from analytics.core.utils import get_beijing_time
+from analytics.core.utils import get_beijing_time, akshare_call_with_retry
 
 def calculate_rsi(series, period=14):
     delta = series.diff()
@@ -60,7 +60,7 @@ class HKFearGreed:
     def get_data() -> Dict[str, Any]:
         try:
             # 1. Fetch HSI Daily Data (for RSI and Bias)
-            df = ak.stock_hk_index_daily_sina(symbol="HSI")
+            df = akshare_call_with_retry(ak.stock_hk_index_daily_sina, symbol="HSI")
             
             if df.empty or len(df) < 60:
                 raise ValueError("Insufficient historical data for HSI")

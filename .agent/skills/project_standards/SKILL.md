@@ -297,11 +297,14 @@ The background scheduler is the ONLY component that fetches external data:
 {
     "status": "ok" | "warming_up" | "error",
     "data": {...} | None,
-    "message": str | None,  # Required for warming_up/error
+    "message": str | None,  # Required for warming_up/error; if present with "ok", indicates stale data
     "cached_at": "ISO8601 timestamp",  # When data was cached
     "ttl": int  # Seconds until cache expires
 }
 ```
+
+> [!NOTE]
+> When `status` is `"ok"` but `message` is present, the frontend should treat this as **stale data** (served from cache while background refresh occurs). The `api.js` unwrapper marks this as `_stale: true`.
 
 **Frontend Handling**:
 ```javascript

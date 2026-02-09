@@ -78,15 +78,13 @@ Direct calls to `akshare` are **FORBIDDEN** in production code. You MUST use the
 ### Constants & Magic Numbers
 - **No Magic Numbers**: Do not use hardcoded numbers (e.g. `if ratio > 90`) in logic.
 - **Extraction**: Extract them as clear constants (e.g. `RATIO_THRESHOLD_HIGH = 90`) at the class or module level.
-1. **Test Location**: All debug scripts, temporary test files, and exploration code **MUST** be created in the `tests/` directory.
-   - ❌ Do NOT create debug scripts in the project root.
-   - ✅ Create `tests/debug_market.py` instead of `debug_market.py`.
-2. **File Naming**: Debug scripts should be prefixed with `debug_` or `test_`.
-3. **Cleanup**: Temporary test files created for debugging or verification **MUST** be deleted before completing the task.
-   - Do not commit `debug_*.py` files unless they are converted to permanent unit tests.
-   - If a script is valuable, rename it to `test_integration_*.py` and keep it.
 
-## 6. Python 3.9 Compatibility
+### Temporary Files & Debugging
+- **Cleanup Required**: Temporary test files created for debugging or verification **MUST** be deleted before completing the task.
+- **File Naming**: Debug scripts should be prefixed with `debug_` or `test_`.
+- Do not commit `debug_*.py` files unless they are converted to permanent unit tests.
+
+## 7. Python 3.9 Compatibility
 
 > ⚠️ **CRITICAL**: Docker environment uses **Python 3.9`. Python 3.10+ syntax is FORBIDDEN!
 
