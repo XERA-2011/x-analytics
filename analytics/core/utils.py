@@ -72,6 +72,73 @@ def get_refresh_interval(market: str) -> int:
         return settings.REFRESH_INTERVALS["non_trading_hours"].get(market, 1800)
 
 
+TOLERANCE_MINUTES = 15  # Buffer window around trading hours
+
+
+def is_trading_time(market: str, tolerance_minutes: int = TOLERANCE_MINUTES) -> bool:
+    """Check if a market is within its trading time window (with tolerance).
+    
+    Extends the trading window by ±tolerance_minutes to avoid edge-case misses
+    where a warmup task fires slightly before open or after close.
+
+    Args:
+        market: Market type ('market_cn', 'market_us', 'metals').
+        tolerance_minutes: Minutes to extend each end of the window.
+
+    Returns:
+        True if the current time falls within the expanded trading window.
+    """
+    if market not in settings.TRADING_HOURS:
+        return False
+
+    # Metals trade 24h — always return True
+    config: Dict[str, Any] = settings.TRADING_HOURS[market]
+    if not config.get("weekdays_only", True):
+        return True
+
+    from .scheduler import is_trading_day
+    now = get_beijing_time()
+
+    # Weekend / holiday check (no tolerance can save a non-trading day)
+    if config.get("weekdays_only", True):
+        if now.weekday() >= 5:
+            return False
+        if not is_trading_day(now.date()):
+            return False
+
+    from datetime import timedelta
+
+    current_dt = now
+    tolerance = timedelta(minutes=tolerance_minutes)
+
+    if market == "market_cn":
+        morning_start, morning_end = config["morning"]
+        afternoon_start, afternoon_end = config["afternoon"]
+        # Build datetime versions for tolerance math
+        day = now.date()
+        m_start = datetime.combine(day, morning_start) - tolerance
+        a_end = datetime.combine(day, afternoon_end) + tolerance
+        # Simplified: if within expanded morning-open to afternoon-close, allow
+        return m_start <= current_dt.replace(tzinfo=None) <= a_end
+
+    elif config.get("cross_midnight", False):
+        # US market: 21:30 - 04:00 Beijing time
+        session_start, session_end = config["session"]
+        day = now.date()
+        start_dt = datetime.combine(day, session_start) - tolerance
+        # End is next day
+        end_dt = datetime.combine(day + timedelta(days=1), session_end) + tolerance
+        current_naive = current_dt.replace(tzinfo=None)
+        return current_naive >= start_dt or current_naive <= (datetime.combine(day, session_end) + tolerance)
+
+    else:
+        session_start, session_end = config["session"]
+        day = now.date()
+        start_dt = datetime.combine(day, session_start) - tolerance
+        end_dt = datetime.combine(day, session_end) + tolerance
+        return start_dt <= current_dt.replace(tzinfo=None) <= end_dt
+
+
 def format_number(value: float, precision: int = 2) -> str:
     """格式化数字显示"""
     if abs(value) >= 1e8:

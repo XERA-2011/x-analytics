@@ -26,6 +26,6 @@ async def get_hk_indices():
 async def get_hk_overbought_oversold(period: str = "daily"):
     """获取港股超买超卖信号"""
     result = OverboughtOversoldSignal.get_hk_signal(period=period)
-    if result.get("error"):
-        return wrap_response(status="error", message=result.get("error"))
+    if result.get("status") == "error":
+        return wrap_response(status="error", message=result.get("message", result.get("error")))
     return wrap_response(status="ok", data=result)

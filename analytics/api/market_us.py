@@ -5,8 +5,9 @@ Date: 2026/01/20
 Desc: 美国市场 API 路由
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from typing import Dict, Any
+from ..core.cache import wrap_response
 from ..modules.market_us import USFearGreedIndex, USMarketHeat, USTreasury, USMarketLeaders
 
 router = APIRouter(tags=["美国市场"])
@@ -18,11 +19,9 @@ def get_fear_greed() -> Dict[str, Any]:
     获取美国市场恐慌贪婪指数 (自定义替代CNN)
     """
     try:
-        # 优先使用实时抓取的 CNN 数据
-        data = USFearGreedIndex.get_cnn_fear_greed()
-        return data
+        return USFearGreedIndex.get_cnn_fear_greed()
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        return wrap_response(status="error", message=str(e))
 
 
 @router.get("/fear-greed/custom", summary="获取自定义美国市场恐慌贪婪指数")
@@ -33,7 +32,7 @@ def get_custom_fear_greed() -> Dict[str, Any]:
     try:
         return USFearGreedIndex.calculate_custom_index()
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        return wrap_response(status="error", message=str(e))
 
 
 @router.get("/market-heat", summary="获取美国市场板块热度")
@@ -44,7 +43,7 @@ def get_market_heat() -> Any:
     try:
         return USMarketHeat.get_sector_performance()
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        return wrap_response(status="error", message=str(e))
 
 
 @router.get("/bond-yields", summary="获取美债收益率")
@@ -55,7 +54,7 @@ def get_bond_yields() -> Any:
     try:
         return USTreasury.get_us_bond_yields()
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        return wrap_response(status="error", message=str(e))
 
 
 @router.get("/leaders", summary="获取美国市场领涨板块")
@@ -66,7 +65,7 @@ def get_market_leaders() -> Dict[str, Any]:
     try:
         return USMarketLeaders.get_leaders()
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        return wrap_response(status="error", message=str(e))
 
 
 @router.get("/signals/overbought-oversold", summary="获取超买超卖信号")
@@ -81,4 +80,4 @@ def get_us_obo_signal(period: str = "daily") -> Dict[str, Any]:
         from ..modules.signals.overbought_oversold import OverboughtOversoldSignal
         return OverboughtOversoldSignal.get_us_signal(period=period)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        return wrap_response(status="error", message=str(e))

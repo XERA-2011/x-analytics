@@ -26,6 +26,10 @@ async def lifespan(app: FastAPI):
     # 初始化数据库
     await init_db()
 
+    from analytics.core.db import DB_AVAILABLE
+    if not DB_AVAILABLE:
+        logger.warning("⚠️ Database not available — history/snapshot features disabled")
+
     # 检查 Redis 连接
     if cache.connected:
         logger.info(f"✅ Redis 已连接: {cache.redis_url}")

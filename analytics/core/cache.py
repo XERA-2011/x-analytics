@@ -37,7 +37,8 @@ class RedisCache:
         self.redis_url = redis_url or settings.REDIS_URL
         self._redis: Optional[redis.Redis] = None
         self._connected = False
-        self._inflight_tasks = set() # Track keys currently being refreshed locally
+        self._connect_attempted = False
+        self._inflight_tasks = set()  # Track keys currently being refreshed locally
 
     @classmethod
     def get_instance(cls) -> "RedisCache":
@@ -50,11 +51,15 @@ class RedisCache:
         return cls._instance
 
     @property
-    def redis(self) -> redis.Redis:
-        """懒加载 Redis 连接（使用连接池）"""
-        if self._redis is None:
+    def redis(self) -> Optional[redis.Redis]:
+        """懒加载 Redis 连接（使用连接池）
+        
+        Returns:
+            Redis client if connected, None otherwise.
+        """
+        if self._redis is None and not self._connect_attempted:
+            self._connect_attempted = True
             try:
-                # 使用连接池管理连接
                 if self.redis_url is None:
                     raise ValueError("Redis URL is not configured.")
                 pool = ConnectionPool.from_url(
@@ -66,29 +71,38 @@ class RedisCache:
                     retry_on_timeout=True,
                     health_check_interval=30,
                 )
-                self._redis = redis.Redis(connection_pool=pool)
-                # 测试连接
-                self._redis.ping()
+                client = redis.Redis(connection_pool=pool)
+                client.ping()
+                self._redis = client
                 self._connected = True
-            except redis.ConnectionError as e:
+            except (redis.ConnectionError, redis.TimeoutError, ValueError) as e:
                 print(f"⚠️ Redis 连接失败: {e}，将使用无缓存模式")
+                self._redis = None
                 self._connected = False
-        if self._redis is None:
-            # Try to connect if lazy initialization
-            if self.redis_url:
-                self._redis = redis.Redis.from_url(
-                    self.redis_url, decode_responses=True
-                )
-            else:
-                return redis.Redis()  # Fallback or error
 
         return self._redis
 
     @property
     def connected(self) -> bool:
         """检查是否已连接"""
-        if self._redis is None:
-            _ = self.redis  # 触发连接
+        if not self._connect_attempted:
+            _ = self.redis  # 触发首次连接
+        return self._connected
+
+    def reconnect(self) -> bool:
+        """重置连接状态并重新尝试连接 Redis
+        
+        Returns:
+            bool: True if reconnection succeeded.
+        """
+        self._redis = None
+        self._connected = False
+        self._connect_attempted = False
+        _ = self.redis  # 触发重连
+        if self._connected:
+            print("✅ Redis 重连成功")
+        else:
+            print("❌ Redis 重连失败，继续无缓存模式")
         return self._connected
 
     def get(self, key: str) -> Optional[dict]:

@@ -81,6 +81,33 @@ class SecurityMiddleware(BaseHTTPMiddleware):
         
         # 1. 检查是否为管理 API
         if any(path.startswith(p) for p in ADMIN_API_PATHS):
+            # Admin token 鉴权
+            from .config import settings
+            admin_token = settings.ADMIN_TOKEN
+            LOCALHOST_IPS = ("127.0.0.1", "::1", "localhost")
+
+            if admin_token:
+                # Token 已配置 — 必须匹配
+                request_token = request.headers.get("X-Admin-Token")
+                if request_token != admin_token:
+                    return JSONResponse(
+                        status_code=403,
+                        content={
+                            "status": "error",
+                            "message": "Forbidden: invalid or missing admin token",
+                        }
+                    )
+            else:
+                # Token 未配置 — 仅允许 localhost 访问
+                if client_ip not in LOCALHOST_IPS:
+                    return JSONResponse(
+                        status_code=403,
+                        content={
+                            "status": "error",
+                            "message": "Forbidden: admin API is restricted to localhost (set ADMIN_TOKEN to enable remote access)",
+                        }
+                    )
+
             # 管理 API 限流
             if not admin_limiter.is_allowed(client_ip):
                 return JSONResponse(

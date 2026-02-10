@@ -4,7 +4,7 @@
 
 import os
 from datetime import time
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from dotenv import load_dotenv
 
 # 加载环境变量 (优先加载 .env.local, 然后 .env)
@@ -23,11 +23,14 @@ class Settings:
     REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 
     # Database 配置
-    # 强制要求通过环境变量配置数据库连接 (e.g. postgres://user:pass@host:5432/db)
-    if not os.getenv("DATABASE_URL"):
-        raise ValueError("Critical: DATABASE_URL environment variable is not set. Please configure a valid database connection.")
-    
-    DATABASE_URL = os.getenv("DATABASE_URL")
+    # 优先使用环境变量；未配置时降级到本地 SQLite 文件（仅供演示/开发，无需外部依赖）
+    _raw_db_url = os.getenv("DATABASE_URL")
+    DB_ENABLED: bool = bool(_raw_db_url)
+    DATABASE_URL: str = _raw_db_url or "sqlite://db.sqlite3"
+
+    # Admin API 鉴权 (未设置时仅允许 localhost 访问管理接口)
+    ADMIN_TOKEN: Optional[str] = os.getenv("ADMIN_TOKEN")
+
     CACHE_PREFIX = "xanalytics"
 
     # 交易时间配置 (北京时间)

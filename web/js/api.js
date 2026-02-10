@@ -13,7 +13,7 @@ class API {
     async request(endpoint, options = {}) {
         const url = `${this.baseURL}${endpoint}`;
         const method = options.method || 'GET';
-        const requestKey = `${method}:${endpoint}`;
+        const requestKey = `${method}:${this._normalizeEndpoint(endpoint)}`;
 
         // 1. 检查缓存 (仅针对 GET 请求)
         if (method === 'GET') {
@@ -167,6 +167,23 @@ class API {
                 return response.data || response;
         }
     }
+
+    /**
+     * Normalize endpoint by sorting query parameters for consistent cache keys.
+     * e.g. '/api?b=2&a=1' → '/api?a=1&b=2'
+     * @param {string} endpoint
+     * @returns {string}
+     */
+    _normalizeEndpoint(endpoint) {
+        const qIdx = endpoint.indexOf('?');
+        if (qIdx === -1) return endpoint;
+
+        const path = endpoint.substring(0, qIdx);
+        const query = endpoint.substring(qIdx + 1);
+        const sorted = query.split('&').sort().join('&');
+        return `${path}?${sorted}`;
+    }
+
 
     // 取消所有活跃请求
     cancelAllRequests() {

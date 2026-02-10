@@ -1,9 +1,11 @@
 from tortoise import Tortoise
 from analytics.core.config import settings
 from analytics.core.logger import logger
-import os
 
 DATABASE_URL = settings.DATABASE_URL
+
+# Module-level flag indicating whether DB is usable
+DB_AVAILABLE = False
 
 TORTOISE_ORM = {
     "connections": {"default": DATABASE_URL},
@@ -18,20 +20,32 @@ TORTOISE_ORM = {
     },
 }
 
-async def init_db():
-    """Initialize database connection"""
+async def init_db() -> None:
+    """Initialize database connection (fault-tolerant).
+    
+    Sets DB_AVAILABLE = True on success. On failure, logs a warning
+    and leaves DB_AVAILABLE = False so the rest of the app can degrade gracefully.
+    """
+    global DB_AVAILABLE
+
+    if not settings.DB_ENABLED:
+        logger.warning("⚠️ DATABASE_URL not configured, using local SQLite fallback. History features limited.")
+
     try:
         await Tortoise.init(config=TORTOISE_ORM)
-        # Generate schemas (create tables) if they don't exist
         await Tortoise.generate_schemas()
-        if "sqlite" in DATABASE_URL:
-             logger.info(f"✅ Database connected: {DATABASE_URL}")
-        else:
-             # Hide password in logs for safety
-             logger.info("✅ Database connected: Remote PostgreSQL")
-    except Exception as e:
-        logger.error(f"❌ Database initialization failed: {e}")
+        DB_AVAILABLE = True
 
-async def close_db():
+        if "sqlite" in DATABASE_URL:
+            logger.info(f"✅ Database connected: {DATABASE_URL}")
+        else:
+            logger.info("✅ Database connected: Remote PostgreSQL")
+    except Exception as e:
+        DB_AVAILABLE = False
+        logger.error(f"❌ Database initialization failed: {e}")
+        logger.warning("⚠️ Continuing without database — history/snapshot features disabled.")
+
+async def close_db() -> None:
     """Close database connection"""
-    await Tortoise.close_connections()
+    if DB_AVAILABLE:
+        await Tortoise.close_connections()

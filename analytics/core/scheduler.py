@@ -61,16 +61,19 @@ class SmartScheduler:
         """
 
         def smart_warmup():
-            """智能预热函数"""
+            """智能预热函数 — 非交易时段跳过"""
             import random
             import time as time_module
+            from .utils import is_trading_time
+
+            # 非交易时段跳过预热（节省 API 配额）
+            if not is_trading_time(market):
+                return
+
             # 错峰延迟 (0-10秒随机)，避免多个任务同时触发导致 API 限流
             stagger_delay = random.uniform(0, 10)
             time_module.sleep(stagger_delay)
             try:
-                # 直接执行预热函数
-                # 执行频率由 APScheduler 的 IntervalTrigger 控制
-                # 不再在此处做分钟过滤（之前的逻辑有 BUG：任务触发时间与整点对不上）
                 now = get_beijing_time()
                 print(f"🔄 执行预热任务: {job_id} @ {now.strftime('%H:%M:%S')}")
                 func(**kwargs)
@@ -529,6 +532,10 @@ def initial_warmup():
 
 def snapshot_daily_metrics():
     """每日市场快照（写入数据库）"""
+    from .db import DB_AVAILABLE
+    if not DB_AVAILABLE:
+        return
+
     import asyncio
     
     async def _async_snapshot():
@@ -567,6 +574,10 @@ def snapshot_daily_metrics():
 
 def cleanup_old_data():
     """清理30天前的旧数据"""
+    from .db import DB_AVAILABLE
+    if not DB_AVAILABLE:
+        return
+
     import asyncio
     from datetime import date, timedelta
     
