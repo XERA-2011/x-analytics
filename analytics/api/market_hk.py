@@ -1,31 +1,33 @@
+"""
+港股市场 API 路由
+"""
+
 from fastapi import APIRouter
+from typing import Dict, Any
 from ..modules.market_hk import HKIndices
-from analytics.modules.market_hk.fear_greed import HKFearGreed
+from ..modules.market_hk.fear_greed import HKFearGreed
 from ..modules.signals.overbought_oversold import OverboughtOversoldSignal
-from ..core.cache import wrap_response
+from ..core.decorators import safe_endpoint
 
-router = APIRouter()
+router = APIRouter(tags=["港股市场"])
 
-@router.get("/fear-greed")
-async def get_hk_fear_greed():
+
+@router.get("/fear-greed", summary="获取港股恐慌贪婪指数")
+@safe_endpoint
+def get_hk_fear_greed() -> Dict[str, Any]:
     """获取港股恐慌贪婪指数"""
-    result = HKFearGreed.get_data()
-    if result.get("status") == "error":
-         return wrap_response(status="error", message=result.get("error"))
-    return wrap_response(status="ok", data=result)
+    return HKFearGreed.get_data()
 
-@router.get("/indices")
-async def get_hk_indices():
+
+@router.get("/indices", summary="获取港股指数")
+@safe_endpoint
+def get_hk_indices() -> Dict[str, Any]:
     """获取港股指数和板块概览"""
-    result = HKIndices.get_market_data()
-    if result.get("status") == "error":
-         return wrap_response(status="error", message=result.get("error"))
-    return wrap_response(status="ok", data=result)
+    return HKIndices.get_market_data()
 
-@router.get("/signals/overbought-oversold")
-async def get_hk_overbought_oversold(period: str = "daily"):
+
+@router.get("/signals/overbought-oversold", summary="获取港股超买超卖信号")
+@safe_endpoint
+def get_hk_overbought_oversold(period: str = "daily") -> Dict[str, Any]:
     """获取港股超买超卖信号"""
-    result = OverboughtOversoldSignal.get_hk_signal(period=period)
-    if result.get("status") == "error":
-        return wrap_response(status="error", message=result.get("message", result.get("error")))
-    return wrap_response(status="ok", data=result)
+    return OverboughtOversoldSignal.get_hk_signal(period=period)

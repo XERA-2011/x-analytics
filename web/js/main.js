@@ -6,6 +6,7 @@ class App {
         this.currentTab = 'market-cn';
         this.lastUpdateTime = null;
         this.isRefreshing = false;
+        this.loadedTabs = new Set();
 
         // Controllers
         this.modules = {
@@ -98,8 +99,10 @@ class App {
         // 更新URL
         utils.setUrlParam('tab', tabId);
 
-        // 刷新当前标签数据
-        this.refreshCurrentTab();
+        // 懒加载：仅首次切换到该 Tab 时加载数据
+        if (!this.loadedTabs.has(tabId)) {
+            this.refreshCurrentTab();
+        }
     }
 
     initCardTabs() {
@@ -193,6 +196,9 @@ class App {
 
         this.isRefreshing = true;
 
+        // 清除前端缓存，确保手动刷新时获取最新数据
+        api.clearLocalCache();
+
         // UI Loading State (Button)
         const activeTab = document.querySelector('.tab-content.active');
         const refreshBtn = activeTab ? activeTab.querySelector('.refresh-btn') : null;
@@ -217,6 +223,7 @@ class App {
                 console.error('No controller found for tab:', this.currentTab);
             }
 
+            this.loadedTabs.add(this.currentTab);
             this.updateGlobalTime();
         } catch (error) {
             console.error('刷新数据失败:', error);

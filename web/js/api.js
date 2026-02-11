@@ -190,6 +190,11 @@ class API {
         this.activeRequests.clear();
     }
 
+    // 清除前端缓存（用于手动刷新时强制重新请求）
+    clearLocalCache() {
+        this.cache.clear();
+    }
+
     // 中国市场 API
     async getCNFearGreed(symbol = 'sh000001', days = 14) {
         return this.request(`/market-cn/fear-greed?symbol=${symbol}&days=${days}`);

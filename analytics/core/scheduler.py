@@ -5,6 +5,8 @@
 基于交易时间的智能缓存预热调度
 """
 
+import time as time_module
+from collections import deque
 from datetime import date
 from typing import Callable, List, Optional
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -33,6 +35,17 @@ class SmartScheduler:
         )
         self._jobs: List[str] = []
         self._started = False
+        self._execution_log: deque = deque(maxlen=50)  # 最近50条执行记录
+
+    def _record_execution(self, job_id, success, duration, error=None):
+        """记录任务执行结果"""
+        self._execution_log.append({
+            "job_id": job_id,
+            "timestamp": get_beijing_time().strftime("%Y-%m-%d %H:%M:%S"),
+            "success": success,
+            "duration_s": round(duration, 2),
+            "error": str(error) if error else None,
+        })
 
     @classmethod
     def get_instance(cls) -> "SmartScheduler":
@@ -63,7 +76,6 @@ class SmartScheduler:
         def smart_warmup():
             """智能预热函数 — 非交易时段跳过"""
             import random
-            import time as time_module
             from .utils import is_trading_time
 
             # 非交易时段跳过预热（节省 API 配额）
@@ -73,12 +85,14 @@ class SmartScheduler:
             # 错峰延迟 (0-10秒随机)，避免多个任务同时触发导致 API 限流
             stagger_delay = random.uniform(0, 10)
             time_module.sleep(stagger_delay)
+            start = time_module.time()
             try:
                 now = get_beijing_time()
                 print(f"🔄 执行预热任务: {job_id} @ {now.strftime('%H:%M:%S')}")
                 func(**kwargs)
-
+                self._record_execution(job_id, True, time_module.time() - start)
             except Exception as e:
+                self._record_execution(job_id, False, time_module.time() - start, e)
                 print(f"❌ 预热任务失败 [{job_id}]: {e}")
 
         # 使用最小间隔注册任务，在函数内部进行智能过滤
@@ -113,9 +127,12 @@ class SmartScheduler:
         """
 
         def job_wrapper():
+            start = time_module.time()
             try:
                 func(**kwargs)
+                self._record_execution(job_id, True, time_module.time() - start)
             except Exception as e:
+                self._record_execution(job_id, False, time_module.time() - start, e)
                 print(f"❌ 任务失败 [{job_id}]: {e}")
 
         self.scheduler.add_job(
@@ -139,9 +156,12 @@ class SmartScheduler:
         """
 
         def job_wrapper():
+            start = time_module.time()
             try:
                 func(**kwargs)
+                self._record_execution(job_id, True, time_module.time() - start)
             except Exception as e:
+                self._record_execution(job_id, False, time_module.time() - start, e)
                 print(f"❌ 定时任务失败 [{job_id}]: {e}")
 
         # 解析cron表达式
@@ -194,6 +214,7 @@ class SmartScheduler:
             "running": self._started,
             "job_count": len(jobs_info),
             "jobs": jobs_info,
+            "recent_executions": list(self._execution_log),
         }
 
     def run_job_now(self, job_id: str) -> bool:
