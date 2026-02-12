@@ -15,19 +15,19 @@ This workflow executes a suite of automated tools to ensure code quality and con
 ### 1. Quick Check (Fast)
 Run basic linting and formatting without strict type checking.
 ```bash
-python3 .shared/code-sentinel/scripts/check.py --quick
+python .shared/code-sentinel/scripts/check.py --quick
 ```
 
 ### 2. Full Audit (Strict)
 Run all checks including strict type analysis.
 ```bash
-python3 .shared/code-sentinel/scripts/check.py --full
+python .shared/code-sentinel/scripts/check.py --full
 ```
 
 ### 3. Auto Fix
 Attempt to automatically fix linting and formatting errors.
 ```bash
-python3 .shared/code-sentinel/scripts/check.py --fix
+python .shared/code-sentinel/scripts/check.py --fix
 ```
 
 ### 4. Python 3.9 Compatibility Check

@@ -86,7 +86,7 @@ Direct calls to `akshare` are **FORBIDDEN** in production code. You MUST use the
 
 ## 7. Python 3.9 Compatibility
 
-> ⚠️ **CRITICAL**: Docker environment uses **Python 3.9`. Python 3.10+ syntax is FORBIDDEN!
+> ⚠️ **CRITICAL**: Docker environment uses **Python 3.9**. Python 3.10+ syntax is FORBIDDEN!
 
 ### Forbidden Syntax
 ```python

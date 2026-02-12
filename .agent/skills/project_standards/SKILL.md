@@ -201,11 +201,11 @@ For 24/7 markets (Crypto, Metals) or high-volatility assets:
 
 ---
 
-## 6. Redis-First Architecture
+## 5. Redis-First Architecture
 
 > **Core Principle**: Redis is the single source of truth for all user-facing data.
 
-### 6.1 Data Flow Model
+### 5.1 Data Flow Model
 ```
 ┌──────────────────────────────────────────────────────────────────┐
 │                        BACKGROUND                                │
@@ -224,7 +224,7 @@ For 24/7 markets (Crypto, Metals) or high-volatility assets:
 └────────────────────────────────────────────────────────────────────┘
 ```
 
-### 6.2 User Request Policy
+### 5.2 User Request Policy
 
 | Rule | Description |
 |:-----|:------------|
@@ -233,7 +233,7 @@ For 24/7 markets (Crypto, Metals) or high-volatility assets:
 | **Instant Response** | API must return within 500ms. No blocking on data availability. |
 | **Passive Mode** | If cache is empty/expired, return "warming_up" status, don't fetch. |
 
-### 6.3 Response State Machine
+### 5.3 Response State Machine
 
 Every API endpoint MUST return one of these states:
 
@@ -249,7 +249,7 @@ Every API endpoint MUST return one of these states:
 └─────────────┘     └─────────────┘     └─────────────┘
 ```
 
-### 6.4 Warming Up Timeout Policy
+### 5.4 Warming Up Timeout Policy
 
 > **CRITICAL**: "Warming Up" is NOT an excuse for infinite loading.
 
@@ -277,7 +277,7 @@ if (response.status === 'warming_up') {
 }
 ```
 
-### 6.5 Scheduler Responsibilities
+### 5.5 Scheduler Responsibilities
 
 The background scheduler is the ONLY component that fetches external data:
 
@@ -289,7 +289,7 @@ The background scheduler is the ONLY component that fetches external data:
 | Failure handling | Log errors, do NOT crash; stale data > no data |
 | Health monitoring | Track last successful fetch time per endpoint |
 
-### 6.6 API Response Contract
+### 5.6 API Response Contract
 
 **Standard Response Structure**:
 ```python
@@ -329,7 +329,7 @@ async function loadData(endpoint) {
 
 ---
 
-## 7. Related Skills
+## 6. Related Skills
 
 | Skill | Path | When to Read |
 |:------|:-----|:-------------|

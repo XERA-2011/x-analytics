@@ -5,54 +5,42 @@ description: Perform deep architectural reviews and logic analysis
 
 This workflow is for deep, intelligent analysis of code structure, logic, and design patterns.
 
-## Philosophy
-- **Security First**: Always check for injection, leakage, and permission flaws.
-- **Performance**: Look for O(n^2) loops, unnecessary IO, and cache misses.
-- **Maintainability**: Enforce DRY (Don't Repeat Yourself) and SOLID principles.
-- **Frontend Excellence**: Enforce Mobile-First, consistent styling, and responsive design.
-
 ## Usage
 
 ### 1. Structured Review
-Ask the agent to review a specific file or module against the guidelines.
-> "Run Architect Review on `analytics/market.py` focusing on caching strategy."
-> "Run Architect Review on `web/js/main.js` checking for UI compliance."
+Ask the agent to review a specific file or module against the project guidelines.
+> "Run Architect Review on `analytics/modules/metals/fear_greed.py` focusing on caching strategy."
+> "Run Architect Review on `web/js/modules/market-cn.js` checking for UI compliance."
 
 ### 2. Architecture Plan
 Before starting a big feature, ask for an architectural plan.
-> "Draft an architecture plan for the new 'User Portfolio' module."
+> "Draft an architecture plan for a new 'Portfolio Tracker' module."
 
-## Checklist to Enforce
+## Review Checklist
 
-### Code Hygiene (The "Clean Freak" Standard)
-1.  **Type Safety**: Are all functions typed? (`mypy` compliant).
-2.  **Complexity**: Is Cyclomatic Complexity low? (No deeply nested `if/for`). Max indent level: 3.
-3.  **Naming**:
-    - Python: `snake_case` for vars/funcs, `PascalCase` for classes.
-    - JS: `camelCase` for vars/funcs, `PascalCase` for classes.
-    - Constants: `UPPER_CASE` everywhere.
-4.  **No Magic Numbers**: Extract constants (e.g., `MAX_RETRIES = 5` instead of hardcoded `5`).
-5.  **Dead Code**: Delete commented-out code blocks immediately.
+The reviewer must enforce all standards defined in the Skills documents:
 
-### UI/UX & Frontend
-1.  **UI Standards**: Does it follow [Frontend Skills](../skills/frontend_development/SKILL.md)?
-2.  **Responsive**: Is layout functional on small screens? (Mobile-First verification).
-3.  **Clean Code**: Are CSS variables (`styles.css`) used instead of hardcoded hex values?
-4.  **Structure**: Are semantic HTML tags used? Is JS rendering decoupled?
+### Backend (Python)
+Refer to [Python Development Standards](../skills/python_development/SKILL.md) for the full rules. Key areas:
+- **Type Safety**: All functions typed (`mypy` compliant)
+- **No Magic Numbers**: Constants extracted (e.g., `MAX_RETRIES = 5`)
+- **Python 3.9 Compatibility**: No `X | Y`, `dict[K, V]`, `list[T]` syntax
+- **Caching**: Uses `@cached` decorator with centralized TTL from `settings`
+- **Anti-Scraping**: Uses `akshare_call_with_retry`, never direct `ak.xxx()` calls
 
-## Reference
-See `.agent/skills/` for the specific standards of this project.
-- [Frontend Development Standards](../skills/frontend_development/SKILL.md)
-- [Python Development Standards](../skills/python_development/SKILL.md)
+### Frontend (JS/HTML/CSS)
+Refer to [Frontend Development Standards](../skills/frontend_development/SKILL.md) for the full rules. Key areas:
+- **Mobile-First**: Layout functional on iPhone SE/mini
+- **Color Conventions**: CN/HK = red-up/green-down, US = green-up/red-down
+- **CSS Variables**: Uses design tokens from `styles.css`, no hardcoded hex
+- **Error Handling**: Uses `utils.renderError()`, no infinite loading states
+- **Semantic HTML**: Proper `<header>`, `<main>`, `<section>`, `<footer>` usage
 
----
-
-## 📚 Lessons Learned Reminder
-
-> After resolving major issues or discovering new best practices, check if the following files need updates:
-> - `.agent/skills/python_development/SKILL.md`
-> - `.agent/skills/frontend_development/SKILL.md`
-> - `.agent/workflows/*.md`
+### General
+- **Complexity**: Max indent level 3. No deeply nested `if/for`
+- **Naming**: Python `snake_case`, JS `camelCase`, constants `UPPER_CASE`
+- **Dead Code**: No commented-out code blocks
+- **DRY / KISS / YAGNI**: No over-engineering or duplication
 
 ---
 
