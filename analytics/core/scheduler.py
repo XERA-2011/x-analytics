@@ -337,30 +337,30 @@ def setup_default_jobs():
     # 美国市场 (US Market)
     # =========================================================================
 
-    # 1. CNN 恐慌指数
-    scheduler.add_market_job(
+    # 1. CNN 恐慌指数 (60分钟无条件刷新，美股日线数据收盘后固定)
+    scheduler.add_simple_job(
         job_id="warmup:us:fear_cnn",
         func=lambda: warmup_cache(USFearGreedIndex.get_cnn_fear_greed),
-        market="market_us"
+        interval_minutes=60
     )
     
     # 2. 自定义恐慌指数
-    scheduler.add_market_job(
+    scheduler.add_simple_job(
         job_id="warmup:us:fear_custom",
         func=lambda: warmup_cache(USFearGreedIndex.calculate_custom_index),
-        market="market_us"
+        interval_minutes=60
     )
 
     # 3. 板块热度 & 领涨
-    scheduler.add_market_job(
+    scheduler.add_simple_job(
         job_id="warmup:us:heat",
         func=lambda: warmup_cache(USMarketHeat.get_sector_performance),
-        market="market_us"
+        interval_minutes=60
     )
-    scheduler.add_market_job(
+    scheduler.add_simple_job(
         job_id="warmup:us:leaders",
         func=lambda: warmup_cache(USMarketLeaders.get_leaders),
-        market="market_us"
+        interval_minutes=60
     )
 
     # 4. 美债 (低频)
@@ -415,11 +415,13 @@ def setup_default_jobs():
         market="market_cn"
     )
     
-    # 美股超买超卖 (每30分钟)
-    scheduler.add_market_job(
+    # 美股超买超卖 (每60分钟，与其他美股任务保持一致)
+    scheduler.add_simple_job(
         job_id="warmup:signals:us",
-        func=lambda: warmup_cache(OverboughtOversoldSignal.get_us_signal, period="daily"),
-        market="market_us"
+        func=lambda: warmup_cache(
+            OverboughtOversoldSignal.get_us_signal, period="daily"
+        ),
+        interval_minutes=60
     )
     
     # 黄金超买超卖 (每小时)
