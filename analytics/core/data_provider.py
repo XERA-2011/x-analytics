@@ -108,9 +108,67 @@ class SharedDataProvider:
             return cached
 
         print("🌐 请求行业板块数据...")
-        df = self._fetch_with_retry(ak.stock_board_industry_name_em)
+        try:
+            df = self._fetch_with_retry(ak.stock_board_industry_name_em)
+        except Exception as e:
+            print(f"⚠️ akshare 调用失败: {e}, 使用直接 API 回退")
+            df = self._fallback_board_industry()
         self._set_cached(cache_key, df)
         return df
+
+    def _fallback_board_industry(self) -> pd.DataFrame:
+        """
+        直接请求东方财富 API 获取行业板块数据 (akshare 失败时的回退)
+        """
+        import requests
+        import random
+
+        subdomains = ["push2", "17.push2", "28.push2", "29.push2", "40.push2", "91.push2"]
+        random.shuffle(subdomains)
+
+        params = {
+            "pn": "1",
+            "pz": "2000",
+            "po": "1",
+            "np": "1",
+            "ut": "bd1d9ddb04089700cf9c27f6f7426281",
+            "fltt": "2",
+            "invt": "2",
+            "fid": "f3",
+            "fs": "m:90 t:2 f:!50",
+            "fields": "f3,f8,f12,f14,f20,f104,f105,f128,f140",
+        }
+
+        last_err = None
+        for sub in subdomains:
+            url = f"https://{sub}.eastmoney.com/api/qt/clist/get"
+            try:
+                r = requests.get(url, params=params, timeout=10)
+                data = r.json()
+                if data.get("data") and data["data"].get("diff"):
+                    items = data["data"]["diff"]
+                    rows = []
+                    for item in items:
+                        rows.append({
+                            "板块名称": item.get("f14", ""),
+                            "板块代码": item.get("f12", ""),
+                            "涨跌幅": item.get("f3"),
+                            "换手率": item.get("f8"),
+                            "总市值": item.get("f20"),
+                            "上涨家数": item.get("f104"),
+                            "下跌家数": item.get("f105"),
+                            "领涨股票": item.get("f140", ""),
+                        })
+                    df = pd.DataFrame(rows)
+                    for col in ["涨跌幅", "换手率", "总市值", "上涨家数", "下跌家数"]:
+                        df[col] = pd.to_numeric(df[col], errors="coerce")
+                    print(f"✅ 直接 API 回退成功 ({sub}), 获取 {len(df)} 个板块")
+                    return df
+            except Exception as e:
+                last_err = e
+                continue
+
+        raise ValueError(f"所有东方财富 API 子域均不可用: {last_err}")
     
     def get_sector_constituents(self, sector_name: str) -> pd.DataFrame:
         """
