@@ -304,23 +304,12 @@ def setup_default_jobs():
 
 
 
-    # 3. 领涨/领跌板块 (已移除旧版接口)
-    # scheduler.add_market_job(
-    #     job_id="warmup:cn:gainers",
-    #     func=lambda: warmup_cache(CNMarketLeaders.get_top_gainers),
-    #     market="market_cn"
-    # )
-    # scheduler.add_market_job(
-    #     job_id="warmup:cn:losers",
-    #     func=lambda: warmup_cache(CNMarketLeaders.get_top_losers),
-    #     market="market_cn"
-    # )
-    # scheduler.add_market_job(
-    #     job_id="warmup:cn:sectors",
-    #     func=lambda: warmup_cache(CNMarketLeaders.get_sector_leaders),
-    #     market="market_cn"
-    # )
 
+    scheduler.add_market_job(
+        job_id="warmup:cn:sectors",
+        func=lambda: warmup_cache(CNMarketLeaders.get_all_sectors),
+        market="market_cn"
+    )
 
     scheduler.add_simple_job(
         job_id="warmup:cn:bonds",
@@ -331,6 +320,27 @@ def setup_default_jobs():
         job_id="warmup:cn:lpr",
         func=lambda: warmup_cache(LPRAnalysis.get_lpr_rates),
         interval_minutes=240
+    )
+
+    # =========================================================================
+    # 香港市场 (HK Market)
+    # =========================================================================
+
+    from ..modules.market_hk import HKIndices
+    from ..modules.market_hk.fear_greed import HKFearGreed
+
+    # 1. 港股指数 & 板块
+    scheduler.add_market_job(
+        job_id="warmup:hk:indices",
+        func=lambda: warmup_cache(HKIndices.get_market_data),
+        market="market_hk"
+    )
+
+    # 2. 港股恐慌贪婪
+    scheduler.add_market_job(
+        job_id="warmup:hk:fear_greed",
+        func=lambda: warmup_cache(HKFearGreed.get_data),
+        market="market_hk"
     )
 
     # =========================================================================
@@ -424,6 +434,13 @@ def setup_default_jobs():
         interval_minutes=60
     )
     
+    # 港股超买超卖 (每30分钟)
+    scheduler.add_market_job(
+        job_id="warmup:signals:hk",
+        func=lambda: warmup_cache(OverboughtOversoldSignal.get_hk_signal, period="daily"),
+        market="market_hk"
+    )
+    
     # 黄金超买超卖 (每小时)
     scheduler.add_market_job(
         job_id="warmup:signals:gold",
@@ -499,11 +516,9 @@ def initial_warmup():
         
         # CN
         warmup_cache(CNFearGreedIndex.calculate, symbol="sh000001", days=14)
+        warmup_cache(CNMarketLeaders.get_all_sectors)
 
-        # warmup_cache(CNMarketLeaders.get_top_gainers)
-        # warmup_cache(CNMarketLeaders.get_top_losers)
-        # warmup_cache(CNMarketLeaders.get_sector_leaders)
-        
+
         # US
         warmup_cache(USFearGreedIndex.get_cnn_fear_greed)
         warmup_cache(USFearGreedIndex.calculate_custom_index)
@@ -533,6 +548,8 @@ def initial_warmup():
         from ..modules.signals.overbought_oversold import OverboughtOversoldSignal
         warmup_cache(OverboughtOversoldSignal.get_cn_signal, period="daily")
         time.sleep(5)  # 每个信号间隔 5s
+        warmup_cache(OverboughtOversoldSignal.get_hk_signal, period="daily")
+        time.sleep(5)
         warmup_cache(OverboughtOversoldSignal.get_us_signal, period="daily")
         time.sleep(5)
         warmup_cache(OverboughtOversoldSignal.get_gold_signal, period="daily")
