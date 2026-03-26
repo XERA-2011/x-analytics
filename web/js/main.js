@@ -7,6 +7,7 @@ class App {
         this.lastUpdateTime = null;
         this.isRefreshing = false;
         this.loadedTabs = new Set();
+        this.refreshResetTimer = null;
 
         // Controllers
         this.modules = {
@@ -183,6 +184,53 @@ class App {
         }
     }
 
+    getActiveRefreshButton() {
+        const activeTab = document.querySelector('.tab-content.active');
+        return activeTab ? activeTab.querySelector('.refresh-btn') : null;
+    }
+
+    setRefreshButtonLoading(isLoading) {
+        const refreshBtn = this.getActiveRefreshButton();
+        if (!refreshBtn) return;
+
+        if (isLoading) {
+            if (!refreshBtn.dataset.originalHtml) {
+                refreshBtn.dataset.originalHtml = refreshBtn.innerHTML;
+            }
+            refreshBtn.disabled = true;
+            refreshBtn.classList.add('refreshing');
+            refreshBtn.innerHTML = '<i data-lucide="loader-2" class="spin" width="14"></i> 刷新中...';
+        } else {
+            refreshBtn.disabled = false;
+            refreshBtn.classList.remove('refreshing');
+            if (refreshBtn.dataset.originalHtml) {
+                refreshBtn.innerHTML = refreshBtn.dataset.originalHtml;
+                delete refreshBtn.dataset.originalHtml;
+            }
+        }
+
+        if (window.lucide) lucide.createIcons();
+    }
+
+    armRefreshButtonFallback() {
+        if (this.refreshResetTimer) {
+            clearTimeout(this.refreshResetTimer);
+        }
+
+        this.refreshResetTimer = setTimeout(() => {
+            this.isRefreshing = false;
+            this.setRefreshButtonLoading(false);
+            this.refreshResetTimer = null;
+        }, 20000);
+    }
+
+    clearRefreshButtonFallback() {
+        if (this.refreshResetTimer) {
+            clearTimeout(this.refreshResetTimer);
+            this.refreshResetTimer = null;
+        }
+    }
+
     async refreshCurrentTab() {
         if (!navigator.onLine) {
             console.log('离线状态，跳过数据刷新');
@@ -199,20 +247,8 @@ class App {
         // 清除前端缓存，确保手动刷新时获取最新数据
         api.clearLocalCache();
 
-        // UI Loading State (Button)
-        const activeTab = document.querySelector('.tab-content.active');
-        const refreshBtn = activeTab ? activeTab.querySelector('.refresh-btn') : null;
-        let originalText = '';
-
-        if (refreshBtn) {
-            refreshBtn.disabled = true;
-            refreshBtn.classList.add('refreshing');
-            const icon = refreshBtn.querySelector('i');
-            if (icon) icon.classList.add('spin');
-            originalText = refreshBtn.innerHTML;
-            refreshBtn.innerHTML = '<i data-lucide="loader-2" class="spin" width="14"></i> 刷新中...';
-            if (window.lucide) lucide.createIcons();
-        }
+        this.setRefreshButtonLoading(true);
+        this.armRefreshButtonFallback();
 
         try {
             // Delegate to Module
@@ -229,15 +265,8 @@ class App {
             console.error('刷新数据失败:', error);
         } finally {
             this.isRefreshing = false;
-
-            if (refreshBtn && originalText) {
-                setTimeout(() => {
-                    refreshBtn.disabled = false;
-                    refreshBtn.classList.remove('refreshing');
-                    refreshBtn.innerHTML = originalText;
-                    if (window.lucide) lucide.createIcons();
-                }, 500);
-            }
+            this.clearRefreshButtonFallback();
+            this.setRefreshButtonLoading(false);
         }
     }
 

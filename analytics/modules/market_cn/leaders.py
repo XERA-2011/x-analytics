@@ -15,6 +15,53 @@ from ...core.logger import logger
 class CNMarketLeaders:
     """中国市场领涨领跌股票"""
 
+    # 申万一级行业白名单。
+    # 东方财富行业接口会混入一级/二级/三级行业，热力图只保留一级行业。
+    PRIMARY_SECTOR_NAMES = {
+        "农林牧渔",
+        "基础化工",
+        "钢铁",
+        "有色金属",
+        "电子",
+        "家用电器",
+        "食品饮料",
+        "纺织服饰",
+        "轻工制造",
+        "医药生物",
+        "公用事业",
+        "交通运输",
+        "房地产",
+        "商贸零售",
+        "社会服务",
+        "综合",
+        "建筑材料",
+        "建筑装饰",
+        "电力设备",
+        "国防军工",
+        "计算机",
+        "通信",
+        "银行",
+        "非银金融",
+        "传媒",
+        "机械设备",
+        "汽车",
+        "美容护理",
+        "环保",
+        "石油石化",
+        "煤炭",
+    }
+
+    @staticmethod
+    def _filter_primary_sectors(df):
+        """仅保留一级行业。"""
+        if "板块名称" not in df.columns:
+            return df
+
+        filtered_df = df[df["板块名称"].astype(str).isin(CNMarketLeaders.PRIMARY_SECTOR_NAMES)]
+
+        # 上游名称口径变化时，退回原始数据，避免页面整体空白。
+        return filtered_df if not filtered_df.empty else df
+
 
 
 
@@ -33,6 +80,7 @@ class CNMarketLeaders:
             df = data_provider.get_board_industry_name()
             if df.empty:
                 raise ValueError("无法获取行业板块数据")
+            df = CNMarketLeaders._filter_primary_sectors(df)
 
             # 格式化所有数据
             sectors = []
@@ -69,5 +117,4 @@ class CNMarketLeaders:
             return "交易中"
         else:
             return "休市"
-
 
