@@ -114,22 +114,27 @@ def is_trading_time(market: str, tolerance_minutes: int = TOLERANCE_MINUTES) -> 
     if market in ("market_cn", "market_hk"):
         morning_start, morning_end = config["morning"]
         afternoon_start, afternoon_end = config["afternoon"]
-        # Build datetime versions for tolerance math
         day = now.date()
         m_start = datetime.combine(day, morning_start) - tolerance
+        m_end = datetime.combine(day, morning_end) + tolerance
+        a_start = datetime.combine(day, afternoon_start) - tolerance
         a_end = datetime.combine(day, afternoon_end) + tolerance
-        # Simplified: if within expanded morning-open to afternoon-close, allow
-        return m_start <= current_dt.replace(tzinfo=None) <= a_end
+        current_naive = current_dt.replace(tzinfo=None)
+        return (m_start <= current_naive <= m_end) or (a_start <= current_naive <= a_end)
 
     elif config.get("cross_midnight", False):
-        # US market: 21:30 - 04:00 Beijing time
         session_start, session_end = config["session"]
-        day = now.date()
-        start_dt = datetime.combine(day, session_start) - tolerance
-        # End is next day
-        end_dt = datetime.combine(day + timedelta(days=1), session_end) + tolerance
         current_naive = current_dt.replace(tzinfo=None)
-        return current_naive >= start_dt or current_naive <= (datetime.combine(day, session_end) + tolerance)
+        day = now.date()
+
+        today_start = datetime.combine(day, session_start) - tolerance
+        tomorrow_end = datetime.combine(day + timedelta(days=1), session_end) + tolerance
+        if today_start <= current_naive <= tomorrow_end:
+            return True
+
+        yesterday_start = datetime.combine(day - timedelta(days=1), session_start) - tolerance
+        today_end = datetime.combine(day, session_end) + tolerance
+        return yesterday_start <= current_naive <= today_end
 
     else:
         session_start, session_end = config["session"]
@@ -264,4 +269,3 @@ def akshare_call_with_retry(
                 print(f"❌ API调用失败 [{func_name}] (已重试{max_retries}次): {str(e)[:150]}")
 
     raise last_exception  # type: ignore
-

@@ -60,6 +60,7 @@ class SmartScheduler:
         func: Callable,
         market: str,
         cache_type: str = "default",
+        use_warmup_cache: bool = False,
         **kwargs,
     ):
         """
@@ -107,7 +108,11 @@ class SmartScheduler:
             try:
                 now = get_beijing_time()
                 print(f"🔄 执行预热任务: {job_id} @ {now.strftime('%H:%M:%S')}")
-                func(**kwargs)
+                if use_warmup_cache:
+                    from .cache import warmup_cache
+                    warmup_cache(func, **kwargs)
+                else:
+                    func(**kwargs)
                 self._record_execution(job_id, True, time_module.time() - start)
             except Exception as e:
                 self._record_execution(job_id, False, time_module.time() - start, e)
@@ -316,8 +321,11 @@ def setup_default_jobs():
     # 1. 恐慌贪婪指数 (30分/4小时)
     scheduler.add_market_job(
         job_id="warmup:cn:fear_greed",
-        func=lambda: warmup_cache(CNFearGreedIndex.calculate, symbol="sh000001", days=14),
-        market="market_cn"
+        func=CNFearGreedIndex.calculate,
+        market="market_cn",
+        use_warmup_cache=True,
+        symbol="sh000001",
+        days=14,
     )
 
 
@@ -325,8 +333,9 @@ def setup_default_jobs():
 
     scheduler.add_market_job(
         job_id="warmup:cn:sectors",
-        func=lambda: warmup_cache(CNMarketLeaders.get_all_sectors),
-        market="market_cn"
+        func=CNMarketLeaders.get_all_sectors,
+        market="market_cn",
+        use_warmup_cache=True,
     )
 
     scheduler.add_simple_job(
@@ -350,15 +359,17 @@ def setup_default_jobs():
     # 1. 港股指数 & 板块
     scheduler.add_market_job(
         job_id="warmup:hk:indices",
-        func=lambda: warmup_cache(HKIndices.get_market_data),
-        market="market_hk"
+        func=HKIndices.get_market_data,
+        market="market_hk",
+        use_warmup_cache=True,
     )
 
     # 2. 港股恐慌贪婪
     scheduler.add_market_job(
         job_id="warmup:hk:fear_greed",
-        func=lambda: warmup_cache(HKFearGreed.get_data),
-        market="market_hk"
+        func=HKFearGreed.get_data,
+        market="market_hk",
+        use_warmup_cache=True,
     )
 
     # =========================================================================
@@ -405,30 +416,34 @@ def setup_default_jobs():
     # 1. 金银比
     scheduler.add_market_job(
         job_id="warmup:metals:ratio",
-        func=lambda: warmup_cache(GoldSilverAnalysis.get_gold_silver_ratio),
-        market="metals"
+        func=GoldSilverAnalysis.get_gold_silver_ratio,
+        market="metals",
+        use_warmup_cache=True,
     )
 
     # 2. 现货价格
     scheduler.add_market_job(
         job_id="warmup:metals:prices",
-        func=lambda: warmup_cache(MetalSpotPrice.get_spot_prices),
-        market="metals"
+        func=MetalSpotPrice.get_spot_prices,
+        market="metals",
+        use_warmup_cache=True,
     )
 
     # 3. 黄金恐慌贪婪
     scheduler.add_market_job(
         job_id="warmup:metals:fear",
-        func=lambda: warmup_cache(GoldFearGreedIndex.calculate),
-        market="metals"
+        func=GoldFearGreedIndex.calculate,
+        market="metals",
+        use_warmup_cache=True,
     )
 
     # 4. 白银恐慌贪婪
     from ..modules.metals.fear_greed import SilverFearGreedIndex
     scheduler.add_market_job(
         job_id="warmup:metals:silver_fear",
-        func=lambda: warmup_cache(SilverFearGreedIndex.calculate),
-        market="metals"
+        func=SilverFearGreedIndex.calculate,
+        market="metals",
+        use_warmup_cache=True,
     )
 
     # =========================================================================
@@ -439,8 +454,10 @@ def setup_default_jobs():
     # A股超买超卖 (每30分钟)
     scheduler.add_market_job(
         job_id="warmup:signals:cn",
-        func=lambda: warmup_cache(OverboughtOversoldSignal.get_cn_signal, period="daily"),
-        market="market_cn"
+        func=OverboughtOversoldSignal.get_cn_signal,
+        market="market_cn",
+        use_warmup_cache=True,
+        period="daily",
     )
     
     # 美股超买超卖 (每60分钟，与其他美股任务保持一致)
@@ -455,22 +472,28 @@ def setup_default_jobs():
     # 港股超买超卖 (每30分钟)
     scheduler.add_market_job(
         job_id="warmup:signals:hk",
-        func=lambda: warmup_cache(OverboughtOversoldSignal.get_hk_signal, period="daily"),
-        market="market_hk"
+        func=OverboughtOversoldSignal.get_hk_signal,
+        market="market_hk",
+        use_warmup_cache=True,
+        period="daily",
     )
     
     # 黄金超买超卖 (每小时)
     scheduler.add_market_job(
         job_id="warmup:signals:gold",
-        func=lambda: warmup_cache(OverboughtOversoldSignal.get_gold_signal, period="daily"),
-        market="metals"
+        func=OverboughtOversoldSignal.get_gold_signal,
+        market="metals",
+        use_warmup_cache=True,
+        period="daily",
     )
     
     # 白银超买超卖 (每小时)
     scheduler.add_market_job(
         job_id="warmup:signals:silver",
-        func=lambda: warmup_cache(OverboughtOversoldSignal.get_silver_signal, period="daily"),
-        market="metals"
+        func=OverboughtOversoldSignal.get_silver_signal,
+        market="metals",
+        use_warmup_cache=True,
+        period="daily",
     )
 
     # =========================================================================
@@ -662,4 +685,3 @@ def cleanup_old_data():
         asyncio.set_event_loop(loop)
     
     loop.run_until_complete(_async_cleanup())
-

@@ -32,7 +32,7 @@ class USTreasury:
             df = akshare_call_with_retry(ak.bond_zh_us_rate, start_date="20240101")
 
             if df.empty:
-                return []
+                return {"error": "无法获取美债收益率数据"}
 
             latest = df.iloc[-1]
 
@@ -155,4 +155,4 @@ class USTreasury:
 
         except Exception as e:
             logger.error(f"获取美债收益率失败: {e}")
-            return []
+            return {"error": str(e)}

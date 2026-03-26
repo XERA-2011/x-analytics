@@ -197,7 +197,7 @@ class CNBonds:
 
             # 1. 利率水平分析
             # 使用 .get() 增加健壮性，防止 'key_rates' 不存在导致的 KeyError
-            key_rates = yield_data.get("key_rates", {})
+            key_rates = actual_data.get("key_rates", {})
             ten_year_yield = key_rates.get("10y")
             
             # 如果关键数据缺失，给予默认值或处理

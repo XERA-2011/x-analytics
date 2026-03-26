@@ -58,7 +58,7 @@ class BaseMetalFearGreedIndex:
                 df = df.sort_values(by="date")
 
             # 注入实时数据
-            cls._inject_realtime_data(df, symbol, name)
+            df = cls._inject_realtime_data(df, symbol, name)
             
             # 计算技术指标
             indicators = cls._calculate_indicators(df)
@@ -102,18 +102,18 @@ class BaseMetalFearGreedIndex:
             }
 
     @classmethod
-    def _inject_realtime_data(cls, df: pd.DataFrame, symbol: str, name: str) -> None:
+    def _inject_realtime_data(cls, df: pd.DataFrame, symbol: str, name: str) -> pd.DataFrame:
         """注入实时数据"""
         try:
             min_df = akshare_call_with_retry(ak.futures_zh_minute_sina, symbol=symbol, period="1")
             if min_df.empty:
-                return
+                return df
                 
             latest_price = safe_float(min_df.iloc[-1]["close"])
             latest_time = min_df.iloc[-1]["datetime"]
             
             if latest_price is None:
-                return
+                return df
                 
             last_date_str = str(df.iloc[-1]["date"])[:10]
             current_date_str = str(latest_time)[:10]
@@ -127,9 +127,10 @@ class BaseMetalFearGreedIndex:
                 new_row["date"] = current_date_str
                 new_row["close"] = latest_price
                 df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
-                
+            return df
         except Exception as e:
             logger.warning(f"⚠️ 无法获取{name}实时数据: {e}")
+            return df
 
     @staticmethod
     def _calculate_indicators(df: pd.DataFrame) -> Dict[str, Any]:
