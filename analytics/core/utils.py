@@ -111,7 +111,7 @@ def is_trading_time(market: str, tolerance_minutes: int = TOLERANCE_MINUTES) -> 
     current_dt = now
     tolerance = timedelta(minutes=tolerance_minutes)
 
-    if market == "market_cn":
+    if market in ("market_cn", "market_hk"):
         morning_start, morning_end = config["morning"]
         afternoon_start, afternoon_end = config["afternoon"]
         # Build datetime versions for tolerance math

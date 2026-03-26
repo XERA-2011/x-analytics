@@ -74,13 +74,31 @@ class SmartScheduler:
         """
 
         def smart_warmup():
-            """智能预热函数 — 非交易时段跳过"""
+            """智能预热函数 — 交易时段高频刷新，非交易时段按需保鲜"""
             import random
             from .utils import is_trading_time
 
-            # 非交易时段跳过预热（节省 API 配额）
-            if not is_trading_time(market):
-                return
+            trading = is_trading_time(market)
+
+            if not trading:
+                # 非交易时段：检查缓存是否仍然新鲜，如果是则跳过
+                # 只有当缓存的逻辑 TTL 已过期时才执行预热，确保数据不断档
+                try:
+                    _func = func if not kwargs else lambda: func(**kwargs)
+                    _target = func
+                    prefix = getattr(_target, '_cache_prefix', None)
+                    if prefix:
+                        from .cache import make_cache_key, cache as _cache
+                        import time as _time
+                        cache_key = make_cache_key(prefix, **kwargs)
+                        cached_data = _cache.get(cache_key)
+                        if cached_data and isinstance(cached_data, dict) and "_meta" in cached_data:
+                            expire_at = cached_data["_meta"].get("expire_at", 0)
+                            # 缓存逻辑 TTL 还没过期，无需刷新
+                            if _time.time() < expire_at:
+                                return
+                except Exception:
+                    pass  # 检查失败时 fallthrough 执行预热
 
             # 错峰延迟 (0-10秒随机)，避免多个任务同时触发导致 API 限流
             stagger_delay = random.uniform(0, 10)

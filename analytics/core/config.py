@@ -51,6 +51,12 @@ class Settings:
             "session": (time(0, 0), time(23, 59)),
             "weekdays_only": False,
         },
+        "market_hk": {
+            # 港股交易时间 (北京时间 9:30-12:00, 13:00-16:00)
+            "morning": (time(9, 30), time(12, 0)),
+            "afternoon": (time(13, 0), time(16, 0)),
+            "weekdays_only": True,
+        },
     }
 
     # 刷新间隔配置 (秒)
@@ -60,11 +66,13 @@ class Settings:
             "market_cn": 1800,   # 30分钟
             "market_us": 1800,   # 30分钟 (改小，确保覆盖)
             "metals": 1800,      # 30分钟 (改小，确保覆盖)
+            "market_hk": 1800,   # 30分钟
         },
         "non_trading_hours": {
             "market_cn": 86400 * 365,   # A股非交易时间停止更新 (设为一年)
             "market_us": 86400 * 365,   # 美股非交易时间停止更新 (设为一年)
             "metals": 3600,             # 金属仍每小时更新
+            "market_hk": 86400 * 365,   # 港股非交易时间停止更新 (设为一年)
         },
     }
 
