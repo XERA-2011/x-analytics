@@ -20,6 +20,21 @@ class App {
         this.init();
     }
 
+    getPageTitle(tabId) {
+        const titles = {
+            'market-cn': '中国市场',
+            'market-hk': '中国香港',
+            'market-us': '美国市场',
+            'metals': '金属',
+        };
+        const sectionTitle = titles[tabId] || 'x-analytics';
+        return sectionTitle === 'x-analytics' ? sectionTitle : `${sectionTitle}｜x-analytics`;
+    }
+
+    updatePageTitle(tabId) {
+        document.title = this.getPageTitle(tabId);
+    }
+
     async init() {
         console.log('🚀 x-analytics 启动中...');
 
@@ -34,6 +49,9 @@ class App {
 
         // 初始化工具提示
         this.initTooltips();
+
+        // 初始化页面标题
+        this.updatePageTitle(this.currentTab);
 
         // 加载初始数据
         await this.loadInitialData();
@@ -96,6 +114,7 @@ class App {
         });
 
         this.currentTab = tabId;
+        this.updatePageTitle(tabId);
 
         // 更新URL
         utils.setUrlParam('tab', tabId);
