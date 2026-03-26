@@ -142,27 +142,17 @@ class MetalsController {
     }
 
     renderMetalIndicators(container, indicators) {
-        const items = Object.values(indicators);
+        const items = Object.values(indicators).filter(item => item && typeof item === 'object' && item.score != null);
 
         const html = items.map(item => {
-            // Determine color based on score
-            // Low score = Fear (Green/Down), High score = Greed (Red/Up)
-            // But this is just "contribution to fear/greed", so let's just use neutral or heat colors suitable for the theme
-
-            // Using heat-cell style
-            // item.name, item.value, item.score
-
-            let valueText = item.value;
-            // Add % if likely percentage
-            if (['momentum', 'trend', 'volatility', 'rsi'].some(k => item.name.toLowerCase().includes(k))) {
-                // Heuristic: already formatted in backend likely? No, backend sends float
-                // But check name. Actually backend sends `value`.
-            }
+            const label = item.label || item.name || '--';
+            const value = item.value;
+            const valueText = typeof value === 'number' ? utils.formatNumber(value) : value;
 
             return `
                 <div class="heat-cell" style="display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 12px; background: var(--bg-secondary); border-radius: 8px;">
-                    <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px;">${item.label || item.name || '--'}</div>
-                    <div style="font-size: 16px; font-weight: 600;">${item.value}</div>
+                    <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px;">${label}</div>
+                    <div style="font-size: 16px; font-weight: 600;">${valueText}</div>
                     <div style="font-size: 10px; color: var(--text-secondary); opacity: 0.7;">Score: ${item.score}</div>
                 </div>
             `;
