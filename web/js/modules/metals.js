@@ -108,8 +108,8 @@ class MetalsController {
         // Bind Info Button
         const infoBtn = document.getElementById(`info-${metal}-fear`);
         if (infoBtn && data.explanation) {
-            const title = metal === 'gold' ? '黄金恐慌贪婪指数' : '白银恐慌贪婪指数';
-            infoBtn.onclick = () => utils.showInfoModal(title, data.explanation);
+            const title = metal === 'gold' ? '黄金情绪指数' : '白银情绪指数';
+            infoBtn.onclick = () => utils.showInfoModal(title, utils.buildFearGreedModalBody(data));
             infoBtn.style.display = 'flex';
         }
 
@@ -121,6 +121,7 @@ class MetalsController {
             <div class="fg-info" style="flex: 0 1 auto;">
                 <div class="fg-level">${data.level}</div>
                 <div class="fg-desc">${data.description || ''}</div>
+                <div class="fg-desc" style="font-size: 11px; color: var(--text-secondary); margin-top: 8px;">${utils.getFearGreedMetaLine(data)}</div>
             </div>
         `;
 
@@ -160,7 +161,7 @@ class MetalsController {
 
             return `
                 <div class="heat-cell" style="display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 12px; background: var(--bg-secondary); border-radius: 8px;">
-                    <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px;">${item.name}</div>
+                    <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px;">${item.label || item.name || '--'}</div>
                     <div style="font-size: 16px; font-weight: 600;">${item.value}</div>
                     <div style="font-size: 10px; color: var(--text-secondary); opacity: 0.7;">Score: ${item.score}</div>
                 </div>

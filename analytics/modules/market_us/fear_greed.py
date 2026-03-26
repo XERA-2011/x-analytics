@@ -12,17 +12,34 @@ from typing import Dict, Any, List, Optional
 from ...core.cache import cached
 from ...core.config import settings
 from ...core.utils import safe_float, get_beijing_time, akshare_call_with_retry
+from ...core.fear_greed import (
+    build_factor,
+    calculate_composite_score,
+    build_fear_greed_meta,
+    build_fear_greed_response,
+    build_fear_greed_error,
+    score_percent_change,
+    score_volatility_level,
+)
 from ...core.logger import logger
 
 
 class USFearGreedIndex:
     """美国市场恐慌贪婪指数"""
 
+    META = build_fear_greed_meta(
+        market="US",
+        asset="标普500代理情绪",
+        methodology="custom_proxy",
+        cadence="daily",
+        reference_note="与 CNN Fear & Greed 官方指数并非同口径，不能直接对比",
+    )
+
     DEFAULT_WEIGHTS = {
-        "vix": 0.30,
-        "sp500_momentum": 0.25,
+        "volatility": 0.30,
+        "momentum": 0.25,
         "daily_change": 0.25,
-        "market_breadth": 0.20,
+        "breadth": 0.20,
     }
 
     DEFAULT_LEVELS = [
@@ -37,7 +54,13 @@ class USFearGreedIndex:
 
     @staticmethod
     def _get_weights() -> Dict[str, float]:
-        return settings.FEAR_GREED_CONFIG.get("us", {}).get("weights", USFearGreedIndex.DEFAULT_WEIGHTS)
+        raw = settings.FEAR_GREED_CONFIG.get("us", {}).get("weights", USFearGreedIndex.DEFAULT_WEIGHTS)
+        return {
+            "volatility": raw.get("volatility", raw.get("vix", USFearGreedIndex.DEFAULT_WEIGHTS["volatility"])),
+            "momentum": raw.get("momentum", raw.get("sp500_momentum", USFearGreedIndex.DEFAULT_WEIGHTS["momentum"])),
+            "daily_change": raw.get("daily_change", USFearGreedIndex.DEFAULT_WEIGHTS["daily_change"]),
+            "breadth": raw.get("breadth", raw.get("market_breadth", USFearGreedIndex.DEFAULT_WEIGHTS["breadth"])),
+        }
 
     @staticmethod
     def _get_levels() -> list:
@@ -69,11 +92,12 @@ class USFearGreedIndex:
             custom_data = USFearGreedIndex.calculate_custom_index()
             
             if "error" in custom_data:
-                return {
-                    "error": custom_data["error"], 
-                    "message": "无法获取恐慌贪婪指数 (AkShare源)",
-                    "update_time": get_beijing_time().strftime("%Y-%m-%d %H:%M:%S")
-                }
+                return build_fear_greed_error(
+                    error=custom_data["error"],
+                    message="无法获取自定义美股情绪指数",
+                    update_time=get_beijing_time().strftime("%Y-%m-%d %H:%M:%S"),
+                    meta=USFearGreedIndex.META,
+                )
 
             # 映射字段以兼容前端
             score = custom_data.get("score", 50)
@@ -92,6 +116,7 @@ class USFearGreedIndex:
                 "explanation": USFearGreedIndex._get_custom_explanation(), # 使用自定义说明
                 "source": "AkShare (Calculated, CNN proxy)", # 明确标注来源
                 "levels": USFearGreedIndex._get_levels_payload(),
+                "meta": USFearGreedIndex.META,
             }
 
         except Exception as e:
@@ -105,6 +130,7 @@ class USFearGreedIndex:
             "error": error_msg,
             "message": "无法获取恐慌贪婪指数",
             "update_time": get_beijing_time().strftime("%Y-%m-%d %H:%M:%S"),
+            "meta": USFearGreedIndex.META,
         }
     @staticmethod
     @cached(
@@ -118,48 +144,52 @@ class USFearGreedIndex:
         基于VIX、标普500等指标
         """
         try:
+            update_time = get_beijing_time().strftime("%Y-%m-%d %H:%M:%S")
             vix_data = USFearGreedIndex._get_vix_data()
             sp500_data = USFearGreedIndex._get_sp500_data()
 
             indicators = {
-                "vix": vix_data,
-                "sp500_momentum": sp500_data,
+                "volatility": vix_data,
+                "momentum": sp500_data,
                 "daily_change": USFearGreedIndex._get_daily_change(),
-                "market_breadth": USFearGreedIndex._get_market_breadth(),
+                "breadth": USFearGreedIndex._get_market_breadth(),
             }
 
             composite_score = USFearGreedIndex._calculate_composite_score(indicators)
             
             # 如果无法计算综合得分（所有指标都失败），返回错误
             if composite_score is None:
-                return {
-                    "error": "无法获取足够的指标数据",
-                    "message": "所有指标获取失败",
-                    "indicators": indicators,
-                    "update_time": get_beijing_time().strftime("%Y-%m-%d %H:%M:%S"),
-                }
+                return build_fear_greed_error(
+                    error="无法获取足够的指标数据",
+                    message="所有指标获取失败",
+                    update_time=update_time,
+                    meta=USFearGreedIndex.META,
+                    extra={"indicators": indicators},
+                )
             
             level, description = USFearGreedIndex._get_level_description(
                 composite_score
             )
 
-            return {
-                "score": round(composite_score, 1),
-                "level": level,
-                "description": description,
-                "indicators": indicators,
-                "update_time": get_beijing_time().strftime("%Y-%m-%d %H:%M:%S"),
-                "explanation": USFearGreedIndex._get_custom_explanation(),
-                "levels": USFearGreedIndex._get_levels_payload(),
-            }
+            return build_fear_greed_response(
+                score=composite_score,
+                level=level,
+                description=description,
+                indicators=indicators,
+                update_time=update_time,
+                explanation=USFearGreedIndex._get_custom_explanation(),
+                levels=USFearGreedIndex._get_levels_payload(),
+                meta=USFearGreedIndex.META,
+            )
 
         except Exception as e:
             logger.error(f"❌ 计算自定义恐慌贪婪指数失败: {e}")
-            return {
-                "error": str(e),
-                "message": "无法计算自定义恐慌贪婪指数",
-                "update_time": get_beijing_time().strftime("%Y-%m-%d %H:%M:%S"),
-            }
+            return build_fear_greed_error(
+                error=str(e),
+                message="无法计算自定义恐慌贪婪指数",
+                update_time=get_beijing_time().strftime("%Y-%m-%d %H:%M:%S"),
+                meta=USFearGreedIndex.META,
+            )
 
     @staticmethod
     def _get_vix_data() -> Dict[str, Any]:
@@ -190,7 +220,7 @@ class USFearGreedIndex:
             df_sp500 = akshare_call_with_retry(ak.stock_us_daily, symbol=".INX")
             
             if df_sp500.empty or len(df_sp500) < 30:
-                return {"error": "数据不足无法计算VIX", "weight": 0.3}
+                return {"error": "数据不足无法计算VIX", "weight": USFearGreedIndex._get_weights()["volatility"]}
             df_sp500 = USFearGreedIndex._sort_by_date(df_sp500)
 
             # 计算对数收益率
@@ -204,13 +234,13 @@ class USFearGreedIndex:
             latest_vol = safe_float(rolling_vol.iloc[-1])
             
             if latest_vol is None:
-                return {"error": "波动率计算失败", "weight": 0.3}
+                return {"error": "波动率计算失败", "weight": USFearGreedIndex._get_weights()["volatility"]}
 
             return USFearGreedIndex._format_vix_score(latest_vol, is_estimated=True)
 
         except Exception as e:
             logger.warning(f"⚠️ 获取/计算 VIX 数据失败: {e}")
-            return {"error": str(e), "weight": 0.25}
+            return {"error": str(e), "weight": USFearGreedIndex._get_weights()["volatility"]}
 
     @staticmethod
     def _get_daily_change() -> Dict[str, Any]:
@@ -231,14 +261,14 @@ class USFearGreedIndex:
             # Map spread: -2% (Fear) to +2% (Greed)
             # 0% = 50
             # 1% = 60 (Sensitivity 10)
-            score = 50 + change_pct * 10
-            score = min(100, max(0, score))
+            score = score_percent_change(change_pct, sensitivity=10)
             
-            return {
-                "change_pct": round(change_pct, 2),
-                "score": round(score, 1),
-                "weight": USFearGreedIndex._get_weights()["daily_change"],
-            }
+            return build_factor(
+                value=round(change_pct, 2),
+                score=score,
+                weight=USFearGreedIndex._get_weights()["daily_change"],
+                label="当日涨跌",
+            )
         except Exception as e:
             return {"error": str(e), "weight": USFearGreedIndex._get_weights()["daily_change"]}
 
@@ -251,24 +281,21 @@ class USFearGreedIndex:
         # VIX 12 (Low) -> 50 + (20-12)*2 = 66 (Greed) -> Matches CNN ~62
         # VIX 30 (High) -> 50 + (20-30)*2.5 = 25 (Fear)
         
-        diff = 20 - vix_value
-        if diff >= 0:
-            # VIX < 20: Greed side (Lower VIX = Higher Score)
-            vix_score = 50 + diff * 2.0
-        else:
-            # VIX > 20: Fear side (Higher VIX = Lower Score)
-            # Higher sensitivity for high volatility
-            vix_score = 50 + diff * 2.5
-            
-        vix_score = min(100, max(0, vix_score))
+        vix_score = score_volatility_level(
+            vix_value,
+            neutral_level=20.0,
+            calm_sensitivity=2.0,
+            stress_sensitivity=2.5,
+        )
         
-        return {
-            "value": round(vix_value, 2),
-            "score": round(vix_score, 1),
-            "weight": USFearGreedIndex._get_weights()["vix"],
-            "is_estimated": is_estimated,
-            "note": "基于标普500波动率估算" if is_estimated else "API直接获取"
-        }
+        return build_factor(
+            value=round(vix_value, 2),
+            score=vix_score,
+            weight=USFearGreedIndex._get_weights()["volatility"],
+            label="VIX波动率",
+            is_estimated=is_estimated,
+            note="基于标普500波动率估算" if is_estimated else "API直接获取",
+        )
 
 
     @staticmethod
@@ -278,7 +305,7 @@ class USFearGreedIndex:
             # 使用 AkShare 获取标普500指数数据 (代号 .INX)
             df = akshare_call_with_retry(ak.stock_us_daily, symbol=".INX")
             if df.empty or len(df) < 20:
-                return {"error": "数据不足", "weight": USFearGreedIndex._get_weights()["sp500_momentum"]}
+                return {"error": "数据不足", "weight": USFearGreedIndex._get_weights()["momentum"]}
             df = USFearGreedIndex._sort_by_date(df)
             
             # 计算20日动量 (新接口返回英文列名: close)
@@ -290,16 +317,17 @@ class USFearGreedIndex:
             )
             
             # 动量转换为分数 (涨5%=75, 涨10%=100, 跌5%=25)
-            score = min(100, max(0, 50 + momentum_pct * 5))
+            score = score_percent_change(momentum_pct, sensitivity=4)
             
-            return {
-                "momentum_pct": round(momentum_pct, 2),
-                "score": round(score, 1),
-                "weight": USFearGreedIndex._get_weights()["sp500_momentum"],
-            }
+            return build_factor(
+                value=round(momentum_pct, 2),
+                score=score,
+                weight=USFearGreedIndex._get_weights()["momentum"],
+                label="标普500动量",
+            )
         except Exception as e:
             logger.warning(f"⚠️ 获取标普500数据失败: {e}")
-            return {"error": str(e), "weight": USFearGreedIndex._get_weights()["sp500_momentum"]}
+            return {"error": str(e), "weight": USFearGreedIndex._get_weights()["momentum"]}
 
     @staticmethod
     def _get_market_breadth() -> Dict[str, Any]:
@@ -313,7 +341,7 @@ class USFearGreedIndex:
             ndx = akshare_call_with_retry(ak.stock_us_daily, symbol=".IXIC") # 纳斯达克综合
             
             if dji.empty or ndx.empty:
-                return {"error": "数据不足", "weight": USFearGreedIndex._get_weights()["market_breadth"]}
+                return {"error": "数据不足", "weight": USFearGreedIndex._get_weights()["breadth"]}
             dji = USFearGreedIndex._sort_by_date(dji)
             ndx = USFearGreedIndex._sort_by_date(ndx)
             
@@ -323,43 +351,25 @@ class USFearGreedIndex:
             
             # 如果大盘股(道琼斯)和成长股(纳斯达克)同涨=贪婪, 同跌=恐慌
             avg_change = (dji_change + ndx_change) / 2
-            score = min(100, max(0, 50 + avg_change * 5))
+            score = score_percent_change(avg_change, sensitivity=4)
             
-            return {
-                "dji_5d_change": round(dji_change, 2),
-                "ndx_5d_change": round(ndx_change, 2),
-                "score": round(score, 1),
-                "weight": USFearGreedIndex._get_weights()["market_breadth"],
-            }
+            return build_factor(
+                value=round(avg_change, 2),
+                score=score,
+                weight=USFearGreedIndex._get_weights()["breadth"],
+                label="市场分化",
+                note="以道指/纳指近5日表现近似广度",
+                dji_5d_change=round(dji_change, 2),
+                ndx_5d_change=round(ndx_change, 2),
+            )
         except Exception as e:
             logger.warning(f"⚠️ 获取市场广度数据失败: {e}")
-            return {"error": str(e), "weight": USFearGreedIndex._get_weights()["market_breadth"]}
+            return {"error": str(e), "weight": USFearGreedIndex._get_weights()["breadth"]}
 
     @staticmethod
     def _calculate_composite_score(indicators: Dict[str, Any]) -> Optional[float]:
         """计算综合得分，跳过有错误的指标"""
-        total_score: float = 0.0
-        total_weight: float = 0.0
-        valid_count = 0
-        
-        for indicator in indicators.values():
-            # 跳过有错误的指标
-            if "error" in indicator:
-                continue
-            
-            score = safe_float(indicator.get("score"))
-            weight = safe_float(indicator.get("weight", 0))
-            
-            if score is not None and weight > 0:
-                total_score += score * weight
-                total_weight += weight
-                valid_count += 1
-        
-        # 如果没有有效指标，返回 None 而非假数据
-        if total_weight == 0 or valid_count == 0:
-            return None
-        
-        return total_score / total_weight
+        return calculate_composite_score(indicators)
 
     @staticmethod
     def _get_level_description(score: float) -> tuple:
@@ -382,11 +392,11 @@ CNN恐慌贪婪指数说明：
         weights = USFearGreedIndex._get_weights()
         return """
 自定义美国市场恐慌贪婪指数说明：
-• 计算因子：VIX({vix}%)、标普500动量({mom}%)、当日涨跌({dc}%)、市场分化({breadth}%)
+• 计算因子：波动率代理({vix}%)、动量({mom}%)、当日涨跌({dc}%)、广度代理({breadth}%)
 • 说明：该指数为自定义估算，用于替代CNN官方指数，不代表CNN观点
         """.strip().format(
-            vix=int(weights["vix"] * 100),
-            mom=int(weights["sp500_momentum"] * 100),
+            vix=int(weights["volatility"] * 100),
+            mom=int(weights["momentum"] * 100),
             dc=int(weights["daily_change"] * 100),
-            breadth=int(weights["market_breadth"] * 100),
+            breadth=int(weights["breadth"] * 100),
         )

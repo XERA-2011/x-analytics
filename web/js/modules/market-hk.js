@@ -84,7 +84,7 @@ class HKMarketController {
         // 绑定说明弹窗
         const infoBtn = document.getElementById('info-hk-fear');
         if (infoBtn && (data.explanation || data.description)) {
-            infoBtn.onclick = () => utils.showInfoModal('港股恐慌贪婪指数', data.explanation || data.description);
+            infoBtn.onclick = () => utils.showInfoModal('香港市场情绪指数', utils.buildFearGreedModalBody(data) || data.description);
             infoBtn.style.display = 'flex';
         }
 
@@ -94,23 +94,22 @@ class HKMarketController {
             <div class="fg-info" style="flex: 0 1 auto;">
 
                 <div class="fg-level">${level}</div>
+                <div class="fg-desc" style="font-size: 11px; color: var(--text-secondary); margin-top: 8px;">${utils.getFearGreedMetaLine(data)}</div>
         `;
 
         if (indicators) {
             contentHtml += `<div class="fg-desc" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px;">`;
-            // RSI
-            if (indicators.rsi_14) {
+            if (indicators.rsi) {
                 contentHtml += `
                     <span class="heat-tag heat-gray" title="RSI (14)">
-                       RSI: ${indicators.rsi_14.score}
+                       RSI: ${indicators.rsi.score}
                     </span>
                  `;
             }
-            // Bias
-            if (indicators.bias_60) {
+            if (indicators.momentum) {
                 contentHtml += `
                     <span class="heat-tag heat-gray" title="偏离度 (60日)">
-                       Bias: ${indicators.bias_60.value}
+                       动量: ${indicators.momentum.value}%
                     </span>
                  `;
             }

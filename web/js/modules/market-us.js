@@ -96,13 +96,17 @@ class USMarketController {
 
     getIndicatorName(key) {
         const names = {
-            // Backend keys
+            volatility: '波动率',
+            momentum: '动量',
+            breadth: '广度',
+            flow: '资金流',
+            rsi: 'RSI',
+
+            // Legacy/CNN concept keys
             vix: 'VIX波动率',
             sp500_momentum: '标普动量',
             market_breadth: '市场分化',
             safe_haven: '避险需求',
-
-            // Legacy/CNN concept keys
             junk_bond_demand: '垃圾债',
             market_volatility: '波动率',
             put_call_options: '期权',
@@ -143,7 +147,7 @@ class USMarketController {
         // Bind Info Button
         const infoBtn = document.getElementById('info-us-cnn');
         if (infoBtn && data.explanation) {
-            infoBtn.onclick = () => utils.showInfoModal('恐慌贪婪指数', data.explanation);
+            infoBtn.onclick = () => utils.showInfoModal('美国市场情绪指数', utils.buildFearGreedModalBody(data));
             infoBtn.style.display = 'flex';
         }
 
@@ -162,13 +166,14 @@ class USMarketController {
             <div class="fg-info" style="flex: 0 1 auto;">
                 <div class="fg-level">${level}</div>
                 <div class="fg-desc">${data.description || ''}</div>
+                <div class="fg-desc" style="font-size: 11px; color: var(--text-secondary); margin-top: 8px;">${utils.getFearGreedMetaLine(data)}</div>
         `;
 
         // Add indicators if available (using unified 'heat-tag' style)
         if (indicators) {
             contentHtml += `<div class="fg-desc" style="display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 8px;">`;
             for (const [key, val] of Object.entries(indicators)) {
-                if (typeof val !== 'object' || !val.score) continue;
+                if (typeof val !== 'object' || val.score == null) continue;
                 contentHtml += `
                     <span class="heat-tag heat-gray" title="${this.getIndicatorName(key)}: ${Math.round(val.score)}">
                         ${this.getIndicatorName(key)}
@@ -182,7 +187,7 @@ class USMarketController {
         contentHtml += `
             <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-color); width: 100%; display: flex; justify-content: center;">
                 <a href="https://edition.cnn.com/markets/fear-and-greed" target="_blank" style="display: inline-flex; align-items: center; gap: 4px; color: var(--text-secondary); text-decoration: none; font-size: 11px; transition: color 0.2s;">
-                    CNN 官网参考
+                    CNN 官方参考(非同口径)
                     <i data-lucide="external-link" width="10"></i>
                 </a>
             </div>

@@ -15,6 +15,16 @@ import numpy as np
 from typing import Dict, Any, Optional
 from ...core.cache import cached
 from ...core.config import settings
+from ...core.fear_greed import (
+    build_factor,
+    calculate_composite_score,
+    build_fear_greed_meta,
+    build_fear_greed_response,
+    build_fear_greed_error,
+    score_inverse_ratio,
+    score_percent_change,
+    score_rsi,
+)
 from ...core.utils import get_beijing_time, akshare_call_with_retry, safe_float
 from ...core.logger import logger
 
@@ -43,6 +53,13 @@ class BaseMetalFearGreedIndex:
     def calculate(cls, symbol: str, name: str) -> Dict[str, Any]:
         """计算恐慌贪婪指数"""
         try:
+            update_time = get_beijing_time().strftime("%Y-%m-%d %H:%M:%S")
+            meta = build_fear_greed_meta(
+                market="METALS",
+                asset=name,
+                methodology="technical_composite",
+                cadence="daily+intraday",
+            )
             # 获取历史日线数据
             df = akshare_call_with_retry(ak.futures_zh_daily_sina, symbol=symbol)
             
@@ -64,42 +81,51 @@ class BaseMetalFearGreedIndex:
             indicators = cls._calculate_indicators(df)
             
             if not indicators:
-                return {
-                    "error": "无法计算技术指标",
-                    "message": f"无法计算{name}恐慌贪婪指数",
-                    "update_time": get_beijing_time().strftime("%Y-%m-%d %H:%M:%S"),
-                }
+                return build_fear_greed_error(
+                    error="无法计算技术指标",
+                    message=f"无法计算{name}恐慌贪婪指数",
+                    update_time=update_time,
+                    meta=meta,
+                )
             
             # 计算综合得分
             score = cls._calculate_composite_score(indicators)
             
             if score is None:
-                return {
-                    "error": "无法计算综合得分",
-                    "message": "指标数据不足",
-                    "update_time": get_beijing_time().strftime("%Y-%m-%d %H:%M:%S"),
-                }
+                return build_fear_greed_error(
+                    error="无法计算综合得分",
+                    message="指标数据不足",
+                    update_time=update_time,
+                    meta=meta,
+                )
             
             # 等级描述
             level, description = cls._get_level(score)
             
-            return {
-                "score": round(score, 1),
-                "level": level,
-                "description": description,
-                "indicators": indicators,
-                "update_time": get_beijing_time().strftime("%Y-%m-%d %H:%M:%S"),
-                "explanation": cls._get_explanation(name),
-                "levels": [{"min": t, "label": l, "description": d} for t, l, d in cls.LEVELS],
-            }
+            return build_fear_greed_response(
+                score=score,
+                level=level,
+                description=description,
+                indicators=indicators,
+                update_time=update_time,
+                explanation=cls._get_explanation(name),
+                levels=[{"min": t, "label": l, "description": d} for t, l, d in cls.LEVELS],
+                meta=meta,
+            )
 
         except Exception as e:
             logger.error(f"❌ 计算{name}恐慌贪婪指数失败: {e}")
-            return {
-                "error": str(e),
-                "message": f"无法计算{name}恐慌贪婪指数",
-                "update_time": get_beijing_time().strftime("%Y-%m-%d %H:%M:%S")
-            }
+            return build_fear_greed_error(
+                error=str(e),
+                message=f"无法计算{name}恐慌贪婪指数",
+                update_time=get_beijing_time().strftime("%Y-%m-%d %H:%M:%S"),
+                meta=build_fear_greed_meta(
+                    market="METALS",
+                    asset=name,
+                    methodology="technical_composite",
+                    cadence="daily+intraday",
+                ),
+            )
 
     @classmethod
     def _inject_realtime_data(cls, df: pd.DataFrame, symbol: str, name: str) -> pd.DataFrame:
@@ -143,30 +169,29 @@ class BaseMetalFearGreedIndex:
             rsi = BaseMetalFearGreedIndex._calculate_rsi(close, 14)
             if rsi is None:
                 return {}
-            score_rsi = 50 + (rsi - 50) * 1.33 if rsi > 50 else 50 - (50 - rsi) * 1.33
-            score_rsi = min(100, max(0, score_rsi))
+            rsi_score = score_rsi(rsi)
             
-            indicators["rsi"] = {
-                "value": round(rsi, 2),
-                "score": round(score_rsi, 1),
-                "weight": BaseMetalFearGreedIndex.WEIGHTS["rsi"],
-                "name": "RSI (14)"
-            }
+            indicators["rsi"] = build_factor(
+                value=round(rsi, 2),
+                score=rsi_score,
+                weight=BaseMetalFearGreedIndex.WEIGHTS["rsi"],
+                label="RSI (14)",
+            )
 
             # 2. 波动率
             returns = close.pct_change()
             current_vol = returns.tail(20).std() * np.sqrt(252)
             avg_vol = returns.tail(60).std() * np.sqrt(252)
             vol_ratio = current_vol / avg_vol if avg_vol and not pd.isna(avg_vol) else 1.0
-            score_vol = min(100, max(0, 50 - (vol_ratio - 1.0) * 60))
+            score_vol = score_inverse_ratio(vol_ratio, sensitivity=60)
              
-            indicators["volatility"] = {
-                "value": round(current_vol * 100, 2) if not pd.isna(current_vol) else 0,
-                "ratio": round(vol_ratio, 2),
-                "score": round(score_vol, 1),
-                "weight": BaseMetalFearGreedIndex.WEIGHTS["volatility"],
-                "name": "波动率趋势"
-            }
+            indicators["volatility"] = build_factor(
+                value=round(current_vol * 100, 2) if not pd.isna(current_vol) else 0,
+                score=score_vol,
+                weight=BaseMetalFearGreedIndex.WEIGHTS["volatility"],
+                label="波动率趋势",
+                ratio=round(vol_ratio, 2),
+            )
             
             # 3. 价格动量 (MA50 偏离)
             current_price = close.iloc[-1]
@@ -174,25 +199,25 @@ class BaseMetalFearGreedIndex:
             if pd.isna(ma50):
                 ma50 = close.mean()
             bias = (current_price - ma50) / ma50 * 100
-            score_mom = min(100, max(0, 50 + bias * 4))
+            score_mom = score_percent_change(bias, sensitivity=4)
             
-            indicators["momentum"] = {
-                "value": round(bias, 2),
-                "score": round(score_mom, 1),
-                "weight": BaseMetalFearGreedIndex.WEIGHTS["momentum"],
-                "name": "均线偏离 (MA50)"
-            }
+            indicators["momentum"] = build_factor(
+                value=round(bias, 2),
+                score=score_mom,
+                weight=BaseMetalFearGreedIndex.WEIGHTS["momentum"],
+                label="均线偏离 (MA50)",
+            )
             
             # 4. 当日涨跌
             daily_change = (close.iloc[-1] - close.iloc[-2]) / close.iloc[-2] * 100
-            score_daily = min(100, max(0, 50 + daily_change * 10))
+            score_daily = score_percent_change(daily_change, sensitivity=10)
             
-            indicators["daily_change"] = {
-                "value": round(daily_change, 2),
-                "score": round(score_daily, 1),
-                "weight": BaseMetalFearGreedIndex.WEIGHTS["daily_change"],
-                "name": "当日涨跌"
-            }
+            indicators["daily_change"] = build_factor(
+                value=round(daily_change, 2),
+                score=score_daily,
+                weight=BaseMetalFearGreedIndex.WEIGHTS["daily_change"],
+                label="当日涨跌",
+            )
             
         except Exception as e:
             logger.warning(f"指标计算失败: {e}")
@@ -214,14 +239,7 @@ class BaseMetalFearGreedIndex:
         """计算综合得分"""
         if not indicators:
             return None
-        
-        total_score, total_weight = 0.0, 0.0
-        for v in indicators.values():
-            if "score" in v and "weight" in v:
-                total_score += v["score"] * v["weight"]
-                total_weight += v["weight"]
-        
-        return total_score / total_weight if total_weight > 0 else None
+        return calculate_composite_score(indicators)
 
     @staticmethod
     def _get_level(score: float) -> tuple:

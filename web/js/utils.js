@@ -177,6 +177,62 @@ class Utils {
         `;
     }
 
+    static getFearGreedMetaLine(data) {
+        const meta = data?.meta || {};
+        const parts = [];
+
+        if (meta.methodology === 'custom_proxy') {
+            parts.push('口径: 自定义 Proxy');
+        } else if (meta.methodology === 'technical_composite') {
+            parts.push('口径: 技术合成');
+        }
+        if (meta.factor_framework === 'normalized_v1') {
+            parts.push('统一因子归一化');
+        }
+
+        const updateTime = data?.update_time || data?._cached_at;
+        if (updateTime) {
+            parts.push(`更新时间: ${Utils.formatTime(updateTime)}`);
+        }
+
+        if (meta.reference_note) {
+            parts.push(meta.reference_note);
+        } else if (meta.comparable_scope === 'same_market_only') {
+            parts.push('仅适合同市场内观察');
+        }
+
+        return parts.join(' · ');
+    }
+
+    static getFearGreedComparableNote(data) {
+        const meta = data?.meta || {};
+        const lines = [];
+
+        if (meta.factor_framework === 'normalized_v1') {
+            lines.push('统一框架：当前指数已接入统一因子归一化框架。');
+        }
+
+        if (meta.comparable_scope === 'same_market_only') {
+            lines.push('可比性：更适合同一市场内部纵向观察，不建议直接跨市场横向比较。');
+        }
+
+        if (meta.reference_note) {
+            lines.push(`补充说明：${meta.reference_note}`);
+        }
+
+        return lines.join('\n');
+    }
+
+    static buildFearGreedModalBody(data) {
+        const sections = [];
+        if (data?.explanation) sections.push(data.explanation);
+
+        const note = Utils.getFearGreedComparableNote(data);
+        if (note) sections.push(note);
+
+        return sections.join('\n\n');
+    }
+
     // Gold/Silver Ratio Color
     static getRatioColor(ratio) {
         if (!ratio) return 'var(--text-primary)';

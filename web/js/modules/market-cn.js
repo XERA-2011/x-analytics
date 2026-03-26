@@ -274,7 +274,7 @@ class CNMarketController {
         // Bind Info Button
         const infoBtn = document.getElementById('info-cn-fear');
         if (infoBtn && data.explanation) {
-            infoBtn.onclick = () => utils.showInfoModal('恐慌贪婪指数 (CN)', data.explanation);
+            infoBtn.onclick = () => utils.showInfoModal('中国市场情绪指数', utils.buildFearGreedModalBody(data));
             infoBtn.style.display = 'flex';
         }
 
@@ -287,6 +287,7 @@ class CNMarketController {
 
                 <div class="fg-level">${data.level}</div>
                 <div class="fg-desc">${data.description}</div>
+                <div class="fg-desc" style="font-size: 11px; color: var(--text-secondary); margin-top: 8px;">${utils.getFearGreedMetaLine(data)}</div>
             </div>
         `;
 

@@ -124,11 +124,11 @@ class Settings:
     FEAR_GREED_CONFIG: Dict[str, Dict[str, Any]] = {
         "cn": {
             "weights": {
-                "price_momentum": 0.20,
+                "momentum": 0.20,
                 "volatility": 0.15,
-                "volume": 0.15,
+                "flow": 0.15,
                 "rsi": 0.20,
-                "price_position": 0.10,
+                "breadth": 0.10,
                 "daily_change": 0.20,
             },
             "levels": [
@@ -143,10 +143,10 @@ class Settings:
         },
         "us": {
             "weights": {
-                "vix": 0.30,
-                "sp500_momentum": 0.25,
+                "volatility": 0.30,
+                "momentum": 0.25,
                 "daily_change": 0.25,
-                "market_breadth": 0.20,
+                "breadth": 0.20,
             },
             "levels": [
                 (80, "极度贪婪", "市场情绪极度乐观"),
@@ -161,7 +161,7 @@ class Settings:
         "hk": {
             "weights": {
                 "rsi": 0.35,
-                "bias": 0.35,
+                "momentum": 0.35,
                 "daily_change": 0.30,
             },
             "levels": [
@@ -174,14 +174,10 @@ class Settings:
         },
         "metals": {
             "weights": {
-                # 技术面因子 (70% 总计)
-                "rsi": 0.20,
-                "volatility": 0.15,
-                "momentum": 0.20,
-                "daily_change": 0.15,
-                # 基本面因子 (30% 总计)
-                "etf_holdings": 0.15,
-                "comex_inventory": 0.15,
+                "rsi": 0.30,
+                "volatility": 0.20,
+                "momentum": 0.30,
+                "daily_change": 0.20,
             },
             "levels": [
                 (75, "极度贪婪", "市场情绪极度乐观"),

@@ -6,6 +6,15 @@ from datetime import datetime
 from typing import Dict, Any
 from analytics.core.cache import cached
 from analytics.core.config import settings
+from analytics.core.fear_greed import (
+    build_factor,
+    calculate_composite_score,
+    build_fear_greed_meta,
+    build_fear_greed_response,
+    build_fear_greed_error,
+    score_percent_change,
+    score_rsi,
+)
 from analytics.core.logger import logger
 from analytics.core.utils import get_beijing_time, akshare_call_with_retry
 
@@ -18,9 +27,16 @@ def calculate_rsi(series, period=14):
     return 100 - (100 / (1 + rs))
 
 class HKFearGreed:
+    META = build_fear_greed_meta(
+        market="HK",
+        asset="恒生指数",
+        methodology="technical_composite",
+        cadence="daily",
+    )
+
     DEFAULT_WEIGHTS = {
         "rsi": 0.35,
-        "bias": 0.35,
+        "momentum": 0.35,
         "daily_change": 0.30,
     }
 
@@ -34,7 +50,12 @@ class HKFearGreed:
 
     @staticmethod
     def _get_weights() -> Dict[str, float]:
-        return settings.FEAR_GREED_CONFIG.get("hk", {}).get("weights", HKFearGreed.DEFAULT_WEIGHTS)
+        raw = settings.FEAR_GREED_CONFIG.get("hk", {}).get("weights", HKFearGreed.DEFAULT_WEIGHTS)
+        return {
+            "rsi": raw.get("rsi", HKFearGreed.DEFAULT_WEIGHTS["rsi"]),
+            "momentum": raw.get("momentum", raw.get("bias", HKFearGreed.DEFAULT_WEIGHTS["momentum"])),
+            "daily_change": raw.get("daily_change", HKFearGreed.DEFAULT_WEIGHTS["daily_change"]),
+        }
 
     @staticmethod
     def _get_levels() -> list:
@@ -59,6 +80,7 @@ class HKFearGreed:
     )
     def get_data() -> Dict[str, Any]:
         try:
+            update_time = get_beijing_time().strftime("%Y-%m-%d %H:%M:%S")
             # 1. Fetch HSI Daily Data (for RSI and Bias)
             df = akshare_call_with_retry(ak.stock_hk_index_daily_sina, symbol="HSI")
             
@@ -95,8 +117,7 @@ class HKFearGreed:
             # Map Bias to 0-100 Score
             # Assume -20% is 0 (Extreme Fear), +20% is 100 (Extreme Greed), 0% is 50.
             # Linear mapping: Score = 50 + (Bias * 2.5) => 20*2.5 = 50.
-            bias_score = 50 + (bias_pct * 2.5)
-            bias_score = max(0, min(100, bias_score))
+            bias_score = score_percent_change(bias_pct, sensitivity=4)
 
             # --- Indicator 3: Daily Change (Market Sentiment) ---
             # 权重 30%: 让当日大跌能显著拉低分数
@@ -107,62 +128,65 @@ class HKFearGreed:
             # 0% = 50 (Neutral)
             # +1% = 60, -1% = 40 (Sensitivity: 10 points per 1%)
             # Max/Min clumping handled later
-            daily_score = 50 + (change_pct * 10)
-            daily_score = max(0, min(100, daily_score))
+            daily_score = score_percent_change(change_pct, sensitivity=10)
 
             # --- Final Score Calculation ---
             # Weights: RSI (35%), Bias (35%), Daily Change (30%)
             weights = HKFearGreed._get_weights()
-            final_score = (
-                (current_rsi * weights["rsi"])
-                + (bias_score * weights["bias"])
-                + (daily_score * weights["daily_change"])
-            )
-            final_score = round(final_score, 1)
+            indicators = {
+                "rsi": build_factor(
+                    value=round(current_rsi, 2),
+                    score=score_rsi(current_rsi),
+                    weight=weights["rsi"],
+                    label="RSI (14)",
+                ),
+                "momentum": build_factor(
+                    value=round(bias_pct, 2),
+                    score=bias_score,
+                    weight=weights["momentum"],
+                    label="均线偏离 (Bias60)",
+                ),
+                "daily_change": build_factor(
+                    value=round(change_pct, 2),
+                    score=daily_score,
+                    weight=weights["daily_change"],
+                    label="当日涨跌",
+                ),
+                "close": current_price,
+                "ma60": round(current_ma60, 2)
+            }
 
-            # Determine Level
+            final_score = calculate_composite_score(indicators)
+            if final_score is None:
+                raise ValueError("无法计算港股恐慌贪婪综合得分")
+
             level_cn = "未知"
             for threshold, label, _desc in HKFearGreed._get_levels():
                 if final_score >= threshold:
                     level_cn = label
                     break
 
-            return {
-                "score": final_score,
-                "level": level_cn,
-                "update_time": get_beijing_time().strftime("%Y-%m-%d %H:%M:%S"),
-                "indicators": {
-                    "rsi_14": {
-                        "value": round(current_rsi, 2),
-                        "score": round(current_rsi, 1),
-                        "name": "相对强弱 (RSI)"
-                    },
-                    "bias_60": {
-                        "value": f"{round(bias_pct, 2)}%",
-                        "score": round(bias_score, 1),
-                        "name": "均线偏离 (Bias)"
-                    },
-                    "daily_change": {
-                        "value": f"{round(change_pct, 2)}%",
-                        "score": round(daily_score, 1),
-                        "name": "当日涨跌"
-                    },
-                    "close": current_price,
-                    "ma60": round(current_ma60, 2)
-                },
-                "description": f"HSI当日涨跌{round(change_pct, 2)}%，RSI(14)为{round(current_rsi, 1)}。",
-                "explanation": HKFearGreed._get_explanation(),
-                "levels": HKFearGreed._get_levels_payload(),
-                "status": "success"
-            }
+            return build_fear_greed_response(
+                score=final_score,
+                level=level_cn,
+                description=f"HSI当日涨跌{round(change_pct, 2)}%，RSI(14)为{round(current_rsi, 1)}。",
+                indicators=indicators,
+                update_time=update_time,
+                explanation=HKFearGreed._get_explanation(),
+                levels=HKFearGreed._get_levels_payload(),
+                meta=HKFearGreed.META,
+                extra={"status": "success"},
+            )
 
         except Exception as e:
             logger.error(f"❌ 计算港股恐慌贪婪指数失败: {e}")
-            return {
-                "error": str(e),
-                "message": "无法计算港股恐慌贪婪指数",
-                "status": "error"
-            }
+            return build_fear_greed_error(
+                error=str(e),
+                message="无法计算港股恐慌贪婪指数",
+                update_time=get_beijing_time().strftime("%Y-%m-%d %H:%M:%S"),
+                meta=HKFearGreed.META,
+                extra={"status": "error"},
+            )
 
     @staticmethod
     def _get_explanation() -> str:
@@ -170,7 +194,7 @@ class HKFearGreed:
         return """
 港股恐慌贪婪指数说明：
 • 指数范围：0-100，数值越高表示市场越贪婪
-• 计算因子：RSI({rsi}%)、均线偏离({bias}%)、当日涨跌({dc}%)
+• 计算因子：RSI({rsi}%)、动量代理({bias}%)、当日涨跌({dc}%)
 • 分值解读：
   - 0-25：极度恐慌
   - 25-45：恐慌
@@ -180,6 +204,6 @@ class HKFearGreed:
 • 说明：此指标为技术指标合成，不构成投资建议
         """.strip().format(
             rsi=int(weights["rsi"] * 100),
-            bias=int(weights["bias"] * 100),
+            bias=int(weights["momentum"] * 100),
             dc=int(weights["daily_change"] * 100),
         )
