@@ -302,6 +302,7 @@ def setup_default_jobs():
     from ..modules.market_cn import (
         CNFearGreedIndex,
         CNMarketLeaders,
+        CNIndices,
         CNBonds,
         LPRAnalysis,
     )
@@ -334,6 +335,13 @@ def setup_default_jobs():
     scheduler.add_market_job(
         job_id="warmup:cn:sectors",
         func=CNMarketLeaders.get_all_sectors,
+        market="market_cn",
+        use_warmup_cache=True,
+    )
+
+    scheduler.add_market_job(
+        job_id="warmup:cn:indices",
+        func=CNIndices.get_indices,
         market="market_cn",
         use_warmup_cache=True,
     )
@@ -390,16 +398,16 @@ def setup_default_jobs():
         interval_minutes=10
     )
 
-    # 3. 板块热度 & 领涨
+    # 3. 板块热度 & 领涨 (每10分钟)
     scheduler.add_simple_job(
         job_id="warmup:us:heat",
         func=lambda: warmup_cache(USMarketHeat.get_sector_performance),
-        interval_minutes=60
+        interval_minutes=10
     )
     scheduler.add_simple_job(
         job_id="warmup:us:leaders",
         func=lambda: warmup_cache(USMarketLeaders.get_leaders),
-        interval_minutes=60
+        interval_minutes=10
     )
 
     # 4. 美债 (低频)
@@ -460,13 +468,13 @@ def setup_default_jobs():
         period="daily",
     )
     
-    # 美股超买超卖 (每60分钟，与其他美股任务保持一致)
+    # 美股超买超卖 (每10分钟)
     scheduler.add_simple_job(
         job_id="warmup:signals:us",
         func=lambda: warmup_cache(
             OverboughtOversoldSignal.get_us_signal, period="daily"
         ),
-        interval_minutes=60
+        interval_minutes=10
     )
     
     # 港股超买超卖 (每10分钟)
@@ -539,6 +547,7 @@ def initial_warmup():
     from ..modules.market_cn import (
         CNFearGreedIndex,
         CNMarketLeaders,
+        CNIndices,
         CNBonds,
         LPRAnalysis,
     )
@@ -558,6 +567,7 @@ def initial_warmup():
         # CN
         warmup_cache(CNFearGreedIndex.calculate, symbol="sh000001", days=14)
         warmup_cache(CNMarketLeaders.get_all_sectors)
+        warmup_cache(CNIndices.get_indices)
 
 
         # US
