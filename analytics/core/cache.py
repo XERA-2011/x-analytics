@@ -18,7 +18,7 @@ from datetime import datetime
 from .config import settings
 
 # 缓存版本号：当缓存数据结构变化时递增，自动使旧缓存失效
-CACHE_VERSION = "v2"
+CACHE_VERSION = "v4"
 
 
 class RedisCache:

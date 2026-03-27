@@ -325,23 +325,28 @@ class Charts {
 
         const chart = echarts.init(dom, "dark");
 
-        // 格式化数据结构
-        const treeData = data.map(item => ({
+        const buildNode = (item, depth = 0) => ({
             name: item.name,
-            value: item.value, // 市值 (数值)
-
-            // 自定义属性
-            change_pct: item.change_pct,
+            value: item.value,
+            code: item.code,
+            price: item.price,
+            change_pct: Number.isFinite(Number(item.change_pct)) ? Number(item.change_pct) : 0,
             leading_stock: item.leading_stock,
             stock_count: item.stock_count,
-            turnover: item.turnover,
-
+            turnover: Number.isFinite(Number(item.turnover)) ? Number(item.turnover) : 0,
             itemStyle: {
-                color: item.change_pct >= 0
-                    ? `rgba(239, 68, 68, ${Math.min(0.3 + item.change_pct / 10, 1)})` // Red
-                    : `rgba(34, 197, 94, ${Math.min(0.3 + Math.abs(item.change_pct) / 10, 1)})` // Green
-            }
-        }));
+                color: (Number.isFinite(Number(item.change_pct)) ? Number(item.change_pct) : 0) >= 0
+                    ? `rgba(239, 68, 68, ${Math.min((depth === 0 ? 0.3 : 0.18) + (Number.isFinite(Number(item.change_pct)) ? Number(item.change_pct) : 0) / 10, 1)})`
+                    : `rgba(34, 197, 94, ${Math.min((depth === 0 ? 0.3 : 0.18) + Math.abs(Number.isFinite(Number(item.change_pct)) ? Number(item.change_pct) : 0) / 10, 1)})`
+            },
+            children: Array.isArray(item.children)
+                ? item.children.map(child => buildNode(child, depth + 1))
+                : undefined,
+        });
+
+        const treeData = data.map(item => buildNode(item));
+        const sectorsWithChildren = treeData.filter(item => Array.isArray(item.children) && item.children.length > 0).length;
+        const enableNested = sectorsWithChildren >= Math.max(3, Math.floor(treeData.length / 3));
 
         const option = {
             backgroundColor: "transparent",
@@ -349,14 +354,10 @@ class Charts {
                 trigger: 'item',
                 formatter: function (info) {
                     const d = info.data;
-                    const change = d.change_pct ?? 0;
+                    const isLeaf = enableNested && Array.isArray(d.children) ? d.children.length === 0 : false;
+                    const change = Number.isFinite(Number(d.change_pct)) ? Number(d.change_pct) : 0;
                     const color = change >= 0 ? "#ef4444" : "#22c55e";
                     const capStr = d.value ? (d.value / 100000000).toFixed(0) : '--';
-
-                    // Calculate derived metrics
-
-                    // Estimated Traded Value
-                    const estAmount = (d.value && d.turnover) ? (d.value * (d.turnover / 100) / 100000000).toFixed(0) : '--';
 
                     // Sentiment & Volume Analysis
                     let analysis = "中性";
@@ -391,6 +392,35 @@ class Charts {
                         else { analysis = "弱势调整"; analysisColor = "#22c55e"; }
                     }
 
+                    if (isLeaf) {
+                        return `
+                        <div style="min-width: 140px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; padding-bottom: 6px; border-bottom: 1px solid #404040;">
+                                <span style="font-weight: 700; font-size: 14px; color: #fff;">${d.name}</span>
+                                <span style="font-weight: 700; font-family: monospace; font-size: 14px; color:${color}">${change >= 0 ? '+' : ''}${change.toFixed(2)}%</span>
+                            </div>
+                            <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                                <tr style="line-height: 1.6;">
+                                    <td style="color: #9ca3af; padding-right: 12px;">代码</td>
+                                    <td style="text-align: right; font-family: monospace; color: #e5e7eb;">${d.code || '--'}</td>
+                                </tr>
+                                <tr style="line-height: 1.6;">
+                                    <td style="color: #9ca3af; padding-right: 12px;">价格</td>
+                                    <td style="text-align: right; font-family: monospace; color: #e5e7eb;">${Number.isFinite(Number(d.price)) ? Number(d.price).toFixed(2) : '--'}</td>
+                                </tr>
+                                <tr style="line-height: 1.6;">
+                                    <td style="color: #9ca3af; padding-right: 12px;">市值</td>
+                                    <td style="text-align: right; font-family: monospace; color: #e5e7eb;">${capStr}亿</td>
+                                </tr>
+                                <tr style="line-height: 1.6;">
+                                    <td style="color: #9ca3af; padding-right: 12px;">换手</td>
+                                    <td style="text-align: right; font-family: monospace; color: #e5e7eb;">${d.turnover}%</td>
+                                </tr>
+                            </table>
+                        </div>
+                    `;
+                    }
+
                     return `
                         <div style="min-width: 140px;">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; padding-bottom: 6px; border-bottom: 1px solid #404040;">
@@ -406,18 +436,9 @@ class Charts {
                                     <td style="color: #9ca3af; padding-right: 12px;">市值</td>
                                     <td style="text-align: right; font-family: monospace; color: #e5e7eb;">${capStr}亿</td>
                                 </tr>
-
-                                <tr style="line-height: 1.6;">
-                                    <td style="color: #9ca3af; padding-right: 12px;">家数</td>
-                                    <td style="text-align: right; font-family: monospace; color: #e5e7eb;">${d.stock_count}</td>
-                                </tr>
                                 <tr style="line-height: 1.6;">
                                     <td style="color: #9ca3af; padding-right: 12px;">换手</td>
                                     <td style="text-align: right; font-family: monospace; color: #e5e7eb;">${d.turnover}%</td>
-                                </tr>
-                                <tr style="line-height: 1.6;">
-                                    <td style="color: #9ca3af; padding-right: 12px;">成交</td>
-                                    <td style="text-align: right; font-family: monospace; color: #e5e7eb;">${estAmount}亿</td>
                                 </tr>
                                 <tr style="line-height: 1.6;">
                                     <td style="color: #9ca3af; padding-right: 12px;">领涨</td>
@@ -441,11 +462,27 @@ class Charts {
                 roam: false,
                 nodeClick: false,
                 breadcrumb: { show: false },
+                upperLabel: {
+                    show: enableNested,
+                    height: 22,
+                    formatter: function (params) {
+                        return params.name || '';
+                    },
+                    color: '#ffffff',
+                    fontWeight: 'bold',
+                    textShadowColor: 'rgba(0,0,0,0.8)',
+                    textShadowBlur: 3
+                },
                 label: {
                     show: true,
                     formatter: function (params) {
                         const d = params.data;
-                        return `{name|${d.name}}\n{val|${d.change_pct.toFixed(2)}%}`;
+                        const change = Number.isFinite(Number(d.change_pct)) ? Number(d.change_pct) : 0;
+                        const isLeaf = enableNested && Array.isArray(d.children) ? d.children.length === 0 : false;
+                        if (isLeaf) {
+                            return `{leaf|${d.name}}\n{leafVal|${change.toFixed(2)}%}`;
+                        }
+                        return `{name|${d.name}}\n{val|${change.toFixed(2)}%}`;
                     },
                     rich: {
                         name: {
@@ -461,6 +498,20 @@ class Charts {
                             color: '#f5f5f5',
                             textShadowColor: 'rgba(0,0,0,0.8)',
                             textShadowBlur: 3
+                        },
+                        leaf: {
+                            fontSize: 10,
+                            fontWeight: 'bold',
+                            color: '#fff',
+                            textShadowColor: 'rgba(0,0,0,0.8)',
+                            textShadowBlur: 2,
+                            overflow: 'truncate'
+                        },
+                        leafVal: {
+                            fontSize: 9,
+                            color: '#f5f5f5',
+                            textShadowColor: 'rgba(0,0,0,0.8)',
+                            textShadowBlur: 2
                         }
                     }
                 },
@@ -469,7 +520,28 @@ class Charts {
                     borderWidth: 1,
                     gapWidth: 1
                 },
-                data: treeData
+                levels: [
+                    {
+                        itemStyle: {
+                            borderColor: '#0f0f0f',
+                            borderWidth: 3,
+                            gapWidth: 3
+                        },
+                        upperLabel: {
+                            show: enableNested
+                        }
+                    },
+                    {
+                        itemStyle: {
+                            borderColor: '#171717',
+                            borderWidth: 1,
+                            gapWidth: 1
+                        }
+                    }
+                ],
+                data: enableNested
+                    ? treeData
+                    : treeData.map(item => ({ ...item, children: undefined }))
             }]
         };
 

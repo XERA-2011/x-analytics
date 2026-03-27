@@ -170,7 +170,12 @@ class CNMarketController {
         // 绑定说明按钮
         const infoBtn = document.getElementById('info-cn-heatmap');
         if (infoBtn) {
-            infoBtn.onclick = () => utils.showInfoModal('全行业热力图', `热力图展示 A 股全行业板块的实时涨跌情况，方块大小代表板块市值。
+            infoBtn.onclick = () => utils.showInfoModal('行业板块热力图', `热力图展示 A 股一级行业板块的结构与强弱变化。
+
+图表口径：
+• 面积代表板块总市值
+• 颜色代表板块涨跌幅
+• 默认使用本地一级行业映射，低频刷新；运行时只聚合实时个股行情
 
 **情绪分析逻辑**（基于换手率+涨跌幅）：
 
@@ -237,19 +242,37 @@ class CNMarketController {
             }
         };
 
-        const renderItem = (item) => {
+        const resolveStockName = (item, columnType) => {
+            const preferred = columnType === 'down' ? item.lagging_stock : item.leading_stock;
+            if (preferred) return preferred;
+
+            if (Array.isArray(item.children) && item.children.length > 0) {
+                const sortedChildren = [...item.children].sort((a, b) => {
+                    const changeA = Number.isFinite(Number(a.change_pct)) ? Number(a.change_pct) : 0;
+                    const changeB = Number.isFinite(Number(b.change_pct)) ? Number(b.change_pct) : 0;
+                    return columnType === 'down' ? changeA - changeB : changeB - changeA;
+                });
+                return sortedChildren[0]?.name || '--';
+            }
+
+            return '--';
+        };
+
+        const renderItem = (item, columnType) => {
             const changeVal = item.change_pct || 0;
             const changeClass = changeVal > 0 ? 'text-up' : changeVal < 0 ? 'text-down' : '';
             const sign = changeVal > 0 ? '+' : '';
             const turnover = item.turnover != null ? `换手${item.turnover.toFixed(1)}%` : '';
             const sentiment = getSentiment(changeVal, item.turnover);
+            const stockLabel = columnType === 'down' ? '领跌' : '领涨';
+            const stockName = resolveStockName(item, columnType);
 
             return `
                 <div class="ranking-item">
                     <div class="ranking-row">
                         <div class="ranking-left">
                             <span class="ranking-name">${item.name}</span>
-                            <span class="ranking-turnover">${turnover}</span>
+                            <span class="ranking-turnover">${turnover} · ${stockLabel}${stockName}</span>
                         </div>
                         <div class="ranking-right">
                             <span class="ranking-change ${changeClass}">${sign}${changeVal.toFixed(2)}%</span>
@@ -263,11 +286,11 @@ class CNMarketController {
         container.innerHTML = `
             <div class="ranking-column">
                 <div class="ranking-header up">📈 涨幅榜</div>
-                ${gainers.length > 0 ? gainers.map(item => renderItem(item)).join('') : renderEmptyState('暂无上涨行业')}
+                ${gainers.length > 0 ? gainers.map(item => renderItem(item, 'up')).join('') : renderEmptyState('暂无上涨行业')}
             </div>
             <div class="ranking-column">
                 <div class="ranking-header down">📉 跌幅榜</div>
-                ${losers.length > 0 ? losers.map(item => renderItem(item)).join('') : renderEmptyState('暂无下跌行业')}
+                ${losers.length > 0 ? losers.map(item => renderItem(item, 'down')).join('') : renderEmptyState('暂无下跌行业')}
             </div>
         `;
     }
