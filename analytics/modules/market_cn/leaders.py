@@ -15,6 +15,8 @@ from ...core.logger import logger
 class CNMarketLeaders:
     """中国市场领涨领跌股票"""
 
+    MIN_PRIMARY_SECTOR_COUNT = 20
+
     # 申万一级行业白名单。
     # 东方财富行业接口会混入一级/二级/三级行业，热力图只保留一级行业。
     PRIMARY_SECTOR_NAMES = {
@@ -59,8 +61,16 @@ class CNMarketLeaders:
 
         filtered_df = df[df["板块名称"].astype(str).isin(CNMarketLeaders.PRIMARY_SECTOR_NAMES)]
 
-        # 上游名称口径变化时，退回原始数据，避免页面整体空白。
-        return filtered_df if not filtered_df.empty else df
+        # 上游名称口径变化时，命中过少说明白名单已失效，退回原始数据。
+        if len(filtered_df) >= CNMarketLeaders.MIN_PRIMARY_SECTOR_COUNT:
+            return filtered_df
+
+        logger.warning(
+            "一级行业白名单命中过少，回退原始行业列表: matched=%s total=%s",
+            len(filtered_df),
+            len(df),
+        )
+        return df
 
 
 
@@ -117,4 +127,3 @@ class CNMarketLeaders:
             return "交易中"
         else:
             return "休市"
-

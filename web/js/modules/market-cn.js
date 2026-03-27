@@ -199,10 +199,20 @@ class CNMarketController {
         const container = document.getElementById('cn-sector-ranking');
         if (!container || !sectors || sectors.length === 0) return;
 
-        // 排序获取涨幅榜和跌幅榜
-        const sorted = [...sectors].sort((a, b) => b.change_pct - a.change_pct);
-        const gainers = sorted.slice(0, 5);
-        const losers = sorted.slice(-5).reverse();
+        const renderEmptyState = (text) => `
+            <div class="ranking-item" style="display:flex; align-items:center; justify-content:center; min-height:120px; color:var(--text-secondary);">
+                ${text}
+            </div>
+        `;
+
+        const sortedDesc = [...sectors].sort((a, b) => b.change_pct - a.change_pct);
+        const positives = sortedDesc.filter(item => (item.change_pct || 0) >= 0);
+        const negatives = [...sortedDesc]
+            .filter(item => (item.change_pct || 0) < 0)
+            .sort((a, b) => a.change_pct - b.change_pct);
+
+        const gainers = positives.slice(0, 5);
+        const losers = negatives.slice(0, 5);
 
         // 情绪分析函数 (与 charts.js treemap tooltip 保持一致)
         const getSentiment = (change, turnover) => {
@@ -227,9 +237,9 @@ class CNMarketController {
             }
         };
 
-        const renderItem = (item, isGainer) => {
+        const renderItem = (item) => {
             const changeVal = item.change_pct || 0;
-            const changeClass = isGainer ? 'text-up' : 'text-down';
+            const changeClass = changeVal > 0 ? 'text-up' : changeVal < 0 ? 'text-down' : '';
             const sign = changeVal > 0 ? '+' : '';
             const turnover = item.turnover != null ? `换手${item.turnover.toFixed(1)}%` : '';
             const sentiment = getSentiment(changeVal, item.turnover);
@@ -253,11 +263,11 @@ class CNMarketController {
         container.innerHTML = `
             <div class="ranking-column">
                 <div class="ranking-header up">📈 涨幅榜</div>
-                ${gainers.map(item => renderItem(item, true)).join('')}
+                ${gainers.length > 0 ? gainers.map(item => renderItem(item)).join('') : renderEmptyState('暂无上涨行业')}
             </div>
             <div class="ranking-column">
                 <div class="ranking-header down">📉 跌幅榜</div>
-                ${losers.map(item => renderItem(item, false)).join('')}
+                ${losers.length > 0 ? losers.map(item => renderItem(item)).join('') : renderEmptyState('暂无下跌行业')}
             </div>
         `;
     }
