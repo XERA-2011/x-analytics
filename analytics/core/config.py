@@ -63,10 +63,10 @@ class Settings:
     # 核心原则：预热间隔 < 物理 TTL，确保缓存永不为空
     REFRESH_INTERVALS = {
         "trading_hours": {
-            "market_cn": 1800,   # 30分钟
-            "market_us": 1800,   # 30分钟 (改小，确保覆盖)
-            "metals": 1800,      # 30分钟 (改小，确保覆盖)
-            "market_hk": 1800,   # 30分钟
+            "market_cn": 600,    # 10分钟
+            "market_us": 600,    # 10分钟
+            "metals": 600,       # 10分钟
+            "market_hk": 600,    # 10分钟
         },
         "non_trading_hours": {
             "market_cn": 86400 * 365,   # A股非交易时间停止更新 (设为一年)

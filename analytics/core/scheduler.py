@@ -318,7 +318,7 @@ def setup_default_jobs():
     # 中国市场 (CN Market)
     # =========================================================================
     
-    # 1. 恐慌贪婪指数 (30分/4小时)
+    # 1. 恐慌贪婪指数 (10分/4小时)
     scheduler.add_market_job(
         job_id="warmup:cn:fear_greed",
         func=CNFearGreedIndex.calculate,
@@ -376,18 +376,18 @@ def setup_default_jobs():
     # 美国市场 (US Market)
     # =========================================================================
 
-    # 1. CNN 恐慌指数 (60分钟无条件刷新，美股日线数据收盘后固定)
+    # 1. CNN 恐慌指数 (10分钟无条件刷新，美股日线数据收盘后固定)
     scheduler.add_simple_job(
         job_id="warmup:us:fear_cnn",
         func=lambda: warmup_cache(USFearGreedIndex.get_cnn_fear_greed),
-        interval_minutes=60
+        interval_minutes=10
     )
     
     # 2. 自定义恐慌指数
     scheduler.add_simple_job(
         job_id="warmup:us:fear_custom",
         func=lambda: warmup_cache(USFearGreedIndex.calculate_custom_index),
-        interval_minutes=60
+        interval_minutes=10
     )
 
     # 3. 板块热度 & 领涨
@@ -451,7 +451,7 @@ def setup_default_jobs():
     # =========================================================================
     from ..modules.signals.overbought_oversold import OverboughtOversoldSignal
     
-    # A股超买超卖 (每30分钟)
+    # A股超买超卖 (每10分钟)
     scheduler.add_market_job(
         job_id="warmup:signals:cn",
         func=OverboughtOversoldSignal.get_cn_signal,
@@ -469,7 +469,7 @@ def setup_default_jobs():
         interval_minutes=60
     )
     
-    # 港股超买超卖 (每30分钟)
+    # 港股超买超卖 (每10分钟)
     scheduler.add_market_job(
         job_id="warmup:signals:hk",
         func=OverboughtOversoldSignal.get_hk_signal,
@@ -478,7 +478,7 @@ def setup_default_jobs():
         period="daily",
     )
     
-    # 黄金超买超卖 (每小时)
+    # 黄金超买超卖 (每10分钟)
     scheduler.add_market_job(
         job_id="warmup:signals:gold",
         func=OverboughtOversoldSignal.get_gold_signal,
@@ -487,7 +487,7 @@ def setup_default_jobs():
         period="daily",
     )
     
-    # 白银超买超卖 (每小时)
+    # 白银超买超卖 (每10分钟)
     scheduler.add_market_job(
         job_id="warmup:signals:silver",
         func=OverboughtOversoldSignal.get_silver_signal,
