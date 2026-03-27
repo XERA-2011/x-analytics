@@ -18,6 +18,7 @@ from ...core.fear_greed import (
     build_fear_greed_meta,
     build_fear_greed_response,
     build_fear_greed_error,
+    build_fear_greed_explanation,
     score_percent_change,
     score_volatility_level,
 )
@@ -380,23 +381,26 @@ class USFearGreedIndex:
 
     @staticmethod
     def _get_cnn_explanation() -> str:
-        return """
-CNN恐慌贪婪指数说明：
-• 指数范围：0-100，数值越高表示市场越贪婪
-• 数据来源：CNN Business官方发布
-• 更新频率：实时/每日
-        """.strip()
+        return build_fear_greed_explanation(
+            title="美国市场情绪指数",
+            factors=[
+                ("CNN 官方指数", 1.0, "当前接口已切换为 AkShare 代理估算，不直接抓取 CNN 原始页面"),
+            ],
+            levels=USFearGreedIndex._get_levels(),
+            methodology_note="当前页面展示的是基于美股行情因子的代理情绪指数，用于替代 CNN 官方指数，不代表 CNN 官方观点。",
+        )
 
     @staticmethod
     def _get_custom_explanation() -> str:
         weights = USFearGreedIndex._get_weights()
-        return """
-自定义美国市场恐慌贪婪指数说明：
-• 计算因子：波动率代理({vix}%)、动量({mom}%)、当日涨跌({dc}%)、广度代理({breadth}%)
-• 说明：该指数为自定义估算，用于替代CNN官方指数，不代表CNN观点
-        """.strip().format(
-            vix=int(weights["volatility"] * 100),
-            mom=int(weights["momentum"] * 100),
-            dc=int(weights["daily_change"] * 100),
-            breadth=int(weights["breadth"] * 100),
+        return build_fear_greed_explanation(
+            title="美国市场情绪指数",
+            factors=[
+                ("波动率代理", weights["volatility"], "反映市场避险与紧张程度"),
+                ("动量", weights["momentum"], "反映主要指数趋势强弱"),
+                ("当日涨跌", weights["daily_change"], "反映短线价格变化"),
+                ("广度代理", weights["breadth"], "以道指与纳指表现差异近似市场分化"),
+            ],
+            levels=USFearGreedIndex._get_levels(),
+            methodology_note="该指数为基于美股行情因子的代理估算，用于替代 CNN 官方指数，不代表 CNN 官方观点，也不建议与其他市场横向直接比较。",
         )

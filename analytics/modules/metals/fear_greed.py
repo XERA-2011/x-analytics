@@ -21,6 +21,7 @@ from ...core.fear_greed import (
     build_fear_greed_meta,
     build_fear_greed_response,
     build_fear_greed_error,
+    build_fear_greed_explanation,
     score_inverse_ratio,
     score_percent_change,
     score_rsi,
@@ -251,12 +252,17 @@ class BaseMetalFearGreedIndex:
     @staticmethod
     def _get_explanation(name: str) -> str:
         w = BaseMetalFearGreedIndex.WEIGHTS
-        return f"""{name}恐慌贪婪指数 (技术面分析)
-• RSI ({int(w['rsi']*100)}%): 相对强弱，衡量超买超卖
-• 均线偏离 ({int(w['momentum']*100)}%): 价格与MA50乖离率
-• 波动率 ({int(w['volatility']*100)}%): 近期vs历史波动对比
-• 当日涨跌 ({int(w['daily_change']*100)}%): 实时价格变化
-• 分值: 0-25极度恐慌, 75-100极度贪婪"""
+        return build_fear_greed_explanation(
+            title=f"{name}情绪指数",
+            factors=[
+                ("RSI", w["rsi"], "衡量超买超卖状态"),
+                ("均线偏离", w["momentum"], "反映价格相对 MA50 的偏离"),
+                ("波动率", w["volatility"], "反映近期相对历史的波动变化"),
+                ("当日涨跌", w["daily_change"], "反映短线价格变化"),
+            ],
+            levels=BaseMetalFearGreedIndex.LEVELS,
+            methodology_note=f"该指数基于{name}技术与行情因子合成，更适合同品种内部纵向观察，不建议与股票市场直接比较。",
+        )
 
 
 class GoldFearGreedIndex(BaseMetalFearGreedIndex):

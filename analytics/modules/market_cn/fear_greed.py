@@ -17,6 +17,7 @@ from ...core.fear_greed import (
     build_fear_greed_meta,
     build_fear_greed_response,
     build_fear_greed_error,
+    build_fear_greed_explanation,
     score_percent_change,
     score_rsi,
     score_volatility_level,
@@ -304,24 +305,16 @@ class CNFearGreedIndex:
     def _get_explanation() -> str:
         """获取指数说明"""
         weights = CNFearGreedIndex._get_weights()
-        levels = CNFearGreedIndex._get_levels()
-        level_lines = []
-        for i, (min_score, label, _) in enumerate(levels):
-            max_score = 100 if i == 0 else levels[i - 1][0] - 1
-            level_lines.append(f"• {label}({min_score}-{max_score})")
-        level_lines = "\n".join(level_lines)
-        return """
-恐慌贪婪指数说明：
-• 指数范围：0-100，数值越高表示市场越贪婪
-• 计算因子：动量({pm}%)、当日涨跌({dc}%)、RSI({rsi}%)、波动率({vol}%)、资金流({volu}%)、广度代理({pos}%)
-{levels}
-• 说明：此指标为技术指标合成，不构成投资建议
-        """.strip().format(
-            pm=int(weights["momentum"] * 100),
-            dc=int(weights["daily_change"] * 100),
-            rsi=int(weights["rsi"] * 100),
-            vol=int(weights["volatility"] * 100),
-            volu=int(weights["flow"] * 100),
-            pos=int(weights["breadth"] * 100),
-            levels=level_lines
+        return build_fear_greed_explanation(
+            title="中国市场情绪指数",
+            factors=[
+                ("动量", weights["momentum"], "反映价格趋势强弱"),
+                ("当日涨跌", weights["daily_change"], "反映短线价格变化"),
+                ("RSI", weights["rsi"], "衡量超买超卖状态"),
+                ("波动率", weights["volatility"], "反映市场紧张程度"),
+                ("资金流", weights["flow"], "反映成交与活跃度变化"),
+                ("广度代理", weights["breadth"], "以指数区间位置近似市场广度"),
+            ],
+            levels=CNFearGreedIndex._get_levels(),
+            methodology_note="该指数基于A股技术与行情因子合成，更适合同市场内部纵向观察，不建议直接跨市场比较。",
         )

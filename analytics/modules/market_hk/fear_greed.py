@@ -12,6 +12,7 @@ from analytics.core.fear_greed import (
     build_fear_greed_meta,
     build_fear_greed_response,
     build_fear_greed_error,
+    build_fear_greed_explanation,
     score_percent_change,
     score_rsi,
 )
@@ -191,19 +192,13 @@ class HKFearGreed:
     @staticmethod
     def _get_explanation() -> str:
         weights = HKFearGreed._get_weights()
-        return """
-港股恐慌贪婪指数说明：
-• 指数范围：0-100，数值越高表示市场越贪婪
-• 计算因子：RSI({rsi}%)、动量代理({bias}%)、当日涨跌({dc}%)
-• 分值解读：
-  - 0-25：极度恐慌
-  - 25-45：恐慌
-  - 45-55：中性
-  - 55-75：贪婪
-  - 75-100：极度贪婪
-• 说明：此指标为技术指标合成，不构成投资建议
-        """.strip().format(
-            rsi=int(weights["rsi"] * 100),
-            bias=int(weights["momentum"] * 100),
-            dc=int(weights["daily_change"] * 100),
+        return build_fear_greed_explanation(
+            title="香港市场情绪指数",
+            factors=[
+                ("RSI", weights["rsi"], "衡量超买超卖状态"),
+                ("动量代理", weights["momentum"], "反映价格相对均线的偏离"),
+                ("当日涨跌", weights["daily_change"], "反映短线价格变化"),
+            ],
+            levels=HKFearGreed._get_levels(),
+            methodology_note="该指数基于港股核心技术与行情因子合成，更适合同市场内部纵向观察，不建议直接跨市场比较。",
         )

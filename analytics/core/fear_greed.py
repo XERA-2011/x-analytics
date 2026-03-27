@@ -2,7 +2,7 @@
 恐慌贪婪指数统一输出工具
 """
 
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional, List, Tuple
 
 
 def clamp_score(score: float) -> float:
@@ -151,3 +151,33 @@ def build_fear_greed_error(
     if extra:
         payload.update(extra)
     return payload
+
+
+def build_fear_greed_explanation(
+    *,
+    title: str,
+    factors: List[Tuple[str, float, Optional[str]]],
+    levels: List[Tuple[float, str, str]],
+    methodology_note: str = "该指数基于技术与行情因子合成，用于观察市场情绪变化，不构成投资建议。",
+) -> str:
+    """构建统一的恐慌贪婪说明文案。"""
+    factor_lines = []
+    for label, weight, note in factors:
+        suffix = f"：{note}" if note else ""
+        factor_lines.append(f"• {label} ({int(weight * 100)}%){suffix}")
+
+    level_lines = []
+    for idx, (min_score, label, _desc) in enumerate(levels):
+        max_score = 100 if idx == 0 else int(levels[idx - 1][0] - 1)
+        level_lines.append(f"• {label}：{int(min_score)}-{max_score}")
+
+    sections = [
+        f"{title}说明：",
+        "• 指数范围：0-100，数值越高表示市场情绪越偏贪婪，越低表示越偏恐慌",
+        "• 计算因子：",
+        "\n".join(factor_lines),
+        "• 分值解读：",
+        "\n".join(level_lines),
+        f"• 说明：{methodology_note}",
+    ]
+    return "\n".join(sections)
