@@ -325,24 +325,31 @@ class Charts {
 
         const chart = echarts.init(dom, "dark");
 
-        const buildNode = (item, depth = 0) => ({
-            name: item.name,
-            value: item.value,
-            code: item.code,
-            price: item.price,
-            change_pct: Number.isFinite(Number(item.change_pct)) ? Number(item.change_pct) : 0,
-            leading_stock: item.leading_stock,
-            stock_count: item.stock_count,
-            turnover: Number.isFinite(Number(item.turnover)) ? Number(item.turnover) : 0,
-            itemStyle: {
-                color: (Number.isFinite(Number(item.change_pct)) ? Number(item.change_pct) : 0) >= 0
-                    ? `rgba(239, 68, 68, ${Math.min((depth === 0 ? 0.3 : 0.18) + (Number.isFinite(Number(item.change_pct)) ? Number(item.change_pct) : 0) / 10, 1)})`
-                    : `rgba(34, 197, 94, ${Math.min((depth === 0 ? 0.3 : 0.18) + Math.abs(Number.isFinite(Number(item.change_pct)) ? Number(item.change_pct) : 0) / 10, 1)})`
-            },
-            children: Array.isArray(item.children)
-                ? item.children.map(child => buildNode(child, depth + 1))
-                : undefined,
-        });
+        const buildNode = (item, depth = 0) => {
+            const change = Number.isFinite(Number(item.change_pct)) ? Number(item.change_pct) : 0;
+            // Limit children to top 10 by market cap (value) to reduce visual clutter
+            let children = undefined;
+            if (Array.isArray(item.children)) {
+                const sorted = [...item.children].sort((a, b) => (b.value || 0) - (a.value || 0));
+                children = sorted.slice(0, 10).map(child => buildNode(child, depth + 1));
+            }
+            return {
+                name: item.name,
+                value: item.value,
+                code: item.code,
+                price: item.price,
+                change_pct: change,
+                leading_stock: item.leading_stock,
+                stock_count: item.stock_count,
+                turnover: Number.isFinite(Number(item.turnover)) ? Number(item.turnover) : 0,
+                itemStyle: {
+                    color: change >= 0
+                        ? `rgba(239, 68, 68, ${Math.min((depth === 0 ? 0.3 : 0.18) + change / 10, 1)})`
+                        : `rgba(34, 197, 94, ${Math.min((depth === 0 ? 0.3 : 0.18) + Math.abs(change) / 10, 1)})`
+                },
+                children: children,
+            };
+        };
 
         const treeData = data.map(item => buildNode(item));
         const sectorsWithChildren = treeData.filter(item => Array.isArray(item.children) && item.children.length > 0).length;
@@ -354,7 +361,7 @@ class Charts {
                 trigger: 'item',
                 formatter: function (info) {
                     const d = info.data;
-                    const isLeaf = enableNested && Array.isArray(d.children) ? d.children.length === 0 : false;
+                    const isLeaf = enableNested && !Array.isArray(d.children);
                     const change = Number.isFinite(Number(d.change_pct)) ? Number(d.change_pct) : 0;
                     const color = change >= 0 ? "#ef4444" : "#22c55e";
                     const capStr = d.value ? (d.value / 100000000).toFixed(0) : '--';
@@ -440,10 +447,6 @@ class Charts {
                                     <td style="color: #9ca3af; padding-right: 12px;">换手</td>
                                     <td style="text-align: right; font-family: monospace; color: #e5e7eb;">${d.turnover}%</td>
                                 </tr>
-                                <tr style="line-height: 1.6;">
-                                    <td style="color: #9ca3af; padding-right: 12px;">领涨</td>
-                                    <td style="text-align: right; color: #e5e7eb; max-width: 65px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${d.leading_stock}</td>
-                                </tr>
                             </table>
                         </div>
                     `;
@@ -477,25 +480,18 @@ class Charts {
                     show: true,
                     formatter: function (params) {
                         const d = params.data;
-                        const change = Number.isFinite(Number(d.change_pct)) ? Number(d.change_pct) : 0;
-                        const isLeaf = enableNested && Array.isArray(d.children) ? d.children.length === 0 : false;
+                        const isLeaf = enableNested && !Array.isArray(d.children);
+                        // Only show name, percentage is shown on hover via tooltip
                         if (isLeaf) {
-                            return `{leaf|${d.name}}\n{leafVal|${change.toFixed(2)}%}`;
+                            return `{leaf|${d.name}}`;
                         }
-                        return `{name|${d.name}}\n{val|${change.toFixed(2)}%}`;
+                        return `{name|${d.name}}`;
                     },
                     rich: {
                         name: {
                             fontSize: 13,
                             fontWeight: 'bold',
                             color: '#fff',
-                            textShadowColor: 'rgba(0,0,0,0.8)',
-                            textShadowBlur: 3,
-                            padding: [0, 0, 4, 0]
-                        },
-                        val: {
-                            fontSize: 11,
-                            color: '#f5f5f5',
                             textShadowColor: 'rgba(0,0,0,0.8)',
                             textShadowBlur: 3
                         },
@@ -506,12 +502,6 @@ class Charts {
                             textShadowColor: 'rgba(0,0,0,0.8)',
                             textShadowBlur: 2,
                             overflow: 'truncate'
-                        },
-                        leafVal: {
-                            fontSize: 9,
-                            color: '#f5f5f5',
-                            textShadowColor: 'rgba(0,0,0,0.8)',
-                            textShadowBlur: 2
                         }
                     }
                 },
