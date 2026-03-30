@@ -443,6 +443,101 @@ class Utils {
         if (window.lucide) lucide.createIcons();
     }
 
+    // Screenshot Share Modal (Minimalist)
+    static showShareModal(dataURL, title = '截图分享') {
+        const existingModal = document.querySelector('.modal-overlay');
+        if (existingModal) existingModal.remove();
+
+        // Minimalist layout matching reference screenshot exactly
+        const html = `
+            <div class="modal-overlay share-modal-overlay" style="display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.85); z-index: 10000;" onclick="if(event.target===this) this.remove()">
+                
+                <button style="position: absolute; top: 24px; right: 24px; background: rgba(255,255,255,0.1); border: none; color: white; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.2s;" onclick="this.closest('.share-modal-overlay').remove()" onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'">
+                    <i data-lucide="x" width="20"></i>
+                </button>
+                
+                <div style="position: relative; display: flex; justify-content: center; align-items: center; max-width: 90vw;">
+                    <img src="${dataURL}" style="max-width: 100%; max-height: 80vh; object-fit: contain; border-radius: 4px; box-shadow: 0 8px 30px rgba(0,0,0,0.5);" />
+                    
+                    <!-- Floating actions panel mimicking the screenshot exactly -->
+                    <div style="position: absolute; bottom: 20px; display: flex; align-items: center; justify-content: center; background: rgba(30, 30, 30, 0.95); backdrop-filter: blur(8px); padding: 4px 16px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 4px 20px rgba(0,0,0,0.4);">
+                        
+                        <button id="btn-download-img" style="background: transparent; border: none; color: rgba(255,255,255,0.85); font-size: 13px; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 10px 8px; width: 96px; transition: color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,0.85)'">
+                            <i data-lucide="download" width="16"></i> 下载保存
+                        </button>
+                        
+                        <div style="width: 1px; height: 16px; background: rgba(255,255,255,0.2); margin: 0 16px;"></div>
+                        
+                        <button id="btn-copy-img" style="background: transparent; border: none; color: rgba(255,255,255,0.85); font-size: 13px; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 10px 8px; width: 96px; transition: color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,0.85)'">
+                            <i data-lucide="copy" width="16"></i> 复制图片
+                        </button>
+                        
+                    </div>
+                </div>
+                
+            </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', html);
+        if (window.lucide) lucide.createIcons();
+
+        // Bind events
+        document.getElementById('btn-download-img').onclick = function() {
+            const a = document.createElement('a');
+            a.href = dataURL;
+            a.download = `${title}_${new Date().toISOString().slice(0, 10)}.png`;
+            a.click();
+
+            const btn = this;
+            if (btn) {
+                const originalHtml = btn.innerHTML;
+                btn.innerHTML = `<i data-lucide="check" width="16"></i> 下载成功`;
+                if (window.lucide) lucide.createIcons();
+                setTimeout(() => {
+                    btn.innerHTML = originalHtml;
+                    if (window.lucide) lucide.createIcons();
+                }, 2000);
+            }
+        };
+
+        document.getElementById('btn-copy-img').onclick = async function() {
+            const btn = this;
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<i data-lucide="loader" width="16" class="spin"></i> 正在复制';
+            try {
+                const res = await fetch(dataURL);
+                const blob = await res.blob();
+                
+                if (navigator.clipboard && navigator.clipboard.write) {
+                    await navigator.clipboard.write([
+                        new ClipboardItem({
+                            [blob.type]: blob
+                        })
+                    ]);
+                    
+                    btn.innerHTML = '<i data-lucide="check" width="16"></i> 复制成功';
+                    if (window.lucide) lucide.createIcons();
+                    setTimeout(() => {
+                        btn.innerHTML = originalHtml;
+                        if (window.lucide) lucide.createIcons();
+                    }, 2000);
+                } else {
+                    btn.innerHTML = originalHtml;
+                    if (window.lucide) lucide.createIcons();
+                    alert('当前浏览器不支持直接复制图片，请使用下载保存功能');
+                }
+            } catch (err) {
+                console.error('复制失败', err);
+                btn.innerHTML = '<i data-lucide="x-circle" width="16"></i> 复制失败';
+                if (window.lucide) lucide.createIcons();
+                setTimeout(() => {
+                    btn.innerHTML = originalHtml;
+                    if (window.lucide) lucide.createIcons();
+                }, 2000);
+            }
+        };
+    }
+
     // 颜色工具
     static color = {
         // 根据数值获取颜色

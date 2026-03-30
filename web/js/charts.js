@@ -384,6 +384,18 @@ class Charts {
                 }
             }
 
+            // 统一风格：采用标准的 Tailwind 色阶（500 级匹配文字，向下到 900 级），保持色彩高对比与纯正饱和度（防发白发灰）
+            let bgColor;
+            if (change >= 3.0) { bgColor = '#ef4444'; }       // Red 500 (同文字大红)
+            else if (change >= 2.0) { bgColor = '#dc2626'; }  // Red 600
+            else if (change >= 1.0) { bgColor = '#b91c1c'; }  // Red 700
+            else if (change > 0) { bgColor = '#7f1d1d'; }     // Red 900 (极深红)
+            else if (change === 0) { bgColor = '#27272a'; }   // Zinc 800 (深中性暗灰)
+            else if (change > -1.0) { bgColor = '#14532d'; }  // Green 900 (极深绿)
+            else if (change > -2.0) { bgColor = '#15803d'; }  // Green 700
+            else if (change > -3.0) { bgColor = '#16a34a'; }  // Green 600
+            else { bgColor = '#22c55e'; }                     // Green 500 (同文字大绿)
+
             return {
                 name: item.name,
                 value: item.value || 1, // Fallback to 1 to ensure it renders
@@ -395,15 +407,52 @@ class Charts {
                 analysis: sentiment.analysis,
                 analysisColor: sentiment.analysisColor,
                 itemStyle: {
-                    color: change >= 0
-                        ? `rgba(239, 68, 68, ${Math.min(0.2 + change / 10, 1)})`
-                        : `rgba(34, 197, 94, ${Math.min(0.2 + Math.abs(change) / 10, 1)})`
+                    color: bgColor
                 }
             };
         });
 
         const option = {
             backgroundColor: "transparent",
+            toolbox: {
+                show: true,
+                showTitle: false, // 禁用默认的 SVG 文本 label，防止与图表文字重叠
+                tooltip: { // 启用基于 DOM 的悬浮提示
+                    show: true,
+                    backgroundColor: 'rgba(30, 30, 30, 0.95)',
+                    textStyle: { color: '#fff', fontSize: 12 },
+                    padding: [4, 8],
+                    borderWidth: 1,
+                    borderColor: '#404040',
+                    formatter: function(param) {
+                        return param.title; // 显示 feature.title
+                    }
+                },
+                orient: 'vertical',
+                left: 'right',
+                top: 'top',
+                feature: {
+                    myShare: {
+                        show: true,
+                        title: '截图分享',
+                        icon: 'path://M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z M12 17a5 5 0 1 0 0-10 5 5 0 0 0 0 10z',
+                        onclick: function () {
+                            const dataURL = chart.getDataURL({
+                                type: 'png',
+                                pixelRatio: 2,
+                                backgroundColor: '#121212',
+                                excludeComponents: ['toolbox']
+                            });
+                            if (window.utils && utils.showShareModal) {
+                                utils.showShareModal(dataURL, '行业板块热力图');
+                            }
+                        }
+                    }
+                },
+                iconStyle: {
+                    borderColor: '#9ca3af'
+                }
+            },
             tooltip: {
                 trigger: 'item',
                 formatter: function (info) {
