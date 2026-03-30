@@ -9,9 +9,23 @@ description: "⚠️ MANDATORY: Read before modifying ANY .py files. Contains Py
 - **Core (`analytics/core/`)**: Infrastructure code only.
   - `config.py`: Centralized configuration (TTLs, Intervals).
   - `cache.py`: Redis interface and decorators.
+  - `data_provider.py`: Shared data provider (AkShare wrapper with singleton pattern).
+  - `scheduler.py`: Background task scheduler (periodic data refresh, warmup).
   - `patch.py`: Anti-scraping patches (User-Agent, Headers).
   - `throttler.py`: Global request rate limiting.
-- **Modules (`analytics/modules/`)**: Business logic grouped by domain (e.g., `market_cn`, `metals`).
+  - `rate_limiter.py`: API endpoint rate limiting (public/admin).
+  - `security.py`: Authentication and security middleware.
+  - `utils.py`: Shared utilities (`safe_float`, `akshare_call_with_retry`, `get_beijing_time`).
+  - `db.py`: Database initialization (Tortoise ORM).
+  - `decorators.py`: Shared decorators.
+  - `logger.py`: Logging configuration.
+  - `fear_greed.py`: Base fear & greed index calculation logic.
+- **Modules (`analytics/modules/`)**: Business logic grouped by domain.
+  - `market_cn/`: A-share market (indices, leaders/sectors, bonds, LPR, fear & greed).
+  - `market_hk/`: Hong Kong market (indices, fear & greed).
+  - `market_us/`: US market (indices, leaders, treasury, fear & greed, heat map).
+  - `metals/`: Precious metals (spot prices, gold/silver, fear & greed).
+  - `signals/`: Cross-market technical signals (overbought/oversold).
   - Modules should focus on data fetching and processing.
   - **Stateless**: Modules should not hold state; rely on Redis cache.
 
@@ -122,7 +136,6 @@ grep -rn " | None" analytics/ --include="*.py"
 > - `.agent/skills/python_development/SKILL.md` - Python development guidelines
 > - `.agent/skills/frontend_development/SKILL.md` - Frontend development guidelines
 > - `.agent/workflows/*.md` - Workflow configurations
-> - `.shared/*/docs/guidelines.md` - Project guidelines
 
 ---
 

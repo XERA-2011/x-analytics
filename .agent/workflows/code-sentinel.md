@@ -56,3 +56,10 @@ npm install -g prettier
 > - `.agent/skills/python_development/SKILL.md`
 > - `.agent/skills/frontend_development/SKILL.md`
 > - `.agent/workflows/*.md`
+
+---
+
+## ⚙️ Language Policy
+
+> **All content in `.agent/` directory MUST be written in English.**
+> This ensures consistency and optimal AI comprehension.

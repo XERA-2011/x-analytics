@@ -10,7 +10,7 @@ description: "⚠️ MANDATORY: Read before modifying ANY .js/.html/.css files. 
 - **Simplicity**: Minimalist UI, single-column flow on mobile.
 - **Unified Styles**: Use a single `styles.css` instead of fragmented files.
 
-## 2. CSS Architecture (`styles.css`)
+## 2. CSS Architecture (`web/css/styles.css`)
 ### Responsive Grid
 Use `auto-fit` for automatic column adjustment without media queries where possible:
 ```css
@@ -109,8 +109,17 @@ Complex logic must be split by business domain into separate modules under `web/
   - Instantiating Controllers in `this.modules`.
   - Routing `refreshCurrentTab()` calls to the active controller.
 
-- **`api.js`**: All network requests.
-- **`charts.js`**: ECharts wrappers and theme configuration.
+- **`api.js`**: All network requests and response unwrapping.
+- **`charts.js`**: ECharts wrappers, theme configuration, and chart rendering (includes Treemap, Gauge, Line, Bar).
+- **`utils.js`**: Shared formatting utilities (`formatNumber`, `formatPercentage`, `formatTime`, `renderError`).
+
+### Module Files (`web/js/modules/`)
+| Module | File | Description |
+|:-------|:-----|:------------|
+| CN Market | `market-cn.js` | A-share indices, sector heatmap, fear & greed, bonds, LPR |
+| HK Market | `market-hk.js` | Hong Kong indices, fear & greed |
+| US Market | `market-us.js` | US indices, leaders, treasury, heat map, fear & greed |
+| Metals | `metals.js` | Precious metals spot prices, fear & greed |
 
 ## 7. User Experience & Resilience
 ### Error Handling & Loading
