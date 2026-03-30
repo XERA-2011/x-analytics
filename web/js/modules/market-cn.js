@@ -262,12 +262,15 @@ class CNMarketController {
             if (targetStock) {
                 const change = Number.isFinite(Number(targetStock.change_pct)) ? Number(targetStock.change_pct) : 0;
                 const sign = change > 0 ? '+' : '';
-                return `${targetStock.name} <span class="${change > 0 ? 'text-up' : change < 0 ? 'text-down' : ''}">${sign}${change.toFixed(2)}%</span>`;
+                return {
+                    name: targetStock.name,
+                    changeHtml: `<span class="${change > 0 ? 'text-up' : change < 0 ? 'text-down' : ''}">${sign}${change.toFixed(2)}%</span>`
+                };
             } else if (preferredName) {
-                return preferredName;
+                return { name: preferredName, changeHtml: '' };
             }
 
-            return '--';
+            return { name: '--', changeHtml: '' };
         };
 
         const renderItem = (item, columnType) => {
@@ -276,18 +279,22 @@ class CNMarketController {
             const sign = changeVal > 0 ? '+' : '';
             const sentiment = getSentiment(changeVal, item.turnover);
             const stockLabel = columnType === 'down' ? '领跌' : '领涨';
-            const stockNameHtml = resolveStockName(item, columnType);
+            const stockInfo = resolveStockName(item, columnType);
 
             return `
                 <div class="ranking-item">
-                    <div class="ranking-row">
-                        <div class="ranking-left">
-                            <span class="ranking-name">${item.name}</span>
-                            <span class="ranking-turnover">${stockLabel}: ${stockNameHtml}</span>
+                    <div class="ranking-row" style="margin-bottom: 6px; align-items: baseline;">
+                        <span class="ranking-name" style="flex: 1; font-size: 14px;">${item.name}</span>
+                        <div style="display: flex; gap: 8px; align-items: baseline;">
+                            <span class="ranking-sentiment" style="color:${sentiment.color}; font-size: 12px;">${sentiment.text}</span>
+                            <span class="ranking-change ${changeClass}" style="font-size: 14px;">${sign}${changeVal.toFixed(2)}%</span>
                         </div>
-                        <div class="ranking-right">
-                            <span class="ranking-change ${changeClass}">${sign}${changeVal.toFixed(2)}%</span>
-                            <span class="ranking-sentiment" style="color:${sentiment.color}">${sentiment.text}</span>
+                    </div>
+                    <div class="ranking-row" style="display: flex; justify-content: space-between; align-items: baseline; margin-top: 2px;">
+                        <span class="ranking-turnover">${stockLabel}</span>
+                        <div style="display: flex; gap: 8px; align-items: baseline;">
+                            <span class="ranking-name" style="font-size: 12px; font-weight: 400; color: var(--text-secondary);">${stockInfo.name}</span>
+                            <span style="font-size: 12px; font-weight: 700; font-family: var(--font-mono);">${stockInfo.changeHtml}</span>
                         </div>
                     </div>
                 </div>
