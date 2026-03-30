@@ -243,16 +243,28 @@ class CNMarketController {
         };
 
         const resolveStockName = (item, columnType) => {
-            const preferred = columnType === 'down' ? item.lagging_stock : item.leading_stock;
-            if (preferred) return preferred;
+            let preferredName = columnType === 'down' ? item.lagging_stock : item.leading_stock;
+            let targetStock = null;
 
-            if (Array.isArray(item.children) && item.children.length > 0) {
+            if (preferredName && Array.isArray(item.children)) {
+                targetStock = item.children.find(s => s.name === preferredName);
+            }
+
+            if (!targetStock && Array.isArray(item.children) && item.children.length > 0) {
                 const sortedChildren = [...item.children].sort((a, b) => {
                     const changeA = Number.isFinite(Number(a.change_pct)) ? Number(a.change_pct) : 0;
                     const changeB = Number.isFinite(Number(b.change_pct)) ? Number(b.change_pct) : 0;
                     return columnType === 'down' ? changeA - changeB : changeB - changeA;
                 });
-                return sortedChildren[0]?.name || '--';
+                targetStock = sortedChildren[0];
+            }
+
+            if (targetStock) {
+                const change = Number.isFinite(Number(targetStock.change_pct)) ? Number(targetStock.change_pct) : 0;
+                const sign = change > 0 ? '+' : '';
+                return `${targetStock.name} <span class="${change > 0 ? 'text-up' : change < 0 ? 'text-down' : ''}">${sign}${change.toFixed(2)}%</span>`;
+            } else if (preferredName) {
+                return preferredName;
             }
 
             return '--';
@@ -262,17 +274,16 @@ class CNMarketController {
             const changeVal = item.change_pct || 0;
             const changeClass = changeVal > 0 ? 'text-up' : changeVal < 0 ? 'text-down' : '';
             const sign = changeVal > 0 ? '+' : '';
-            const turnover = item.turnover != null ? `换手${item.turnover.toFixed(1)}%` : '';
             const sentiment = getSentiment(changeVal, item.turnover);
             const stockLabel = columnType === 'down' ? '领跌' : '领涨';
-            const stockName = resolveStockName(item, columnType);
+            const stockNameHtml = resolveStockName(item, columnType);
 
             return `
                 <div class="ranking-item">
                     <div class="ranking-row">
                         <div class="ranking-left">
                             <span class="ranking-name">${item.name}</span>
-                            <span class="ranking-turnover">${turnover} · ${stockLabel}${stockName}</span>
+                            <span class="ranking-turnover">${stockLabel}: ${stockNameHtml}</span>
                         </div>
                         <div class="ranking-right">
                             <span class="ranking-change ${changeClass}">${sign}${changeVal.toFixed(2)}%</span>

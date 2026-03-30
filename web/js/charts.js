@@ -325,107 +325,121 @@ class Charts {
 
         const chart = echarts.init(dom, "dark");
 
-        const buildNode = (item, depth = 0) => {
-            const change = Number.isFinite(Number(item.change_pct)) ? Number(item.change_pct) : 0;
-            // Limit children to top 10 by market cap (value) to reduce visual clutter
-            let children = undefined;
-            if (Array.isArray(item.children)) {
-                const sorted = [...item.children].sort((a, b) => (b.value || 0) - (a.value || 0));
-                children = sorted.slice(0, 10).map(child => buildNode(child, depth + 1));
+        const getSentiment = (c, t) => {
+            let analysis = "中性";
+            let analysisColor = "#9ca3af";
+            const absC = Math.abs(c);
+
+            if (absC < 0.8) {
+                analysis = "横盘震荡";
+                analysisColor = "#9ca3af";
+            } else if (c > 0) {
+                if (c > 8) { analysis = t > 2 ? "极度超买" : "逼空拉升"; analysisColor = "#dc2626"; }
+                else if (t > 5 && c > 4) { analysis = "严重超买"; analysisColor = "#dc2626"; }
+                else if (t > 3 || c > 4) { analysis = "放量上攻"; analysisColor = "#ef4444"; }
+                else if (t < 1.2 && c < 2) { analysis = "缩量上涨"; analysisColor = "#f59e0b"; }
+                else { analysis = "温和上涨"; analysisColor = "#ef4444"; }
+            } else {
+                if (c < -8) { analysis = t > 2 ? "恐慌抛售" : "闷杀出局"; analysisColor = "#16a34a"; }
+                else if (t > 5 && c < -4) { analysis = "恐慌抛售"; analysisColor = "#16a34a"; }
+                else if (t > 3 || c < -4) { analysis = "放量杀跌"; analysisColor = "#16a34a"; }
+                else if (t < 1.2 && c > -2) { analysis = "无量下跌"; analysisColor = "#10b981"; }
+                else { analysis = "弱势调整"; analysisColor = "#22c55e"; }
             }
-            return {
-                name: item.name,
-                value: item.value,
-                code: item.code,
-                price: item.price,
-                change_pct: change,
-                leading_stock: item.leading_stock,
-                stock_count: item.stock_count,
-                turnover: Number.isFinite(Number(item.turnover)) ? Number(item.turnover) : 0,
-                itemStyle: {
-                    color: change >= 0
-                        ? `rgba(239, 68, 68, ${Math.min((depth === 0 ? 0.3 : 0.18) + change / 10, 1)})`
-                        : `rgba(34, 197, 94, ${Math.min((depth === 0 ? 0.3 : 0.18) + Math.abs(change) / 10, 1)})`
-                },
-                children: children,
-            };
+            return { analysis, analysisColor };
         };
 
-        const treeData = data.map(item => buildNode(item));
-        const sectorsWithChildren = treeData.filter(item => Array.isArray(item.children) && item.children.length > 0).length;
-        const enableNested = sectorsWithChildren >= Math.max(3, Math.floor(treeData.length / 3));
+        const treeData = data.map(item => {
+            const change = Number.isFinite(Number(item.change_pct)) ? Number(item.change_pct) : 0;
+            const turnover = Number.isFinite(Number(item.turnover)) ? Number(item.turnover) : 0;
+            const sentiment = getSentiment(change, turnover);
+
+            let leadingStr = item.leading_stock;
+            let laggingStr = item.lagging_stock;
+            let topCapStockStr = '';
+
+            // Fetch the individual stock's percentage change from the children array if possible
+            if (Array.isArray(item.children)) {
+                if (item.children.length > 0) {
+                    const sortedByCap = [...item.children].sort((a, b) => (b.value || 0) - (a.value || 0));
+                    const topStock = sortedByCap[0];
+                    if (topStock) {
+                        const c = Number.isFinite(Number(topStock.change_pct)) ? Number(topStock.change_pct) : 0;
+                        topCapStockStr = `${topStock.name} ${c >= 0 ? '+' : ''}${c.toFixed(2)}%`;
+                    }
+                }
+                if (leadingStr && leadingStr !== 'undefined') {
+                    const leadStock = item.children.find(s => s.name === leadingStr);
+                    if (leadStock) {
+                        const c = Number.isFinite(Number(leadStock.change_pct)) ? Number(leadStock.change_pct) : 0;
+                        leadingStr = `${leadingStr} ${c >= 0 ? '+' : ''}${c.toFixed(2)}%`;
+                    }
+                }
+                if (laggingStr && laggingStr !== 'undefined') {
+                    const lagStock = item.children.find(s => s.name === laggingStr);
+                    if (lagStock) {
+                        const c = Number.isFinite(Number(lagStock.change_pct)) ? Number(lagStock.change_pct) : 0;
+                        laggingStr = `${laggingStr} ${c >= 0 ? '+' : ''}${c.toFixed(2)}%`;
+                    }
+                }
+            }
+
+            return {
+                name: item.name,
+                value: item.value || 1, // Fallback to 1 to ensure it renders
+                change_pct: change,
+                top_cap_stock: topCapStockStr,
+                leading_stock: leadingStr,
+                lagging_stock: laggingStr,
+                turnover: turnover,
+                analysis: sentiment.analysis,
+                analysisColor: sentiment.analysisColor,
+                itemStyle: {
+                    color: change >= 0
+                        ? `rgba(239, 68, 68, ${Math.min(0.2 + change / 10, 1)})`
+                        : `rgba(34, 197, 94, ${Math.min(0.2 + Math.abs(change) / 10, 1)})`
+                }
+            };
+        });
 
         const option = {
             backgroundColor: "transparent",
             tooltip: {
                 trigger: 'item',
                 formatter: function (info) {
-                    const d = info.data;
-                    const isLeaf = enableNested && !Array.isArray(d.children);
-                    const change = Number.isFinite(Number(d.change_pct)) ? Number(d.change_pct) : 0;
+                    const d = info.data || params.data; // Unified variable pull for safety
+                    const rawChange = d ? (d.change_pct !== undefined ? d.change_pct : 0) : 0;
+                    const change = Number.isFinite(Number(rawChange)) ? Number(rawChange) : 0;
                     const color = change >= 0 ? "#ef4444" : "#22c55e";
-                    const capStr = d.value ? (d.value / 100000000).toFixed(0) : '--';
-
-                    // Sentiment & Volume Analysis
-                    let analysis = "中性";
-                    let analysisColor = "#9ca3af";
-
-                    const t = d.turnover || 0;
-                    const c = change;
-                    const absC = Math.abs(c);
-
-                    if (absC < 0.8) {
-                        analysis = "横盘震荡";
-                        analysisColor = "#9ca3af";
-                    } else if (c > 0) {
-                        // 上涨情况：综合考虑涨幅和换手率
-                        if (c > 8) {
-                            analysis = t > 2 ? "极度超买" : "逼空拉升";
-                            analysisColor = "#dc2626";
-                        }
-                        else if (t > 5 && c > 4) { analysis = "严重超买"; analysisColor = "#dc2626"; }
-                        else if (t > 3 || c > 4) { analysis = "放量上攻"; analysisColor = "#ef4444"; }
-                        else if (t < 1.2 && c < 2) { analysis = "缩量上涨"; analysisColor = "#f59e0b"; }
-                        else { analysis = "温和上涨"; analysisColor = "#ef4444"; }
-                    } else {
-                        // 下跌情况：综合考虑跌幅和换手率
-                        if (c < -8) {
-                            analysis = t > 2 ? "恐慌抛售" : "闷杀出局";
-                            analysisColor = "#16a34a";
-                        }
-                        else if (t > 5 && c < -4) { analysis = "恐慌抛售"; analysisColor = "#16a34a"; }
-                        else if (t > 3 || c < -4) { analysis = "放量杀跌"; analysisColor = "#16a34a"; }
-                        else if (t < 1.2 && c > -2) { analysis = "无量下跌"; analysisColor = "#10b981"; }
-                        else { analysis = "弱势调整"; analysisColor = "#22c55e"; }
+                    let capStr = '--';
+                    if (d.value && d.value !== 1) {
+                        capStr = (d.value / 100000000).toFixed(0);
                     }
 
-                    if (isLeaf) {
-                        return `
-                        <div style="min-width: 140px;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; padding-bottom: 6px; border-bottom: 1px solid #404040;">
-                                <span style="font-weight: 700; font-size: 14px; color: #fff;">${d.name}</span>
-                                <span style="font-weight: 700; font-family: monospace; font-size: 14px; color:${color}">${change >= 0 ? '+' : ''}${change.toFixed(2)}%</span>
-                            </div>
-                            <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
-                                <tr style="line-height: 1.6;">
-                                    <td style="color: #9ca3af; padding-right: 12px;">代码</td>
-                                    <td style="text-align: right; font-family: monospace; color: #e5e7eb;">${d.code || '--'}</td>
-                                </tr>
-                                <tr style="line-height: 1.6;">
-                                    <td style="color: #9ca3af; padding-right: 12px;">价格</td>
-                                    <td style="text-align: right; font-family: monospace; color: #e5e7eb;">${Number.isFinite(Number(d.price)) ? Number(d.price).toFixed(2) : '--'}</td>
-                                </tr>
-                                <tr style="line-height: 1.6;">
-                                    <td style="color: #9ca3af; padding-right: 12px;">市值</td>
-                                    <td style="text-align: right; font-family: monospace; color: #e5e7eb;">${capStr}亿</td>
-                                </tr>
-                                <tr style="line-height: 1.6;">
-                                    <td style="color: #9ca3af; padding-right: 12px;">换手</td>
-                                    <td style="text-align: right; font-family: monospace; color: #e5e7eb;">${d.turnover}%</td>
-                                </tr>
-                            </table>
-                        </div>
-                    `;
+                    let trailingRows = '';
+                    if (d.top_cap_stock) {
+                        trailingRows += `
+                            <tr style="line-height: 1.6;">
+                                <td style="color: #9ca3af; padding-right: 12px;">龙头</td>
+                                <td style="text-align: right; color: #e5e7eb; white-space: nowrap;">${d.top_cap_stock}</td>
+                            </tr>
+                        `;
+                    }
+                    if (d.leading_stock && d.leading_stock !== 'undefined') {
+                        trailingRows += `
+                            <tr style="line-height: 1.6;">
+                                <td style="color: #9ca3af; padding-right: 12px;">领涨</td>
+                                <td style="text-align: right; color: #e5e7eb; white-space: nowrap;">${d.leading_stock}</td>
+                            </tr>
+                        `;
+                    }
+                    if (d.lagging_stock && d.lagging_stock !== 'undefined') {
+                        trailingRows += `
+                            <tr style="line-height: 1.6;">
+                                <td style="color: #9ca3af; padding-right: 12px;">领跌</td>
+                                <td style="text-align: right; color: #e5e7eb; white-space: nowrap;">${d.lagging_stock}</td>
+                            </tr>
+                        `;
                     }
 
                     return `
@@ -437,7 +451,7 @@ class Charts {
                             <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
                                 <tr style="line-height: 1.6;">
                                     <td style="color: #9ca3af; padding-right: 12px;">情绪</td>
-                                    <td style="text-align: right; font-weight: bold; color: ${analysisColor};">${analysis}</td>
+                                    <td style="text-align: right; font-weight: bold; color: ${d.analysisColor};">${d.analysis}</td>
                                 </tr>
                                 <tr style="line-height: 1.6;">
                                     <td style="color: #9ca3af; padding-right: 12px;">市值</td>
@@ -447,6 +461,7 @@ class Charts {
                                     <td style="color: #9ca3af; padding-right: 12px;">换手</td>
                                     <td style="text-align: right; font-family: monospace; color: #e5e7eb;">${d.turnover}%</td>
                                 </tr>
+                                ${trailingRows}
                             </table>
                         </div>
                     `;
@@ -465,44 +480,57 @@ class Charts {
                 roam: false,
                 nodeClick: false,
                 breadcrumb: { show: false },
-                upperLabel: {
-                    show: enableNested,
-                    height: 22,
-                    formatter: function (params) {
-                        return params.name || '';
-                    },
-                    color: '#ffffff',
-                    fontWeight: 'bold',
-                    textShadowColor: 'rgba(0,0,0,0.8)',
-                    textShadowBlur: 3
-                },
                 label: {
                     show: true,
+                    position: 'insideTopLeft',
                     formatter: function (params) {
-                        const d = params.data;
-                        const isLeaf = enableNested && !Array.isArray(d.children);
-                        // Only show name, percentage is shown on hover via tooltip
-                        if (isLeaf) {
-                            return `{leaf|${d.name}}`;
+                        const d = params.data || {};
+                        const rawChange = d.change_pct !== undefined ? d.change_pct : 0;
+                        const change = Number.isFinite(Number(rawChange)) ? Number(rawChange) : 0;
+                        const sign = change >= 0 ? '+' : '';
+                        // ECharts labels don't get much space, so we format compactly
+                        let capStr = '--';
+                        if (d.value && d.value !== 1) {
+                            capStr = (d.value / 100000000).toFixed(0);
                         }
-                        return `{name|${d.name}}`;
+
+                        let labelStr = `{name|${d.name}} {change|${sign}${change.toFixed(2)}%}\n`;
+
+                        const colorMap = {
+                            '#dc2626': 's1', '#ef4444': 's2', '#f59e0b': 's3',
+                            '#16a34a': 's4', '#10b981': 's5', '#22c55e': 's6', '#9ca3af': 's7'
+                        };
+                        const styleName = colorMap[d.analysisColor] || 's7';
+
+                        labelStr += `{rowLabel|情绪:} {${styleName}|${d.analysis}}\n`;
+                        labelStr += `{rowLabel|市值:} {rowVal|${capStr}亿}\n`;
+                        labelStr += `{rowLabel|换手:} {rowVal|${d.turnover}%}`;
+
+                        // Custom conditionals for trailing properties
+                        if (d.top_cap_stock) {
+                            labelStr += `\n{rowLabel|龙头:} {rowVal|${d.top_cap_stock}}`;
+                        }
+                        if (d.leading_stock && d.leading_stock !== 'undefined') {
+                            labelStr += `\n{rowLabel|领涨:} {rowVal|${d.leading_stock}}`;
+                        }
+                        if (d.lagging_stock && d.lagging_stock !== 'undefined') {
+                            labelStr += `\n{rowLabel|领跌:} {rowVal|${d.lagging_stock}}`;
+                        }
+
+                        return labelStr;
                     },
                     rich: {
-                        name: {
-                            fontSize: 13,
-                            fontWeight: 'bold',
-                            color: '#fff',
-                            textShadowColor: 'rgba(0,0,0,0.8)',
-                            textShadowBlur: 3
-                        },
-                        leaf: {
-                            fontSize: 10,
-                            fontWeight: 'bold',
-                            color: '#fff',
-                            textShadowColor: 'rgba(0,0,0,0.8)',
-                            textShadowBlur: 2,
-                            overflow: 'truncate'
-                        }
+                        name: { fontSize: 12, fontWeight: 'bold', color: '#fff', padding: [4, 4, 4, 0], textShadowColor: '#000', textShadowBlur: 2 },
+                        change: { fontSize: 12, fontWeight: 'bold', color: '#fff', textShadowColor: '#000', textShadowBlur: 2 },
+                        rowLabel: { fontSize: 9, color: '#a3a3a3', lineHeight: 14 },
+                        rowVal: { fontSize: 9, color: '#f5f5f5' },
+                        s1: { fontSize: 9, color: '#fca5a5', fontWeight: 'bold', textShadowColor: '#000', textShadowBlur: 2 },
+                        s2: { fontSize: 9, color: '#f87171', fontWeight: 'bold', textShadowColor: '#000', textShadowBlur: 2 },
+                        s3: { fontSize: 9, color: '#fcd34d', fontWeight: 'bold', textShadowColor: '#000', textShadowBlur: 2 },
+                        s4: { fontSize: 9, color: '#86efac', fontWeight: 'bold', textShadowColor: '#000', textShadowBlur: 2 },
+                        s5: { fontSize: 9, color: '#6ee7b7', fontWeight: 'bold', textShadowColor: '#000', textShadowBlur: 2 },
+                        s6: { fontSize: 9, color: '#a7f3d0', fontWeight: 'bold', textShadowColor: '#000', textShadowBlur: 2 },
+                        s7: { fontSize: 9, color: '#d4d4d8', fontWeight: 'bold', textShadowColor: '#000', textShadowBlur: 2 }
                     }
                 },
                 itemStyle: {
@@ -510,28 +538,7 @@ class Charts {
                     borderWidth: 1,
                     gapWidth: 1
                 },
-                levels: [
-                    {
-                        itemStyle: {
-                            borderColor: '#0f0f0f',
-                            borderWidth: 3,
-                            gapWidth: 3
-                        },
-                        upperLabel: {
-                            show: enableNested
-                        }
-                    },
-                    {
-                        itemStyle: {
-                            borderColor: '#171717',
-                            borderWidth: 1,
-                            gapWidth: 1
-                        }
-                    }
-                ],
-                data: enableNested
-                    ? treeData
-                    : treeData.map(item => ({ ...item, children: undefined }))
+                data: treeData
             }]
         };
 
