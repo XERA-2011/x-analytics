@@ -508,7 +508,7 @@ class Utils {
                 const res = await fetch(dataURL);
                 const blob = await res.blob();
                 
-                if (navigator.clipboard && navigator.clipboard.write) {
+                if (navigator.clipboard && navigator.clipboard.write && window.isSecureContext) {
                     await navigator.clipboard.write([
                         new ClipboardItem({
                             [blob.type]: blob
@@ -524,16 +524,20 @@ class Utils {
                 } else {
                     btn.innerHTML = originalHtml;
                     if (window.lucide) lucide.createIcons();
-                    alert('当前浏览器不支持直接复制图片，请使用下载保存功能');
+                    const reason = !window.isSecureContext ? '非 HTTPS 环境限制' : '浏览器不支持';
+                    alert(`受${reason}，无法一键复制图像到剪贴板。\n\n💡 替代方案：请直接在上方图片处【点击右键】（手机端请【长按】）并选择“复制图像”。`);
                 }
             } catch (err) {
                 console.error('复制失败', err);
                 btn.innerHTML = '<i data-lucide="x-circle" width="16"></i> 复制失败';
                 if (window.lucide) lucide.createIcons();
+                
+                // Allow fallback alert if failure is likely due to permissions
                 setTimeout(() => {
                     btn.innerHTML = originalHtml;
                     if (window.lucide) lucide.createIcons();
-                }, 2000);
+                    alert(`剪贴板权限被拒绝。\n\n💡 请直接在上方图片处【点击右键】（手机端【长按】）并选择“复制图像”。`);
+                }, 1500);
             }
         };
     }
