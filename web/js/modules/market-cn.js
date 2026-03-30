@@ -284,14 +284,14 @@ class CNMarketController {
             return `
                 <div class="ranking-item">
                     <div class="ranking-row" style="margin-bottom: 6px; align-items: baseline;">
-                        <span class="ranking-name" style="flex: 1; font-size: 14px;">${item.name}</span>
+                        <span class="ranking-name" style="flex: 1; font-size: 12px;">${item.name}</span>
                         <div style="display: flex; gap: 8px; align-items: baseline;">
                             <span class="ranking-sentiment" style="color:${sentiment.color}; font-size: 12px;">${sentiment.text}</span>
-                            <span class="ranking-change ${changeClass}" style="font-size: 14px;">${sign}${changeVal.toFixed(2)}%</span>
+                            <span class="ranking-change ${changeClass}" style="font-size: 12px;">${sign}${changeVal.toFixed(2)}%</span>
                         </div>
                     </div>
                     <div class="ranking-row" style="display: flex; justify-content: space-between; align-items: baseline; margin-top: 2px;">
-                        <span class="ranking-turnover">${stockLabel}</span>
+                        <span class="ranking-turnover" style="font-size: 12px;">${stockLabel}</span>
                         <div style="display: flex; gap: 8px; align-items: baseline;">
                             <span class="ranking-name" style="font-size: 12px; font-weight: 400; color: var(--text-secondary);">${stockInfo.name}</span>
                             <span style="font-size: 12px; font-weight: 700; font-family: var(--font-mono);">${stockInfo.changeHtml}</span>
@@ -303,11 +303,11 @@ class CNMarketController {
 
         container.innerHTML = `
             <div class="ranking-column">
-                <div class="ranking-header up">📈 涨幅榜</div>
+                <div class="ranking-header up" style="font-size: 12px;">📈 涨幅榜</div>
                 ${gainers.length > 0 ? gainers.map(item => renderItem(item, 'up')).join('') : renderEmptyState('暂无上涨行业')}
             </div>
             <div class="ranking-column">
-                <div class="ranking-header down">📉 跌幅榜</div>
+                <div class="ranking-header down" style="font-size: 12px;">📉 跌幅榜</div>
                 ${losers.length > 0 ? losers.map(item => renderItem(item, 'down')).join('') : renderEmptyState('暂无下跌行业')}
             </div>
         `;
