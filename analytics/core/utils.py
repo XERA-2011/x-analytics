@@ -182,8 +182,8 @@ def generate_cache_key(*args) -> str:
 def akshare_call_with_retry(
     func,
     *args,
-    max_retries: int = 5,
-    base_delay: float = 2.0,
+    max_retries: int = 3,
+    base_delay: float = 1.0,
     use_throttle: bool = True,
     **kwargs
 ):
@@ -258,6 +258,7 @@ def akshare_call_with_retry(
                 # 指数退避 + 随机抖动，避免同时重试造成更大压力
                 jitter = random.uniform(0.5, 1.5)
                 delay = base_delay * (2 ** attempt) * jitter
+                delay = min(delay, 5.0)  # 限制最大单次重试等待时间为 5 秒
                 func_name = getattr(func, '__name__', str(func))
                 print(
                     f"⚠️ API调用失败 [{func_name}] (尝试 {attempt + 1}/{max_retries}): {str(e)[:100]}"
