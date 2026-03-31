@@ -82,9 +82,9 @@ class USMarketController {
         try {
             const data = await api.getUSMarketLeaders();
             if (data && data._stale) this._hasStaleData = true;
-            if (data.error) {
+            if (data.error || data._warming_up) {
                 console.error('加载美国市场领涨板块API返回错误:', data.error);
-                utils.renderError('us-gainers', '排行数据暂时不可用');
+                utils.renderError('us-gainers', data.error || 'warming_up');
                 return;
             }
             this.renderUSLeaders(data);
@@ -126,9 +126,13 @@ class USMarketController {
         container.style.justifyContent = 'center';
 
         const renderFallback = (message) => {
+            let displayMsg = message;
+            if (message === 'warming_up' || message === 'warming up') {
+                displayMsg = '<i data-lucide="clock" width="14" style="vertical-align: middle; margin-right: 4px;"></i> 数据预热中，请稍后刷新';
+            }
             container.innerHTML = `
                 <div style="text-align: center; padding: 20px;">
-                    <div style="margin-bottom: 12px; color: var(--text-secondary); font-size: 14px;">${message}</div>
+                    <div style="margin-bottom: 12px; color: var(--text-secondary); font-size: 14px;">${displayMsg}</div>
                     <a href="https://edition.cnn.com/markets/fear-and-greed" target="_blank" class="btn-primary" style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 6px; background: var(--accent-blue); color: white; text-decoration: none; font-size: 13px;">
                         CNN 官网参考
                         <i data-lucide="external-link" width="14"></i>
