@@ -160,7 +160,7 @@ class CNMarketController {
         }
 
         // 渲染涨跌幅排行榜
-        this.renderSectorRanking(data.sectors);
+        this.renderSectorRanking(data.sectors, data.source);
 
         // 渲染 ECharts Treemap
         if (window.charts) {
@@ -200,7 +200,7 @@ class CNMarketController {
         }
     }
 
-    renderSectorRanking(sectors) {
+    renderSectorRanking(sectors, source) {
         const container = document.getElementById('cn-sector-ranking');
         if (!container || !sectors || sectors.length === 0) return;
 
@@ -281,6 +281,8 @@ class CNMarketController {
             const stockLabel = columnType === 'down' ? '领跌' : '领涨';
             const stockInfo = resolveStockName(item, columnType);
 
+            const showStocks = source !== 'stock_board_aggregated';
+
             return `
                 <div class="ranking-item">
                     <div class="ranking-row" style="margin-bottom: 6px; align-items: baseline;">
@@ -290,13 +292,13 @@ class CNMarketController {
                             <span class="ranking-change ${changeClass}" style="font-size: 12px;">${sign}${changeVal.toFixed(2)}%</span>
                         </div>
                     </div>
-                    <div class="ranking-row" style="display: flex; justify-content: space-between; align-items: baseline; margin-top: 2px;">
+                    ${showStocks ? `<div class="ranking-row" style="display: flex; justify-content: space-between; align-items: baseline; margin-top: 2px;">
                         <span class="ranking-turnover" style="font-size: 12px;">${stockLabel}</span>
                         <div style="display: flex; gap: 8px; align-items: baseline;">
                             <span class="ranking-name" style="font-size: 12px; font-weight: 400; color: var(--text-secondary);">${stockInfo.name}</span>
                             <span style="font-size: 12px; font-weight: 700; font-family: var(--font-mono);">${stockInfo.changeHtml}</span>
                         </div>
-                    </div>
+                    </div>` : ''}
                 </div>
             `;
         };
