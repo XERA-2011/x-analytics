@@ -281,7 +281,7 @@ class CNMarketController {
             const stockLabel = columnType === 'down' ? '领跌' : '领涨';
             const stockInfo = resolveStockName(item, columnType);
 
-            const showStocks = source !== 'stock_board_aggregated';
+            const showStocks = source !== 'board_snapshot';
 
             return `
                 <div class="ranking-item">
