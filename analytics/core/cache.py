@@ -492,29 +492,4 @@ def warmup_cache(func: Callable, *args, **kwargs) -> bool:
     except Exception as e:
         print(f"❌ 缓存预热失败 [{func.__name__}]: {e}")
     
-    # === 故障保护逻辑 ===
-    # 如果预热失败（无论是 validation 失败还是 Exception），尝试延长现有缓存的寿命
-    try:
-        prefix = getattr(func, "_cache_prefix", None)
-        if prefix:
-             # 我们需要重新计算 key，但这需要 args/kwargs
-             # 幸运的是 args/kwargs 就在作用域里
-             key = make_cache_key(prefix, *args, **kwargs)
-             
-             # 获取现有数据
-             cached_val = cache.get(key)
-             if cached_val and "_meta" in cached_val:
-                 # 延长物理 TTL
-                 ttl = getattr(func, "_cache_ttl", 60)
-                 stale = getattr(func, "_cache_stale_ttl", 0) or 0
-                 physical_ttl = ttl + stale
-                 
-                 # 重新 सेट (SETEX)
-                 # 内容不变，只更新过期时间
-                 cache.set(key, cached_val, physical_ttl)
-                 print(f"🛡️ [预热保护] 已延长现有缓存寿命: {prefix}")
-                 return True # 虽然预热新数据失败，但保护了老数据，算作"处理成功"
-    except Exception as protect_err:
-        print(f"⚠️ [预热保护] 执行失败: {protect_err}")
-
     return False

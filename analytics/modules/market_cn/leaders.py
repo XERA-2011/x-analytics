@@ -206,8 +206,12 @@ class CNMarketLeaders:
         if not sector_members:
             return None
 
-        spot_df = data_provider.get_stock_zh_a_spot()
-        if spot_df.empty:
+        try:
+            spot_df = data_provider.get_stock_zh_a_spot()
+            if spot_df.empty:
+                return None
+        except Exception as e:
+            logger.warning("获取全市场个股实时行情失败，聚合热力图不可用，将尝试回退板块接口: %s", e)
             return None
 
         code_col = CNMarketLeaders._find_column(spot_df, ["代码", "证券代码"])

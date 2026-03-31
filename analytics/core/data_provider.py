@@ -89,10 +89,73 @@ class SharedDataProvider:
             return cached
 
         print("🌐 请求 A 股实时行情...")
-        # 使用带重试的调用
-        df = self._fetch_with_retry(ak.stock_zh_a_spot_em)
+        try:
+            # 使用带重试的调用
+            df = self._fetch_with_retry(ak.stock_zh_a_spot_em)
+        except Exception as e:
+            print(f"⚠️ akshare A股实时行情调用失败: {e}, 使用直接 API 回退")
+            df = self._fallback_stock_a_spot()
+            
         self._set_cached(cache_key, df)
         return df
+
+    def _fallback_stock_a_spot(self) -> pd.DataFrame:
+        """
+        直接请求东方财富 API 获取 A 股实时行情数据 (akshare 失败时的回退)
+        """
+        import requests
+        import random
+
+        subdomains = ["push2", "17.push2", "28.push2", "29.push2", "40.push2", "91.push2", "82.push2"]
+        random.shuffle(subdomains)
+
+        params = {
+            "pn": "1",
+            "pz": "10000",
+            "po": "1",
+            "np": "1",
+            "ut": "bd1d9ddb04089700cf9c27f6f7426281",
+            "fltt": "2",
+            "invt": "2",
+            "fid": "f3",
+            "fs": "m:0 t:6,m:0 t:80,m:1 t:2,m:1 t:23,m:0 t:81 s:2048",
+            "fields": "f12,f14,f2,f3,f8,f20,f21",
+        }
+        
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Referer": "https://quote.eastmoney.com/"
+        }
+
+        last_err = None
+        for sub in subdomains:
+            url = f"http://{sub}.eastmoney.com/api/qt/clist/get"
+            try:
+                r = requests.get(url, params=params, headers=headers, timeout=5)
+                data = r.json()
+                if data.get("data") and data["data"].get("diff"):
+                    items = data["data"]["diff"]
+                    rows = []
+                    for item in items:
+                        rows.append({
+                            "代码": item.get("f12", ""),
+                            "名称": item.get("f14", ""),
+                            "最新价": item.get("f2"),
+                            "涨跌幅": item.get("f3"),
+                            "换手率": item.get("f8"),
+                            "总市值": item.get("f20"),
+                            "流通市值": item.get("f21"),
+                        })
+                    df = pd.DataFrame(rows)
+                    for col in ["最新价", "涨跌幅", "换手率", "总市值", "流通市值"]:
+                        df[col] = pd.to_numeric(df[col], errors="coerce")
+                    print(f"✅ 直接 API 回退成功 ({sub}), 获取 {len(df)} 只股票")
+                    return df
+            except Exception as e:
+                last_err = e
+                continue
+
+        raise ValueError(f"所有东方财富 API 子域均不可用: {last_err}")
 
     def get_board_industry_name(self) -> pd.DataFrame:
         """
@@ -139,11 +202,16 @@ class SharedDataProvider:
             "fields": "f3,f8,f12,f14,f20,f104,f105,f128,f140",
         }
 
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Referer": "https://quote.eastmoney.com/"
+        }
+
         last_err = None
         for sub in subdomains:
-            url = f"https://{sub}.eastmoney.com/api/qt/clist/get"
+            url = f"http://{sub}.eastmoney.com/api/qt/clist/get"
             try:
-                r = requests.get(url, params=params, timeout=10)
+                r = requests.get(url, params=params, headers=headers, timeout=10)
                 data = r.json()
                 if data.get("data") and data["data"].get("diff"):
                     items = data["data"]["diff"]

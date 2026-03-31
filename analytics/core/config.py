@@ -112,10 +112,8 @@ class Settings:
 
     }
 
-    # Stale TTL 倍率：物理 TTL = TTL × STALE_TTL_RATIO
-    # 设为 24 表示：逻辑过期后，数据仍在 Redis 中保留 23 倍 TTL 时间
-    # 例：TTL=2h, 物理TTL=48h, 覆盖整个周末 + 节假日无成功预热场景
-    STALE_TTL_RATIO = 24
+    # Stale TTL 倍率：彻底禁用（设为0），一旦过期或获取失败不展示旧数据，避免误导用户
+    STALE_TTL_RATIO = 0
 
     # API 限流配置
     RATE_LIMIT = {"requests_per_minute": 60, "burst_size": 10}
