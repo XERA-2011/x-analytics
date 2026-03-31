@@ -94,7 +94,11 @@ class SharedDataProvider:
             df = self._fetch_with_retry(ak.stock_zh_a_spot_em)
         except Exception as e:
             print(f"⚠️ akshare A股实时行情调用失败: {e}, 使用直接 API 回退")
-            df = self._fallback_stock_a_spot()
+            try:
+                df = self._fallback_stock_a_spot()
+            except Exception as e2:
+                print(f"⚠️ 直接 API 也失败: {e2}, 尝试新浪全市场个股接口作为最后降级 (约需5-10秒)...")
+                df = self._fallback_stock_a_spot_sina()
             
         self._set_cached(cache_key, df)
         return df
@@ -106,8 +110,8 @@ class SharedDataProvider:
         import requests
         import random
 
-        subdomains = ["push2", "17.push2", "28.push2", "29.push2", "40.push2", "91.push2", "82.push2"]
-        random.shuffle(subdomains)
+        subdomains_pool = ["push2", "17.push2", "28.push2", "29.push2", "40.push2", "91.push2", "82.push2"]
+        subdomains = random.sample(subdomains_pool, min(2, len(subdomains_pool)))
 
         params = {
             "pn": "1",
@@ -157,6 +161,29 @@ class SharedDataProvider:
 
         raise ValueError(f"所有东方财富 API 子域均不可用: {last_err}")
 
+    def _fallback_stock_a_spot_sina(self) -> pd.DataFrame:
+        """
+        最后的回退：使用新浪个股行情接口 (拉取时间稍长约8秒)
+        将 '成交额' 映射到 '总市值' 供依赖权重的下游使用
+        """
+        import akshare as ak
+        df_sina = self._fetch_with_retry(ak.stock_zh_a_spot)
+        
+        df = pd.DataFrame()
+        df["代码"] = df_sina["代码"]
+        df["名称"] = df_sina["名称"]
+        df["最新价"] = pd.to_numeric(df_sina["最新价"], errors="coerce")
+        df["涨跌幅"] = pd.to_numeric(df_sina["涨跌幅"], errors="coerce")
+        df["换手率"] = 0.0  # 新浪接口没有直接暴露换手率
+        
+        # 将成交额当做市值代理用于防崩溃和粗略加权
+        turnover_amount = pd.to_numeric(df_sina["成交额"], errors="coerce")
+        df["总市值"] = turnover_amount
+        df["流通市值"] = turnover_amount
+        
+        print(f"✅ 新浪 A股 API 降级回退成功, 获取 {len(df)} 只股票")
+        return df
+
     def get_board_industry_name(self) -> pd.DataFrame:
         """
         获取行业板块数据
@@ -175,7 +202,12 @@ class SharedDataProvider:
             df = self._fetch_with_retry(ak.stock_board_industry_name_em)
         except Exception as e:
             print(f"⚠️ akshare 调用失败: {e}, 使用直接 API 回退")
-            df = self._fallback_board_industry()
+            try:
+                df = self._fallback_board_industry()
+            except Exception as e2:
+                print(f"⚠️ 直接 API 也失败: {e2}, 使用新浪行业接口作为最后降级...")
+                df = self._fallback_board_industry_sina()
+                
         self._set_cached(cache_key, df)
         return df
 
@@ -186,8 +218,8 @@ class SharedDataProvider:
         import requests
         import random
 
-        subdomains = ["push2", "17.push2", "28.push2", "29.push2", "40.push2", "91.push2"]
-        random.shuffle(subdomains)
+        subdomains_pool = ["push2", "17.push2", "28.push2", "29.push2", "40.push2", "91.push2"]
+        subdomains = random.sample(subdomains_pool, min(2, len(subdomains_pool)))
 
         params = {
             "pn": "1",
@@ -237,6 +269,31 @@ class SharedDataProvider:
                 continue
 
         raise ValueError(f"所有东方财富 API 子域均不可用: {last_err}")
+
+    def _fallback_board_industry_sina(self) -> pd.DataFrame:
+        """
+        使用新浪接口作为最后求生回退，映射为近似的东方财富字段格式
+        巧妙地将 '总成交额' 映射给 '总市值' 给热力图面积提供良好支撑
+        """
+        import akshare as ak
+        df_sina = self._fetch_with_retry(ak.stock_sector_spot, indicator="新浪行业")
+        
+        rows = []
+        for _, row in df_sina.iterrows():
+            rows.append({
+                "板块名称": row.get("板块", ""),
+                "板块代码": row.get("label", ""),
+                "涨跌幅": pd.to_numeric(row.get("涨跌幅"), errors="coerce"),
+                "换手率": 0.0, 
+                "总市值": pd.to_numeric(row.get("总成交额"), errors="coerce"), 
+                "上涨家数": 0,
+                "下跌家数": 0,
+                "领涨股票": row.get("股票名称", ""),
+            })
+            
+        df = pd.DataFrame(rows)
+        print(f"✅ 新浪行业 API 降级回退成功, 获取 {len(df)} 个板块")
+        return pd.DataFrame(rows)
     
     def get_sector_constituents(self, sector_name: str) -> pd.DataFrame:
         """
