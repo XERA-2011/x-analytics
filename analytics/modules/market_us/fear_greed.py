@@ -3,12 +3,10 @@
 获取CNN Fear & Greed Index和自定义计算
 """
 
-import requests
 import akshare as ak
 import pandas as pd
 import numpy as np
-from datetime import datetime
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, Optional, Tuple
 from ...core.cache import cached
 from ...core.config import settings
 from ...core.utils import safe_float, get_beijing_time, akshare_call_with_retry
@@ -79,6 +77,21 @@ class USFearGreedIndex:
         return df
 
     @staticmethod
+    def _fetch_market_frames(symbols: Tuple[str, ...]) -> Dict[str, pd.DataFrame]:
+        """
+        批量拉取并缓存本次计算所需的市场数据，避免同一轮计算重复请求。
+        """
+        frames: Dict[str, pd.DataFrame] = {}
+        for symbol in symbols:
+            try:
+                df = akshare_call_with_retry(ak.stock_us_daily, symbol=symbol)
+                if df is not None and not df.empty:
+                    frames[symbol] = USFearGreedIndex._sort_by_date(df)
+            except Exception as e:
+                logger.warning(f"⚠️ 获取 {symbol} 数据失败: {e}")
+        return frames
+
+    @staticmethod
     @cached("market_us:fear_greed", ttl=settings.CACHE_TTL["fear_greed"], stale_ttl=settings.CACHE_TTL["fear_greed"] * settings.STALE_TTL_RATIO)
     def get_cnn_fear_greed() -> Dict[str, Any]:
         """
@@ -146,14 +159,17 @@ class USFearGreedIndex:
         """
         try:
             update_time = get_beijing_time().strftime("%Y-%m-%d %H:%M:%S")
-            vix_data = USFearGreedIndex._get_vix_data()
-            sp500_data = USFearGreedIndex._get_sp500_data()
+            frames = USFearGreedIndex._fetch_market_frames((".INX", ".DJI", ".IXIC", ".VIX"))
+            inx_df = frames.get(".INX")
+            dji_df = frames.get(".DJI")
+            ndx_df = frames.get(".IXIC")
+            vix_df = frames.get(".VIX")
 
             indicators = {
-                "volatility": vix_data,
-                "momentum": sp500_data,
-                "daily_change": USFearGreedIndex._get_daily_change(),
-                "breadth": USFearGreedIndex._get_market_breadth(),
+                "volatility": USFearGreedIndex._get_vix_data(vix_df=vix_df, sp500_df=inx_df),
+                "momentum": USFearGreedIndex._get_sp500_data(inx_df=inx_df),
+                "daily_change": USFearGreedIndex._get_daily_change(inx_df=inx_df),
+                "breadth": USFearGreedIndex._get_market_breadth(dji_df=dji_df, ndx_df=ndx_df),
             }
 
             composite_score = USFearGreedIndex._calculate_composite_score(indicators)
@@ -193,7 +209,10 @@ class USFearGreedIndex:
             )
 
     @staticmethod
-    def _get_vix_data() -> Dict[str, Any]:
+    def _get_vix_data(
+        vix_df: Optional[pd.DataFrame] = None,
+        sp500_df: Optional[pd.DataFrame] = None,
+    ) -> Dict[str, Any]:
         """
         获取 VIX 数据
         策略: 优先尝试 API (.VIX), 失败则计算标普500历史波动率作为替代
@@ -201,7 +220,7 @@ class USFearGreedIndex:
         try:
             # 1. 优先尝试直接获取 VIX 数据
             try:
-                df = akshare_call_with_retry(ak.stock_us_daily, symbol=".VIX")
+                df = vix_df.copy() if vix_df is not None else akshare_call_with_retry(ak.stock_us_daily, symbol=".VIX")
                 if not df.empty:
                     df = USFearGreedIndex._sort_by_date(df)
                     latest_vix = safe_float(df.iloc[-1]["close"])
@@ -218,7 +237,7 @@ class USFearGreedIndex:
             logger.info("🔄 使用标普500波动率计算 VIX 替代值...")
             
             # 获取标普500数据 (多取一些数据以计算滚动窗口)
-            df_sp500 = akshare_call_with_retry(ak.stock_us_daily, symbol=".INX")
+            df_sp500 = sp500_df.copy() if sp500_df is not None else akshare_call_with_retry(ak.stock_us_daily, symbol=".INX")
             
             if df_sp500.empty or len(df_sp500) < 30:
                 return {"error": "数据不足无法计算VIX", "weight": USFearGreedIndex._get_weights()["volatility"]}
@@ -244,10 +263,10 @@ class USFearGreedIndex:
             return {"error": str(e), "weight": USFearGreedIndex._get_weights()["volatility"]}
 
     @staticmethod
-    def _get_daily_change() -> Dict[str, Any]:
+    def _get_daily_change(inx_df: Optional[pd.DataFrame] = None) -> Dict[str, Any]:
         """获取标普500单日涨跌幅 (Sentiment Sensitivity)"""
         try:
-            df = akshare_call_with_retry(ak.stock_us_daily, symbol=".INX")
+            df = inx_df.copy() if inx_df is not None else akshare_call_with_retry(ak.stock_us_daily, symbol=".INX")
             if df.empty or len(df) < 2:
                 return {"error": "数据不足", "weight": USFearGreedIndex._get_weights()["daily_change"]}
             df = USFearGreedIndex._sort_by_date(df)
@@ -300,11 +319,11 @@ class USFearGreedIndex:
 
 
     @staticmethod
-    def _get_sp500_data() -> Dict[str, Any]:
+    def _get_sp500_data(inx_df: Optional[pd.DataFrame] = None) -> Dict[str, Any]:
         """获取标普500动量数据"""
         try:
             # 使用 AkShare 获取标普500指数数据 (代号 .INX)
-            df = akshare_call_with_retry(ak.stock_us_daily, symbol=".INX")
+            df = inx_df.copy() if inx_df is not None else akshare_call_with_retry(ak.stock_us_daily, symbol=".INX")
             if df.empty or len(df) < 20:
                 return {"error": "数据不足", "weight": USFearGreedIndex._get_weights()["momentum"]}
             df = USFearGreedIndex._sort_by_date(df)
@@ -331,15 +350,18 @@ class USFearGreedIndex:
             return {"error": str(e), "weight": USFearGreedIndex._get_weights()["momentum"]}
 
     @staticmethod
-    def _get_market_breadth() -> Dict[str, Any]:
+    def _get_market_breadth(
+        dji_df: Optional[pd.DataFrame] = None,
+        ndx_df: Optional[pd.DataFrame] = None,
+    ) -> Dict[str, Any]:
         """
         获取市场广度数据
         注: 美国市场涨跌家数难以直接获取，使用道琼斯/纳斯达克相对表现代替
         """
         try:
             # 获取道琼斯(.DJI)和纳斯达克(.IXIC)
-            dji = akshare_call_with_retry(ak.stock_us_daily, symbol=".DJI")
-            ndx = akshare_call_with_retry(ak.stock_us_daily, symbol=".IXIC") # 纳斯达克综合
+            dji = dji_df.copy() if dji_df is not None else akshare_call_with_retry(ak.stock_us_daily, symbol=".DJI")
+            ndx = ndx_df.copy() if ndx_df is not None else akshare_call_with_retry(ak.stock_us_daily, symbol=".IXIC") # 纳斯达克综合
             
             if dji.empty or ndx.empty:
                 return {"error": "数据不足", "weight": USFearGreedIndex._get_weights()["breadth"]}

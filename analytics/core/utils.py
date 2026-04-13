@@ -214,7 +214,7 @@ def akshare_call_with_retry(
         try:
             # 使用节流器控制请求频率
             if use_throttle:
-                throttler.wait_if_needed()
+                throttler.wait_if_needed(apply_jitter=attempt > 0)
 
             return func(*args, **kwargs)
         except Exception as e:

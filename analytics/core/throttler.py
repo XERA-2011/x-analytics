@@ -15,7 +15,7 @@ class RequestThrottler:
 
     特性:
     - 限制每分钟最大请求数
-    - 请求前随机延迟 (模拟人类行为)
+    - 可选随机抖动（仅在重试阶段建议开启）
     - 线程安全
     """
 
@@ -24,9 +24,9 @@ class RequestThrottler:
 
     def __init__(
         self,
-        max_requests_per_minute: int = 10,
-        min_delay: float = 1.0,
-        max_delay: float = 3.0,
+        max_requests_per_minute: int = 30,
+        min_delay: float = 0.2,
+        max_delay: float = 0.8,
     ):
         """
         初始化节流器
@@ -51,7 +51,7 @@ class RequestThrottler:
                     cls._instance = cls()
         return cls._instance
 
-    def wait_if_needed(self) -> float:
+    def wait_if_needed(self, apply_jitter: bool = False) -> float:
         """
         如果超过速率限制，则等待
 
@@ -78,10 +78,11 @@ class RequestThrottler:
                     # 重新清理
                     self._requests = [t for t in self._requests if now - t < 60]
 
-            # 添加随机延迟 (模拟人类行为)
-            random_delay = random.uniform(self.min_delay, self.max_delay)
-            time.sleep(random_delay)
-            total_wait += random_delay
+            # 可选随机抖动：仅建议在重试时开启，避免常规请求被无谓放慢
+            if apply_jitter:
+                random_delay = random.uniform(self.min_delay, self.max_delay)
+                time.sleep(random_delay)
+                total_wait += random_delay
 
             # 记录本次请求
             self._requests.append(time.time())

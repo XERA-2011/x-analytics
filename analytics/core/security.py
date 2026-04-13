@@ -3,8 +3,7 @@
 提供安全响应头、限流、管理 API 保护等功能
 """
 
-import os
-from typing import Optional, Callable
+from typing import Callable
 from fastapi import Request
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -40,6 +39,16 @@ STATIC_PATHS = [
     "/analytics/js/",
     "/analytics/css/",
 ]
+
+
+def _is_api_path(path: str) -> bool:
+    """判断是否为 API 路径。"""
+    return any(path.startswith(p) for p in PUBLIC_API_PATHS)
+
+
+def _is_static_path(path: str) -> bool:
+    """判断是否为静态资源路径。"""
+    return any(path.startswith(p) for p in STATIC_PATHS)
 
 
 def get_client_ip(request: Request) -> str:
@@ -120,8 +129,8 @@ class SecurityMiddleware(BaseHTTPMiddleware):
                 )
         
         # 2. 检查是否为公开 API（需要限流）
-        elif any(path.startswith(p) for p in PUBLIC_API_PATHS):
-            if not any(path.startswith(p) for p in STATIC_PATHS):
+        elif _is_api_path(path):
+            if not _is_static_path(path):
                 if not public_limiter.is_allowed(client_ip):
                     return JSONResponse(
                         status_code=429,
@@ -140,10 +149,15 @@ class SecurityMiddleware(BaseHTTPMiddleware):
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["X-XSS-Protection"] = "1; mode=block"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-        response.headers["Cache-Control"] = "no-store, max-age=0"
+        if _is_api_path(path):
+            # API 响应禁用缓存，避免客户端使用过期数据
+            response.headers["Cache-Control"] = "no-store, max-age=0"
+        else:
+            # 静态资源允许浏览器缓存，降低重复下载成本
+            response.headers["Cache-Control"] = "public, max-age=86400"
         
         # 添加限流信息头（仅 API 请求）
-        if any(path.startswith(p) for p in PUBLIC_API_PATHS):
+        if _is_api_path(path):
             remaining = public_limiter.get_remaining(client_ip)
             response.headers["X-RateLimit-Limit"] = str(public_limiter.requests_per_minute)
             response.headers["X-RateLimit-Remaining"] = str(remaining)
