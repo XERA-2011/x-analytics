@@ -8,10 +8,10 @@ services:
     volumes:
       - redis_data:/data
     command: >
-      redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy volatile-ttl --tcp-backlog 511 --timeout 0 --tcp-keepalive 300
+      redis-server --requirepass ${REDIS_PASSWORD:-devpass} --appendonly yes --maxmemory 512mb --maxmemory-policy volatile-ttl --tcp-backlog 511 --timeout 0 --tcp-keepalive 300
     restart: unless-stopped
     healthcheck:
-      test: [ "CMD", "redis-cli", "ping" ]
+      test: [ "CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-devpass}", "ping" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -29,11 +29,13 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - REDIS_URL=redis://redis:6379/0
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-devpass}@redis:6379/0
       - TZ=Asia/Shanghai
 
-    volumes:
-      - .:/app
+    deploy:
+      resources:
+        limits:
+          memory: 1G
     depends_on:
       redis:
         condition: service_healthy

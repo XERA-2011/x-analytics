@@ -6,6 +6,7 @@ import pytz  # type: ignore[import-untyped]
 from datetime import datetime, time as dt_time
 from typing import Any, Dict, Tuple, cast, overload, Optional
 from .config import settings
+from .logger import logger
 
 
 def get_beijing_time() -> datetime:
@@ -260,13 +261,12 @@ def akshare_call_with_retry(
                 delay = base_delay * (2 ** attempt) * jitter
                 delay = min(delay, 5.0)  # 限制最大单次重试等待时间为 5 秒
                 func_name = getattr(func, '__name__', str(func))
-                print(
-                    f"⚠️ API调用失败 [{func_name}] (尝试 {attempt + 1}/{max_retries}): {str(e)[:100]}"
+                logger.warning(
+                    f"API调用失败 [{func_name}] (尝试 {attempt + 1}/{max_retries}): {str(e)[:100]}, {delay:.1f}s后重试"
                 )
-                print(f"   {delay:.1f}秒后重试...")
                 time.sleep(delay)
             else:
                 func_name = getattr(func, '__name__', str(func))
-                print(f"❌ API调用失败 [{func_name}] (已重试{max_retries}次): {str(e)[:150]}")
+                logger.error(f"API调用失败 [{func_name}] (已重试{max_retries}次): {str(e)[:150]}")
 
     raise last_exception  # type: ignore

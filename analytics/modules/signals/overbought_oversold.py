@@ -226,6 +226,13 @@ class OverboughtOversoldSignal:
                 if col in df.columns:
                     df[col] = pd.to_numeric(df[col], errors="coerce")
 
+            # 标准化成交量列名 (AKShare 不同接口列名不一致)
+            volume_aliases = {"成交量": "volume", "vol": "volume", "成交量(手)": "volume"}
+            for alias, canonical in volume_aliases.items():
+                if alias in df.columns and canonical not in df.columns:
+                    df = df.rename(columns={alias: canonical})
+                    break
+
             if "volume" in df.columns:
                 df["volume"] = pd.to_numeric(df["volume"], errors="coerce")
 

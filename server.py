@@ -56,7 +56,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="x-analytics API",
     description="三大板块金融数据分析服务：中国市场、美国市场、有色金属",
-    version="2.0.0",
+    version=settings.VERSION,
     root_path="/analytics",
     lifespan=lifespan,
     # 安全：隐藏 OpenAPI 文档（生产环境可取消注释）
@@ -115,7 +115,7 @@ def health_check():
     return {
         "status": "ok",
         "service": "x-analytics",
-        "version": "2.0.0",
+        "version": settings.VERSION,
         "cache": {
             "connected": cache.connected,
             "host": redis_host,

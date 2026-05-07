@@ -31,13 +31,15 @@ PUBLIC_API_PATHS = [
     "/analytics/metals/",
 ]
 
-# 静态资源路径（不限流）
+# 静态资源 / 健康检查路径（不限流）
 STATIC_PATHS = [
     "/js/",
     "/css/",
     "/favicon.ico",
     "/analytics/js/",
     "/analytics/css/",
+    "/api/health",
+    "/analytics/api/health",
 ]
 
 

@@ -8,6 +8,7 @@ import pandas as pd
 import threading
 import time
 from typing import Optional, Callable, Any, Dict
+from .logger import logger
 
 
 class SharedDataProvider:
@@ -50,7 +51,7 @@ class SharedDataProvider:
             if key in self._cache:
                 entry = self._cache[key]
                 if time.time() - entry["timestamp"] < self.memory_cache_ttl:
-                    print(f"📦 使用内存缓存: {key}")
+                    logger.debug(f"Using memory cache: {key}")
                     return entry["data"]
                 else:
                     # 过期，删除
@@ -88,16 +89,16 @@ class SharedDataProvider:
         if cached is not None:
             return cached
 
-        print("🌐 请求 A 股实时行情...")
+        logger.info("请求 A 股实时行情...")
         try:
             # 使用带重试的调用
             df = self._fetch_with_retry(ak.stock_zh_a_spot_em)
         except Exception as e:
-            print(f"⚠️ akshare A股实时行情调用失败: {e}, 使用直接 API 回退")
+            logger.warning(f"akshare A股实时行情调用失败: {e}, 使用直接 API 回退")
             try:
                 df = self._fallback_stock_a_spot()
             except Exception as e2:
-                print(f"⚠️ 直接 API 也失败: {e2}, 尝试新浪全市场个股接口作为最后降级 (约需5-10秒)...")
+                logger.warning(f"直接 API 也失败: {e2}, 尝试新浪全市场个股接口作为最后降级")
                 df = self._fallback_stock_a_spot_sina()
             
         self._set_cached(cache_key, df)
@@ -153,7 +154,7 @@ class SharedDataProvider:
                     df = pd.DataFrame(rows)
                     for col in ["最新价", "涨跌幅", "换手率", "总市值", "流通市值"]:
                         df[col] = pd.to_numeric(df[col], errors="coerce")
-                    print(f"✅ 直接 API 回退成功 ({sub}), 获取 {len(df)} 只股票")
+                    logger.info(f"直接 API 回退成功 ({sub}), 获取 {len(df)} 只股票")
                     return df
             except Exception as e:
                 last_err = e
@@ -181,7 +182,7 @@ class SharedDataProvider:
         df["总市值"] = turnover_amount
         df["流通市值"] = turnover_amount
         
-        print(f"✅ 新浪 A股 API 降级回退成功, 获取 {len(df)} 只股票")
+        logger.info(f"新浪 A股 API 降级回退成功, 获取 {len(df)} 只股票")
         return df
 
     def get_board_industry_name(self) -> pd.DataFrame:
@@ -197,15 +198,15 @@ class SharedDataProvider:
         if cached is not None:
             return cached
 
-        print("🌐 请求行业板块数据...")
+        logger.info("请求行业板块数据...")
         try:
             df = self._fetch_with_retry(ak.stock_board_industry_name_em)
         except Exception as e:
-            print(f"⚠️ akshare 调用失败: {e}, 使用直接 API 回退")
+            logger.warning(f"akshare 调用失败: {e}, 使用直接 API 回退")
             try:
                 df = self._fallback_board_industry()
             except Exception as e2:
-                print(f"⚠️ 直接 API 也失败: {e2}, 使用新浪行业接口作为最后降级...")
+                logger.warning(f"直接 API 也失败: {e2}, 使用新浪行业接口作为最后降级")
                 df = self._fallback_board_industry_sina()
                 
         self._set_cached(cache_key, df)
@@ -262,7 +263,7 @@ class SharedDataProvider:
                     df = pd.DataFrame(rows)
                     for col in ["涨跌幅", "换手率", "总市值", "上涨家数", "下跌家数"]:
                         df[col] = pd.to_numeric(df[col], errors="coerce")
-                    print(f"✅ 直接 API 回退成功 ({sub}), 获取 {len(df)} 个板块")
+                    logger.info(f"直接 API 回退成功 ({sub}), 获取 {len(df)} 个板块")
                     return df
             except Exception as e:
                 last_err = e
@@ -292,7 +293,7 @@ class SharedDataProvider:
             })
             
         df = pd.DataFrame(rows)
-        print(f"✅ 新浪行业 API 降级回退成功, 获取 {len(df)} 个板块")
+        logger.info(f"新浪行业 API 降级回退成功, 获取 {len(df)} 个板块")
         return pd.DataFrame(rows)
     
     def get_sector_constituents(self, sector_name: str) -> pd.DataFrame:
@@ -307,7 +308,7 @@ class SharedDataProvider:
         if cached is not None:
             return cached
 
-        print(f"🌐 请求板块成分股: {sector_name}...")
+        logger.info(f"请求板块成分股: {sector_name}...")
         df = self._fetch_with_retry(ak.stock_board_industry_cons_em, symbol=sector_name)
         self._set_cached(cache_key, df)
         return df
@@ -324,7 +325,7 @@ class SharedDataProvider:
         if cached is not None:
             return cached
 
-        print(f"🌐 请求指数行情: {symbol}...")
+        logger.info(f"请求指数行情: {symbol}...")
         df = self._fetch_with_retry(ak.stock_zh_index_spot_em, symbol=symbol)
         self._set_cached(cache_key, df)
         return df

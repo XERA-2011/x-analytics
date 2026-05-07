@@ -16,6 +16,7 @@ from functools import wraps
 from typing import Optional, Any, Callable, Dict
 from datetime import datetime
 from .config import settings
+from .logger import logger
 
 # 缓存版本号：当缓存数据结构变化时递增，自动使旧缓存失效
 CACHE_VERSION = "v4"
@@ -76,7 +77,7 @@ class RedisCache:
                 self._redis = client
                 self._connected = True
             except (redis.ConnectionError, redis.TimeoutError, ValueError) as e:
-                print(f"⚠️ Redis 连接失败: {e}，将使用无缓存模式")
+                logger.warning(f"Redis 连接失败: {e}，将使用无缓存模式")
                 self._redis = None
                 self._connected = False
 
@@ -100,9 +101,9 @@ class RedisCache:
         self._connect_attempted = False
         _ = self.redis  # 触发重连
         if self._connected:
-            print("✅ Redis 重连成功")
+            logger.info("Redis 重连成功")
         else:
-            print("❌ Redis 重连失败，继续无缓存模式")
+            logger.error("Redis 重连失败，继续无缓存模式")
         return self._connected
 
     def get(self, key: str) -> Optional[dict]:
@@ -114,7 +115,7 @@ class RedisCache:
             if value:
                 return json.loads(value)
         except (redis.RedisError, json.JSONDecodeError) as e:
-            print(f"缓存读取失败 [{key}]: {e}")
+            logger.error(f"缓存读取失败 [{key}]: {e}")
         return None
 
     def set(self, key: str, value: Any, ttl: int = 60) -> bool:
@@ -127,7 +128,7 @@ class RedisCache:
             )
             return True
         except (redis.RedisError, TypeError) as e:
-            print(f"缓存写入失败 [{key}]: {e}")
+            logger.error(f"缓存写入失败 [{key}]: {e}")
         return False
 
     def delete(self, key: str) -> bool:
@@ -138,7 +139,7 @@ class RedisCache:
             self.redis.delete(key)
             return True
         except redis.RedisError as e:
-            print(f"缓存删除失败 [{key}]: {e}")
+            logger.error(f"缓存删除失败 [{key}]: {e}")
         return False
 
     def delete_pattern(self, pattern: str) -> int:
@@ -150,7 +151,7 @@ class RedisCache:
             if keys:
                 return self.redis.delete(*keys)
         except redis.RedisError as e:
-            print(f"批量删除失败 [{pattern}]: {e}")
+            logger.error(f"批量删除失败 [{pattern}]: {e}")
         return 0
 
     def get_stats(self) -> dict:
@@ -368,7 +369,7 @@ def cached(key_prefix: str, ttl: int = 60, stale_ttl: Optional[int] = None):
                                         if fresh_data and "_meta" in fresh_data and time.time() < fresh_data["_meta"]["expire_at"]:
                                             return
 
-                                    print(f"⚡ [Async] 开始计算: {key_prefix}")
+                                    logger.info(f"[Async] 开始计算: {key_prefix}")
                                     result = func(*args, **kwargs)
 
                                     if result is not None:
@@ -400,24 +401,22 @@ def cached(key_prefix: str, ttl: int = 60, stale_ttl: Optional[int] = None):
                                                 "data": result
                                             }
                                             cache.set(cache_key, val, p_ttl)
-                                            print(f"✅ [Async] 缓存更新完成: {key_prefix}")
+                                            logger.info(f"[Async] 缓存更新完成: {key_prefix}")
                                         else:
-                                            print(f"⚠️ [Async] 计算结果无效，忽略: {key_prefix}")
+                                            logger.warning(f"[Async] 计算结果无效，忽略: {key_prefix}")
 
                                 finally:
                                     try:
                                         lock.release()
-                                    except:
-                                        pass
+                                    except Exception as lock_err:
+                                        logger.warning(f"Lock release failed [{cache_key}]: {lock_err}")
                             else:
                                 # 未获取到锁，说明其他节点正在计算
                                 pass
                         except Exception as e:
-                            print(f"❌ [Async] 后台刷新任务异常: {e}")
+                            logger.error(f"[Async] 后台刷新任务异常: {e}")
                         finally:
-                            # 标记结束
-                            if cache_key in cache._inflight_tasks:
-                                cache._inflight_tasks.remove(cache_key)
+                            cache._inflight_tasks.discard(cache_key)
 
                     # 启动后台线程
                     threading.Thread(target=async_refresh_task, daemon=True).start()
@@ -471,7 +470,7 @@ def warmup_cache(func: Callable, *args, **kwargs) -> bool:
                         has_valid_data = True
                         break
                 if not has_valid_data:
-                    print(f"⚠️ 预热检测到错误结果，跳过缓存: {func.__name__} - {result.get('error', 'Unknown')}")
+                    logger.warning(f"预热检测到错误结果，跳过缓存: {func.__name__} - {result.get('error', 'Unknown')}")
                     return False
 
             now = time.time()
@@ -480,16 +479,16 @@ def warmup_cache(func: Callable, *args, **kwargs) -> bool:
             stale = getattr(func, "_cache_stale_ttl", 0) or 0
 
             if prefix is None or ttl is None:
-                print(f"❌ 缓存预热失败 [{func.__name__}]: 缺少缓存元数据")
+                logger.error(f"缓存预热失败 [{func.__name__}]: 缺少缓存元数据")
                 return False
 
             key = make_cache_key(prefix, *args, **kwargs)
 
             val = {"_meta": {"expire_at": now + ttl, "cached_at": now, "ttl": ttl}, "data": result}
             cache.set(key, val, ttl + stale)
-            print(f"✅ 缓存预热成功: {prefix}")
+            logger.info(f"缓存预热成功: {prefix}")
             return True
     except Exception as e:
-        print(f"❌ 缓存预热失败 [{func.__name__}]: {e}")
+        logger.error(f"缓存预热失败 [{func.__name__}]: {e}")
     
     return False

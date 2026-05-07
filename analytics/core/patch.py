@@ -5,8 +5,7 @@ API 请求伪装补丁
 
 import random
 import requests
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
+from .logger import logger
 
 # 常见浏览器 UA
 # 常见浏览器 UA (扩充列表)
@@ -81,25 +80,10 @@ def _patched_request(self, method, url, *args, **kwargs):
 
 def apply_patches():
     """应用所有补丁"""
-    print("🛡️ 正在应用 API 伪装补丁...")
+    logger.info("正在应用 API 伪装补丁...")
     
     # 1. Monkey Patch requests.Session.request
     requests.Session.request = _patched_request
-    print("✅ 已注入随机 User-Agent 和浏览器 Headers")
+    logger.info("已注入随机 User-Agent 和浏览器 Headers")
     
-    # 2. 配置全局重试策略 (针对 requests.get/post 等直接调用)
-    # 注意：AkShare 内部虽然可能有自己的 session，但这个全局补丁能覆盖大部分情况
-    retry_strategy = Retry(
-        total=3,
-        backoff_factor=1,
-        status_forcelist=[429, 500, 502, 503, 504],
-        allowed_methods=["HEAD", "GET", "OPTIONS", "POST"]
-    )
-    adapter = HTTPAdapter(max_retries=retry_strategy)
-    http = requests.Session()
-    http.mount("https://", adapter)
-    http.mount("http://", adapter)
-    
-    http.mount("http://", adapter)
-    
-    print("🛡️ API 伪装补丁已生效")
+    logger.info("API 伪装补丁已生效")

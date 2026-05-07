@@ -16,6 +16,9 @@ load_dotenv(".env")
 class Settings:
     """应用配置"""
     
+    # 版本号 (单一来源)
+    VERSION = "2.0.0"
+    
     # Base Directory
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -112,8 +115,9 @@ class Settings:
 
     }
 
-    # Stale TTL 倍率：彻底禁用（设为0），一旦过期或获取失败不展示旧数据，避免误导用户
-    STALE_TTL_RATIO = 0
+    # Stale TTL 倍率：物理 TTL = 逻辑 TTL × (1 + STALE_TTL_RATIO)
+    # 设为 1 表示物理 TTL = 逻辑 TTL × 2，过期后仍有旧数据可展示，避免数据空洞
+    STALE_TTL_RATIO = 1
 
     # API 限流配置
     RATE_LIMIT = {"requests_per_minute": 60, "burst_size": 10}

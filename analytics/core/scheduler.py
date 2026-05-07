@@ -33,7 +33,7 @@ class SmartScheduler:
                 "misfire_grace_time": 60,  # 错过任务的容忍时间
             },
         )
-        self._jobs: List[str] = []
+        self._jobs: set = set()
         self._started = False
         self._execution_log: deque = deque(maxlen=50)  # 最近50条执行记录
 
@@ -107,7 +107,7 @@ class SmartScheduler:
             start = time_module.time()
             try:
                 now = get_beijing_time()
-                print(f"🔄 执行预热任务: {job_id} @ {now.strftime('%H:%M:%S')}")
+                logger.info(f"执行预热任务: {job_id} @ {now.strftime('%H:%M:%S')}")
                 if use_warmup_cache:
                     from .cache import warmup_cache
                     warmup_cache(func, **kwargs)
@@ -116,7 +116,7 @@ class SmartScheduler:
                 self._record_execution(job_id, True, time_module.time() - start)
             except Exception as e:
                 self._record_execution(job_id, False, time_module.time() - start, e)
-                print(f"❌ 预热任务失败 [{job_id}]: {e}")
+                logger.error(f"预热任务失败 [{job_id}]: {e}")
 
         # 使用最小间隔注册任务，在函数内部进行智能过滤
         min_interval = min(
@@ -133,8 +133,8 @@ class SmartScheduler:
             id=job_id,
             replace_existing=True,
         )
-        self._jobs.append(job_id)
-        print(f"✅ 注册智能预热任务: {job_id} (市场: {market})")
+        self._jobs.add(job_id)
+        logger.info(f"注册智能预热任务: {job_id} (市场: {market})")
 
     def add_simple_job(
         self, job_id: str, func: Callable, interval_minutes: int = 5, **kwargs
@@ -156,7 +156,7 @@ class SmartScheduler:
                 self._record_execution(job_id, True, time_module.time() - start)
             except Exception as e:
                 self._record_execution(job_id, False, time_module.time() - start, e)
-                print(f"❌ 任务失败 [{job_id}]: {e}")
+                logger.error(f"任务失败 [{job_id}]: {e}")
 
         self.scheduler.add_job(
             job_wrapper,
@@ -164,8 +164,8 @@ class SmartScheduler:
             id=job_id,
             replace_existing=True,
         )
-        self._jobs.append(job_id)
-        print(f"✅ 注册任务: {job_id} (间隔: {interval_minutes}分钟)")
+        self._jobs.add(job_id)
+        logger.info(f"注册任务: {job_id} (间隔: {interval_minutes}分钟)")
 
     def add_cron_job(self, job_id: str, func: Callable, cron_expr: str, **kwargs):
         """
@@ -185,7 +185,7 @@ class SmartScheduler:
                 self._record_execution(job_id, True, time_module.time() - start)
             except Exception as e:
                 self._record_execution(job_id, False, time_module.time() - start, e)
-                print(f"❌ 定时任务失败 [{job_id}]: {e}")
+                logger.error(f"定时任务失败 [{job_id}]: {e}")
 
         # 解析cron表达式
         parts = cron_expr.split()
@@ -204,22 +204,22 @@ class SmartScheduler:
                 id=job_id,
                 replace_existing=True,
             )
-            self._jobs.append(job_id)
-            print(f"✅ 注册定时任务: {job_id} ({cron_expr})")
+            self._jobs.add(job_id)
+            logger.info(f"注册定时任务: {job_id} ({cron_expr})")
 
     def start(self):
         """启动调度器"""
         if not self._started:
             self.scheduler.start()
             self._started = True
-            print("🚀 智能调度器已启动")
+            logger.info("智能调度器已启动")
 
     def shutdown(self, wait: bool = True):
         """关闭调度器"""
         if self._started:
             self.scheduler.shutdown(wait=wait)
             self._started = False
-            print("🛑 智能调度器已关闭")
+            logger.info("智能调度器已关闭")
 
     def get_status(self) -> dict:
         """获取调度器状态"""
@@ -248,7 +248,7 @@ class SmartScheduler:
                 job.func()
                 return True
             except Exception as e:
-                print(f"❌ 手动执行任务失败 [{job_id}]: {e}")
+                logger.error(f"手动执行任务失败 [{job_id}]: {e}")
         return False
 
 
@@ -256,17 +256,17 @@ class SmartScheduler:
 scheduler = SmartScheduler.get_instance()
 
 
-@lru_cache(maxsize=1)
+@lru_cache(maxsize=2)
 def _get_trading_days_cache(year: int) -> set:
     """获取指定年份的交易日历（缓存）"""
     try:
-        print(f"📅正在获取 {year} 年交易日历...")
+        logger.info(f"正在获取 {year} 年交易日历...")
         tool_trade_date_hist_sina_df = ak.tool_trade_date_hist_sina()
         df = tool_trade_date_hist_sina_df
         trade_dates = set(df["trade_date"].dt.strftime("%Y-%m-%d").tolist())
         return trade_dates
     except Exception as e:
-        print(f"⚠️ 获取交易日历失败: {e}")
+        logger.warning(f"获取交易日历失败: {e}")
         return set()
 
 
@@ -296,7 +296,7 @@ def is_trading_day(d: Optional[date] = None) -> bool:
 
 def setup_default_jobs():
     """设置默认的预热任务"""
-    print("🔧 设置默认预热任务...")
+    logger.info("设置默认预热任务...")
     
     from .cache import warmup_cache
     from ..modules.market_cn import (
@@ -511,7 +511,7 @@ def setup_default_jobs():
     # 开盘前预热任务 (工作日 9:25)
     def pre_market_warmup():
         if is_trading_day():
-            print("🌅 执行开盘前预热...")
+            logger.info("执行开盘前预热...")
             initial_warmup()
 
     scheduler.add_cron_job(
@@ -654,13 +654,7 @@ def snapshot_daily_metrics():
             logger.error(f"❌ 数据库快照失败: {e}")
 
     # 在同步环境运行异步任务
-    try:
-        loop = asyncio.get_event_loop()
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-    
-    loop.run_until_complete(_async_snapshot())
+    asyncio.run(_async_snapshot())
 
 
 def cleanup_old_data():
@@ -688,10 +682,4 @@ def cleanup_old_data():
             logger.error(f"❌ 数据清理失败: {e}")
 
     # 在同步环境运行异步任务
-    try:
-        loop = asyncio.get_event_loop()
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-    
-    loop.run_until_complete(_async_cleanup())
+    asyncio.run(_async_cleanup())

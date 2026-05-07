@@ -7,6 +7,7 @@ import time
 import random
 import threading
 from typing import Optional, List
+from .logger import logger
 
 
 class RequestThrottler:
@@ -71,7 +72,7 @@ class RequestThrottler:
                 oldest_request = self._requests[0]
                 wait_time = 60 - (now - oldest_request) + 0.1  # 额外 0.1s 缓冲
                 if wait_time > 0:
-                    print(f"⏳ 请求频率过高，等待 {wait_time:.1f}s...")
+                    logger.warning(f"请求频率过高，等待 {wait_time:.1f}s...")
                     time.sleep(wait_time)
                     total_wait += wait_time
                     now = time.time()
