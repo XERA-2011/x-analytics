@@ -66,6 +66,11 @@ class USMarketLeaders:
                     # 跳过失败的指数，不填充假数据
                     continue
 
+            core_index_count = sum(1 for item in indices_data if item.get("code") in {".IXIC", ".INX", ".DJI"})
+            if core_index_count != len(indices_map):
+                logger.error("❌ 美国核心指数数据不完整: expected=%s actual=%s", len(indices_map), core_index_count)
+                return {"error": "美国核心指数数据不完整"}
+
             # 添加中概股 (使用 PGJ ETF 作为代理 - Invesco Golden Dragon China ETF)
             try:
                 # 使用 stock_us_daily (Sina源) 获取 PGJ 数据，避开 EM 接口屏蔽

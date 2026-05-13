@@ -15,6 +15,7 @@ from ...core.logger import logger
 
 class USMarketHeat:
     """美国市场板块热度分析"""
+    MIN_SECTOR_COUNT = 8
 
     @staticmethod
     @cached(
@@ -70,6 +71,13 @@ class USMarketHeat:
                     logger.warning(f"获取 {item['symbol']} 失败: {e_inner}")
 
             results.sort(key=lambda x: x.get("change_pct", 0.0), reverse=True)  # type: ignore
+            if len(results) < USMarketHeat.MIN_SECTOR_COUNT:
+                logger.warning(
+                    "美国板块 ETF 数据不完整，拒绝返回局部结果: expected>=%s actual=%s",
+                    USMarketHeat.MIN_SECTOR_COUNT,
+                    len(results),
+                )
+                return []
             return results
 
         except Exception as e:

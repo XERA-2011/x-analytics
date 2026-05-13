@@ -66,6 +66,10 @@ class CNIndices:
                         "volume": safe_float(row["成交量"]),
                         "amount": safe_float(row["成交额"]),
                     })
+
+            if len(indices_data) != len(CNIndices.DISPLAY_ORDER):
+                missing = [code for code in CNIndices.DISPLAY_ORDER if code not in df_map]
+                raise ValueError(f"核心指数数据不完整: missing={missing}")
             
             return {
                 "indices": indices_data,

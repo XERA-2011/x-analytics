@@ -24,6 +24,8 @@ class SharedDataProvider:
 
     _instance: Optional["SharedDataProvider"] = None
     _lock = threading.Lock()
+    MIN_A_STOCK_SPOT_ROWS = 1000
+    MIN_INDUSTRY_BOARD_ROWS = 20
 
     def __init__(self, memory_cache_ttl: int = 300):
         """
@@ -71,6 +73,13 @@ class SharedDataProvider:
         from .utils import akshare_call_with_retry
         return akshare_call_with_retry(func, *args, **kwargs)
 
+    def _require_min_rows(self, df: pd.DataFrame, min_rows: int, label: str) -> pd.DataFrame:
+        """拒绝明显残缺的列表型行情，避免缓存局部快照。"""
+        if df is None or df.empty or len(df) < min_rows:
+            actual = 0 if df is None else len(df)
+            raise ValueError(f"{label}数据不完整: expected>={min_rows}, actual={actual}")
+        return df
+
     # =========================================================================
     # 常用数据接口
     # =========================================================================
@@ -93,13 +102,16 @@ class SharedDataProvider:
         try:
             # 使用带重试的调用
             df = self._fetch_with_retry(ak.stock_zh_a_spot_em)
+            df = self._require_min_rows(df, self.MIN_A_STOCK_SPOT_ROWS, "A股实时行情")
         except Exception as e:
             logger.warning(f"akshare A股实时行情调用失败: {e}, 使用直接 API 回退")
             try:
                 df = self._fallback_stock_a_spot()
+                df = self._require_min_rows(df, self.MIN_A_STOCK_SPOT_ROWS, "A股实时行情直接回退")
             except Exception as e2:
                 logger.warning(f"直接 API 也失败: {e2}, 尝试新浪全市场个股接口作为最后降级")
                 df = self._fallback_stock_a_spot_sina()
+                df = self._require_min_rows(df, self.MIN_A_STOCK_SPOT_ROWS, "A股实时行情新浪回退")
             
         self._set_cached(cache_key, df)
         return df
@@ -201,13 +213,16 @@ class SharedDataProvider:
         logger.info("请求行业板块数据...")
         try:
             df = self._fetch_with_retry(ak.stock_board_industry_name_em)
+            df = self._require_min_rows(df, self.MIN_INDUSTRY_BOARD_ROWS, "行业板块")
         except Exception as e:
             logger.warning(f"akshare 调用失败: {e}, 使用直接 API 回退")
             try:
                 df = self._fallback_board_industry()
+                df = self._require_min_rows(df, self.MIN_INDUSTRY_BOARD_ROWS, "行业板块直接回退")
             except Exception as e2:
                 logger.warning(f"直接 API 也失败: {e2}, 使用新浪行业接口作为最后降级")
                 df = self._fallback_board_industry_sina()
+                df = self._require_min_rows(df, self.MIN_INDUSTRY_BOARD_ROWS, "行业板块新浪回退")
                 
         self._set_cached(cache_key, df)
         return df

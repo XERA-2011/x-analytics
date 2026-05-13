@@ -20,6 +20,7 @@ class CNMarketLeaders:
     """中国市场领涨领跌股票"""
 
     MIN_PRIMARY_SECTOR_COUNT = 20
+    MIN_AGGREGATED_STOCK_COUNT = 1000
     SECTOR_MEMBERS_FILE = Path(settings.BASE_DIR) / "analytics" / "data" / "cn_primary_sector_members.json"
     SECTOR_MEMBERS_CACHE_TTL = 6 * 3600
     _sector_members_cache: Dict[str, List[Dict[str, str]]] = {}
@@ -231,6 +232,7 @@ class CNMarketLeaders:
                 df[col] = pd.to_numeric(df[col], errors="coerce")
 
         sector_rows = []
+        total_matched_stocks = 0
         for sector_name, members in sector_members.items():
             member_df = pd.DataFrame(members)
             merged = member_df.merge(df, left_on="code", right_on=code_col, how="inner")
@@ -242,6 +244,7 @@ class CNMarketLeaders:
                 continue
 
             stock_count = int(len(merged))
+            total_matched_stocks += stock_count
             total_market_cap = 0.0
             weighted_change = None
 
@@ -302,6 +305,14 @@ class CNMarketLeaders:
 
         if len(sector_rows) < CNMarketLeaders.MIN_PRIMARY_SECTOR_COUNT:
             logger.warning("个股聚合行业数据过少，回退板块接口: count=%s", len(sector_rows))
+            return None
+
+        if total_matched_stocks < CNMarketLeaders.MIN_AGGREGATED_STOCK_COUNT:
+            logger.warning(
+                "个股聚合匹配样本过少，疑似上游只返回局部行情，回退板块接口: matched_stocks=%s sectors=%s",
+                total_matched_stocks,
+                len(sector_rows),
+            )
             return None
 
         sector_rows.sort(key=lambda item: item["value"], reverse=True)

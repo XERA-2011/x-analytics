@@ -11,6 +11,7 @@ import akshare as ak  # type: ignore
 
 class HKIndices:
     """香港市场指数与板块"""
+    MIN_SECTOR_INDEX_COUNT = 5
     
     # 核心指数
     CORE_INDICES = {
@@ -72,6 +73,10 @@ class HKIndices:
                         # Sina 返回的 '成交额' 往往是指数成分股总额
                         "amount": safe_float(row.get("成交额", 0)), 
                     })
+
+            if len(indices_data) != len(HKIndices.DISPLAY_ORDER):
+                missing = [code for code in HKIndices.DISPLAY_ORDER if code not in df_map]
+                raise ValueError(f"港股核心指数数据不完整: missing={missing}")
             
             # 2. 板块指数 (用于模拟领涨领跌)
             sectors_data = []
@@ -85,6 +90,11 @@ class HKIndices:
                         "change_pct": safe_float(row["涨跌幅"]),
                         "amount": safe_float(row.get("成交额", 0)),
                     })
+
+            if len(sectors_data) < HKIndices.MIN_SECTOR_INDEX_COUNT:
+                raise ValueError(
+                    f"港股板块指数数据不完整: expected>={HKIndices.MIN_SECTOR_INDEX_COUNT}, actual={len(sectors_data)}"
+                )
             
             # 排序板块
             sectors_data.sort(key=lambda x: x["change_pct"], reverse=True)

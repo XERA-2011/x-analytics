@@ -115,6 +115,10 @@ class CNBonds:
                 else:
                     yield_changes[key] = 0 # 或 None, 前端处理 0 也可以(无变化)
 
+            valid_curve_points = sum(1 for value in yield_curve.values() if value is not None)
+            if valid_curve_points < 5 or yield_curve.get("10y") is None:
+                raise ValueError(f"国债收益率曲线数据不完整: valid_points={valid_curve_points}, has_10y={yield_curve.get('10y') is not None}")
+
             logger.info(" 国债数据整合完成")
 
             # 分析收益率曲线形态
@@ -201,10 +205,13 @@ class CNBonds:
             ten_year_yield = key_rates.get("10y")
             
             # 如果关键数据缺失，给予默认值或处理
-            if ten_year_yield is not None and ten_year_yield > 3.5:
+            if ten_year_yield is None:
+                rate_level = "未知"
+                rate_comment = "关键期限收益率暂缺，等待数据源恢复"
+            elif ten_year_yield > 3.5:
                 rate_level = "高位"
                 rate_comment = "收益率处于相对高位，债券配置价值较高"
-            elif ten_year_yield is not None and ten_year_yield > 2.5:
+            elif ten_year_yield > 2.5:
                 rate_level = "中位"
                 rate_comment = "收益率处于中等水平"
             else:
