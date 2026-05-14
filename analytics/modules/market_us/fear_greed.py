@@ -92,7 +92,11 @@ class USFearGreedIndex:
         return frames
 
     @staticmethod
-    @cached("market_us:fear_greed", ttl=settings.CACHE_TTL["fear_greed"], stale_ttl=settings.CACHE_TTL["fear_greed"] * settings.STALE_TTL_RATIO)
+    @cached(
+        "market_us:fear_greed_v2",
+        ttl=settings.CACHE_TTL["fear_greed_realtime"],
+        stale_ttl=settings.CACHE_TTL["fear_greed_stale"],
+    )
     def get_cnn_fear_greed() -> Dict[str, Any]:
         """
         获取恐慌贪婪指数
@@ -148,9 +152,9 @@ class USFearGreedIndex:
         }
     @staticmethod
     @cached(
-        "market_us:custom_fear_greed",
-        ttl=settings.CACHE_TTL.get("fear_greed", 3600),
-        stale_ttl=settings.CACHE_TTL.get("fear_greed", 3600) * settings.STALE_TTL_RATIO,
+        "market_us:custom_fear_greed_v2",
+        ttl=settings.CACHE_TTL["fear_greed_realtime"],
+        stale_ttl=settings.CACHE_TTL["fear_greed_stale"],
     )
     def calculate_custom_index() -> Dict[str, Any]:
         """

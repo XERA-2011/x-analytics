@@ -91,6 +91,8 @@ class Settings:
         "sector_bottom": 7200,       # 2小时
         "board_cons": 7200,          # 2小时
         "fear_greed": 7200,          # 2小时
+        "fear_greed_realtime": 300,  # 5分钟：开盘期情绪指标尽量贴近盘中行情
+        "fear_greed_stale": 86400,   # 24小时：上游异常或休市时保留最近有效值
         "leaders": 7200,             # 2小时 (原1小时)
         
         # === 金属市场 ===

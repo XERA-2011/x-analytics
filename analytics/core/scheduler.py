@@ -61,6 +61,8 @@ class SmartScheduler:
         market: str,
         cache_type: str = "default",
         use_warmup_cache: bool = False,
+        trading_interval_minutes: Optional[int] = None,
+        non_trading_max_age_seconds: Optional[int] = None,
         **kwargs,
     ):
         """
@@ -71,6 +73,8 @@ class SmartScheduler:
             func: 预热函数
             market: 市场类型 ('cn_market', 'us_market', 'metals')
             cache_type: 缓存类型，用于确定TTL
+            trading_interval_minutes: 交易时段执行间隔，默认读取配置
+            non_trading_max_age_seconds: 非交易时段缓存最大保鲜时间，避免短 TTL 指标休市持续打上游
             **kwargs: 传递给 func 的参数
         """
 
@@ -94,9 +98,14 @@ class SmartScheduler:
                         cache_key = make_cache_key(prefix, **kwargs)
                         cached_data = _cache.get(cache_key)
                         if cached_data and isinstance(cached_data, dict) and "_meta" in cached_data:
-                            expire_at = cached_data["_meta"].get("expire_at", 0)
-                            # 缓存逻辑 TTL 还没过期，无需刷新
-                            if _time.time() < expire_at:
+                            meta = cached_data["_meta"]
+                            fresh_until = meta.get("expire_at", 0)
+                            if non_trading_max_age_seconds is not None:
+                                cached_at = meta.get("cached_at", 0)
+                                fresh_until = cached_at + non_trading_max_age_seconds
+
+                            # 缓存仍在非交易保鲜窗口内，无需刷新
+                            if _time.time() < fresh_until:
                                 return
                 except Exception:
                     pass  # 检查失败时 fallthrough 执行预热
@@ -119,13 +128,15 @@ class SmartScheduler:
                 logger.error(f"预热任务失败 [{job_id}]: {e}")
 
         # 使用最小间隔注册任务，在函数内部进行智能过滤
-        min_interval = min(
-            settings.REFRESH_INTERVALS["trading_hours"].get(market, 300),
-            settings.REFRESH_INTERVALS["non_trading_hours"].get(market, 1800),
-        )
-
-        # 转换为分钟，最小1分钟
-        interval_minutes = max(1, min_interval // 60)
+        if trading_interval_minutes is not None:
+            interval_minutes = max(1, trading_interval_minutes)
+        else:
+            min_interval = min(
+                settings.REFRESH_INTERVALS["trading_hours"].get(market, 300),
+                settings.REFRESH_INTERVALS["non_trading_hours"].get(market, 1800),
+            )
+            # 转换为分钟，最小1分钟
+            interval_minutes = max(1, min_interval // 60)
 
         self.scheduler.add_job(
             smart_warmup,
@@ -325,6 +336,8 @@ def setup_default_jobs():
         func=CNFearGreedIndex.calculate,
         market="market_cn",
         use_warmup_cache=True,
+        trading_interval_minutes=5,
+        non_trading_max_age_seconds=settings.CACHE_TTL["fear_greed_stale"],
         symbol="sh000001",
         days=14,
     )
@@ -378,24 +391,32 @@ def setup_default_jobs():
         func=HKFearGreed.get_data,
         market="market_hk",
         use_warmup_cache=True,
+        trading_interval_minutes=5,
+        non_trading_max_age_seconds=settings.CACHE_TTL["fear_greed_stale"],
     )
 
     # =========================================================================
     # 美国市场 (US Market)
     # =========================================================================
 
-    # 1. CNN 恐慌指数 (10分钟无条件刷新，美股日线数据收盘后固定)
-    scheduler.add_simple_job(
+    # 1. CNN 恐慌指数代理：开盘期 5 分钟刷新，休市保留最近有效值
+    scheduler.add_market_job(
         job_id="warmup:us:fear_cnn",
-        func=lambda: warmup_cache(USFearGreedIndex.get_cnn_fear_greed),
-        interval_minutes=10
+        func=USFearGreedIndex.get_cnn_fear_greed,
+        market="market_us",
+        use_warmup_cache=True,
+        trading_interval_minutes=5,
+        non_trading_max_age_seconds=settings.CACHE_TTL["fear_greed_stale"],
     )
     
     # 2. 自定义恐慌指数
-    scheduler.add_simple_job(
+    scheduler.add_market_job(
         job_id="warmup:us:fear_custom",
-        func=lambda: warmup_cache(USFearGreedIndex.calculate_custom_index),
-        interval_minutes=10
+        func=USFearGreedIndex.calculate_custom_index,
+        market="market_us",
+        use_warmup_cache=True,
+        trading_interval_minutes=5,
+        non_trading_max_age_seconds=settings.CACHE_TTL["fear_greed_stale"],
     )
 
     # 3. 板块热度 & 领涨 (每10分钟)
@@ -443,6 +464,7 @@ def setup_default_jobs():
         func=GoldFearGreedIndex.calculate,
         market="metals",
         use_warmup_cache=True,
+        trading_interval_minutes=5,
     )
 
     # 4. 白银恐慌贪婪
@@ -452,6 +474,7 @@ def setup_default_jobs():
         func=SilverFearGreedIndex.calculate,
         market="metals",
         use_warmup_cache=True,
+        trading_interval_minutes=5,
     )
 
     # =========================================================================

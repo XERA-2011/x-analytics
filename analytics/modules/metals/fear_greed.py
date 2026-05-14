@@ -269,7 +269,11 @@ class GoldFearGreedIndex(BaseMetalFearGreedIndex):
     """黄金恐慌贪婪指数"""
     
     @staticmethod
-    @cached("metals:fear_greed_v3", ttl=settings.CACHE_TTL["metals"], stale_ttl=settings.CACHE_TTL["metals"] * settings.STALE_TTL_RATIO)
+    @cached(
+        "metals:fear_greed_v4",
+        ttl=settings.CACHE_TTL["fear_greed_realtime"],
+        stale_ttl=settings.CACHE_TTL["fear_greed_stale"],
+    )
     def calculate() -> Dict[str, Any]:
         return BaseMetalFearGreedIndex.calculate("au0", "黄金")
 
@@ -278,6 +282,10 @@ class SilverFearGreedIndex(BaseMetalFearGreedIndex):
     """白银恐慌贪婪指数"""
     
     @staticmethod
-    @cached("metals:silver_fear_greed_v3", ttl=settings.CACHE_TTL["metals"], stale_ttl=settings.CACHE_TTL["metals"] * settings.STALE_TTL_RATIO)
+    @cached(
+        "metals:silver_fear_greed_v4",
+        ttl=settings.CACHE_TTL["fear_greed_realtime"],
+        stale_ttl=settings.CACHE_TTL["fear_greed_stale"],
+    )
     def calculate() -> Dict[str, Any]:
         return BaseMetalFearGreedIndex.calculate("ag0", "白银")

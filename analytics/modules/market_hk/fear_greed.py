@@ -139,9 +139,9 @@ class HKFearGreed:
 
     @staticmethod
     @cached(
-        "market_hk:fear_greed",
-        ttl=settings.CACHE_TTL["market"],  # Use standard market data TTL
-        stale_ttl=settings.CACHE_TTL["market"] * settings.STALE_TTL_RATIO
+        "market_hk:fear_greed_v2",
+        ttl=settings.CACHE_TTL["fear_greed_realtime"],
+        stale_ttl=settings.CACHE_TTL["fear_greed_stale"],
     )
     def get_data() -> Dict[str, Any]:
         try:

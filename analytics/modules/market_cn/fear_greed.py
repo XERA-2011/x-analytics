@@ -10,7 +10,7 @@ import numpy as np
 from typing import Dict, Any, Optional
 from ...core.cache import cached
 from ...core.config import settings
-from ...core.utils import get_beijing_time, akshare_call_with_retry
+from ...core.utils import get_beijing_time, akshare_call_with_retry, safe_float
 from ...core.fear_greed import (
     build_factor,
     calculate_composite_score,
@@ -32,7 +32,7 @@ class CNFearGreedIndex:
         market="CN",
         asset="上证指数",
         methodology="technical_composite",
-        cadence="daily",
+        cadence="daily+intraday",
     )
 
     DEFAULT_WEIGHTS = {
@@ -75,7 +75,81 @@ class CNFearGreedIndex:
         return [{"min": t, "label": l, "description": d} for t, l, d in CNFearGreedIndex._get_levels()]
 
     @staticmethod
-    @cached("market_cn:fear_greed", ttl=settings.CACHE_TTL["fear_greed"], stale_ttl=settings.CACHE_TTL["fear_greed"] * settings.STALE_TTL_RATIO)
+    def _apply_realtime_index_snapshot(index_data: pd.DataFrame, symbol: str) -> tuple[pd.DataFrame, Dict[str, Any]]:
+        """用实时指数快照修正最后一根数据，避免盘中仍使用上一交易日收盘价。"""
+        snapshot: Dict[str, Any] = {"source": "daily"}
+
+        try:
+            spot_df = akshare_call_with_retry(
+                ak.stock_zh_index_spot_sina,
+                max_retries=3,
+            )
+            if spot_df.empty or "代码" not in spot_df.columns:
+                return index_data, snapshot
+
+            rows = spot_df[spot_df["代码"] == symbol]
+            if rows.empty:
+                compact_symbol = symbol[2:] if symbol.startswith(("sh", "sz")) else symbol
+                rows = spot_df[spot_df["代码"].astype(str).str.endswith(compact_symbol)]
+            if rows.empty:
+                return index_data, snapshot
+
+            row = rows.iloc[0]
+            latest = safe_float(row.get("最新价"), None)
+            prev_close = safe_float(row.get("昨收"), None)
+            change_pct = safe_float(row.get("涨跌幅"), None)
+            if latest is None or latest <= 0:
+                return index_data, snapshot
+
+            patched = index_data.copy()
+            date_col = next((col for col in ["date", "trade_date"] if col in patched.columns), None)
+            today = get_beijing_time().date()
+
+            if date_col:
+                parsed_dates = pd.to_datetime(patched[date_col], errors="coerce").dt.date
+                if parsed_dates.iloc[-1] == today:
+                    target_index = patched.index[-1]
+                    patched.loc[target_index, "close"] = latest
+                    patched.loc[target_index, "high"] = max(
+                        safe_float(row.get("最高"), latest) or latest,
+                        safe_float(patched.loc[target_index, "high"], latest) or latest,
+                    )
+                    patched.loc[target_index, "low"] = min(
+                        safe_float(row.get("最低"), latest) or latest,
+                        safe_float(patched.loc[target_index, "low"], latest) or latest,
+                    )
+                else:
+                    new_row = patched.iloc[-1].copy()
+                    new_row[date_col] = today
+                    new_row["open"] = safe_float(row.get("今开"), latest) or latest
+                    new_row["high"] = safe_float(row.get("最高"), latest) or latest
+                    new_row["low"] = safe_float(row.get("最低"), latest) or latest
+                    new_row["close"] = latest
+                    if "volume" in patched.columns:
+                        new_row["volume"] = safe_float(row.get("成交量"), 0) or 0
+                    patched = pd.concat([patched, pd.DataFrame([new_row])], ignore_index=True)
+            else:
+                patched.loc[patched.index[-1], "close"] = latest
+
+            snapshot.update(
+                {
+                    "source": "spot",
+                    "price": latest,
+                    "prev_close": prev_close,
+                    "change_pct": change_pct,
+                }
+            )
+            return patched, snapshot
+        except Exception as e:
+            logger.warning(f"⚠️ A股实时指数快照获取失败，回退日线数据: {e}")
+            return index_data, snapshot
+
+    @staticmethod
+    @cached(
+        "market_cn:fear_greed_v2",
+        ttl=settings.CACHE_TTL["fear_greed_realtime"],
+        stale_ttl=settings.CACHE_TTL["fear_greed_stale"],
+    )
     def calculate(symbol: str = "sh000001", days: int = 14) -> Dict[str, Any]:
         """
         计算恐慌贪婪指数
@@ -112,6 +186,8 @@ class CNFearGreedIndex:
                     index_data = index_data.sort_values(date_col)
                     break
 
+            index_data, realtime_snapshot = CNFearGreedIndex._apply_realtime_index_snapshot(index_data, symbol)
+
             # 取最近的数据
             recent_data = index_data.tail(days)
             if len(recent_data) < days:
@@ -119,6 +195,14 @@ class CNFearGreedIndex:
 
             # 计算各项指标
             indicators = CNFearGreedIndex._calculate_indicators(recent_data, symbol)
+            if "daily_change" in indicators and realtime_snapshot.get("change_pct") is not None:
+                change_pct = realtime_snapshot["change_pct"]
+                indicators["daily_change"] = build_factor(
+                    value=round(change_pct, 2),
+                    score=score_percent_change(change_pct, sensitivity=10),
+                    weight=CNFearGreedIndex._get_weights()["daily_change"],
+                    label="当日涨跌",
+                )
             
             # 如果指标计算失败，返回错误
             if "error" in indicators:
@@ -156,7 +240,7 @@ class CNFearGreedIndex:
                 explanation=CNFearGreedIndex._get_explanation(),
                 levels=CNFearGreedIndex._get_levels_payload(),
                 meta=CNFearGreedIndex.META,
-                extra={"symbol": symbol, "days": days},
+                extra={"symbol": symbol, "days": days, "data_source": realtime_snapshot["source"]},
             )
 
         except Exception as e:
