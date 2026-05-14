@@ -37,8 +37,8 @@ def is_trading_hours(market: str) -> bool:
 
     current_time = now.time()
 
-    # 处理中国市场 (上午 + 下午两个时段)
-    if market == "market_cn":
+    # 处理中国/香港市场 (上午 + 下午两个时段)
+    if market in ("market_cn", "market_hk"):
         morning_start, morning_end = cast(Tuple[dt_time, dt_time], config["morning"])
         afternoon_start, afternoon_end = cast(Tuple[dt_time, dt_time], config["afternoon"])
         return (

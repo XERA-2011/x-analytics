@@ -17,7 +17,7 @@ from analytics.core.fear_greed import (
     score_rsi,
 )
 from analytics.core.logger import logger
-from analytics.core.utils import get_beijing_time, akshare_call_with_retry
+from analytics.core.utils import get_beijing_time, akshare_call_with_retry, safe_float
 
 def calculate_rsi(series, period=14):
     delta = series.diff()
@@ -74,6 +74,70 @@ class HKFearGreed:
         return df
 
     @staticmethod
+    def _apply_realtime_hsi_snapshot(df: pd.DataFrame) -> tuple[pd.DataFrame, Dict[str, Any]]:
+        """
+        Patch the latest HSI close with the spot index snapshot when available.
+
+        Sina's daily HSI endpoint often lags during the trading session. The
+        spot endpoint has the live level and previous close, so use it as the
+        last observation while keeping the historical daily series for RSI/MA.
+        """
+        snapshot: Dict[str, Any] = {"source": "daily"}
+
+        try:
+            spot_df = akshare_call_with_retry(
+                ak.stock_hk_index_spot_sina,
+                max_retries=3,
+            )
+            if spot_df.empty or "代码" not in spot_df.columns:
+                return df, snapshot
+
+            hsi_rows = spot_df[spot_df["代码"] == "HSI"]
+            if hsi_rows.empty:
+                return df, snapshot
+
+            row = hsi_rows.iloc[0]
+            latest = safe_float(row.get("最新价"), None)
+            prev_close = safe_float(row.get("昨收"), None)
+            change_pct = safe_float(row.get("涨跌幅"), None)
+            if latest is None or latest <= 0:
+                return df, snapshot
+
+            today = get_beijing_time().date()
+            patched = df.copy()
+            date_col = next((col for col in ["date", "trade_date", "datetime"] if col in patched.columns), None)
+
+            if date_col:
+                parsed_dates = pd.to_datetime(patched[date_col], errors="coerce").dt.date
+                if parsed_dates.iloc[-1] == today:
+                    patched.loc[patched.index[-1], "close"] = latest
+                else:
+                    new_row = patched.iloc[-1].copy()
+                    new_row[date_col] = today
+                    new_row["open"] = safe_float(row.get("今开"), latest) or latest
+                    new_row["high"] = safe_float(row.get("最高"), latest) or latest
+                    new_row["low"] = safe_float(row.get("最低"), latest) or latest
+                    new_row["close"] = latest
+                    if "volume" in patched.columns:
+                        new_row["volume"] = 0
+                    patched = pd.concat([patched, pd.DataFrame([new_row])], ignore_index=True)
+            else:
+                patched.loc[patched.index[-1], "close"] = latest
+
+            snapshot.update(
+                {
+                    "source": "spot",
+                    "price": latest,
+                    "prev_close": prev_close,
+                    "change_pct": change_pct,
+                }
+            )
+            return patched, snapshot
+        except Exception as e:
+            logger.warning(f"港股实时指数快照获取失败，回退日线数据: {e}")
+            return df, snapshot
+
+    @staticmethod
     @cached(
         "market_hk:fear_greed",
         ttl=settings.CACHE_TTL["market"],  # Use standard market data TTL
@@ -91,6 +155,7 @@ class HKFearGreed:
             # Ensure numeric
             df['close'] = pd.to_numeric(df['close'])
             df = HKFearGreed._sort_by_date(df)
+            df, realtime_snapshot = HKFearGreed._apply_realtime_hsi_snapshot(df)
             
             # --- Indicator 1: RSI (14) ---
             # Measures Momentum: >70 Overbought (Greed), <30 Oversold (Fear)
@@ -123,7 +188,13 @@ class HKFearGreed:
             # --- Indicator 3: Daily Change (Market Sentiment) ---
             # 权重 30%: 让当日大跌能显著拉低分数
             prev_close = df['close'].iloc[-2]
-            change_pct = ((current_price - prev_close) / prev_close) * 100
+            if realtime_snapshot.get("prev_close"):
+                prev_close = realtime_snapshot["prev_close"]
+
+            if realtime_snapshot.get("change_pct") is not None:
+                change_pct = realtime_snapshot["change_pct"]
+            else:
+                change_pct = ((current_price - prev_close) / prev_close) * 100
             
             # Map Change% to 0-100
             # 0% = 50 (Neutral)
@@ -176,7 +247,7 @@ class HKFearGreed:
                 explanation=HKFearGreed._get_explanation(),
                 levels=HKFearGreed._get_levels_payload(),
                 meta=HKFearGreed.META,
-                extra={"status": "success"},
+                extra={"status": "success", "data_source": realtime_snapshot["source"]},
             )
 
         except Exception as e:
