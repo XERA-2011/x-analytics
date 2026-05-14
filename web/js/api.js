@@ -7,16 +7,18 @@ class API {
         this.activeRequests = new Map(); // 跟踪活跃请求
         this.cache = new Map(); // 前端缓存
         this.cacheTTL = 60000; // 缓存有效期 60秒
+        this.forceRefreshToken = null; // 手动刷新时绕过浏览器/代理缓存
     }
 
     // 通用请求方法
     async request(endpoint, options = {}) {
-        const url = `${this.baseURL}${endpoint}`;
         const method = options.method || 'GET';
+        const forceRefresh = method === 'GET' && Boolean(this.forceRefreshToken);
+        const url = this._buildURL(endpoint, forceRefresh);
         const requestKey = `${method}:${this._normalizeEndpoint(endpoint)}`;
 
         // 1. 检查缓存 (仅针对 GET 请求)
-        if (method === 'GET') {
+        if (method === 'GET' && !forceRefresh) {
             const cached = this.cache.get(requestKey);
             if (cached) {
                 const now = Date.now();
@@ -42,8 +44,13 @@ class API {
             timeout: this.timeout,
             headers: {
                 'Content-Type': 'application/json',
+                ...(forceRefresh ? {
+                    'Cache-Control': 'no-cache',
+                    'Pragma': 'no-cache',
+                } : {}),
                 ...options.headers
             },
+            ...(forceRefresh ? { cache: 'no-store' } : {}),
             ...options
         };
 
@@ -54,7 +61,7 @@ class API {
             const result = await requestPromise;
 
             // 3. 写入缓存 (仅针对 GET 请求且成功响应)
-            if (method === 'GET') {
+            if (method === 'GET' && !forceRefresh) {
                 this.cache.set(requestKey, {
                     timestamp: Date.now(),
                     data: result
@@ -65,6 +72,14 @@ class API {
         } finally {
             this.activeRequests.delete(requestKey);
         }
+    }
+
+    _buildURL(endpoint, forceRefresh = false) {
+        const url = new URL(`${this.baseURL}${endpoint}`, window.location.origin);
+        if (forceRefresh) {
+            url.searchParams.set('_refresh', this.forceRefreshToken);
+        }
+        return url.pathname + url.search;
     }
 
     async _executeRequest(url, config, endpoint) {
@@ -193,6 +208,15 @@ class API {
     // 清除前端缓存（用于手动刷新时强制重新请求）
     clearLocalCache() {
         this.cache.clear();
+    }
+
+    startForceRefresh() {
+        this.clearLocalCache();
+        this.forceRefreshToken = `${Date.now()}`;
+    }
+
+    endForceRefresh() {
+        this.forceRefreshToken = null;
     }
 
     // 中国市场 API

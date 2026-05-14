@@ -263,8 +263,8 @@ class App {
 
         this.isRefreshing = true;
 
-        // 清除前端缓存，确保手动刷新时获取最新数据
-        api.clearLocalCache();
+        // 清除前端缓存，并让本轮请求绕过浏览器/代理缓存
+        api.startForceRefresh();
 
         this.setRefreshButtonLoading(true);
         this.armRefreshButtonFallback();
@@ -283,6 +283,7 @@ class App {
         } catch (error) {
             console.error('刷新数据失败:', error);
         } finally {
+            api.endForceRefresh();
             this.isRefreshing = false;
             this.clearRefreshButtonFallback();
             this.setRefreshButtonLoading(false);
