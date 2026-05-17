@@ -1,7 +1,7 @@
 import uvicorn
 import threading
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from analytics.core import cache, scheduler, settings
@@ -163,6 +163,42 @@ def clear_cache_pattern(pattern: str):
 def get_scheduler_status():
     """获取后台调度器运行状态和任务列表"""
     return scheduler.get_status()
+
+
+# -----------------------------------------------------------------------------
+# 测试 API
+# -----------------------------------------------------------------------------
+@app.api_route("/api/test/callback", methods=["GET", "POST", "PUT", "DELETE", "PATCH"], tags=["测试"], summary="回调测试接口")
+async def test_callback(request: Request):
+    """
+    用于接收并打印外部系统的回调信息，支持各种 HTTP 请求方法
+    """
+    body = await request.body()
+    try:
+        body_json = await request.json()
+    except Exception:
+        body_json = None
+
+    info = {
+        "method": request.method,
+        "url": str(request.url),
+        "headers": dict(request.headers),
+        "query_params": dict(request.query_params),
+        "body_raw": body.decode('utf-8', errors='ignore') if body else "",
+        "body_json": body_json,
+    }
+    
+    logger.info(f"========== 收到回调请求 ==========")
+    logger.info(f"Method: {info['method']} | URL: {info['url']}")
+    logger.info(f"Headers: {info['headers']}")
+    logger.info(f"Query Params: {info['query_params']}")
+    if info['body_json']:
+        logger.info(f"Body (JSON): {info['body_json']}")
+    else:
+        logger.info(f"Body (Raw): {info['body_raw']}")
+    logger.info(f"===================================")
+    
+    return {"status": "success", "message": "Callback received", "received_data": info}
 
 
 # -----------------------------------------------------------------------------
