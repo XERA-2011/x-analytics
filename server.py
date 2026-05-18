@@ -1,5 +1,6 @@
 import uvicorn
 import threading
+from datetime import datetime, timezone, timedelta
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -179,7 +180,10 @@ async def test_callback(request: Request):
     except Exception:
         body_json = None
 
+    received_at = datetime.now(timezone(timedelta(hours=8))).strftime("%Y-%m-%d %H:%M:%S")
+
     info = {
+        "received_at": received_at,
         "method": request.method,
         "url": str(request.url),
         "headers": dict(request.headers),
@@ -188,7 +192,7 @@ async def test_callback(request: Request):
         "body_json": body_json,
     }
     
-    logger.info(f"========== 收到回调请求 ==========")
+    logger.info(f"========== 收到回调请求 [{received_at}] ==========")
     logger.info(f"Method: {info['method']} | URL: {info['url']}")
     logger.info(f"Headers: {info['headers']}")
     logger.info(f"Query Params: {info['query_params']}")
