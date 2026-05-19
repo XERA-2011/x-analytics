@@ -1,3 +1,8 @@
+import os
+
+# 生产环境禁用 tqdm 进度条，避免与日志交叉混排
+os.environ.setdefault("TQDM_DISABLE", "1")
+
 import uvicorn
 import threading
 from datetime import datetime, timezone, timedelta
@@ -11,7 +16,6 @@ from analytics.api import market_cn, metals, market_us, market_hk
 from analytics.core.patch import apply_patches
 from analytics.core.security import SecurityMiddleware
 from analytics.core.logger import logger
-import os
 
 # 应用 API 伪装补丁 (在最早的时机)
 apply_patches()

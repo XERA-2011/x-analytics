@@ -77,9 +77,7 @@ class CNMarketLeaders:
             return filtered_df
 
         logger.warning(
-            "一级行业白名单命中过少，回退原始行业列表: matched=%s total=%s",
-            len(filtered_df),
-            len(df),
+            f"一级行业白名单命中过少，回退原始行业列表: matched={len(filtered_df)} total={len(df)}"
         )
         return df
 
@@ -304,7 +302,7 @@ class CNMarketLeaders:
             })
 
         if len(sector_rows) < CNMarketLeaders.MIN_PRIMARY_SECTOR_COUNT:
-            logger.warning("个股聚合行业数据过少，回退板块接口: count=%s", len(sector_rows))
+            logger.warning(f"个股聚合行业数据过少，回退板块接口: count={len(sector_rows)}")
             return None
 
         if total_matched_stocks < CNMarketLeaders.MIN_AGGREGATED_STOCK_COUNT:

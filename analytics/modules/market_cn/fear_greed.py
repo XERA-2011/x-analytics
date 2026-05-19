@@ -11,6 +11,7 @@ from typing import Dict, Any, Optional
 from ...core.cache import cached
 from ...core.config import settings
 from ...core.utils import get_beijing_time, akshare_call_with_retry, safe_float
+from ...core.data_provider import data_provider
 from ...core.fear_greed import (
     build_factor,
     calculate_composite_score,
@@ -80,10 +81,7 @@ class CNFearGreedIndex:
         snapshot: Dict[str, Any] = {"source": "daily"}
 
         try:
-            spot_df = akshare_call_with_retry(
-                ak.stock_zh_index_spot_sina,
-                max_retries=3,
-            )
+            spot_df = data_provider.get_index_spot_sina_with_fallback()
             if spot_df.empty or "代码" not in spot_df.columns:
                 return index_data, snapshot
 

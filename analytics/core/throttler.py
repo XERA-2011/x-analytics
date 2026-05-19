@@ -25,7 +25,7 @@ class RequestThrottler:
 
     def __init__(
         self,
-        max_requests_per_minute: int = 30,
+        max_requests_per_minute: int = 50,
         min_delay: float = 0.2,
         max_delay: float = 0.8,
     ):

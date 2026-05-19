@@ -11,6 +11,61 @@ from typing import Optional, Callable, Any, Dict
 from .logger import logger
 
 
+class _SourceCircuitBreaker:
+    """自适应源熔断器：连续失败超过阈值后进入冷却期，跳过已知不可用的数据源。
+
+    避免每个预热周期浪费 ~8s 在必然失败的重试上。
+    冷却期结束后自动允许重试，如果恢复则清零计数器。
+    """
+
+    FAILURE_THRESHOLD = 3       # 连续失败次数阈值
+    COOLDOWN_SECONDS = 300      # 冷却时间 (5分钟)
+
+    def __init__(self):
+        self._failures: Dict[str, int] = {}
+        self._last_failure_time: Dict[str, float] = {}
+        self._lock = threading.Lock()
+
+    def record_failure(self, source: str) -> None:
+        with self._lock:
+            self._failures[source] = self._failures.get(source, 0) + 1
+            self._last_failure_time[source] = time.time()
+
+    def record_success(self, source: str) -> None:
+        with self._lock:
+            self._failures[source] = 0
+
+    def should_skip(self, source: str) -> bool:
+        """判断是否应跳过该数据源（处于熔断冷却中）。"""
+        with self._lock:
+            failures = self._failures.get(source, 0)
+            if failures < self.FAILURE_THRESHOLD:
+                return False
+            last_time = self._last_failure_time.get(source, 0)
+            if time.time() - last_time > self.COOLDOWN_SECONDS:
+                # 冷却期结束，允许重试
+                self._failures[source] = 0
+                return False
+            return True
+
+    def get_stats(self) -> Dict[str, Any]:
+        with self._lock:
+            now = time.time()
+            return {
+                source: {
+                    "failures": count,
+                    "in_cooldown": count >= self.FAILURE_THRESHOLD
+                    and now - self._last_failure_time.get(source, 0) < self.COOLDOWN_SECONDS,
+                    "cooldown_remaining": max(
+                        0,
+                        self.COOLDOWN_SECONDS - (now - self._last_failure_time.get(source, 0)),
+                    ),
+                }
+                for source, count in self._failures.items()
+                if count > 0
+            }
+
+
 class SharedDataProvider:
     """
     共享数据提供层
@@ -26,6 +81,7 @@ class SharedDataProvider:
     _lock = threading.Lock()
     MIN_A_STOCK_SPOT_ROWS = 1000
     MIN_INDUSTRY_BOARD_ROWS = 20
+    _breaker = _SourceCircuitBreaker()
 
     def __init__(self, memory_cache_ttl: int = 300):
         """
@@ -99,20 +155,38 @@ class SharedDataProvider:
             return cached
 
         logger.info("请求 A 股实时行情...")
-        try:
-            # 使用带重试的调用
-            df = self._fetch_with_retry(ak.stock_zh_a_spot_em)
-            df = self._require_min_rows(df, self.MIN_A_STOCK_SPOT_ROWS, "A股实时行情")
-        except Exception as e:
-            logger.warning(f"akshare A股实时行情调用失败: {e}, 使用直接 API 回退")
+
+        # --- 第一优先级：东方财富 akshare (可被熔断跳过) ---
+        if not self._breaker.should_skip("eastmoney_stock"):
+            try:
+                df = self._fetch_with_retry(ak.stock_zh_a_spot_em)
+                df = self._require_min_rows(df, self.MIN_A_STOCK_SPOT_ROWS, "A股实时行情")
+                self._breaker.record_success("eastmoney_stock")
+                self._set_cached(cache_key, df)
+                return df
+            except Exception as e:
+                self._breaker.record_failure("eastmoney_stock")
+                logger.warning(f"akshare A股实时行情调用失败: {e}, 使用回退源")
+        else:
+            logger.info("跳过东方财富 A 股接口 (熔断冷却中)，直接使用回退源")
+
+        # --- 第二优先级：东方财富直接 API (可被熔断跳过) ---
+        if not self._breaker.should_skip("eastmoney_stock_direct"):
             try:
                 df = self._fallback_stock_a_spot()
                 df = self._require_min_rows(df, self.MIN_A_STOCK_SPOT_ROWS, "A股实时行情直接回退")
+                self._breaker.record_success("eastmoney_stock_direct")
+                self._set_cached(cache_key, df)
+                return df
             except Exception as e2:
-                logger.warning(f"直接 API 也失败: {e2}, 尝试新浪全市场个股接口作为最后降级")
-                df = self._fallback_stock_a_spot_sina()
-                df = self._require_min_rows(df, self.MIN_A_STOCK_SPOT_ROWS, "A股实时行情新浪回退")
-            
+                self._breaker.record_failure("eastmoney_stock_direct")
+                logger.warning(f"直接 API 也失败: {e2}, 尝试新浪接口")
+        else:
+            logger.info("跳过东方财富直接 API (熔断冷却中)，使用新浪接口")
+
+        # --- 最终回退：新浪个股接口 ---
+        df = self._fallback_stock_a_spot_sina()
+        df = self._require_min_rows(df, self.MIN_A_STOCK_SPOT_ROWS, "A股实时行情新浪回退")
         self._set_cached(cache_key, df)
         return df
 
@@ -211,19 +285,38 @@ class SharedDataProvider:
             return cached
 
         logger.info("请求行业板块数据...")
-        try:
-            df = self._fetch_with_retry(ak.stock_board_industry_name_em)
-            df = self._require_min_rows(df, self.MIN_INDUSTRY_BOARD_ROWS, "行业板块")
-        except Exception as e:
-            logger.warning(f"akshare 调用失败: {e}, 使用直接 API 回退")
+
+        # --- 第一优先级：东方财富 akshare (可被熔断跳过) ---
+        if not self._breaker.should_skip("eastmoney_board"):
+            try:
+                df = self._fetch_with_retry(ak.stock_board_industry_name_em)
+                df = self._require_min_rows(df, self.MIN_INDUSTRY_BOARD_ROWS, "行业板块")
+                self._breaker.record_success("eastmoney_board")
+                self._set_cached(cache_key, df)
+                return df
+            except Exception as e:
+                self._breaker.record_failure("eastmoney_board")
+                logger.warning(f"akshare 调用失败: {e}, 使用回退源")
+        else:
+            logger.info("跳过东方财富板块接口 (熔断冷却中)，直接使用回退源")
+
+        # --- 第二优先级：东方财富直接 API (可被熔断跳过) ---
+        if not self._breaker.should_skip("eastmoney_board_direct"):
             try:
                 df = self._fallback_board_industry()
                 df = self._require_min_rows(df, self.MIN_INDUSTRY_BOARD_ROWS, "行业板块直接回退")
+                self._breaker.record_success("eastmoney_board_direct")
+                self._set_cached(cache_key, df)
+                return df
             except Exception as e2:
-                logger.warning(f"直接 API 也失败: {e2}, 使用新浪行业接口作为最后降级")
-                df = self._fallback_board_industry_sina()
-                df = self._require_min_rows(df, self.MIN_INDUSTRY_BOARD_ROWS, "行业板块新浪回退")
-                
+                self._breaker.record_failure("eastmoney_board_direct")
+                logger.warning(f"直接 API 也失败: {e2}, 使用新浪行业接口")
+        else:
+            logger.info("跳过东方财富板块直接 API (熔断冷却中)，使用新浪接口")
+
+        # --- 最终回退：新浪行业接口 ---
+        df = self._fallback_board_industry_sina()
+        df = self._require_min_rows(df, self.MIN_INDUSTRY_BOARD_ROWS, "行业板块新浪回退")
         self._set_cached(cache_key, df)
         return df
 
@@ -345,6 +438,103 @@ class SharedDataProvider:
         self._set_cached(cache_key, df)
         return df
 
+    def get_index_spot_sina_with_fallback(self) -> pd.DataFrame:
+        """
+        获取新浪指数实时行情，失败时回退到直接 HTTP 请求。
+
+        解决 stock_zh_index_spot_sina 偶尔返回 HTML 页面导致 JSON 解析失败的问题。
+        """
+        cache_key = "index_spot_sina_fallback"
+        cached = self._get_cached(cache_key)
+        if cached is not None:
+            return cached
+
+        # 第一优先级：akshare 新浪指数接口
+        if not self._breaker.should_skip("sina_index_spot"):
+            try:
+                df = self._fetch_with_retry(ak.stock_zh_index_spot_sina, max_retries=2)
+                if df is not None and not df.empty:
+                    self._breaker.record_success("sina_index_spot")
+                    self._set_cached(cache_key, df)
+                    return df
+            except Exception as e:
+                self._breaker.record_failure("sina_index_spot")
+                logger.warning(f"新浪指数接口失败: {e}, 尝试直接 HTTP 回退")
+        else:
+            logger.info("跳过新浪指数接口 (熔断冷却中)，使用直接 HTTP")
+
+        # 第二优先级：直接 HTTP 请求东方财富指数数据
+        df = self._fallback_index_spot_direct()
+        self._set_cached(cache_key, df)
+        return df
+
+    def _fallback_index_spot_direct(self) -> pd.DataFrame:
+        """
+        直接 HTTP 请求获取核心指数实时行情 (新浪指数接口失败时的回退)
+        使用东方财富指数列表 API。
+        """
+        import requests
+        import random
+
+        # 核心指数代码映射: 东方财富代码 -> 新浪代码
+        index_mapping = {
+            "1.000001": "sh000001",  # 上证指数
+            "0.399001": "sz399001",  # 深证成指
+            "0.399006": "sz399006",  # 创业板指
+            "1.000688": "sh000688",  # 科创50
+            "1.000300": "sh000300",  # 沪深300
+            "0.399905": "sz399905",  # 中证500
+        }
+
+        secids = ",".join(index_mapping.keys())
+        subdomains = ["push2", "17.push2", "82.push2"]
+        random.shuffle(subdomains)
+
+        params = {
+            "secids": secids,
+            "fields": "f2,f3,f4,f12,f13,f14,f5,f6,f15,f16,f17,f18",
+            "ut": "bd1d9ddb04089700cf9c27f6f7426281",
+        }
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "Referer": "https://quote.eastmoney.com/",
+        }
+
+        for sub in subdomains:
+            url = f"http://{sub}.eastmoney.com/api/qt/ulist.np/get"
+            try:
+                r = requests.get(url, params=params, headers=headers, timeout=5)
+                data = r.json()
+                if data.get("data") and data["data"].get("diff"):
+                    rows = []
+                    for item in data["data"]["diff"]:
+                        market = str(item.get("f13", ""))
+                        code = str(item.get("f12", ""))
+                        secid = f"{market}.{code}"
+                        sina_code = index_mapping.get(secid, f"{'sh' if market == '1' else 'sz'}{code}")
+                        rows.append({
+                            "代码": sina_code,
+                            "名称": item.get("f14", ""),
+                            "最新价": item.get("f2"),
+                            "涨跌额": item.get("f4"),
+                            "涨跌幅": item.get("f3"),
+                            "今开": item.get("f17"),
+                            "最高": item.get("f15"),
+                            "最低": item.get("f16"),
+                            "昨收": item.get("f18"),
+                            "成交量": item.get("f5"),
+                            "成交额": item.get("f6"),
+                        })
+                    df = pd.DataFrame(rows)
+                    for col in ["最新价", "涨跌额", "涨跌幅", "今开", "最高", "最低", "昨收", "成交量", "成交额"]:
+                        df[col] = pd.to_numeric(df[col], errors="coerce")
+                    logger.info(f"直接 HTTP 指数回退成功 ({sub}), 获取 {len(df)} 个指数")
+                    return df
+            except Exception:
+                continue
+
+        raise ValueError("所有指数回退源均不可用")
+
     def clear_cache(self) -> int:
         """清除所有内存缓存"""
         with self._cache_lock:
@@ -365,6 +555,7 @@ class SharedDataProvider:
                 "total_cached": len(self._cache),
                 "valid_cached": valid_count,
                 "memory_cache_ttl": self.memory_cache_ttl,
+                "circuit_breaker": self._breaker.get_stats(),
             }
 
 

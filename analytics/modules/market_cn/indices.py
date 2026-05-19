@@ -6,9 +6,9 @@
 from typing import Dict, Any, List
 from ...core.cache import cached
 from ...core.config import settings
-from ...core.utils import safe_float, get_beijing_time, akshare_call_with_retry
+from ...core.utils import safe_float, get_beijing_time
+from ...core.data_provider import data_provider
 from ...core.logger import logger
-import akshare as ak  # type: ignore
 
 class CNIndices:
     """中国市场主要指数"""
@@ -38,12 +38,8 @@ class CNIndices:
             指数列表数据
         """
         try:
-            # 优先使用新浪接口获取实时指数行情（响应快，包含核心数据）
-            #备选: stock_zh_index_spot_em (东方财富, 容易被封禁)
-            df = akshare_call_with_retry(
-                ak.stock_zh_index_spot_sina,
-                max_retries=3
-            )
+            # 使用共享数据层获取指数行情（内置熔断器 + 多级回退）
+            df = data_provider.get_index_spot_sina_with_fallback()
             
             if df.empty:
                 raise ValueError("获取指数数据为空")
