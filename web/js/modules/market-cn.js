@@ -37,6 +37,11 @@ class CNMarketController {
         }
 
         const indices = data.indices || [];
+        const formatIndexPoint = (value) => {
+            if (value === null || value === undefined || isNaN(value)) return '--';
+            return Number(value).toFixed(2);
+        };
+
         const html = indices.map(item => {
             const changeVal = item.change_pct;
             const changeClass = changeVal > 0 ? 'text-up' : changeVal < 0 ? 'text-down' : '';
@@ -45,9 +50,9 @@ class CNMarketController {
             return `
                 <div class="index-item">
                     <div class="index-name">${item.name}</div>
-                    <div class="index-price ${changeClass}">${utils.formatNumber(item.price)}</div>
+                    <div class="index-price ${changeClass}">${formatIndexPoint(item.price)}</div>
                     <div class="index-change ${changeClass}">
-                        ${sign}${utils.formatNumber(item.change_amount)} 
+                        ${sign}${formatIndexPoint(item.change_amount)} 
                         (${sign}${utils.formatPercentage(changeVal)})
                     </div>
                     <div class="index-vol">成交 ${utils.formatNumber(item.amount / 100000000)}亿</div>

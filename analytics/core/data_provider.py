@@ -507,6 +507,13 @@ class SharedDataProvider:
                 data = r.json()
                 if data.get("data") and data["data"].get("diff"):
                     rows = []
+
+                    def normalize_scaled_value(item: dict, field: str):
+                        value = item.get(field)
+                        if value in (None, "-", ""):
+                            return value
+                        return safe_float(value) / 100
+
                     for item in data["data"]["diff"]:
                         market = str(item.get("f13", ""))
                         code = str(item.get("f12", ""))
@@ -515,13 +522,13 @@ class SharedDataProvider:
                         rows.append({
                             "代码": sina_code,
                             "名称": item.get("f14", ""),
-                            "最新价": item.get("f2"),
-                            "涨跌额": item.get("f4"),
-                            "涨跌幅": item.get("f3"),
-                            "今开": item.get("f17"),
-                            "最高": item.get("f15"),
-                            "最低": item.get("f16"),
-                            "昨收": item.get("f18"),
+                            "最新价": normalize_scaled_value(item, "f2"),
+                            "涨跌额": normalize_scaled_value(item, "f4"),
+                            "涨跌幅": normalize_scaled_value(item, "f3"),
+                            "今开": normalize_scaled_value(item, "f17"),
+                            "最高": normalize_scaled_value(item, "f15"),
+                            "最低": normalize_scaled_value(item, "f16"),
+                            "昨收": normalize_scaled_value(item, "f18"),
                             "成交量": item.get("f5"),
                             "成交额": item.get("f6"),
                         })
