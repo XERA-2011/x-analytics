@@ -125,6 +125,11 @@ body {
     grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
 }
 
+.market-cn-grid {
+    grid-template-columns: minmax(320px, 420px) minmax(0, 1fr);
+    align-items: start;
+}
+
 @media (max-width: 640px) {
     .grid {
         grid-template-columns: 1fr;
@@ -137,6 +142,12 @@ body {
 
     .main-container {
         padding: 12px;
+    }
+}
+
+@media (max-width: 900px) {
+    .market-cn-grid {
+        grid-template-columns: 1fr;
     }
 }
 
@@ -261,6 +272,15 @@ body {
 
 .card.hero {
     border-top: 4px solid var(--primary);
+}
+
+.heatmap-card .card-body {
+    min-width: 0;
+}
+
+#cn-sector-heatmap {
+    width: 100%;
+    min-width: 0;
 }
 
 .card-header {

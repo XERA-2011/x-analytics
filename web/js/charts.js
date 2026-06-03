@@ -322,8 +322,15 @@ class Charts {
         if (oldInstance) {
             oldInstance.dispose();
         }
+        if (this.charts.has(containerId)) {
+            this.charts.get(containerId).dispose();
+            this.charts.delete(containerId);
+        }
 
-        const chart = echarts.init(dom, "dark");
+        const chart = echarts.init(dom, "dark", {
+            width: dom.clientWidth || undefined,
+            height: dom.clientHeight || undefined
+        });
 
         const getSentiment = (c, t) => {
             let analysis = "中性";
@@ -524,8 +531,10 @@ class Charts {
             },
             series: [{
                 type: 'treemap',
-                width: '100%',
-                height: '100%',
+                left: 0,
+                top: 0,
+                right: 0,
+                bottom: 0,
                 roam: false,
                 nodeClick: false,
                 breadcrumb: { show: false },
@@ -592,7 +601,11 @@ class Charts {
         };
 
         chart.setOption(option);
-        window.addEventListener("resize", () => chart.resize());
+        this.charts.set(containerId, chart);
+        requestAnimationFrame(() => chart.resize({
+            width: dom.clientWidth,
+            height: dom.clientHeight
+        }));
         return chart;
     }
 }

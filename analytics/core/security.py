@@ -23,10 +23,12 @@ ADMIN_API_PATHS = [
 PUBLIC_API_PATHS = [
     "/api/",
     "/market-cn/",
+    "/market-hk/",
     "/market-us/",
     "/metals/",
     "/analytics/api/",
     "/analytics/market-cn/",
+    "/analytics/market-hk/",
     "/analytics/market-us/",
     "/analytics/metals/",
 ]

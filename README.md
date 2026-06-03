@@ -6,6 +6,10 @@
 
 完整接口文档：`/analytics/docs` (Swagger UI)
 
+> 生产环境通常搭配 [`x-actions`](../x-actions) 使用，由 Nginx 将 `/analytics/`
+> 反向代理到 `xanalytics:8080/`，并剥离 `/analytics` 前缀后转发给本服务。
+> 本地直接运行本项目时，可使用根路径访问。
+
 ## 🛠️ 本地开发
 
 你可以根据需求选择以下两种方式之一：
@@ -58,8 +62,12 @@ uvicorn server:app --reload
 ```
 
 ## 🌐 访问地址
-- Web 仪表盘: http://localhost:8080/
-- API 文档: http://localhost:8080/docs
+- 本地直接访问:
+  - Web 仪表盘: http://localhost:8080/
+  - API 文档: http://localhost:8080/docs
+- 通过 x-actions 网关访问:
+  - Web 仪表盘: http://localhost/analytics/
+  - API 文档: http://localhost/analytics/docs
 
 ## 🧹 常用运维命令
 ```bash

@@ -2,12 +2,19 @@
 
 class API {
     constructor() {
-        this.baseURL = '/analytics';
+        this.baseURL = this._resolveBaseURL();
         this.timeout = 15000; // 增加到15秒超时
         this.activeRequests = new Map(); // 跟踪活跃请求
         this.cache = new Map(); // 前端缓存
         this.cacheTTL = 60000; // 缓存有效期 60秒
         this.forceRefreshToken = null; // 手动刷新时绕过浏览器/代理缓存
+    }
+
+    _resolveBaseURL() {
+        const path = window.location.pathname || '/';
+        return path === '/analytics' || path.startsWith('/analytics/')
+            ? '/analytics'
+            : '';
     }
 
     // 通用请求方法
