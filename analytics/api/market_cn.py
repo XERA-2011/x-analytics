@@ -39,6 +39,7 @@ async def get_fear_greed_history(days: int = 30) -> Dict[str, Any]:
     start_date = date.today() - timedelta(days=days)
     history = await SentimentHistory.filter(
         market="CN",
+        indicator_type="fear_greed",
         date__gte=start_date
     ).order_by("date").all()
 

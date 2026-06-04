@@ -12,6 +12,7 @@ import redis
 from redis import ConnectionPool
 import time
 import threading
+import contextvars
 from functools import wraps
 from typing import Optional, Any, Callable, Dict
 from datetime import datetime
@@ -20,6 +21,9 @@ from .logger import logger
 
 # 缓存版本号：当缓存数据结构变化时递增，自动使旧缓存失效
 CACHE_VERSION = "v4"
+
+# 用于跨层传递刷新意图
+request_refresh_var = contextvars.ContextVar("request_refresh", default=False)
 
 
 class RedisCache:
@@ -286,6 +290,10 @@ def cached(key_prefix: str, ttl: int = 60, stale_ttl: Optional[int] = None):
     def decorator(func: Callable) -> Callable:
         @wraps(func)
         def wrapper(*args, **kwargs):
+            # 提取 force_refresh 参数，从 kwargs 中移除以免影响缓存 key 或函数调用
+            # 优先检查 kwargs，其次检查 contextvars (通过 Middleware 注入)
+            force_refresh = kwargs.pop("_refresh", False) or request_refresh_var.get()
+
             # 1. 生成缓存 key
             cache_key = make_cache_key(key_prefix, *args, **kwargs)
 
@@ -302,17 +310,21 @@ def cached(key_prefix: str, ttl: int = 60, stale_ttl: Optional[int] = None):
                     expire_time = cached_data["_meta"].get("expire_at", 0)
                     real_data = cached_data["data"]
 
-                    if now < expire_time:
+                    if not force_refresh and now < expire_time:
                         # 数据新鲜，返回标准格式
                         remaining_ttl = int(expire_time - now)
                         cache_time = cached_data["_meta"].get("cached_at", expire_time - ttl)
                         
+                        msg = None
+                        if cache_key in cache._inflight_tasks:
+                            msg = "数据刷新中"
+                            
                         # 检查数据是否包含错误
                         if isinstance(real_data, dict) and "error" in real_data:
                             return wrap_response(
                                 status="error",
                                 data=real_data.get("data"),
-                                message=real_data.get("message", real_data.get("error")),
+                                message=msg or real_data.get("message", real_data.get("error")),
                                 cached_at=cache_time,
                                 ttl=remaining_ttl
                             )
@@ -320,22 +332,28 @@ def cached(key_prefix: str, ttl: int = 60, stale_ttl: Optional[int] = None):
                         return wrap_response(
                             status="ok",
                             data=real_data,
+                            message=msg,
                             cached_at=cache_time,
                             ttl=remaining_ttl
                         )
                     else:
-                        # 数据陈旧 (但未物理过期)
+                        # 数据陈旧或要求强制刷新
                         should_refresh = True
                         return_stale = True
                         stale_data = real_data  # 保存陈旧数据以供后续使用
                 else:
-                    # 旧版格式或无元数据，假设新鲜
-                    if isinstance(cached_data, dict) and "error" in cached_data:
-                        return wrap_response(
-                            status="error",
-                            message=cached_data.get("message", cached_data.get("error"))
-                        )
-                    return wrap_response(status="ok", data=cached_data)
+                    # 旧版格式或无元数据，假设新鲜 (除非强制刷新)
+                    if force_refresh:
+                        should_refresh = True
+                        return_stale = True
+                        stale_data = cached_data
+                    else:
+                        if isinstance(cached_data, dict) and "error" in cached_data:
+                            return wrap_response(
+                                status="error",
+                                message=cached_data.get("message", cached_data.get("error"))
+                            )
+                        return wrap_response(status="ok", data=cached_data)
             else:
                 # 无缓存
                 should_refresh = True
@@ -344,6 +362,7 @@ def cached(key_prefix: str, ttl: int = 60, stale_ttl: Optional[int] = None):
 
             # 3. 需要刷新数据
             if should_refresh:
+                
                 # 使用后台线程进行异步刷新，确保不阻塞当前请求
                 # 这种模式保证了：
                 # 1. 用户请求永远立即返回 (要么是数据，要么是 warming_up)

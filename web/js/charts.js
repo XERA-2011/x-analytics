@@ -575,7 +575,7 @@ class Charts {
 
                         labelStr += `{rowLabel|情绪:} {${styleName}|${d.analysis}}\n`;
                         labelStr += `{rowLabel|市值:} {rowVal|${capStr}亿}\n`;
-                        labelStr += `{rowLabel|换手:} {rowVal|${d.turnover !== null && d.turnover !== undefined ? d.turnover + '%' : '--'}`;
+                        labelStr += `{rowLabel|换手:} {rowVal|${d.turnover !== null && d.turnover !== undefined ? d.turnover + '%' : '--'}}`;
 
                         // Custom conditionals for trailing properties
                         if (d.top_cap_stock) {

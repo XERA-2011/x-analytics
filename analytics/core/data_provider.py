@@ -109,6 +109,10 @@ class SharedDataProvider:
         self.memory_cache_ttl = memory_cache_ttl
         self._cache: Dict[str, Dict[str, Any]] = {}
         self._cache_lock = threading.Lock()
+        
+        # 跟踪回退状态
+        self.last_sina_fallback_time = None
+        self.last_em_direct_fallback_time = None
 
     @classmethod
     def get_instance(cls) -> "SharedDataProvider":
@@ -118,6 +122,14 @@ class SharedDataProvider:
                 if cls._instance is None:
                     cls._instance = cls()
         return cls._instance
+
+    def get_status(self) -> Dict[str, Any]:
+        """获取数据源状态统计"""
+        return {
+            "circuit_breaker": self._breaker.get_stats(),
+            "last_sina_fallback_time": self.last_sina_fallback_time,
+            "last_em_direct_fallback_time": self.last_em_direct_fallback_time
+        }
 
     def _get_cached(self, key: str) -> Optional[Any]:
         """获取内存缓存"""
@@ -257,6 +269,7 @@ class SharedDataProvider:
                     for col in ["最新价", "涨跌幅", "换手率", "总市值", "流通市值"]:
                         df[col] = pd.to_numeric(df[col], errors="coerce")
                     logger.info(f"直接 API 回退成功 ({sub}), 获取 {len(df)} 只股票")
+                    self.last_em_direct_fallback_time = time.time()
                     return df
             except Exception as e:
                 last_err = e
@@ -284,6 +297,7 @@ class SharedDataProvider:
         df["总市值"] = turnover_amount
         df["流通市值"] = turnover_amount
         
+        self.last_sina_fallback_time = time.time()
         logger.info(f"新浪 A股 API 降级回退成功, 获取 {len(df)} 只股票")
         return df
 

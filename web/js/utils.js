@@ -359,6 +359,30 @@ class Utils {
                 console.error('清空存储失败:', error);
                 return false;
             }
+        },
+
+        showStaleWarning: () => {
+            const timeElement = document.getElementById('global-update-time');
+            const dot = document.querySelector('.pulse-dot');
+            if (timeElement && !timeElement.innerHTML.includes('后台刷新中')) {
+                timeElement.innerHTML += ' <span style="color: #f59e0b; font-size: 11px; margin-left: 4px;">(缓存数据，后台刷新中...)</span>';
+            }
+            if (dot) {
+                dot.style.backgroundColor = '#f59e0b';
+                dot.style.boxShadow = '0 0 0 0 rgba(245, 158, 11, 0.7)';
+            }
+        },
+
+        hideStaleWarning: () => {
+            const timeElement = document.getElementById('global-update-time');
+            const dot = document.querySelector('.pulse-dot');
+            if (timeElement && timeElement.innerHTML.includes('后台刷新中')) {
+                timeElement.innerHTML = timeElement.innerHTML.replace(/ <span[^>]*>\(缓存数据，后台刷新中...\)<\/span>/, '');
+            }
+            if (dot) {
+                dot.style.backgroundColor = '';
+                dot.style.boxShadow = '';
+            }
         }
     };
 

@@ -1,12 +1,9 @@
 class USMarketController {
     constructor() {
-        this._hasStaleData = false;
-        this._retried = false;
     }
 
     async loadData() {
         console.log('📊 加载美国市场数据...');
-        this._hasStaleData = false;
         const promises = [
             this.loadUSFearGreed(),
             this.loadUSOverboughtOversold(),
@@ -15,24 +12,11 @@ class USMarketController {
             this.loadUSBondYields()
         ];
         await Promise.allSettled(promises);
-
-        // Stale data auto-retry: backend is refreshing in background, wait then reload once
-        if (this._hasStaleData && !this._retried) {
-            this._retried = true;
-            console.log('🔄 检测到过期数据，5秒后自动刷新...');
-            setTimeout(() => {
-                api.clearLocalCache();
-                this.loadData();
-            }, 5000);
-        } else {
-            this._retried = false;
-        }
     }
 
     async loadUSOverboughtOversold() {
         try {
             const data = await api.getUSOverboughtOversold();
-            if (data && data._stale) this._hasStaleData = true;
             utils.renderOverboughtOversold('us-obo-signal', data);
         } catch (error) {
             console.error('加载美股超买超卖信号失败:', error);
@@ -45,7 +29,6 @@ class USMarketController {
         try {
             // Load only custom data (CNN direct fetch is deprecated/banned)
             const data = await api.getUSCustomFearGreed();
-            if (data && data._stale) this._hasStaleData = true;
             this.renderUSFearGreed(data);
 
             if (window.lucide) lucide.createIcons();
@@ -59,7 +42,6 @@ class USMarketController {
     async loadUSMarketHeat() {
         try {
             const data = await api.getUSMarketHeat();
-            if (data && data._stale) this._hasStaleData = true;
             this.renderUSMarketHeat(data);
         } catch (error) {
             console.error('加载美国市场热度失败:', error);
@@ -70,7 +52,6 @@ class USMarketController {
     async loadUSBondYields() {
         try {
             const data = await api.getUSBondYields();
-            if (data && data._stale) this._hasStaleData = true;
             this.renderUSBondYields(data);
         } catch (error) {
             console.error('加载美债数据失败:', error);
@@ -81,7 +62,6 @@ class USMarketController {
     async loadUSLeaders() {
         try {
             const data = await api.getUSMarketLeaders();
-            if (data && data._stale) this._hasStaleData = true;
             if (data.error || data._warming_up) {
                 console.error('加载美国市场领涨板块API返回错误:', data.error);
                 utils.renderError('us-gainers', data.error || 'warming_up');

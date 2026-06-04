@@ -8,9 +8,11 @@ import threading
 from datetime import datetime, timezone, timedelta
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from analytics.core import cache, scheduler, settings
+from starlette.middleware.cors import CORSMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
+from analytics.core.cache import cache, request_refresh_var
+from analytics.core import scheduler, settings
 from analytics.core.scheduler import setup_default_jobs, initial_warmup
 from analytics.api import market_cn, metals, market_us, market_hk
 from analytics.core.patch import apply_patches
@@ -89,8 +91,23 @@ app.add_middleware(
     allow_origins=[],  # 空列表 = 仅同源请求
     allow_credentials=False,
     allow_methods=["GET", "POST", "DELETE"],
-    allow_headers=[],  # 仅允许必要的自定义头
+    allow_headers=["X-Admin-Token"],  # 仅允许必要的自定义头
 )
+
+class RefreshMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        # Extract _refresh from query string
+        refresh_token = request.query_params.get("_refresh")
+        
+        # Set context variable
+        token = request_refresh_var.set(bool(refresh_token))
+        try:
+            response = await call_next(request)
+            return response
+        finally:
+            request_refresh_var.reset(token)
+
+app.add_middleware(RefreshMiddleware)
 
 # -----------------------------------------------------------------------------
 # 注册路由模块
@@ -122,6 +139,10 @@ def health_check():
             if match:
                 redis_host = match.group(1)
     
+    from analytics.core.data_provider import data_provider
+
+    cache_stats = cache.get_stats()
+
     return {
         "status": "ok",
         "service": "x-analytics",
@@ -129,7 +150,11 @@ def health_check():
         "cache": {
             "connected": cache.connected,
             "host": redis_host,
+            "keys_count": cache_stats.get("keys_count", 0),
+            "hit_rate": cache_stats.get("hit_rate", "0%"),
+            "memory": cache_stats.get("memory", {}),
         },
+        "data_source": data_provider.get_status()
     }
 
 

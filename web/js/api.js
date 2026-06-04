@@ -167,6 +167,14 @@ class API {
                         data._stale = true;
                     }
                 }
+                
+                if (window.app && typeof window.app.reportDataTime === 'function') {
+                    window.app.reportDataTime(data.update_time || data._cached_at);
+                }
+                if (window.app && data._stale && typeof window.app.markStale === 'function') {
+                    window.app.markStale();
+                }
+                
                 return data;
 
             case 'warming_up':
@@ -229,20 +237,6 @@ class API {
     // 中国市场 API
     async getCNFearGreed(symbol = 'sh000001', days = 14) {
         return this.request(`/market-cn/fear-greed?symbol=${symbol}&days=${days}`);
-    }
-
-
-
-    async getCNMarketHeat() {
-        return this.request('/market-cn/heat');
-    }
-
-    async getCNDividendStocks(limit = 20) {
-        return this.request(`/market-cn/dividend/stocks?limit=${limit}`);
-    }
-
-    async getCNDividendETFs() {
-        return this.request('/market-cn/dividend/etfs');
     }
 
     async getCNTreasuryYields() {
@@ -328,22 +322,6 @@ class API {
     // 宏观数据 API
     async getLPR() {
         return this.request('/market-cn/lpr');
-    }
-
-    // 基金 API
-
-
-    async getNorthFunds() {
-        return this.request('/macro/north-funds');
-    }
-
-    async getETFFlow(limit = 10) {
-        return this.request(`/macro/etf-flow?limit=${limit}`);
-    }
-
-    async getEconomicCalendar(date = null) {
-        const params = date ? `?date=${date}` : '';
-        return this.request(`/macro/calendar${params}`);
     }
 
     async triggerWarmup() {

@@ -73,4 +73,8 @@ uvicorn server:app --reload
 ```bash
 # 清空 Redis 所有缓存 (强制刷新数据)
 python -c "import redis, os; from dotenv import load_dotenv; load_dotenv('.env.local'); r = redis.from_url(os.getenv('REDIS_URL')); r.flushdb(); print('✅ Redis 缓存已清空')"
+
+# 丢弃并重建数据库记录表 (当升级增加列如 indicator_type 导致报错时使用)
+# 注意：这会清除全部历史数据！
+python scripts/reset_sentiment_history.py
 ```

@@ -698,25 +698,64 @@ def snapshot_daily_metrics() -> None:
     try:
         logger.info("📸 开始执行数据库快照...")
         from analytics.modules.market_cn import CNFearGreedIndex
+        from analytics.modules.market_us import USFearGreedIndex
+        from analytics.modules.market_hk.fear_greed import HKFearGreed
+        from analytics.modules.metals import GoldFearGreedIndex
+        from analytics.modules.metals.fear_greed import SilverFearGreedIndex
+        from analytics.modules.signals.overbought_oversold import OverboughtOversoldSignal
         from datetime import date
 
-        # 同步计算留在后台线程，不阻塞主事件循环
-        result = CNFearGreedIndex.calculate(symbol="sh000001", days=14)
-        if not result or "score" not in result:
-            return
-
-        score = result["score"]
-        level = result["level"]
         today = date.today()
+        snapshots = []
+
+        # 1. CN
+        cn_res = CNFearGreedIndex.calculate(symbol="sh000001", days=14)
+        if cn_res and "score" in cn_res:
+            snapshots.append({"market": "CN", "indicator": "fear_greed", "score": cn_res["score"], "level": cn_res["level"]})
+
+        # 2. US
+        us_res = USFearGreedIndex.calculate_custom_index()
+        if us_res and "score" in us_res:
+            snapshots.append({"market": "US", "indicator": "fear_greed", "score": us_res["score"], "level": us_res["level"]})
+
+        # 3. HK
+        hk_res = HKFearGreed.get_data()
+        if hk_res and "score" in hk_res:
+            snapshots.append({"market": "HK", "indicator": "fear_greed", "score": hk_res["score"], "level": hk_res["level"]})
+
+        # 4. Gold
+        gold_res = GoldFearGreedIndex.calculate()
+        if gold_res and "score" in gold_res:
+            snapshots.append({"market": "Gold", "indicator": "fear_greed", "score": gold_res["score"], "level": gold_res["level"]})
+
+        # 5. Silver
+        silver_res = SilverFearGreedIndex.calculate()
+        if silver_res and "score" in silver_res:
+            snapshots.append({"market": "Silver", "indicator": "fear_greed", "score": silver_res["score"], "level": silver_res["level"]})
+            
+        # OBO Signals
+        cn_obo = OverboughtOversoldSignal.get_cn_signal("daily")
+        if cn_obo and "score" in cn_obo:
+            snapshots.append({"market": "CN", "indicator": "overbought_oversold", "score": cn_obo["score"], "level": cn_obo.get("signal", "neutral")})
+            
+        us_obo = OverboughtOversoldSignal.get_us_signal("daily")
+        if us_obo and "score" in us_obo:
+            snapshots.append({"market": "US", "indicator": "overbought_oversold", "score": us_obo["score"], "level": us_obo.get("signal", "neutral")})
+            
+        hk_obo = OverboughtOversoldSignal.get_hk_signal("daily")
+        if hk_obo and "score" in hk_obo:
+            snapshots.append({"market": "HK", "indicator": "overbought_oversold", "score": hk_obo["score"], "level": hk_obo.get("signal", "neutral")})
 
         async def _db_write():
             from analytics.models.sentiment import SentimentHistory
-            await SentimentHistory.update_or_create(
-                date=today,
-                market="CN",
-                defaults={"score": score, "level": level}
-            )
-            logger.info(f"✅ [DB] 已保存今日恐慌指数: {score}")
+            for snap in snapshots:
+                await SentimentHistory.update_or_create(
+                    date=today,
+                    market=snap["market"],
+                    indicator_type=snap["indicator"],
+                    defaults={"score": snap["score"], "level": snap["level"]}
+                )
+            logger.info(f"✅ [DB] 已保存今日快照: {len(snapshots)} 条记录")
 
         _submit_to_main_loop(_db_write())
 

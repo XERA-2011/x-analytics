@@ -8,6 +8,9 @@ class App {
         this.isRefreshing = false;
         this.loadedTabs = new Set();
         this.refreshResetTimer = null;
+        this.currentCycleTimes = [];
+        this.currentCycleStale = false;
+        this._retriedStale = false;
 
         // Controllers
         this.modules = {
@@ -250,7 +253,7 @@ class App {
         }
     }
 
-    async refreshCurrentTab() {
+    async refreshCurrentTab(forceBackend = true) {
         if (!navigator.onLine) {
             console.log('离线状态，跳过数据刷新');
             return;
@@ -262,9 +265,13 @@ class App {
         }
 
         this.isRefreshing = true;
+        this.currentCycleTimes = [];
+        this.currentCycleStale = false;
 
         // 清除前端缓存，并让本轮请求绕过浏览器/代理缓存
-        api.startForceRefresh();
+        if (forceBackend) {
+            api.startForceRefresh();
+        }
 
         this.setRefreshButtonLoading(true);
         this.armRefreshButtonFallback();
@@ -280,26 +287,73 @@ class App {
 
             this.loadedTabs.add(this.currentTab);
             this.updateGlobalTime();
+
+            if (this.currentCycleStale) {
+                if (window.utils && typeof window.utils.showStaleWarning === 'function') {
+                    window.utils.showStaleWarning();
+                }
+                if (!this._retriedStale) {
+                    this._retriedStale = true;
+                    console.log('🔄 检测到陈旧数据，5秒后自动刷新...');
+                    setTimeout(() => {
+                        if (!this.isRefreshing && this.currentCycleStale) {
+                            api.clearLocalCache();
+                            this.refreshCurrentTab(false);
+                        }
+                    }, 5000);
+                }
+            } else {
+                this._retriedStale = false;
+                if (window.utils && typeof window.utils.hideStaleWarning === 'function') {
+                    window.utils.hideStaleWarning();
+                }
+            }
         } catch (error) {
             console.error('刷新数据失败:', error);
         } finally {
-            api.endForceRefresh();
+            if (forceBackend) {
+                api.endForceRefresh();
+            }
             this.isRefreshing = false;
             this.clearRefreshButtonFallback();
             this.setRefreshButtonLoading(false);
         }
     }
 
+    reportDataTime(timeStr) {
+        if (!timeStr) return;
+        
+        // Handle "YYYY-MM-DD HH:mm:ss" format returned by some Python endpoints
+        let parsed = new Date(timeStr);
+        if (isNaN(parsed.getTime()) && typeof timeStr === 'string') {
+            parsed = new Date(timeStr.replace(' ', 'T'));
+        }
+        
+        if (!isNaN(parsed.getTime())) {
+            this.currentCycleTimes.push(parsed);
+        }
+    }
+
+    markStale() {
+        this.currentCycleStale = true;
+    }
+
     updateGlobalTime() {
         const timeElement = document.getElementById('global-update-time');
         const footerTimeElement = document.getElementById('footer-update-time');
-        const now = new Date();
-        const timeStr = now.toLocaleTimeString('zh-CN', { hour12: false });
+        
+        let displayTime = new Date();
+        if (this.currentCycleTimes && this.currentCycleTimes.length > 0) {
+            // Find the most recent update time (max)
+            displayTime = new Date(Math.max(...this.currentCycleTimes));
+        }
+
+        const timeStr = displayTime.toLocaleTimeString('zh-CN', { hour12: false });
 
         if (timeElement) timeElement.textContent = `Updated: ${timeStr}`;
-        if (footerTimeElement) footerTimeElement.textContent = utils.formatDate(now);
+        if (footerTimeElement) footerTimeElement.textContent = utils.formatDate(displayTime);
 
-        this.lastUpdateTime = now;
+        this.lastUpdateTime = displayTime;
     }
 }
 
