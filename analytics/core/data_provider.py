@@ -7,7 +7,7 @@ import akshare as ak
 import pandas as pd
 import threading
 import time
-from typing import Optional, Callable, Any, Dict
+from typing import Optional, Callable, Any, Dict, List
 from .logger import logger
 
 
@@ -20,6 +20,15 @@ class _SourceCircuitBreaker:
 
     FAILURE_THRESHOLD = 3       # 连续失败次数阈值
     COOLDOWN_SECONDS = 300      # 冷却时间 (5分钟)
+
+    # 同一 IP 下共享限流的数据源联动组
+    # 当组内任一源进入冷却，同组其他源也自动跳过
+    SOURCE_GROUPS: Dict[str, List[str]] = {
+        "eastmoney_stock": ["eastmoney_stock", "eastmoney_stock_direct"],
+        "eastmoney_stock_direct": ["eastmoney_stock", "eastmoney_stock_direct"],
+        "eastmoney_board": ["eastmoney_board", "eastmoney_board_direct"],
+        "eastmoney_board_direct": ["eastmoney_board", "eastmoney_board_direct"],
+    }
 
     def __init__(self):
         self._failures: Dict[str, int] = {}
@@ -35,18 +44,25 @@ class _SourceCircuitBreaker:
         with self._lock:
             self._failures[source] = 0
 
+    def _is_in_cooldown(self, source: str) -> bool:
+        """检查单个源是否处于冷却中（调用前须持有 _lock）。"""
+        failures = self._failures.get(source, 0)
+        if failures < self.FAILURE_THRESHOLD:
+            return False
+        last_time = self._last_failure_time.get(source, 0)
+        if time.time() - last_time > self.COOLDOWN_SECONDS:
+            self._failures[source] = 0
+            return False
+        return True
+
     def should_skip(self, source: str) -> bool:
-        """判断是否应跳过该数据源（处于熔断冷却中）。"""
+        """判断是否应跳过该数据源（自身或联动组内任一源处于冷却中）。"""
         with self._lock:
-            failures = self._failures.get(source, 0)
-            if failures < self.FAILURE_THRESHOLD:
-                return False
-            last_time = self._last_failure_time.get(source, 0)
-            if time.time() - last_time > self.COOLDOWN_SECONDS:
-                # 冷却期结束，允许重试
-                self._failures[source] = 0
-                return False
-            return True
+            linked_sources = self.SOURCE_GROUPS.get(source, [source])
+            for s in linked_sources:
+                if self._is_in_cooldown(s):
+                    return True
+            return False
 
     def get_stats(self) -> Dict[str, Any]:
         with self._lock:
@@ -261,7 +277,7 @@ class SharedDataProvider:
         df["名称"] = df_sina["名称"]
         df["最新价"] = pd.to_numeric(df_sina["最新价"], errors="coerce")
         df["涨跌幅"] = pd.to_numeric(df_sina["涨跌幅"], errors="coerce")
-        df["换手率"] = 0.0  # 新浪接口没有直接暴露换手率
+        df["换手率"] = None  # 新浪接口没有直接暴露换手率
         
         # 将成交额当做市值代理用于防崩溃和粗略加权
         turnover_amount = pd.to_numeric(df_sina["成交额"], errors="coerce")
@@ -393,7 +409,7 @@ class SharedDataProvider:
                 "板块名称": row.get("板块", ""),
                 "板块代码": row.get("label", ""),
                 "涨跌幅": pd.to_numeric(row.get("涨跌幅"), errors="coerce"),
-                "换手率": 0.0, 
+                "换手率": None,
                 "总市值": pd.to_numeric(row.get("总成交额"), errors="coerce"), 
                 "上涨家数": 0,
                 "下跌家数": 0,
@@ -401,8 +417,9 @@ class SharedDataProvider:
             })
             
         df = pd.DataFrame(rows)
+        df["_source"] = "sina"
         logger.info(f"新浪行业 API 降级回退成功, 获取 {len(df)} 个板块")
-        return pd.DataFrame(rows)
+        return df
     
     def get_sector_constituents(self, sector_name: str) -> pd.DataFrame:
         """

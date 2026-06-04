@@ -644,49 +644,92 @@ def initial_warmup():
     logger.info("🔥 初始缓存预热结束")
 
 
-def snapshot_daily_metrics():
-    """每日市场快照（写入数据库）"""
+# 主事件循环引用，由 server.py lifespan 启动时通过 set_main_loop() 注入
+_main_loop = None
+
+
+def set_main_loop(loop) -> None:
+    """保存 FastAPI 主事件循环引用，供后台线程的 DB 操作使用。"""
+    global _main_loop
+    _main_loop = loop
+
+
+def _submit_to_main_loop(coro) -> None:
+    """将协程提交到 FastAPI 主事件循环执行。
+
+    仅允许从后台线程调用（如 APScheduler）。
+    如果从主循环线程调用，改用 create_task 避免自锁阻塞。
+    """
+    import asyncio
+
+    if _main_loop is None or _main_loop.is_closed():
+        logger.warning("主事件循环不可用，跳过本次 DB 操作")
+        coro.close()
+        return
+
+    try:
+        # 判断当前是否已在目标事件循环内——如果是，不能 .result() 等待，会自锁
+        try:
+            running_loop = asyncio.get_running_loop()
+        except RuntimeError:
+            running_loop = None
+
+        if running_loop is _main_loop:
+            _main_loop.create_task(coro)
+            return
+
+        future = asyncio.run_coroutine_threadsafe(coro, _main_loop)
+        future.result(timeout=30)
+    except Exception as e:
+        coro.close()
+        logger.error(f"提交协程到主循环失败: {e}")
+
+
+def snapshot_daily_metrics() -> None:
+    """每日市场快照（写入数据库）
+
+    同步行情计算在 APScheduler 后台线程执行，
+    只将轻量的 DB 写入提交到 FastAPI 主事件循环。
+    """
     from .db import DB_AVAILABLE
     if not DB_AVAILABLE:
         return
 
-    import asyncio
-    
-    async def _async_snapshot():
-        try:
-            logger.info("📸 开始执行数据库快照...")
-            from analytics.modules.market_cn import CNFearGreedIndex
+    try:
+        logger.info("📸 开始执行数据库快照...")
+        from analytics.modules.market_cn import CNFearGreedIndex
+        from datetime import date
+
+        # 同步计算留在后台线程，不阻塞主事件循环
+        result = CNFearGreedIndex.calculate(symbol="sh000001", days=14)
+        if not result or "score" not in result:
+            return
+
+        score = result["score"]
+        level = result["level"]
+        today = date.today()
+
+        async def _db_write():
             from analytics.models.sentiment import SentimentHistory
-            from datetime import date
-            
-            # 1. 记录 CN 恐慌指数
-            # 注意：这里我们重新计算一次，以确保是最新的
-            result = CNFearGreedIndex.calculate(symbol="sh000001", days=14)
-            if result and "score" in result:
-                await SentimentHistory.update_or_create(
-                    date=date.today(),
-                    market="CN",
-                    defaults={
-                        "score": result["score"],
-                        "level": result["level"]
-                    }
-                )
-                logger.info(f"✅ [DB] 已保存今日恐慌指数: {result['score']}")
-            
-        except Exception as e:
-            logger.error(f"❌ 数据库快照失败: {e}")
+            await SentimentHistory.update_or_create(
+                date=today,
+                market="CN",
+                defaults={"score": score, "level": level}
+            )
+            logger.info(f"✅ [DB] 已保存今日恐慌指数: {score}")
 
-    # 在同步环境运行异步任务
-    asyncio.run(_async_snapshot())
+        _submit_to_main_loop(_db_write())
+
+    except Exception as e:
+        logger.error(f"❌ 数据库快照失败: {e}")
 
 
-def cleanup_old_data():
+def cleanup_old_data() -> None:
     """清理30天前的旧数据"""
     from .db import DB_AVAILABLE
     if not DB_AVAILABLE:
         return
 
-    import asyncio
     from datetime import date, timedelta
     
     async def _async_cleanup():
@@ -704,5 +747,4 @@ def cleanup_old_data():
         except Exception as e:
             logger.error(f"❌ 数据清理失败: {e}")
 
-    # 在同步环境运行异步任务
-    asyncio.run(_async_cleanup())
+    _submit_to_main_loop(_async_cleanup())

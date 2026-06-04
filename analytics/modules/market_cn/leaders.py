@@ -66,7 +66,10 @@ class CNMarketLeaders:
 
     @staticmethod
     def _filter_primary_sectors(df):
-        """仅保留一级行业。"""
+        """仅保留一级行业。新浪行业分类体系不同，跳过过滤。"""
+        if "_source" in df.columns and (df["_source"] == "sina").any():
+            return df.drop(columns=["_source"], errors="ignore")
+
         if "板块名称" not in df.columns:
             return df
 
@@ -259,22 +262,23 @@ class CNMarketLeaders:
             if weighted_change is None:
                 weighted_change = float(valid_change.mean())
 
-            turnover = 0.0
+            turnover = None
             if turnover_col and merged[turnover_col].notna().any():
-                turnover = float(merged[turnover_col].fillna(0.0).mean())
+                turnover = float(merged[turnover_col].dropna().mean())
 
             child_stocks = []
             for _, stock in merged.iterrows():
                 stock_change = safe_float(stock.get(change_col), 0.0)
                 stock_cap = safe_float(stock.get(market_cap_col), 0.0) if market_cap_col else 0.0
-                stock_turnover = safe_float(stock.get(turnover_col), 0.0) if turnover_col else 0.0
+                raw_stock_turnover = stock.get(turnover_col) if turnover_col else None
+                stock_turnover = safe_float(raw_stock_turnover, None) if raw_stock_turnover is not None and not pd.isna(raw_stock_turnover) else None
                 stock_price = safe_float(stock.get(price_col), 0.0) if price_col else 0.0
                 child_stocks.append({
                     "name": str(stock.get(name_col, stock.get("name", ""))) if name_col else str(stock.get("name", "")),
                     "code": str(stock.get(code_col, "")),
                     "value": stock_cap if stock_cap > 0 else 1.0,
                     "change_pct": round(stock_change, 2),
-                    "turnover": round(stock_turnover, 2),
+                    "turnover": round(stock_turnover, 2) if stock_turnover is not None else None,
                     "price": round(stock_price, 2),
                 })
 
@@ -336,12 +340,14 @@ class CNMarketLeaders:
             total_companies = safe_float(row.get("上涨家数", 0)) + safe_float(
                 row.get("下跌家数", 0)
             )
+            raw_turnover = row.get("换手率")
+            turnover_val = safe_float(raw_turnover, None) if not pd.isna(raw_turnover) else None
             sectors.append({
                 "name": str(row["板块名称"]),
                 "value": safe_float(row.get("总市值", 0)),
                 "change_pct": safe_float(row["涨跌幅"]),
                 "stock_count": int(total_companies),
-                "turnover": safe_float(row.get("换手率", 0)),
+                "turnover": turnover_val,
                 "leading_stock": str(row.get("领涨股票", "")),
                 "lagging_stock": "",
             })

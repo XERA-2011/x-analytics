@@ -226,19 +226,30 @@ class CNMarketController {
 
         // 情绪分析函数 (与 charts.js treemap tooltip 保持一致)
         const getSentiment = (change, turnover) => {
-            const t = turnover || 0;
+            const hasTurnover = turnover !== null && turnover !== undefined;
+            const t = hasTurnover ? turnover : null;
             const c = change || 0;
             const absC = Math.abs(c);
 
             if (absC < 0.8) return { text: '横盘震荡', color: '#9ca3af' };
 
             if (c > 0) {
+                if (t === null) {
+                    if (c > 8) return { text: '逼空拉升', color: '#dc2626' };
+                    if (c > 4) return { text: '放量上攻', color: '#ef4444' };
+                    return { text: '温和上涨', color: '#ef4444' };
+                }
                 if (c > 8) return t > 2 ? { text: '极度超买', color: '#dc2626' } : { text: '逼空拉升', color: '#dc2626' };
                 if (t > 5 && c > 4) return { text: '严重超买', color: '#dc2626' };
                 if (t > 3 || c > 4) return { text: '放量上攻', color: '#ef4444' };
                 if (t < 1.2 && c < 2) return { text: '缩量上涨', color: '#f59e0b' };
                 return { text: '温和上涨', color: '#ef4444' };
             } else {
+                if (t === null) {
+                    if (c < -8) return { text: '恐慌抛售', color: '#16a34a' };
+                    if (c < -4) return { text: '放量杀跌', color: '#16a34a' };
+                    return { text: '弱势调整', color: '#22c55e' };
+                }
                 if (c < -8) return t > 2 ? { text: '恐慌抛售', color: '#16a34a' } : { text: '闷杀出局', color: '#16a34a' };
                 if (t > 5 && c < -4) return { text: '恐慌抛售', color: '#16a34a' };
                 if (t > 3 || c < -4) return { text: '放量杀跌', color: '#16a34a' };

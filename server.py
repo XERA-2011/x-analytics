@@ -31,6 +31,11 @@ async def lifespan(app: FastAPI):
     # 初始化数据库
     await init_db()
 
+    # 将主事件循环注入 scheduler，供后台线程执行 DB 异步操作
+    import asyncio
+    from analytics.core.scheduler import set_main_loop
+    set_main_loop(asyncio.get_event_loop())
+
     from analytics.core.db import DB_AVAILABLE
     if not DB_AVAILABLE:
         logger.warning("⚠️ Database not available — history/snapshot features disabled")

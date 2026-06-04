@@ -341,24 +341,37 @@ class Charts {
                 analysis = "横盘震荡";
                 analysisColor = "#9ca3af";
             } else if (c > 0) {
-                if (c > 8) { analysis = t > 2 ? "极度超买" : "逼空拉升"; analysisColor = "#dc2626"; }
-                else if (t > 5 && c > 4) { analysis = "严重超买"; analysisColor = "#dc2626"; }
-                else if (t > 3 || c > 4) { analysis = "放量上攻"; analysisColor = "#ef4444"; }
-                else if (t < 1.2 && c < 2) { analysis = "缩量上涨"; analysisColor = "#f59e0b"; }
-                else { analysis = "温和上涨"; analysisColor = "#ef4444"; }
+                if (t === null || t === undefined) {
+                    if (c > 8) { analysis = "逼空拉升"; analysisColor = "#dc2626"; }
+                    else if (c > 4) { analysis = "放量上攻"; analysisColor = "#ef4444"; }
+                    else { analysis = "温和上涨"; analysisColor = "#ef4444"; }
+                } else {
+                    if (c > 8) { analysis = t > 2 ? "极度超买" : "逼空拉升"; analysisColor = "#dc2626"; }
+                    else if (t > 5 && c > 4) { analysis = "严重超买"; analysisColor = "#dc2626"; }
+                    else if (t > 3 || c > 4) { analysis = "放量上攻"; analysisColor = "#ef4444"; }
+                    else if (t < 1.2 && c < 2) { analysis = "缩量上涨"; analysisColor = "#f59e0b"; }
+                    else { analysis = "温和上涨"; analysisColor = "#ef4444"; }
+                }
             } else {
-                if (c < -8) { analysis = t > 2 ? "恐慌抛售" : "闷杀出局"; analysisColor = "#16a34a"; }
-                else if (t > 5 && c < -4) { analysis = "恐慌抛售"; analysisColor = "#16a34a"; }
-                else if (t > 3 || c < -4) { analysis = "放量杀跌"; analysisColor = "#16a34a"; }
-                else if (t < 1.2 && c > -2) { analysis = "无量下跌"; analysisColor = "#10b981"; }
-                else { analysis = "弱势调整"; analysisColor = "#22c55e"; }
+                if (t === null || t === undefined) {
+                    if (c < -8) { analysis = "恐慌抛售"; analysisColor = "#16a34a"; }
+                    else if (c < -4) { analysis = "放量杀跌"; analysisColor = "#16a34a"; }
+                    else { analysis = "弱势调整"; analysisColor = "#22c55e"; }
+                } else {
+                    if (c < -8) { analysis = t > 2 ? "恐慌抛售" : "闷杀出局"; analysisColor = "#16a34a"; }
+                    else if (t > 5 && c < -4) { analysis = "恐慌抛售"; analysisColor = "#16a34a"; }
+                    else if (t > 3 || c < -4) { analysis = "放量杀跌"; analysisColor = "#16a34a"; }
+                    else if (t < 1.2 && c > -2) { analysis = "无量下跌"; analysisColor = "#10b981"; }
+                    else { analysis = "弱势调整"; analysisColor = "#22c55e"; }
+                }
             }
             return { analysis, analysisColor };
         };
 
         const treeData = data.map(item => {
             const change = Number.isFinite(Number(item.change_pct)) ? Number(item.change_pct) : 0;
-            const turnover = Number.isFinite(Number(item.turnover)) ? Number(item.turnover) : 0;
+            const hasTurnover = item.turnover !== null && item.turnover !== undefined;
+            const turnover = hasTurnover && Number.isFinite(Number(item.turnover)) ? Number(item.turnover) : null;
             const sentiment = getSentiment(change, turnover);
 
             let leadingStr = item.leading_stock;
@@ -515,7 +528,7 @@ class Charts {
                                 </tr>
                                 <tr style="line-height: 1.6;">
                                     <td style="color: #9ca3af; padding-right: 12px;">换手</td>
-                                    <td style="text-align: right; font-family: monospace; color: #e5e7eb;">${d.turnover}%</td>
+                                    <td style="text-align: right; font-family: monospace; color: #e5e7eb;">${d.turnover !== null && d.turnover !== undefined ? d.turnover + '%' : '--'}</td>
                                 </tr>
                                 ${trailingRows}
                             </table>
@@ -562,7 +575,7 @@ class Charts {
 
                         labelStr += `{rowLabel|情绪:} {${styleName}|${d.analysis}}\n`;
                         labelStr += `{rowLabel|市值:} {rowVal|${capStr}亿}\n`;
-                        labelStr += `{rowLabel|换手:} {rowVal|${d.turnover}%}`;
+                        labelStr += `{rowLabel|换手:} {rowVal|${d.turnover !== null && d.turnover !== undefined ? d.turnover + '%' : '--'}`;
 
                         // Custom conditionals for trailing properties
                         if (d.top_cap_stock) {
