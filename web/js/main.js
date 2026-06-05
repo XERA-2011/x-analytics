@@ -17,7 +17,8 @@ class App {
             'market-cn': new CNMarketController(),
             'market-hk': new HKMarketController(),
             'market-us': new USMarketController(),
-            'metals': new MetalsController()
+            'metals': new MetalsController(),
+            'etf': new ETFController()
         };
 
         this.init();
@@ -29,6 +30,7 @@ class App {
             'market-hk': '中国香港',
             'market-us': '美国市场',
             'metals': '金属',
+            'etf': 'ETF',
         };
         const sectionTitle = titles[tabId] || 'x-analytics';
         return sectionTitle === 'x-analytics' ? sectionTitle : `${sectionTitle}｜x-analytics`;
@@ -198,7 +200,7 @@ class App {
 
     async loadInitialData() {
         const urlTab = utils.getUrlParam('tab');
-        if (urlTab && ['market-cn', 'market-hk', 'market-us', 'metals'].includes(urlTab)) {
+        if (urlTab && ['market-cn', 'market-hk', 'market-us', 'metals', 'etf'].includes(urlTab)) {
             this.switchTab(urlTab); // This calls refreshCurrentTab inside
         } else {
             // Default load

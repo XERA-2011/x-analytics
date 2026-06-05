@@ -324,6 +324,11 @@ class API {
         return this.request('/market-cn/lpr');
     }
 
+    // ETF API
+    async getETFHeatmap() {
+        return this.request('/etf/heatmap');
+    }
+
     async triggerWarmup() {
         return this.request('/api/cache/warmup', { method: 'POST' });
     }

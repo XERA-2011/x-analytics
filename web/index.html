@@ -49,6 +49,9 @@
             <button class="tab-btn" data-tab="metals">
                 金属
             </button>
+            <button class="tab-btn" data-tab="etf">
+                ETF
+            </button>
         </nav>
 
         <!-- CN Market -->
@@ -323,6 +326,38 @@
             </div>
         </section>
 
+        <!-- ETF Market -->
+        <section class="tab-content" id="etf">
+            <div class="section-header">
+                <h2 class="section-title">ETF</h2>
+                <button class="refresh-btn" onclick="window.app.refreshCurrentTab()" title="点击刷新"><i
+                        data-lucide="refresh-cw" width="14"></i> 刷新</button>
+            </div>
+
+            <div class="grid" style="grid-template-columns: 1fr;">
+                <!-- ETF 热力图 -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">ETF 热力图</div>
+                        <span id="etf-match-info" style="font-size: 11px; color: var(--text-secondary);"></span>
+                    </div>
+                    <div id="etf-heatmap">
+                        <div class="loading">Loading...</div>
+                    </div>
+                </div>
+
+                <!-- ETF 涨跌排行 -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">ETF 涨跌排行</div>
+                    </div>
+                    <div id="etf-ranking">
+                        <div class="loading">Loading...</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
 
 
     </main>
@@ -333,15 +368,16 @@
 
     <div id="tooltip" style="display:none;"></div>
 
-    <script src="js/echarts.min.js?v=10"></script>
-    <script src="js/api.js?v=10"></script>
-    <script src="js/charts.js?v=10"></script>
-    <script src="js/utils.js?v=10"></script>
-    <script src="js/modules/market-cn.js?v=10"></script>
-    <script src="js/modules/market-hk.js?v=10"></script>
-    <script src="js/modules/market-us.js?v=10"></script>
-    <script src="js/modules/metals.js?v=10"></script>
-    <script src="js/main.js?v=10"></script>
+    <script src="js/echarts.min.js?v=12"></script>
+    <script src="js/api.js?v=12"></script>
+    <script src="js/charts.js?v=12"></script>
+    <script src="js/utils.js?v=12"></script>
+    <script src="js/modules/market-cn.js?v=12"></script>
+    <script src="js/modules/market-hk.js?v=12"></script>
+    <script src="js/modules/market-us.js?v=12"></script>
+    <script src="js/modules/metals.js?v=12"></script>
+    <script src="js/modules/etf.js?v=12"></script>
+    <script src="js/main.js?v=12"></script>
     <script>lucide.createIcons();</script>
 </body>
 

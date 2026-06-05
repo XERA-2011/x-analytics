@@ -112,6 +112,7 @@ class Settings:
         # === 宏观数据 ===
         "lpr": 86400,                # 24小时 (每月更新)
         "etf_flow": 7200,            # 2小时
+        "etf_heatmap": 7200,         # 2小时
         "calendar": 3600,            # 1小时
         
 
