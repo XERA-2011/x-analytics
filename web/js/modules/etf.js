@@ -94,13 +94,13 @@ class ETFController {
         };
 
         const html = `
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-                <div>
-                    <div class="card-title" style="color: var(--accent-red); margin-bottom: 8px; font-size: 13px;">📈 涨幅榜</div>
+            <div class="sector-ranking" style="border-bottom: none; margin-bottom: 0; padding-bottom: 0;">
+                <div class="ranking-column">
+                    <div class="ranking-header up" style="font-size: 12px;">📈 涨幅榜</div>
                     ${renderList(data.top_gainers, true)}
                 </div>
-                <div>
-                    <div class="card-title" style="color: var(--accent-green); margin-bottom: 8px; font-size: 13px;">📉 跌幅榜</div>
+                <div class="ranking-column">
+                    <div class="ranking-header down" style="font-size: 12px;">📉 跌幅榜</div>
                     ${renderList(data.top_losers, false)}
                 </div>
             </div>

@@ -134,6 +134,9 @@ body {
     .grid {
         grid-template-columns: 1fr;
     }
+    .sector-ranking {
+        grid-template-columns: 1fr;
+    }
 
     .card {
         padding: 12px;
