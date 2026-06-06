@@ -29,16 +29,20 @@ def is_trading_hours(market: str) -> bool:
         return False
 
     config: Dict[str, Any] = settings.TRADING_HOURS[market]
-    now = get_beijing_time()
+    
+    # 获取目标市场的当地时间
+    target_tz_str = config.get("timezone", "Asia/Shanghai")
+    target_tz = pytz.timezone(target_tz_str)
+    now = datetime.now(target_tz)
 
-    # 检查是否为工作日
+    # 检查是否为工作日 (基于目标市场的当地日期)
     if config.get("weekdays_only", True) and now.weekday() >= 5:  # 周六日
         return False
 
     current_time = now.time()
 
-    # 处理中国/香港市场 (上午 + 下午两个时段)
-    if market in ("market_cn", "market_hk"):
+    # 处理上午 + 下午两个时段的市场 (如中国/香港市场)
+    if "morning" in config and "afternoon" in config:
         morning_start, morning_end = cast(Tuple[dt_time, dt_time], config["morning"])
         afternoon_start, afternoon_end = cast(Tuple[dt_time, dt_time], config["afternoon"])
         return (
@@ -46,12 +50,7 @@ def is_trading_hours(market: str) -> bool:
             or afternoon_start <= current_time <= afternoon_end
         )
 
-    # 处理跨午夜的市场 (如美国市场)
-    elif config.get("cross_midnight", False):
-        session_start, session_end = cast(Tuple[dt_time, dt_time], config["session"])
-        return current_time >= session_start or current_time <= session_end
-
-    # 处理普通时段
+    # 处理单一时段的市场 (如美国市场、金属市场)
     else:
         session_start, session_end = cast(Tuple[dt_time, dt_time], config["session"])
         return session_start <= current_time <= session_end
@@ -98,12 +97,17 @@ def is_trading_time(market: str, tolerance_minutes: int = TOLERANCE_MINUTES) -> 
         return True
 
     from .scheduler import is_trading_day
-    now = get_beijing_time()
+    
+    # 获取目标市场的当地时间
+    target_tz_str = config.get("timezone", "Asia/Shanghai")
+    target_tz = pytz.timezone(target_tz_str)
+    now = datetime.now(target_tz)
 
     # Weekend / holiday check (no tolerance can save a non-trading day)
     if config.get("weekdays_only", True):
         if now.weekday() >= 5:
             return False
+        # 暂时使用 A 股的节假日判断兜底
         if not is_trading_day(now.date()):
             return False
 
@@ -112,7 +116,7 @@ def is_trading_time(market: str, tolerance_minutes: int = TOLERANCE_MINUTES) -> 
     current_dt = now
     tolerance = timedelta(minutes=tolerance_minutes)
 
-    if market in ("market_cn", "market_hk"):
+    if "morning" in config and "afternoon" in config:
         morning_start, morning_end = config["morning"]
         afternoon_start, afternoon_end = config["afternoon"]
         day = now.date()
@@ -122,20 +126,6 @@ def is_trading_time(market: str, tolerance_minutes: int = TOLERANCE_MINUTES) -> 
         a_end = datetime.combine(day, afternoon_end) + tolerance
         current_naive = current_dt.replace(tzinfo=None)
         return (m_start <= current_naive <= m_end) or (a_start <= current_naive <= a_end)
-
-    elif config.get("cross_midnight", False):
-        session_start, session_end = config["session"]
-        current_naive = current_dt.replace(tzinfo=None)
-        day = now.date()
-
-        today_start = datetime.combine(day, session_start) - tolerance
-        tomorrow_end = datetime.combine(day + timedelta(days=1), session_end) + tolerance
-        if today_start <= current_naive <= tomorrow_end:
-            return True
-
-        yesterday_start = datetime.combine(day - timedelta(days=1), session_start) - tolerance
-        today_end = datetime.combine(day, session_end) + tolerance
-        return yesterday_start <= current_naive <= today_end
 
     else:
         session_start, session_end = config["session"]

@@ -150,7 +150,7 @@ class USTreasury:
 
             return {
                 "metrics": metrics,
-                "timestamp": latest.get("日期", str(pd.Timestamp.now().date()))
+                "timestamp": latest.get("日期", str(pd.Timestamp.now(tz="America/New_York").date()))
             }
 
         except Exception as e:

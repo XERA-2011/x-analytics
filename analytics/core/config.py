@@ -36,26 +36,29 @@ class Settings:
 
     CACHE_PREFIX = "xanalytics"
 
-    # 交易时间配置 (北京时间)
+    # 交易时间配置
     TRADING_HOURS: Dict[str, Dict[str, Any]] = {
         "market_cn": {
+            "timezone": "Asia/Shanghai",
             "morning": (time(9, 30), time(11, 30)),
             "afternoon": (time(13, 0), time(15, 0)),
             "weekdays_only": True,
         },
         "market_us": {
-            # 美国市场交易时间 (北京时间 21:30-04:00)
-            "session": (time(21, 30), time(4, 0)),
+            # 美国市场交易时间 (美东时间 09:30-16:00)
+            "timezone": "America/New_York",
+            "session": (time(9, 30), time(16, 0)),
             "weekdays_only": True,
-            "cross_midnight": True,
         },
         "metals": {
             # 金属市场 24小时交易
+            "timezone": "Asia/Shanghai",
             "session": (time(0, 0), time(23, 59)),
             "weekdays_only": False,
         },
         "market_hk": {
             # 港股交易时间 (北京时间 9:30-12:00, 13:00-16:00)
+            "timezone": "Asia/Shanghai",
             "morning": (time(9, 30), time(12, 0)),
             "afternoon": (time(13, 0), time(16, 0)),
             "weekdays_only": True,
