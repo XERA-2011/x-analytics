@@ -286,6 +286,16 @@ body {
     min-width: 0;
 }
 
+.heatmap-container {
+    height: 800px;
+}
+
+@media (max-width: 640px) {
+    .heatmap-container {
+        height: 400px;
+    }
+}
+
 .card-header {
     display: flex;
     justify-content: space-between;
@@ -356,13 +366,15 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 0;
+    padding: 10px 8px;
     border-bottom: 1px solid var(--border-light);
 }
 
 .list-item:last-child {
     border-bottom: none;
 }
+
+
 
 .item-main {
     flex: 1;
@@ -391,6 +403,7 @@ body {
     font-family: var(--font-mono);
     font-weight: 600;
     white-space: nowrap;
+    padding-right: 12px;
 }
 
 .item-change {
@@ -783,11 +796,17 @@ footer {
 /* Sector Ranking */
 .sector-ranking {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
     gap: 16px;
     margin-bottom: 16px;
     padding-bottom: 16px;
     border-bottom: 1px solid var(--border-light);
+}
+
+@media (min-width: 641px) {
+    .sector-ranking {
+        grid-template-columns: 1fr 1fr;
+    }
 }
 
 .ranking-column {
@@ -817,7 +836,7 @@ footer {
 .ranking-item {
     display: flex;
     flex-direction: column;
-    padding: 6px 0;
+    padding: 6px 8px;
     border-bottom: 1px solid var(--border-light);
 }
 
@@ -864,6 +883,7 @@ footer {
     font-family: var(--font-mono);
     font-size: 13px;
     font-weight: 700;
+    padding-right: 12px;
 }
 
 .ranking-sentiment {
