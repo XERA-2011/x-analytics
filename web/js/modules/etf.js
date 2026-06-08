@@ -49,7 +49,7 @@ class ETFController {
         });
 
         // 设置合适的高度
-        container.style.height = '500px';
+        container.style.height = '800px';
         window.charts.renderTreemap('etf-heatmap', treemapData);
 
         // 更新匹配信息
