@@ -38,11 +38,11 @@ class ETFController {
                 cat.children.forEach(etf => {
                     treemapData.push({
                         name: etf.name,
+                        code: etf.code,
                         value: etf.value || 0,
                         change_pct: etf.change_pct,
                         turnover: etf.turnover,
-                        leading_stock: `代码: ${etf.code}`,
-                        lagging_stock: `成交: ${etf.amount != null ? (etf.amount / 100000000).toFixed(1) + '亿' : '--'}`
+                        amount: etf.amount
                     });
                 });
             }
