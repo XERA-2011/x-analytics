@@ -274,7 +274,8 @@ def _get_trading_days_cache(year: int) -> set:
         logger.info(f"正在获取 {year} 年交易日历...")
         tool_trade_date_hist_sina_df = ak.tool_trade_date_hist_sina()
         df = tool_trade_date_hist_sina_df
-        trade_dates = set(df["trade_date"].dt.strftime("%Y-%m-%d").tolist())
+        import pandas as pd
+        trade_dates = set(pd.to_datetime(df["trade_date"]).dt.strftime("%Y-%m-%d").tolist())
         return trade_dates
     except Exception as e:
         logger.warning(f"获取交易日历失败: {e}")
