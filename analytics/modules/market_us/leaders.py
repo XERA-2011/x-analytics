@@ -31,6 +31,10 @@ class USMarketLeaders:
         try:
             logger.info("📊 获取美国市场主要指数...")
             
+            # 批量获取实时行情
+            from ...core.us_spot_helper import get_us_spot_direct
+            spot_data = get_us_spot_direct([item["code"] for item in indices_map] + ["PGJ"])
+            
             for item in indices_map:
                 try:
                     df = akshare_call_with_retry(ak.index_us_stock_sina, symbol=item["code"])
@@ -41,6 +45,13 @@ class USMarketLeaders:
                         
                         current_price = safe_float(latest["close"])
                         prev_close = safe_float(prev["close"])
+                        
+                        # 注入极速实时价格
+                        if spot_data and item["code"] in spot_data:
+                            spot = spot_data[item["code"]]
+                            current_price = spot["price"]
+                            if spot["change_pct"] is not None:
+                                prev_close = current_price / (1 + spot["change_pct"] / 100)
                         
                         # 确保价格数据有效
                         if current_price is None or prev_close is None or prev_close == 0:
@@ -81,6 +92,13 @@ class USMarketLeaders:
                     
                     current_price = safe_float(latest["close"])
                     prev_close = safe_float(prev["close"])
+                    
+                    # 注入极速实时价格
+                    if spot_data and "PGJ" in spot_data:
+                        spot = spot_data["PGJ"]
+                        current_price = spot["price"]
+                        if spot["change_pct"] is not None:
+                            prev_close = current_price / (1 + spot["change_pct"] / 100)
                     
                     if current_price and prev_close:
                         change_amount = current_price - prev_close

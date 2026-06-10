@@ -82,11 +82,32 @@ class USFearGreedIndex:
         批量拉取并缓存本次计算所需的市场数据，避免同一轮计算重复请求。
         """
         frames: Dict[str, pd.DataFrame] = {}
+        
+        from ...core.us_spot_helper import get_us_spot_direct
+        spot_data = get_us_spot_direct(list(symbols))
+        
         for symbol in symbols:
             try:
                 df = akshare_call_with_retry(ak.stock_us_daily, symbol=symbol)
                 if df is not None and not df.empty:
-                    frames[symbol] = USFearGreedIndex._sort_by_date(df)
+                    df = USFearGreedIndex._sort_by_date(df)
+                    
+                    # 注入极速实时价格，更新日线 DataFrame 的最后一行或新增一行
+                    if spot_data and symbol in spot_data:
+                        spot = spot_data[symbol]
+                        current_date = get_beijing_time().strftime("%Y-%m-%d")
+                        latest_date = str(df.iloc[-1].get("date", ""))[:10]
+                        if latest_date != current_date:
+                            import pandas as pd
+                            new_row = df.iloc[-1].copy()
+                            new_row["close"] = spot["price"]
+                            if "date" in new_row:
+                                new_row["date"] = pd.Timestamp(current_date)
+                            df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
+                        else:
+                            df.iloc[-1, df.columns.get_loc("close")] = spot["price"]
+                            
+                    frames[symbol] = df
             except Exception as e:
                 logger.warning(f"⚠️ 获取 {symbol} 数据失败: {e}")
         return frames

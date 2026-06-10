@@ -107,9 +107,10 @@ def is_trading_time(market: str, tolerance_minutes: int = TOLERANCE_MINUTES) -> 
     if config.get("weekdays_only", True):
         if now.weekday() >= 5:
             return False
-        # 暂时使用 A 股的节假日判断兜底
-        if not is_trading_day(now.date()):
-            return False
+        # 暂时使用 A 股的节假日判断兜底 (仅适用于 A股/港股，美股不适用中国节假日)
+        if market in ("market_cn", "market_hk"):
+            if not is_trading_day(now.date()):
+                return False
 
     from datetime import timedelta
 

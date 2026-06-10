@@ -44,6 +44,9 @@ class USMarketHeat:
         results = []
 
         try:
+            from ...core.us_spot_helper import get_us_spot_direct
+            spot_data = get_us_spot_direct([item["symbol"] for item in sectors])
+
             for item in sectors:
                 try:
                     # 获取单只美国市场股票历史数据 (日频)
@@ -57,6 +60,13 @@ class USMarketHeat:
                             prev_close = float(df.iloc[-2]["close"])
                             if prev_close > 0:
                                 change_pct = (price - prev_close) / prev_close * 100
+
+                        # 注入极速实时价格
+                        if spot_data and item["symbol"] in spot_data:
+                            spot = spot_data[item["symbol"]]
+                            price = spot["price"]
+                            if spot["change_pct"] is not None:
+                                change_pct = spot["change_pct"]
 
                         results.append(
                             {
