@@ -452,23 +452,6 @@ class SharedDataProvider:
         self._set_cached(cache_key, df)
         return df
 
-    def get_index_spot(self, symbol: str = "沪深重要指数") -> pd.DataFrame:
-        """
-        获取指数实时行情
-
-        Args:
-            symbol: 指数类型
-        """
-        cache_key = f"stock_zh_index_spot_em:{symbol}"
-        cached = self._get_cached(cache_key)
-        if cached is not None:
-            return cached
-
-        logger.info(f"请求指数行情: {symbol}...")
-        df = self._fetch_with_retry(ak.stock_zh_index_spot_em, symbol=symbol)
-        self._set_cached(cache_key, df)
-        return df
-
     def get_index_spot_sina_with_fallback(self) -> pd.DataFrame:
         """
         获取新浪指数实时行情，失败时回退到直接 HTTP 请求。
@@ -572,13 +555,6 @@ class SharedDataProvider:
                 continue
 
         raise ValueError("所有指数回退源均不可用")
-
-    def clear_cache(self) -> int:
-        """清除所有内存缓存"""
-        with self._cache_lock:
-            count = len(self._cache)
-            self._cache.clear()
-            return count
 
     def get_stats(self) -> dict:
         """获取缓存统计"""

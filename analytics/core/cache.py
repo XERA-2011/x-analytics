@@ -94,21 +94,6 @@ class RedisCache:
             _ = self.redis  # 触发首次连接
         return self._connected
 
-    def reconnect(self) -> bool:
-        """重置连接状态并重新尝试连接 Redis
-        
-        Returns:
-            bool: True if reconnection succeeded.
-        """
-        self._redis = None
-        self._connected = False
-        self._connect_attempted = False
-        _ = self.redis  # 触发重连
-        if self._connected:
-            logger.info("Redis 重连成功")
-        else:
-            logger.error("Redis 重连失败，继续无缓存模式")
-        return self._connected
 
     def get(self, key: str) -> Optional[dict]:
         """获取缓存值"""

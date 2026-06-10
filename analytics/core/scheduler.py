@@ -59,7 +59,7 @@ class SmartScheduler:
         job_id: str,
         func: Callable,
         market: str,
-        cache_type: str = "default",
+
         use_warmup_cache: bool = False,
         trading_interval_minutes: Optional[int] = None,
         non_trading_max_age_seconds: Optional[int] = None,
@@ -72,7 +72,7 @@ class SmartScheduler:
             job_id: 任务 ID
             func: 预热函数
             market: 市场类型 ('cn_market', 'us_market', 'metals')
-            cache_type: 缓存类型，用于确定TTL
+
             trading_interval_minutes: 交易时段执行间隔，默认读取配置
             non_trading_max_age_seconds: 非交易时段缓存最大保鲜时间，避免短 TTL 指标休市持续打上游
             **kwargs: 传递给 func 的参数
@@ -251,16 +251,7 @@ class SmartScheduler:
             "recent_executions": list(self._execution_log),
         }
 
-    def run_job_now(self, job_id: str) -> bool:
-        """立即执行指定任务"""
-        job = self.scheduler.get_job(job_id)
-        if job:
-            try:
-                job.func()
-                return True
-            except Exception as e:
-                logger.error(f"手动执行任务失败 [{job_id}]: {e}")
-        return False
+
 
 
 # 全局调度器实例

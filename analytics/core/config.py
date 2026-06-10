@@ -126,7 +126,7 @@ class Settings:
     STALE_TTL_RATIO = 1
 
     # API 限流配置
-    RATE_LIMIT = {"requests_per_minute": 60, "burst_size": 10}
+
 
     # 恐慌贪婪配置（权重、等级）
     FEAR_GREED_CONFIG: Dict[str, Dict[str, Any]] = {

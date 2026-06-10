@@ -257,23 +257,6 @@ class CNBonds:
             }
 
     @staticmethod
-    def _period_to_chinese(period: str) -> str:
-        """期限转换为中文"""
-        mapping = {
-            "1m": "1月",
-            "3m": "3月",
-            "6m": "6月",
-            "1y": "1年",
-            "2y": "2年",
-            "3y": "3年",
-            "5y": "5年",
-            "7y": "7年",
-            "10y": "10年",
-            "30y": "30年",
-        }
-        return mapping.get(period, period)
-
-    @staticmethod
     def _analyze_yield_curve(yield_curve: Dict[str, Any]) -> Dict[str, Any]:
         """分析收益率曲线形态"""
         try:

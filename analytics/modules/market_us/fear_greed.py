@@ -426,16 +426,7 @@ class USFearGreedIndex:
                 return level, description
         return "未知", "无法判断情绪等级"
 
-    @staticmethod
-    def _get_cnn_explanation() -> str:
-        return build_fear_greed_explanation(
-            title="美国市场情绪指数",
-            factors=[
-                ("CNN 官方指数", 1.0, "当前接口已切换为 AkShare 代理估算，不直接抓取 CNN 原始页面"),
-            ],
-            levels=USFearGreedIndex._get_levels(),
-            methodology_note="当前页面展示的是基于美股行情因子的代理情绪指数，用于替代 CNN 官方指数，不代表 CNN 官方观点。",
-        )
+
 
     @staticmethod
     def _get_custom_explanation() -> str:

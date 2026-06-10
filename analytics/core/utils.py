@@ -56,21 +56,6 @@ def is_trading_hours(market: str) -> bool:
         return session_start <= current_time <= session_end
 
 
-def get_refresh_interval(market: str) -> int:
-    """
-    获取指定市场的刷新间隔
-
-    Args:
-        market: 市场类型
-
-    Returns:
-        int: 刷新间隔(秒)
-    """
-    if is_trading_hours(market):
-        return settings.REFRESH_INTERVALS["trading_hours"].get(market, 300)
-    else:
-        return settings.REFRESH_INTERVALS["non_trading_hours"].get(market, 1800)
-
 
 TOLERANCE_MINUTES = 15  # Buffer window around trading hours
 
@@ -136,21 +121,6 @@ def is_trading_time(market: str, tolerance_minutes: int = TOLERANCE_MINUTES) -> 
         return start_dt <= current_dt.replace(tzinfo=None) <= end_dt
 
 
-def format_number(value: float, precision: int = 2) -> str:
-    """格式化数字显示"""
-    if abs(value) >= 1e8:
-        return f"{value / 1e8:.{precision}f}亿"
-    elif abs(value) >= 1e4:
-        return f"{value / 1e4:.{precision}f}万"
-    else:
-        return f"{value:.{precision}f}"
-
-
-def format_percentage(value: float, precision: int = 2) -> str:
-    """格式化百分比显示"""
-    return f"{value:.{precision}f}%"
-
-
 @overload
 def safe_float(value: Any, default: float = 0.0) -> float: ...
 
@@ -163,12 +133,6 @@ def safe_float(value: Any, default: Optional[float] = 0.0) -> Optional[float]:
         return float(value) if value is not None else default
     except (ValueError, TypeError):
         return default
-
-
-def generate_cache_key(*args) -> str:
-    """生成缓存键"""
-    key_parts = [settings.CACHE_PREFIX] + [str(arg) for arg in args]
-    return ":".join(key_parts)
 
 
 def akshare_call_with_retry(
