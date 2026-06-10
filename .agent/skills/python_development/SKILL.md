@@ -19,6 +19,7 @@ description: "⚠️ MANDATORY: Read before modifying ANY .py files. Contains Py
   - `db.py`: Database initialization (Tortoise ORM).
   - `decorators.py`: Shared decorators.
   - `logger.py`: Logging configuration.
+  - `us_spot_helper.py`: EastMoney direct HTTP Push2 API client for real-time US market data.
   - `fear_greed.py`: Base fear & greed index calculation logic.
 - **Modules (`analytics/modules/`)**: Business logic grouped by domain.
   - `market_cn/`: A-share market (indices, leaders/sectors, bonds, LPR, fear & greed).

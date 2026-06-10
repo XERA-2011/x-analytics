@@ -69,8 +69,9 @@ element.textContent = price != null ? formatNumber(price) : '--';
 ```
 
 ### Data Source Requirements
-- **STRICT SOURCE POLICY**: All financial data MUST be fetched exclusively via the **AkShare** library.
-- **FORBIDDEN**: Direct web scraping, using `requests` to fetch third-party HTML/JSON endpoints directly, or reverse-engineering private APIs.
+- **STRICT SOURCE POLICY**: All financial data MUST be fetched primarily via the **AkShare** library.
+- **EXCEPTION FOR BLOCKED APIS**: If an AkShare interface is strictly rate-limited or permanently blocked (e.g., US market spot data), direct HTTP requests to public JSON APIs (like EastMoney Push2 or Sina) are **PERMITTED** as a fallback, provided they are encapsulated within the `analytics/core/` infrastructure layer.
+- **FORBIDDEN**: Direct web HTML scraping, or reverse-engineering authenticated/private APIs.
 - If AkShare does not provide specific data, you MUST:
   1. Use an alternative available indicator from AkShare.
   2. Implement a custom calculation based on other available AkShare data.
