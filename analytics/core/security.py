@@ -26,11 +26,13 @@ PUBLIC_API_PATHS = [
     "/market-hk/",
     "/market-us/",
     "/metals/",
+    "/etf/",
     "/analytics/api/",
     "/analytics/market-cn/",
     "/analytics/market-hk/",
     "/analytics/market-us/",
     "/analytics/metals/",
+    "/analytics/etf/",
 ]
 
 # 静态资源 / 健康检查路径（不限流）
