@@ -149,20 +149,20 @@ class Utils {
         const indicators = data.indicators || {};
         const tags = [];
         if (indicators.rsi && !indicators.rsi.error) {
-            tags.push(`RSI:${Math.round(indicators.rsi.value)}`);
+            tags.push(`<span class="heat-tag heat-gray has-tooltip" data-tooltip="相对强弱指标，<30超卖，>70超买">RSI:${Math.round(indicators.rsi.value)}</span>`);
         }
         if (indicators.macd && !indicators.macd.error) {
             const macdSign = indicators.macd.histogram > 0 ? '+' : '-';
-            tags.push(`MACD:${macdSign}`);
+            tags.push(`<span class="heat-tag heat-gray has-tooltip" data-tooltip="柱状图正负号，+代表多头，-代表空头">MACD:${macdSign}</span>`);
         }
         if (indicators.bollinger && !indicators.bollinger.error) {
             const bollPos = indicators.bollinger.position > 0.5 ? '▲' :
                 indicators.bollinger.position < -0.5 ? '▼' : '―';
-            tags.push(`布林:${bollPos}`);
+            tags.push(`<span class="heat-tag heat-gray has-tooltip" data-tooltip="布林带位置，▲触及上轨，▼触及下轨">布林:${bollPos}</span>`);
         }
         if (indicators.kdj && !indicators.kdj.error) {
             const kdjSignal = indicators.kdj.k > 80 ? '▲' : indicators.kdj.k < 20 ? '▼' : 'N';
-            tags.push(`KDJ:${kdjSignal}`);
+            tags.push(`<span class="heat-tag heat-gray has-tooltip" data-tooltip="随机指标，▲超买，▼超卖">KDJ:${kdjSignal}</span>`);
         }
 
         container.innerHTML = `
@@ -172,7 +172,7 @@ class Utils {
                 <span class="obo-strength">${strength.toFixed(1)}</span>
             </div>
             <div class="obo-tags">
-                ${tags.map(t => `<span class="heat-tag heat-gray">${t}</span>`).join('')}
+                ${tags.join('')}
             </div>
         `;
     }
