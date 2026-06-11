@@ -48,37 +48,44 @@ class USMarketHeat:
             spot_data = get_us_spot_direct([item["symbol"] for item in sectors])
 
             for item in sectors:
+                df_success = False
+                change_pct = 0.0
+                price = 0.0
+                volume = 0.0
+                
                 try:
                     # 获取单只美国市场股票历史数据 (日频)
                     df = akshare_call_with_retry(ak.stock_us_daily, symbol=item["symbol"], adjust="qfq")
                     if not df.empty:
                         latest = df.iloc[-1]
-                        change_pct = 0.0
                         price = float(latest["close"])
-
+                        volume = float(latest["volume"])
                         if len(df) >= 2:
                             prev_close = float(df.iloc[-2]["close"])
                             if prev_close > 0:
                                 change_pct = (price - prev_close) / prev_close * 100
-
-                        # 注入极速实时价格
-                        if spot_data and item["symbol"] in spot_data:
-                            spot = spot_data[item["symbol"]]
-                            price = spot["price"]
-                            if spot["change_pct"] is not None:
-                                change_pct = spot["change_pct"]
-
-                        results.append(
-                            {
-                                "name": item["name"],
-                                "symbol": item["symbol"],
-                                "change_pct": round(change_pct, 2),
-                                "price": price,
-                                "volume": float(latest["volume"]),
-                            }
-                        )
+                        df_success = True
                 except Exception as e_inner:
-                    logger.warning(f"获取 {item['symbol']} 失败: {e_inner}")
+                    logger.warning(f"获取 {item['symbol']} 日线数据失败: {e_inner}")
+
+                # 注入极速实时价格 (即使 df 失败，只要有极速数据也可以展示)
+                if spot_data and item["symbol"] in spot_data:
+                    spot = spot_data[item["symbol"]]
+                    price = spot["price"]
+                    if spot["change_pct"] is not None:
+                        change_pct = spot["change_pct"]
+                    df_success = True
+
+                if df_success:
+                    results.append(
+                        {
+                            "name": item["name"],
+                            "symbol": item["symbol"],
+                            "change_pct": round(change_pct, 2),
+                            "price": price,
+                            "volume": volume,
+                        }
+                    )
 
             results.sort(key=lambda x: x.get("change_pct", 0.0), reverse=True)  # type: ignore
             if len(results) < USMarketHeat.MIN_SECTOR_COUNT:
