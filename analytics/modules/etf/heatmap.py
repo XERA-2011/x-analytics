@@ -1,9 +1,11 @@
 """
 ETF 热力图模块
-获取 A 股市场精选 ETF 实时行情，按四大分类分组，生成热力图数据
+动态获取 A 股市场全量 ETF 实时行情，提取流通市值前 50 的独立 ETF，并通过正则智能分类生成热力图数据
 """
 
-from typing import Dict, Any, List, Optional
+import re
+from typing import Dict, Any, List
+import pandas as pd
 import akshare as ak
 
 from ...core.cache import cached
@@ -11,74 +13,33 @@ from ...core.config import settings
 from ...core.utils import safe_float, get_beijing_time, akshare_call_with_retry
 from ...core.logger import logger
 
-
-# ============================================================================
-# ETF 白名单 — 按分类组织
-# 格式: { "分类名": { "代码": "简称", ... }, ... }
-# ============================================================================
-
-ETF_WATCHLIST: Dict[str, Dict[str, str]] = {
-    "宽基指数": {
-        "510300": "沪深300 ETF",
-        "510050": "上证50 ETF",
-        "159338": "中证A500 ETF",
-        "510500": "中证500 ETF",
-        "512100": "中证1000 ETF",
-        "563300": "中证2000 ETF",
-        "159915": "创业板 ETF",
-        "588000": "科创50 ETF",
-    },
-    "行业主题": {
-        "512880": "证券 ETF",
-        "512800": "银行 ETF",
-        "512480": "半导体 ETF",
-        "515070": "人工智能 ETF",
-        "159941": "纳指 ETF",
-        "512760": "芯片 ETF",
-        "515880": "通信 ETF",
-        "512690": "酒 ETF",
-        "512010": "医药 ETF",
-        "159992": "创新药 ETF",
-        "515030": "新能源车 ETF",
-        "515790": "光伏 ETF",
-        "512400": "有色金属 ETF",
-        "515220": "煤炭 ETF",
-        "512660": "军工 ETF",
-        "512890": "红利低波 ETF",
-    },
-    "跨境": {
-        "513180": "恒生科技 ETF",
-        "513330": "恒生互联网 ETF",
-        "159691": "港股红利 ETF",
-        "513100": "纳斯达克 ETF",
-        "513500": "标普500 ETF",
-        "513880": "日经 ETF",
-    },
-    "商品债券": {
-        "518880": "黄金 ETF",
-        "159985": "豆粕 ETF",
-        "511090": "30年国债 ETF",
-        "511260": "十年国债 ETF",
-    },
-}
-
-# 所有白名单代码的扁平集合，用于快速过滤
-_ALL_CODES = set()
-for _cat_codes in ETF_WATCHLIST.values():
-    _ALL_CODES.update(_cat_codes.keys())
-
-# 代码 → 分类 反查表
-_CODE_TO_CATEGORY: Dict[str, str] = {}
-for _cat_name, _cat_codes in ETF_WATCHLIST.items():
-    for _code in _cat_codes:
-        _CODE_TO_CATEGORY[_code] = _cat_name
-
 # 排行榜返回的最大条目数
 TOP_N = 10
 
-
 class ETFHeatmap:
     """ETF 热力图数据"""
+
+    @staticmethod
+    def _categorize_etf(name: str) -> str:
+        """根据 ETF 名称自动分类"""
+        if re.search(r'(300|500|1000|2000|A50|A500|50ETF|创业板|科创|深100|中证100)', name):
+            return "宽基指数"
+        elif re.search(r'(恒生|纳指|标普|日经|港|跨境|道琼斯)', name):
+            return "跨境"
+        elif re.search(r'(金|银|豆粕|债)', name):
+            return "商品债券"
+        else:
+            return "行业主题"
+
+    @staticmethod
+    def _get_base_name(name: str) -> str:
+        """提取 ETF 核心名，去掉基金公司后缀"""
+        name = name.replace("A500ETF", "中证A500ETF")
+        name = name.replace("券商ETF", "证券ETF")
+        
+        if "ETF" in name:
+            return name.split("ETF")[0] + "ETF"
+        return name
 
     @staticmethod
     @cached(
@@ -88,94 +49,107 @@ class ETFHeatmap:
     )
     def get_heatmap_data() -> Dict[str, Any]:
         """
-        获取 ETF 热力图数据
+        获取 ETF 热力图数据 (动态合并同类项，保留前 50 独立题材)
 
         Returns:
             包含分类 treemap 数据和涨跌排行榜
         """
-        import requests
-        import re
-        
         try:
-            # 1. 构建 Sina API 请求
-            sina_codes = []
-            for code in _ALL_CODES:
-                prefix = "sh" if code.startswith("5") else "sz"
-                sina_codes.append(f"{prefix}{code}")
-                
-            url = f"http://hq.sinajs.cn/list={','.join(sina_codes)}"
-            headers = {"Referer": "http://finance.sina.com.cn/"}
+            # 1. 获取全市场 ETF 数据
+            df = akshare_call_with_retry(ak.fund_etf_spot_em)
+            if df is None or df.empty:
+                raise ValueError("获取全量 ETF 行情数据失败")
             
-            # 2. 获取数据
-            res = requests.get(url, headers=headers, timeout=5)
-            lines = res.text.strip().split('\n')
+            # 2. 清洗数值列
+            if "流通市值" in df.columns:
+                df["流通市值"] = pd.to_numeric(df["流通市值"], errors="coerce").fillna(0)
+            if "成交额" in df.columns:
+                df["成交额"] = pd.to_numeric(df["成交额"], errors="coerce").fillna(0)
             
-            if not lines or 'var hq_str_' not in lines[0]:
-                raise ValueError("获取新浪行情数据失败")
+            # 3. 按底层资产分组并选拔龙头
+            groups_dict: Dict[str, List[pd.Series]] = {}
+            for _, row in df.iterrows():
+                name = str(row.get("名称", ""))
+                base_name = ETFHeatmap._get_base_name(name)
                 
-            # 3. 解析数据
-            etf_data = {}
-            for line in lines:
-                if not line: continue
-                # 格式: var hq_str_sh510300="沪深300ETF华泰柏瑞,4.909,4.926,4.833,...";
-                match = re.match(r'var hq_str_(?:sh|sz)(\d+)="([^"]+)";', line)
-                if match:
-                    code = match.group(1)
-                    fields = match.group(2).split(",")
-                    if len(fields) > 10:
-                        yest_close = safe_float(fields[2])
-                        price = safe_float(fields[3])
-                        amount = safe_float(fields[9])
-                        
-                        change_pct = None
-                        if yest_close and price:
-                            change_pct = ((price - yest_close) / yest_close) * 100
-                            
-                        etf_data[code] = {
-                            "price": price,
-                            "change_pct": change_pct,
-                            "amount": amount,
-                            "turnover": None  # 新浪接口无直接换手率
-                        }
-
-            if not etf_data:
-                raise ValueError("未能解析出任何有效的 ETF 行情")
-
-            # 4. 构建 treemap 数据 (按分类分组)
-            categories = []
+                # 过滤无波动的货币基金
+                if base_name in ["华宝添益ETF", "银华日利ETF"]:
+                    continue
+                    
+                if base_name not in groups_dict:
+                    groups_dict[base_name] = []
+                groups_dict[base_name].append(row)
+                
+            base_leaders = []
+            for base_name, rows in groups_dict.items():
+                # 按成交额降序，挑出组内当天交投最活跃的 ETF 作为展示代表
+                rows_sorted_by_amount = sorted(rows, key=lambda x: safe_float(x.get("成交额")) or 0.0, reverse=True)
+                volume_leader = rows_sorted_by_amount[0]
+                
+                # 提取该板块最大的流通市值，用于评价该题材是否有资格进入 Top 50
+                max_market_cap = max((safe_float(r.get("流通市值")) or 0.0) for r in rows)
+                
+                base_leaders.append({
+                    "leader_row": volume_leader,
+                    "max_market_cap": max_market_cap,
+                    "base_name": base_name
+                })
+                
+            # 4. 根据流通市值排行榜，截取最核心的前 50 大板块
+            base_leaders.sort(key=lambda x: x["max_market_cap"], reverse=True)
+            top50_groups = base_leaders[:50]
+            
+            # 构建最终展示数据列表
             all_etfs: List[Dict[str, Any]] = []
-
-            for cat_name, cat_codes in ETF_WATCHLIST.items():
-                children = []
-                for code, display_name in cat_codes.items():
-                    if code not in etf_data:
-                        continue
-                        
-                    data_row = etf_data[code]
-                    amount = data_row["amount"]
-
-                    etf_item = {
-                        "name": display_name,
-                        "code": code,
-                        "value": amount if amount else 0,  # treemap 面积 = 成交额
-                        "change_pct": data_row["change_pct"],
-                        "price": data_row["price"],
-                        "amount": amount,
-                        "turnover": data_row["turnover"],
-                    }
-                    children.append(etf_item)
-                    all_etfs.append(etf_item)
-
+            for group in top50_groups:
+                row = group["leader_row"]
+                base_name = group["base_name"]
+                
+                amount = safe_float(row.get("成交额")) or 0.0
+                price = safe_float(row.get("最新价"))
+                change_pct = safe_float(row.get("涨跌幅"))
+                turnover = safe_float(row.get("换手率"))
+                
+                etf_item = {
+                    "name": str(row.get("名称", "")),
+                    "code": str(row.get("代码", "")),
+                    "value": amount if amount else 0,  # 面积严格对应这只 ETF 自己的单只成交额
+                    "change_pct": change_pct,
+                    "price": price,
+                    "amount": amount,
+                    "turnover": turnover,
+                    "base_name": base_name
+                }
+                all_etfs.append(etf_item)
+            
+            # 5. 构建 treemap 分类数据
+            category_map: Dict[str, List[Dict[str, Any]]] = {
+                "宽基指数": [],
+                "跨境": [],
+                "商品债券": [],
+                "行业主题": []
+            }
+            
+            for etf_dict in all_etfs:
+                cat_name = ETFHeatmap._categorize_etf(etf_dict["base_name"])
+                
+                # 清理临时字段
+                clean_dict = etf_dict.copy()
+                clean_dict.pop("base_name", None)
+                
+                category_map[cat_name].append(clean_dict)
+                
+            categories = []
+            for cat_name, children in category_map.items():
                 if children:
-                    # 分类总成交额作为该分类的 value
                     cat_total = sum(c["value"] for c in children)
                     categories.append({
                         "name": cat_name,
                         "value": cat_total,
-                        "children": children,
+                        "children": children
                     })
-
-            # 5. 生成涨跌排行
+                    
+            # 6. 生成涨跌排行
             sorted_by_change = sorted(
                 [e for e in all_etfs if e["change_pct"] is not None],
                 key=lambda x: x["change_pct"],
@@ -183,10 +157,10 @@ class ETFHeatmap:
             )
 
             top_gainers = sorted_by_change[:TOP_N]
-            top_losers = sorted_by_change[-TOP_N:][::-1]  # 跌幅最大的在前
+            top_losers = sorted_by_change[-TOP_N:][::-1]
 
             matched_count = len(all_etfs)
-            total_count = len(_ALL_CODES)
+            total_count = len(df)
 
             return {
                 "categories": categories,
