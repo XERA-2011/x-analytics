@@ -127,10 +127,17 @@ def safe_float(value: Any, default: float = 0.0) -> float: ...
 @overload
 def safe_float(value: Any, default: None) -> Optional[float]: ...
 
+import math
+
 def safe_float(value: Any, default: Optional[float] = 0.0) -> Optional[float]:
-    """安全转换为浮点数，支持 None 默认值"""
+    """安全转换为浮点数，处理 None 和 NaN，支持自定义默认值"""
     try:
-        return float(value) if value is not None else default
+        if value is None:
+            return default
+        f_val = float(value)
+        if math.isnan(f_val):
+            return default
+        return f_val
     except (ValueError, TypeError):
         return default
 
