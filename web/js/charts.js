@@ -478,8 +478,11 @@ class Charts {
             tooltip: {
                 trigger: 'item',
                 formatter: function (info) {
-                    const d = info.data || params.data; // Unified variable pull for safety
-                    const rawChange = d ? (d.change_pct !== undefined ? d.change_pct : 0) : 0;
+                    const d = info.data;
+                    if (!d || !d.name) {
+                        return '';
+                    }
+                    const rawChange = d.change_pct !== undefined ? d.change_pct : 0;
                     const change = Number.isFinite(Number(rawChange)) ? Number(rawChange) : 0;
                     const color = change >= 0 ? "#ef4444" : "#22c55e";
                     let capStr = '--';
