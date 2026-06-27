@@ -6,7 +6,7 @@
 
 完整接口文档：`/analytics/docs` (Swagger UI)
 
-> 生产环境通常搭配 [`x-actions`](../x-actions) 使用，由 Nginx 将 `/analytics/`
+> 生产环境通常搭配另一个私人GitHub私人项目部署、使用，由 Nginx 将 `/analytics/`
 > 反向代理到 `xanalytics:8080/`，并剥离 `/analytics` 前缀后转发给本服务。
 > 本地直接运行本项目时，可使用根路径访问。
 
