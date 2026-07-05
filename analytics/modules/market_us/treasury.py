@@ -10,7 +10,7 @@ import pandas as pd
 from typing import List, Dict, Any
 from ...core.cache import cached
 from ...core.config import settings
-from ...core.utils import akshare_call_with_retry
+from ...core.utils import akshare_call_with_retry, safe_float
 from ...core.logger import logger
 
 
@@ -34,45 +34,43 @@ class USTreasury:
             if df.empty:
                 return {"error": "无法获取美债收益率数据"}
 
-            latest = df.iloc[-1]
+            # Walk backward to find the most recent row with valid US bond data.
+            # AkShare may return rows where US columns are NaN on US holidays
+            # (e.g. Independence Day) while Chinese bond data is still present.
+            US_YIELD_COL = "美国国债收益率10年"
+            latest = None
+            latest_idx = len(df) - 1
+            for i in range(latest_idx, max(latest_idx - 5, -1), -1):
+                row = df.iloc[i]
+                if US_YIELD_COL in row and pd.notna(row[US_YIELD_COL]):
+                    latest = row
+                    latest_idx = i
+                    break
+
+            if latest is None:
+                return {"error": "无法获取美债收益率数据"}
 
             # 提取数据
-            us_2y = (
-                float(latest["美国国债收益率2年"])
-                if "美国国债收益率2年" in latest
-                and pd.notna(latest["美国国债收益率2年"])
-                else 0
-            )
-            us_10y = (
-                float(latest["美国国债收益率10年"])
-                if "美国国债收益率10年" in latest
-                and pd.notna(latest["美国国债收益率10年"])
-                else 0
-            )
-            us_30y = (
-                float(latest["美国国债收益率30年"])
-                if "美国国债收益率30年" in latest
-                and pd.notna(latest["美国国债收益率30年"])
-                else 0
-            )
+            us_2y = safe_float(latest.get("美国国债收益率2年"))
+            us_10y = safe_float(latest.get("美国国债收益率10年"))
+            us_30y = safe_float(latest.get("美国国债收益率30年"))
 
             # 计算利差 (倒挂)
             inversion = us_10y - us_2y
 
-            # 获取前一日数据计算变动
+            # 获取前一日有效数据计算变动
             prev_10y = 0.0
             prev_2y = 0.0
             prev_30y = 0.0
-            
-            if len(df) > 1:
-                prev = df.iloc[-2]
-                if "美国国债收益率10年" in prev and pd.notna(prev["美国国债收益率10年"]):
-                    prev_10y = float(prev["美国国债收益率10年"])
-                if "美国国债收益率2年" in prev and pd.notna(prev["美国国债收益率2年"]):
-                    prev_2y = float(prev["美国国债收益率2年"])
-                if "美国国债收益率30年" in prev and pd.notna(prev["美国国债收益率30年"]):
-                    prev_30y = float(prev["美国国债收益率30年"])
-            
+
+            for i in range(latest_idx - 1, max(latest_idx - 6, -1), -1):
+                row = df.iloc[i]
+                if US_YIELD_COL in row and pd.notna(row[US_YIELD_COL]):
+                    prev_10y = safe_float(row.get("美国国债收益率10年"))
+                    prev_2y = safe_float(row.get("美国国债收益率2年"))
+                    prev_30y = safe_float(row.get("美国国债收益率30年"))
+                    break
+
             change_10y = us_10y - prev_10y if prev_10y > 0 else 0.0
             change_2y = us_2y - prev_2y if prev_2y > 0 else 0.0
             change_30y = us_30y - prev_30y if prev_30y > 0 else 0.0
