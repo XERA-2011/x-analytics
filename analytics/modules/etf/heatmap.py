@@ -37,6 +37,9 @@ STATIC_CATEGORIES: Dict[str, Dict[str, str]] = {
         "516180": "光伏ETF", "515030": "新能源车", "515220": "煤炭ETF", "512400": "有色金属",
         "159870": "化工ETF"
     },
+    "国防军工": {
+        "512710": "军工龙头", "159227": "航空航天", "159267": "航天ETF"
+    },
     "大宗商品": {
         "518880": "黄金ETF"
     },
@@ -59,7 +62,7 @@ class ETFHeatmap:
 
     @staticmethod
     @cached(
-        "etf:heatmap:v2",  # 升级缓存键版本，以避免与之前的缓存冲突
+        "etf:heatmap:v3",  # 升级缓存键版本，以避免与之前的缓存冲突
         ttl=settings.CACHE_TTL["etf_heatmap"] if hasattr(settings, "CACHE_TTL") and "etf_heatmap" in settings.CACHE_TTL else 7200,
         stale_ttl=(settings.CACHE_TTL["etf_heatmap"] if hasattr(settings, "CACHE_TTL") and "etf_heatmap" in settings.CACHE_TTL else 7200) * settings.STALE_TTL_RATIO
     )
