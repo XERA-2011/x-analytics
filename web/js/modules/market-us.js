@@ -3,7 +3,7 @@ class USMarketController {
     }
 
     async loadData() {
-        console.log('📊 加载美国市场数据...');
+        console.log('📊 加载欧美市场数据...');
         const promises = [
             this.loadUSFearGreed(),
             this.loadUSOverboughtOversold(),
@@ -63,14 +63,14 @@ class USMarketController {
         try {
             const data = await api.getUSMarketLeaders();
             if (data.error || data._warming_up) {
-                console.error('加载美国市场领涨板块API返回错误:', data.error);
+                console.error('加载欧美主要指数API返回错误:', data.error);
                 utils.renderError('us-gainers', data.error || 'warming_up');
                 return;
             }
             this.renderUSLeaders(data);
         } catch (error) {
-            console.error('加载美国市场领涨板块失败:', error);
-            utils.renderError('us-gainers', '排行榜加载失败');
+            console.error('加载欧美主要指数失败:', error);
+            utils.renderError('us-gainers', '主要指数加载失败');
         }
     }
 

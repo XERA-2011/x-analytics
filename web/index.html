@@ -38,10 +38,10 @@
         <!-- Tabs -->
         <nav class="tabs">
             <button class="tab-btn active" data-tab="market-cn">
-                中国市场
+                亚洲市场
             </button>
             <button class="tab-btn" data-tab="market-us">
-                美国市场
+                欧美市场
             </button>
             <button class="tab-btn" data-tab="metals">
                 金属
@@ -54,7 +54,7 @@
         <!-- CN Market -->
         <section class="tab-content active" id="market-cn">
             <div class="section-header">
-                <h2 class="section-title">中国市场</h2>
+                <h2 class="section-title">亚洲市场</h2>
                 <button class="refresh-btn" onclick="window.app.refreshCurrentTab()" title="点击刷新"><i
                         data-lucide="refresh-cw" width="14"></i> 刷新</button>
             </div>
@@ -62,7 +62,7 @@
             <div class="grid market-cn-grid">
                 <div class="card hero">
                     <div class="card-header">
-                        <div class="card-title">A股指数</div>
+                        <div class="card-title">亚洲指数</div>
                     </div>
                     <div id="cn-indices" class="heat-grid" style="grid-template-columns: repeat(2, 1fr);">
                         <div class="loading">Loading...</div>
@@ -144,7 +144,7 @@
         <!-- US Market -->
         <section class="tab-content" id="market-us">
             <div class="section-header">
-                <h2 class="section-title">美国市场</h2>
+                <h2 class="section-title">欧美市场</h2>
                 <button class="refresh-btn" onclick="window.app.refreshCurrentTab()" title="点击刷新"><i
                         data-lucide="refresh-cw" width="14"></i> 刷新</button>
             </div>
@@ -153,7 +153,7 @@
                 <!-- US Gainers (Indices) -->
                 <div class="card">
                     <div class="card-header">
-                        <div class="card-title">主要指数</div>
+                        <div class="card-title">欧美指数</div>
                     </div>
                     <div id="us-gainers" class="list-container">
                         <div class="loading">Loading...</div>
@@ -165,7 +165,7 @@
                 <!-- US Fear & Greed -->
                 <div class="card hero">
                     <div class="card-header">
-                        <div class="card-title">恐慌贪婪指数</div>
+                        <div class="card-title">恐慌贪婪</div>
                         <button class="info-btn" id="info-us-cnn" title="说明"><i data-lucide="help-circle"
                                 width="16"></i></button>
                     </div>

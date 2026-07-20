@@ -556,6 +556,21 @@ class SharedDataProvider:
 
         raise ValueError("所有指数回退源均不可用")
 
+    def get_global_indices_spot(self) -> pd.DataFrame:
+        """
+        获取全球指数实时数据 (使用东方财富全球指数行情接口)
+        """
+        cache_key = "global_indices_spot"
+        cached_df = self._get_cached(cache_key)
+        if cached_df is not None:
+            return cached_df
+
+        df = self._fetch_with_retry(ak.index_global_spot_em, max_retries=2)
+        if df is not None and not df.empty:
+            self._set_cached(cache_key, df)
+            return df
+        raise ValueError("获取全球实时指数数据为空")
+
     def get_stats(self) -> dict:
         """获取缓存统计"""
         with self._cache_lock:

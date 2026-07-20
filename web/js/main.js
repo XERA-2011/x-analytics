@@ -25,8 +25,8 @@ class App {
 
     getPageTitle(tabId) {
         const titles = {
-            'market-cn': '中国市场',
-            'market-us': '美国市场',
+            'market-cn': '亚洲市场',
+            'market-us': '欧美市场',
             'metals': '金属',
             'etf': 'ETF',
         };

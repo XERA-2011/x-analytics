@@ -3,7 +3,7 @@ class CNMarketController {
     }
 
     async loadData() {
-        console.log('📊 加载中国市场与香港市场数据...');
+        console.log('📊 加载亚洲市场数据...');
 
         const promises = [
             this.loadCNFearGreed(),
@@ -23,8 +23,8 @@ class CNMarketController {
             const data = await api.getCNIndices();
             this.renderCNIndices(data);
         } catch (error) {
-            console.error('加载大盘指数失败:', error);
-            utils.renderError('cn-indices', '大盘指数加载失败');
+            console.error('加载亚洲指数失败:', error);
+            utils.renderError('cn-indices', '亚洲指数加载失败');
         }
     }
 
@@ -47,6 +47,9 @@ class CNMarketController {
             const changeVal = item.change_pct;
             const changeClass = changeVal > 0 ? 'text-up' : changeVal < 0 ? 'text-down' : '';
             const sign = changeVal > 0 ? '+' : '';
+            const volHtml = (item.amount && item.amount > 0) 
+                ? `<div class="index-vol">成交 ${utils.formatNumber(item.amount / 100000000)}亿</div>` 
+                : `<div class="index-vol" style="visibility: hidden;">&nbsp;</div>`;
 
             return `
                 <div class="index-item">
@@ -56,7 +59,7 @@ class CNMarketController {
                         ${sign}${formatIndexPoint(item.change_amount)} 
                         (${sign}${utils.formatPercentage(changeVal)})
                     </div>
-                    <div class="index-vol">成交 ${utils.formatNumber(item.amount / 100000000)}亿</div>
+                    ${volHtml}
                 </div>
             `;
         }).join('');
