@@ -8,8 +8,8 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>x-analytics</title>
-    <script src="js/lucide.min.js?v=24"></script>
-    <link rel="stylesheet" href="css/styles.css?v=24">
+    <script src="js/lucide.min.js?v=25"></script>
+    <link rel="stylesheet" href="css/styles.css?v=25">
     <link rel="icon" href="favicon.ico" type="image/x-icon">
 </head>
 
@@ -59,32 +59,33 @@
                         data-lucide="refresh-cw" width="14"></i> 刷新</button>
             </div>
 
-            <div class="grid market-asia-grid">
-                <div class="card hero">
+            <div class="grid">
+                <!-- 亚洲指数 -->
+                <div class="card">
                     <div class="card-header">
                         <div class="card-title">亚洲指数</div>
                     </div>
-                    <div id="asia-indices" class="heat-grid asia-indices-grid">
+                    <div id="asia-indices" class="heat-grid" style="grid-template-columns: repeat(2, 1fr);">
                         <div class="loading">Loading...</div>
                     </div>
+                </div>
 
-                    <div class="divider"></div>
-
-                    <!-- Fear & Greed + Market Heat -->
+                <!-- 亚洲恐慌贪婪 -->
+                <div class="card hero">
                     <div class="card-header">
                         <div class="card-title">恐慌贪婪</div>
                         <button class="info-btn" id="info-asia-fear" title="说明"><i data-lucide="help-circle"
                                 width="16"></i></button>
                     </div>
-                    <!-- fg-container -->
                     <div id="asia-fear-greed" class="fg-container">
                         <div class="loading">Loading...</div>
                     </div>
                     <!-- 超买超卖信号 -->
                     <div id="asia-obo-signal" class="obo-container"></div>
+                </div>
 
-                    <div class="divider"></div>
-
+                <!-- LPR + 国债 -->
+                <div class="card">
                     <div class="card-header" style="margin-bottom: 12px; padding-bottom: 0; border-bottom: none;">
                         <div class="card-title">LPR 利率</div>
                         <button class="info-btn" id="info-lpr" title="说明"><i data-lucide="help-circle"
@@ -103,8 +104,6 @@
                         <div class="loading">Loading...</div>
                     </div>
                 </div>
-
-
             </div>
         </section>
 
@@ -288,15 +287,15 @@
 
     <div id="tooltip" style="display:none;"></div>
 
-    <script src="js/echarts.min.js?v=24"></script>
-    <script src="js/api.js?v=24"></script>
-    <script src="js/charts.js?v=24"></script>
-    <script src="js/utils.js?v=24"></script>
-    <script src="js/modules/market-asia.js?v=24"></script>
-    <script src="js/modules/market-western.js?v=24"></script>
-    <script src="js/modules/metals.js?v=24"></script>
-    <script src="js/modules/etf.js?v=24"></script>
-    <script src="js/main.js?v=24"></script>
+    <script src="js/echarts.min.js?v=25"></script>
+    <script src="js/api.js?v=25"></script>
+    <script src="js/charts.js?v=25"></script>
+    <script src="js/utils.js?v=25"></script>
+    <script src="js/modules/market-asia.js?v=25"></script>
+    <script src="js/modules/market-western.js?v=25"></script>
+    <script src="js/modules/metals.js?v=25"></script>
+    <script src="js/modules/etf.js?v=25"></script>
+    <script src="js/main.js?v=25"></script>
     <script>lucide.createIcons();</script>
 </body>
 
