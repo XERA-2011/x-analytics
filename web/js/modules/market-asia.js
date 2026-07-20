@@ -61,8 +61,12 @@ class AsiaMarketController {
             `;
         }).join('');
 
-        if (indices.length % 2 !== 0) {
-            html += `<div class="index-item"></div>`;
+        const cols = 4;
+        const rem = indices.length % cols;
+        if (rem !== 0) {
+            for (let i = 0; i < cols - rem; i++) {
+                html += `<div class="index-item"></div>`;
+            }
         }
 
         container.innerHTML = html;

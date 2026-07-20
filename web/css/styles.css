@@ -126,8 +126,12 @@ body {
 }
 
 .market-asia-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr;
     align-items: start;
+}
+
+.asia-indices-grid {
+    grid-template-columns: repeat(4, 1fr);
 }
 
 @media (max-width: 640px) {
@@ -151,6 +155,9 @@ body {
 @media (max-width: 900px) {
     .market-asia-grid {
         grid-template-columns: 1fr;
+    }
+    .asia-indices-grid {
+        grid-template-columns: repeat(2, 1fr);
     }
 }
 
