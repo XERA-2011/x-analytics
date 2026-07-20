@@ -14,7 +14,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from analytics.core.cache import cache, request_refresh_var
 from analytics.core import scheduler, settings
 from analytics.core.scheduler import setup_default_jobs, initial_warmup
-from analytics.api import market_cn, metals, market_us, market_hk, etf
+from analytics.api import market_asia, metals, market_western, market_hk, etf
 from analytics.core.patch import apply_patches
 from analytics.core.security import SecurityMiddleware
 from analytics.core.logger import logger
@@ -32,6 +32,15 @@ async def lifespan(app: FastAPI):
     
     # 初始化数据库
     await init_db()
+
+    # 一次性数据迁移: CN -> ASIA, US -> WESTERN
+    try:
+        from analytics.models.sentiment import SentimentHistory
+        await SentimentHistory.filter(market="CN").update(market="ASIA")
+        await SentimentHistory.filter(market="US").update(market="WESTERN")
+        logger.info("✅ Database sentiment history keys migrated (CN->ASIA, US->WESTERN)")
+    except Exception as e:
+        logger.warning(f"⚠️ Database migration failed: {e}")
 
     # 将主事件循环注入 scheduler，供后台线程执行 DB 异步操作
     import asyncio
@@ -112,8 +121,8 @@ app.add_middleware(RefreshMiddleware)
 # -----------------------------------------------------------------------------
 # 注册路由模块
 # -----------------------------------------------------------------------------
-app.include_router(market_cn.router, prefix="/market-cn", tags=["China Market"])
-app.include_router(market_us.router, prefix="/market-us", tags=["US Market"])
+app.include_router(market_asia.router, prefix="/market-asia", tags=["Asia Market"])
+app.include_router(market_western.router, prefix="/market-western", tags=["Western Market"])
 app.include_router(metals.router, prefix="/metals", tags=["Precious Metals"])
 app.include_router(market_hk.router, prefix="/market-hk", tags=["HK Market"])
 app.include_router(etf.router, prefix="/etf", tags=["ETF"])

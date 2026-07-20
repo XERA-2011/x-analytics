@@ -1,12 +1,12 @@
 """
-中国市场API路由
+亚洲市场API路由
 """
 
 from fastapi import APIRouter
 from typing import Dict, Any
 from ..core.cache import wrap_response
 from ..core.decorators import safe_endpoint, safe_async_endpoint
-from ..modules.market_cn import (
+from ..modules.market_asia import (
     CNFearGreedIndex,
     CNMarketLeaders,
 
@@ -15,7 +15,7 @@ from ..modules.market_cn import (
     CNIndices,
 )
 
-router = APIRouter(tags=["中国市场"])
+router = APIRouter(tags=["亚洲市场"])
 
 
 @router.get("/fear-greed", summary="获取恐慌贪婪指数")
@@ -38,7 +38,7 @@ async def get_fear_greed_history(days: int = 30) -> Dict[str, Any]:
 
     start_date = date.today() - timedelta(days=days)
     history = await SentimentHistory.filter(
-        market="CN",
+        market="ASIA",
         indicator_type="fear_greed",
         date__gte=start_date
     ).order_by("date").all()

@@ -1,4 +1,4 @@
-class CNMarketController {
+class AsiaMarketController {
     constructor() {
     }
 
@@ -24,16 +24,16 @@ class CNMarketController {
             this.renderCNIndices(data);
         } catch (error) {
             console.error('加载亚洲指数失败:', error);
-            utils.renderError('cn-indices', '亚洲指数加载失败');
+            utils.renderError('asia-indices', '亚洲指数加载失败');
         }
     }
 
     renderCNIndices(data) {
-        const container = document.getElementById('cn-indices');
+        const container = document.getElementById('asia-indices');
         if (!container) return;
 
         if (data.error || !data.indices) {
-            utils.renderError('cn-indices', data.error || '暂无数据');
+            utils.renderError('asia-indices', data.error || '暂无数据');
             return;
         }
 
@@ -125,14 +125,14 @@ class CNMarketController {
             this.renderCNFearGreed(data);
         } catch (error) {
             console.error('加载恐慌贪婪指数失败:', error);
-            utils.renderError('cn-fear-greed', '恐慌贪婪指数加载失败');
+            utils.renderError('asia-fear-greed', '恐慌贪婪指数加载失败');
         }
     }
 
     async loadCNOverboughtOversold() {
         try {
             const data = await api.getCNOverboughtOversold();
-            utils.renderOverboughtOversold('cn-obo-signal', data);
+            utils.renderOverboughtOversold('asia-obo-signal', data);
         } catch (error) {
             console.error('加载超买超卖信号失败:', error);
         }
@@ -145,7 +145,7 @@ class CNMarketController {
             this.renderCNBonds(data);
         } catch (error) {
             console.error('加载国债数据失败:', error);
-            utils.renderError('cn-bonds', '国债数据加载失败');
+            utils.renderError('asia-bonds', '国债数据加载失败');
         }
     }
 
@@ -323,16 +323,16 @@ class CNMarketController {
     }
 
     renderCNFearGreed(data) {
-        const container = document.getElementById('cn-fear-greed');
+        const container = document.getElementById('asia-fear-greed');
         if (!container) return;
 
         if (data.error) {
-            utils.renderError('cn-fear-greed', data.error);
+            utils.renderError('asia-fear-greed', data.error);
             return;
         }
 
         // Bind Info Button
-        const infoBtn = document.getElementById('info-cn-fear');
+        const infoBtn = document.getElementById('info-asia-fear');
         if (infoBtn && data.explanation) {
             infoBtn.onclick = () => utils.showInfoModal('中国市场情绪指数', utils.buildFearGreedModalBody(data));
             infoBtn.style.display = 'flex';
@@ -342,7 +342,7 @@ class CNMarketController {
         container.style.justifyContent = 'center';
 
         container.innerHTML = `
-            <div class="fg-gauge" id="cn-fear-greed-gauge"></div>
+            <div class="fg-gauge" id="asia-fear-greed-gauge"></div>
             <div class="fg-info" style="flex: 0 1 auto;">
 
                 <div class="fg-level">${data.level}</div>
@@ -353,7 +353,7 @@ class CNMarketController {
 
         if (window.charts) {
             setTimeout(() => {
-                charts.createFearGreedGauge('cn-fear-greed-gauge', data);
+                charts.createFearGreedGauge('asia-fear-greed-gauge', data);
             }, 100);
         }
     }
@@ -365,16 +365,16 @@ class CNMarketController {
 
 
     renderCNBonds(data) {
-        const container = document.getElementById('cn-bonds');
+        const container = document.getElementById('asia-bonds');
         if (!container) return;
 
         if (!data || data.error) {
-            utils.renderError('cn-bonds', data && data.error ? data.error : '暂无数据');
+            utils.renderError('asia-bonds', data && data.error ? data.error : '暂无数据');
             return;
         }
 
         if (data.status === 'warming_up') {
-            utils.renderWarmingUp('cn-bonds');
+            utils.renderWarmingUp('asia-bonds');
             return;
         }
 

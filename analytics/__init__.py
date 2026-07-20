@@ -10,7 +10,7 @@ from .core import cache, scheduler, settings
 from .core.cache import cached, warmup_cache
 
 # 业务模块
-from .modules.market_cn import (
+from .modules.market_asia import (
     CNFearGreedIndex,
     CNMarketLeaders,
     CNBonds,

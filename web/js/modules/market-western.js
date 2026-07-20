@@ -1,4 +1,4 @@
-class USMarketController {
+class WesternMarketController {
     constructor() {
     }
 
@@ -17,7 +17,7 @@ class USMarketController {
     async loadUSOverboughtOversold() {
         try {
             const data = await api.getUSOverboughtOversold();
-            utils.renderOverboughtOversold('us-obo-signal', data);
+            utils.renderOverboughtOversold('western-obo-signal', data);
         } catch (error) {
             console.error('加载美股超买超卖信号失败:', error);
         }
@@ -35,7 +35,7 @@ class USMarketController {
 
         } catch (error) {
             console.error('加载美国市场恐慌指数失败:', error);
-            utils.renderError('us-cnn-fear', '美国市场恐慌指数加载失败');
+            utils.renderError('western-fear-greed', '美国市场恐慌指数加载失败');
         }
     }
 
@@ -45,7 +45,7 @@ class USMarketController {
             this.renderUSMarketHeat(data);
         } catch (error) {
             console.error('加载美国市场热度失败:', error);
-            utils.renderError('market-us-heat', '美国市场热度加载失败');
+            utils.renderError('market-western-heat', '美国市场热度加载失败');
         }
     }
 
@@ -55,7 +55,7 @@ class USMarketController {
             this.renderUSBondYields(data);
         } catch (error) {
             console.error('加载美债数据失败:', error);
-            utils.renderError('us-treasury', '美债数据加载失败');
+            utils.renderError('western-treasury', '美债数据加载失败');
         }
     }
 
@@ -64,13 +64,13 @@ class USMarketController {
             const data = await api.getUSMarketLeaders();
             if (data.error || data._warming_up) {
                 console.error('加载欧美主要指数API返回错误:', data.error);
-                utils.renderError('us-gainers', data.error || 'warming_up');
+                utils.renderError('western-indices', data.error || 'warming_up');
                 return;
             }
             this.renderUSLeaders(data);
         } catch (error) {
             console.error('加载欧美主要指数失败:', error);
-            utils.renderError('us-gainers', '主要指数加载失败');
+            utils.renderError('western-indices', '主要指数加载失败');
         }
     }
 
@@ -99,7 +99,7 @@ class USMarketController {
     }
 
     renderUSFearGreed(data) {
-        const container = document.getElementById('us-cnn-fear');
+        const container = document.getElementById('western-fear-greed');
         if (!container) return;
 
         // Center content
@@ -129,9 +129,9 @@ class USMarketController {
         }
 
         // Bind Info Button
-        const infoBtn = document.getElementById('info-us-cnn');
+        const infoBtn = document.getElementById('info-western-fear');
         if (infoBtn && data.explanation) {
-            infoBtn.onclick = () => utils.showInfoModal('美国市场情绪指数', utils.buildFearGreedModalBody(data));
+            infoBtn.onclick = () => utils.showInfoModal('欧美市场情绪指数', utils.buildFearGreedModalBody(data));
             infoBtn.style.display = 'flex';
         }
 
@@ -146,7 +146,7 @@ class USMarketController {
         }
 
         let contentHtml = `
-            <div class="fg-gauge" id="us-cnn-gauge"></div>
+            <div class="fg-gauge" id="western-fear-greed-gauge"></div>
             <div class="fg-info" style="flex: 0 1 auto;">
                 <div class="fg-level">${level}</div>
                 <div class="fg-desc">${data.description || ''}</div>
@@ -183,25 +183,25 @@ class USMarketController {
 
         if (window.charts) {
             setTimeout(() => {
-                charts.createFearGreedGauge('us-cnn-gauge', { score, level });
+                charts.createFearGreedGauge('western-fear-greed-gauge', { score, level });
             }, 100);
         }
     }
 
     renderUSMarketHeat(data) {
-        const container = document.getElementById('market-us-heat');
+        const container = document.getElementById('market-western-heat');
         if (!container) return;
 
         // Handle error/warming_up response
         if (data && data.error) {
             container.classList.remove('heat-grid');
-            utils.renderError('market-us-heat', data.error);
+            utils.renderError('market-western-heat', data.error);
             return;
         }
 
         if (!data || !Array.isArray(data) || data.length === 0) {
             container.classList.remove('heat-grid');
-            utils.renderError('market-us-heat', '暂无数据');
+            utils.renderError('market-western-heat', '暂无数据');
             return;
         }
 
@@ -225,22 +225,22 @@ class USMarketController {
     }
 
     renderUSBondYields(data) {
-        const container = document.getElementById('us-treasury');
+        const container = document.getElementById('western-treasury');
         if (!container) return;
 
         // Handle error/warming_up response
         if (data && data.error) {
-            utils.renderError('us-treasury', data.error);
+            utils.renderError('western-treasury', data.error);
             return;
         }
 
         if (!data) {
-            utils.renderError('us-treasury', '暂无数据');
+            utils.renderError('western-treasury', '暂无数据');
             return;
         }
 
         // Bind Info Button
-        const infoBtn = document.getElementById('info-us-treasury');
+        const infoBtn = document.getElementById('info-western-treasury');
         if (infoBtn) {
             infoBtn.onclick = () => utils.showInfoModal('美债收益率指标说明',
                 `1. 10Y-2Y 利差 (衰退预警)
@@ -263,12 +263,12 @@ class USMarketController {
         } else if (data.metrics) {
             metrics = data.metrics;
         } else {
-            utils.renderError('us-treasury', '数据格式错误');
+            utils.renderError('western-treasury', '数据格式错误');
             return;
         }
 
         if (metrics.length === 0) {
-            utils.renderError('us-treasury', '暂无数据');
+            utils.renderError('western-treasury', '暂无数据');
             return;
         }
 
@@ -326,10 +326,10 @@ class USMarketController {
     }
 
     renderUSLeaders(data) {
-        const container = document.getElementById('us-gainers');
+        const container = document.getElementById('western-indices');
 
         // Hide compatibility container if exists
-        const container2 = document.getElementById('us-sp500');
+        const container2 = document.getElementById('western-sp500');
         if (container2) {
             container2.style.display = 'none';
         }
@@ -340,7 +340,7 @@ class USMarketController {
         if (indices.length === 0) {
             container.classList.remove('heat-grid');
             container.classList.add('list-container');
-            utils.renderError('us-gainers', '暂无指数数据');
+            utils.renderError('western-indices', '暂无指数数据');
             return;
         }
 

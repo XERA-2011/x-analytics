@@ -2,15 +2,15 @@
 # -*- coding:utf-8 -*-
 """
 Date: 2026/01/20
-Desc: 美国市场 API 路由
+Desc: 欧美市场 API 路由
 """
 
 from fastapi import APIRouter
 from typing import Dict, Any
 from ..core.decorators import safe_endpoint
-from ..modules.market_us import USFearGreedIndex, USMarketHeat, USTreasury, USMarketLeaders
+from ..modules.market_western import USFearGreedIndex, USMarketHeat, USTreasury, USMarketLeaders
 
-router = APIRouter(tags=["美国市场"])
+router = APIRouter(tags=["欧美市场"])
 
 
 @router.get("/fear-greed", summary="获取美国恐慌贪婪指数(替代CNN)")

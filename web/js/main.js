@@ -3,7 +3,7 @@
 
 class App {
     constructor() {
-        this.currentTab = 'market-cn';
+        this.currentTab = 'market-asia';
         this.lastUpdateTime = null;
         this.isRefreshing = false;
         this.loadedTabs = new Set();
@@ -14,8 +14,8 @@ class App {
 
         // Controllers
         this.modules = {
-            'market-cn': new CNMarketController(),
-            'market-us': new USMarketController(),
+            'market-asia': new AsiaMarketController(),
+            'market-western': new WesternMarketController(),
             'metals': new MetalsController(),
             'etf': new ETFController()
         };
@@ -25,8 +25,8 @@ class App {
 
     getPageTitle(tabId) {
         const titles = {
-            'market-cn': '亚洲市场',
-            'market-us': '欧美市场',
+            'market-asia': '亚洲市场',
+            'market-western': '欧美市场',
             'metals': '金属',
             'etf': 'ETF',
         };

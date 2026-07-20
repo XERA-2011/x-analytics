@@ -234,17 +234,17 @@ class API {
         this.forceRefreshToken = null;
     }
 
-    // 中国市场 API
+    // 亚洲市场 API
     async getCNFearGreed(symbol = 'sh000001', days = 14) {
-        return this.request(`/market-cn/fear-greed?symbol=${symbol}&days=${days}`);
+        return this.request(`/market-asia/fear-greed?symbol=${symbol}&days=${days}`);
     }
 
     async getCNTreasuryYields() {
-        return this.request('/market-cn/bonds/treasury');
+        return this.request('/market-asia/bonds/treasury');
     }
 
     async getCNBondAnalysis() {
-        return this.request('/market-cn/bonds/analysis');
+        return this.request('/market-asia/bonds/analysis');
     }
 
     // 香港市场 API
@@ -257,28 +257,28 @@ class API {
     }
 
     async getCNIndices() {
-        return this.request('/market-cn/indices');
+        return this.request('/market-asia/indices');
     }
 
-    // 美国市场 API
+    // 欧美市场 API
     async getUSFearGreed() {
-        return this.request('/market-us/fear-greed');
+        return this.request('/market-western/fear-greed');
     }
 
     async getUSCustomFearGreed() {
-        return this.request('/market-us/fear-greed/custom');
+        return this.request('/market-western/fear-greed/custom');
     }
 
     async getUSMarketLeaders() {
-        return this.request('/market-us/leaders');
+        return this.request('/market-western/leaders');
     }
 
     async getUSMarketHeat() {
-        return this.request('/market-us/market-heat');
+        return this.request('/market-western/market-heat');
     }
 
     async getUSBondYields() {
-        return this.request('/market-us/bond-yields');
+        return this.request('/market-western/bond-yields');
     }
 
     // Metals
@@ -300,11 +300,11 @@ class API {
 
     // 超买超卖信号 API
     async getCNOverboughtOversold(period = 'daily') {
-        return this.request(`/market-cn/signals/overbought-oversold?period=${period}`);
+        return this.request(`/market-asia/signals/overbought-oversold?period=${period}`);
     }
 
     async getUSOverboughtOversold(period = 'daily') {
-        return this.request(`/market-us/signals/overbought-oversold?period=${period}`);
+        return this.request(`/market-western/signals/overbought-oversold?period=${period}`);
     }
 
     async getHKOverboughtOversold(period = 'daily') {
@@ -321,7 +321,7 @@ class API {
 
     // 宏观数据 API
     async getLPR() {
-        return this.request('/market-cn/lpr');
+        return this.request('/market-asia/lpr');
     }
 
     // ETF API

@@ -38,13 +38,13 @@ class Settings:
 
     # 交易时间配置
     TRADING_HOURS: Dict[str, Dict[str, Any]] = {
-        "market_cn": {
+        "market_asia": {
             "timezone": "Asia/Shanghai",
             "morning": (time(9, 30), time(11, 30)),
             "afternoon": (time(13, 0), time(15, 0)),
             "weekdays_only": True,
         },
-        "market_us": {
+        "market_western": {
             # 美国市场交易时间 (美东时间 09:30-16:00)
             "timezone": "America/New_York",
             "session": (time(9, 30), time(16, 0)),
@@ -69,14 +69,14 @@ class Settings:
     # 核心原则：预热间隔 < 物理 TTL，确保缓存永不为空
     REFRESH_INTERVALS = {
         "trading_hours": {
-            "market_cn": 600,    # 10分钟
-            "market_us": 600,    # 10分钟
+            "market_asia": 600,    # 10分钟
+            "market_western": 600,    # 10分钟
             "metals": 600,       # 10分钟
             "market_hk": 600,    # 10分钟
         },
         "non_trading_hours": {
-            "market_cn": 86400 * 365,   # A股非交易时间停止更新 (设为一年)
-            "market_us": 86400 * 365,   # 美股非交易时间停止更新 (设为一年)
+            "market_asia": 86400 * 365,   # 亚洲非交易时间停止更新 (设为一年)
+            "market_western": 86400 * 365,   # 西方非交易时间停止更新 (设为一年)
             "metals": 3600,             # 金属仍每小时更新
             "market_hk": 86400 * 365,   # 港股非交易时间停止更新 (设为一年)
         },

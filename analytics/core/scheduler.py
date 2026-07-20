@@ -302,14 +302,14 @@ def setup_default_jobs():
     logger.info("设置默认预热任务...")
     
     from .cache import warmup_cache
-    from ..modules.market_cn import (
+    from ..modules.market_asia import (
         CNFearGreedIndex,
         CNMarketLeaders,
         CNIndices,
         CNBonds,
         LPRAnalysis,
     )
-    from ..modules.market_us import (
+    from ..modules.market_western import (
         USFearGreedIndex,
         USMarketHeat,
         USTreasury,
@@ -319,14 +319,14 @@ def setup_default_jobs():
 
 
     # =========================================================================
-    # 中国市场 (CN Market)
+    # 亚洲市场 (Asia Market)
     # =========================================================================
     
     # 1. 恐慌贪婪指数 (10分/4小时)
     scheduler.add_market_job(
-        job_id="warmup:cn:fear_greed",
+        job_id="warmup:asia:fear_greed",
         func=CNFearGreedIndex.calculate,
-        market="market_cn",
+        market="market_asia",
         use_warmup_cache=True,
         trading_interval_minutes=5,
         non_trading_max_age_seconds=settings.CACHE_TTL["fear_greed_stale"],
@@ -338,26 +338,26 @@ def setup_default_jobs():
 
 
     # scheduler.add_market_job(
-    #     job_id="warmup:cn:sectors",
+    #     job_id="warmup:asia:sectors",
     #     func=CNMarketLeaders.get_all_sectors,
-    #     market="market_cn",
+    #     market="market_asia",
     #     use_warmup_cache=True,
     # )
 
     scheduler.add_market_job(
-        job_id="warmup:cn:indices",
+        job_id="warmup:asia:indices",
         func=CNIndices.get_indices,
-        market="market_cn",
+        market="market_asia",
         use_warmup_cache=True,
     )
 
     scheduler.add_simple_job(
-        job_id="warmup:cn:bonds",
+        job_id="warmup:asia:bonds",
         func=lambda: warmup_cache(CNBonds.get_bond_market_analysis),
         interval_minutes=240
     )
     scheduler.add_simple_job(
-        job_id="warmup:cn:lpr",
+        job_id="warmup:asia:lpr",
         func=lambda: warmup_cache(LPRAnalysis.get_lpr_rates),
         interval_minutes=240
     )
@@ -388,14 +388,14 @@ def setup_default_jobs():
     )
 
     # =========================================================================
-    # 美国市场 (US Market)
+    # 欧美市场 (Western Market)
     # =========================================================================
 
     # 1. CNN 恐慌指数代理：开盘期 5 分钟刷新，休市保留最近有效值
     scheduler.add_market_job(
-        job_id="warmup:us:fear_cnn",
+        job_id="warmup:western:fear_cnn",
         func=USFearGreedIndex.get_cnn_fear_greed,
-        market="market_us",
+        market="market_western",
         use_warmup_cache=True,
         trading_interval_minutes=5,
         non_trading_max_age_seconds=settings.CACHE_TTL["fear_greed_stale"],
@@ -403,9 +403,9 @@ def setup_default_jobs():
     
     # 2. 自定义恐慌指数
     scheduler.add_market_job(
-        job_id="warmup:us:fear_custom",
+        job_id="warmup:western:fear_custom",
         func=USFearGreedIndex.calculate_custom_index,
-        market="market_us",
+        market="market_western",
         use_warmup_cache=True,
         trading_interval_minutes=5,
         non_trading_max_age_seconds=settings.CACHE_TTL["fear_greed_stale"],
@@ -413,19 +413,19 @@ def setup_default_jobs():
 
     # 3. 板块热度 & 领涨 (每10分钟)
     scheduler.add_simple_job(
-        job_id="warmup:us:heat",
+        job_id="warmup:western:heat",
         func=lambda: warmup_cache(USMarketHeat.get_sector_performance),
         interval_minutes=10
     )
     scheduler.add_simple_job(
-        job_id="warmup:us:leaders",
+        job_id="warmup:western:leaders",
         func=lambda: warmup_cache(USMarketLeaders.get_leaders),
         interval_minutes=10
     )
 
     # 4. 美债 (低频)
     scheduler.add_simple_job(
-        job_id="warmup:us:treasury",
+        job_id="warmup:western:treasury",
         func=lambda: warmup_cache(USTreasury.get_us_bond_yields),
         interval_minutes=240
     )
@@ -572,14 +572,14 @@ def initial_warmup():
     logger.info("🔥 开始初始缓存预热...")
     
     from .cache import warmup_cache
-    from ..modules.market_cn import (
+    from ..modules.market_asia import (
         CNFearGreedIndex,
         CNMarketLeaders,
         CNIndices,
         CNBonds,
         LPRAnalysis,
     )
-    from ..modules.market_us import (
+    from ..modules.market_western import (
         USFearGreedIndex,
         USMarketHeat,
         USTreasury,
@@ -717,15 +717,15 @@ def snapshot_daily_metrics() -> None:
         today = date.today()
         snapshots = []
 
-        # 1. CN
+        # 1. ASIA
         cn_res = CNFearGreedIndex.calculate(symbol="sh000001", days=14)
         if cn_res and "score" in cn_res:
-            snapshots.append({"market": "CN", "indicator": "fear_greed", "score": cn_res["score"], "level": cn_res["level"]})
+            snapshots.append({"market": "ASIA", "indicator": "fear_greed", "score": cn_res["score"], "level": cn_res["level"]})
 
-        # 2. US
+        # 2. WESTERN
         us_res = USFearGreedIndex.calculate_custom_index()
         if us_res and "score" in us_res:
-            snapshots.append({"market": "US", "indicator": "fear_greed", "score": us_res["score"], "level": us_res["level"]})
+            snapshots.append({"market": "WESTERN", "indicator": "fear_greed", "score": us_res["score"], "level": us_res["level"]})
 
         # 3. HK
         hk_res = HKFearGreed.get_data()
@@ -745,11 +745,11 @@ def snapshot_daily_metrics() -> None:
         # OBO Signals
         cn_obo = OverboughtOversoldSignal.get_cn_signal("daily")
         if cn_obo and "score" in cn_obo:
-            snapshots.append({"market": "CN", "indicator": "overbought_oversold", "score": cn_obo["score"], "level": cn_obo.get("signal", "neutral")})
+            snapshots.append({"market": "ASIA", "indicator": "overbought_oversold", "score": cn_obo["score"], "level": cn_obo.get("signal", "neutral")})
             
         us_obo = OverboughtOversoldSignal.get_us_signal("daily")
         if us_obo and "score" in us_obo:
-            snapshots.append({"market": "US", "indicator": "overbought_oversold", "score": us_obo["score"], "level": us_obo.get("signal", "neutral")})
+            snapshots.append({"market": "WESTERN", "indicator": "overbought_oversold", "score": us_obo["score"], "level": us_obo.get("signal", "neutral")})
             
         hk_obo = OverboughtOversoldSignal.get_hk_signal("daily")
         if hk_obo and "score" in hk_obo:

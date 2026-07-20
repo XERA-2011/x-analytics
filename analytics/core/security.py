@@ -22,15 +22,15 @@ ADMIN_API_PATHS = [
 # 公开 API 路径前缀（需要限流但不需要认证）
 PUBLIC_API_PATHS = [
     "/api/",
-    "/market-cn/",
+    "/market-asia/",
     "/market-hk/",
-    "/market-us/",
+    "/market-western/",
     "/metals/",
     "/etf/",
     "/analytics/api/",
-    "/analytics/market-cn/",
+    "/analytics/market-asia/",
     "/analytics/market-hk/",
-    "/analytics/market-us/",
+    "/analytics/market-western/",
     "/analytics/metals/",
     "/analytics/etf/",
 ]

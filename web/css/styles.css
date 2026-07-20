@@ -125,7 +125,7 @@ body {
     grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
 }
 
-.market-cn-grid {
+.market-asia-grid {
     grid-template-columns: repeat(2, 1fr);
     align-items: start;
 }
@@ -149,7 +149,7 @@ body {
 }
 
 @media (max-width: 900px) {
-    .market-cn-grid {
+    .market-asia-grid {
         grid-template-columns: 1fr;
     }
 }

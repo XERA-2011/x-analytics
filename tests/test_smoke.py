@@ -12,22 +12,22 @@ def test_health_check():
     assert data["status"] == "ok"
     assert "data_source" in data
 
-def test_cn_market_routes():
+def test_asia_market_routes():
     routes = [
-        "/market-cn/indices",
-        "/market-cn/fear-greed",
-        "/market-cn/bonds/treasury",
-        "/market-cn/lpr"
+        "/market-asia/indices",
+        "/market-asia/fear-greed",
+        "/market-asia/bonds/treasury",
+        "/market-asia/lpr"
     ]
     for route in routes:
         response = requests.get(f"{BASE_URL}{route}")
         assert response.status_code in (200, 503)
 
-def test_us_market_routes():
+def test_western_market_routes():
     routes = [
-        "/market-us/fear-greed/custom",
-        "/market-us/market-heat",
-        "/market-us/bond-yields"
+        "/market-western/fear-greed/custom",
+        "/market-western/market-heat",
+        "/market-western/bond-yields"
     ]
     for route in routes:
         response = requests.get(f"{BASE_URL}{route}")

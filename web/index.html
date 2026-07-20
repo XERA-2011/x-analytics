@@ -8,8 +8,8 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>x-analytics</title>
-    <script src="js/lucide.min.js?v=18"></script>
-    <link rel="stylesheet" href="css/styles.css?v=18">
+    <script src="js/lucide.min.js?v=19"></script>
+    <link rel="stylesheet" href="css/styles.css?v=19">
     <link rel="icon" href="favicon.ico" type="image/x-icon">
 </head>
 
@@ -37,10 +37,10 @@
     <main class="main-container">
         <!-- Tabs -->
         <nav class="tabs">
-            <button class="tab-btn active" data-tab="market-cn">
+            <button class="tab-btn active" data-tab="market-asia">
                 亚洲市场
             </button>
-            <button class="tab-btn" data-tab="market-us">
+            <button class="tab-btn" data-tab="market-western">
                 欧美市场
             </button>
             <button class="tab-btn" data-tab="metals">
@@ -52,19 +52,19 @@
         </nav>
 
         <!-- CN Market -->
-        <section class="tab-content active" id="market-cn">
+        <section class="tab-content active" id="market-asia">
             <div class="section-header">
                 <h2 class="section-title">亚洲市场</h2>
                 <button class="refresh-btn" onclick="window.app.refreshCurrentTab()" title="点击刷新"><i
                         data-lucide="refresh-cw" width="14"></i> 刷新</button>
             </div>
 
-            <div class="grid market-cn-grid">
+            <div class="grid market-asia-grid">
                 <div class="card hero">
                     <div class="card-header">
                         <div class="card-title">亚洲指数</div>
                     </div>
-                    <div id="cn-indices" class="heat-grid" style="grid-template-columns: repeat(2, 1fr);">
+                    <div id="asia-indices" class="heat-grid" style="grid-template-columns: repeat(2, 1fr);">
                         <div class="loading">Loading...</div>
                     </div>
 
@@ -73,15 +73,15 @@
                     <!-- Fear & Greed + Market Heat -->
                     <div class="card-header">
                         <div class="card-title">恐慌贪婪</div>
-                        <button class="info-btn" id="info-cn-fear" title="说明"><i data-lucide="help-circle"
+                        <button class="info-btn" id="info-asia-fear" title="说明"><i data-lucide="help-circle"
                                 width="16"></i></button>
                     </div>
                     <!-- fg-container -->
-                    <div id="cn-fear-greed" class="fg-container">
+                    <div id="asia-fear-greed" class="fg-container">
                         <div class="loading">Loading...</div>
                     </div>
                     <!-- 超买超卖信号 -->
-                    <div id="cn-obo-signal" class="obo-container"></div>
+                    <div id="asia-obo-signal" class="obo-container"></div>
 
                     <div class="divider"></div>
 
@@ -99,7 +99,7 @@
                     <div class="card-header" style="margin-bottom: 12px; padding-bottom: 0; border-bottom: none;">
                         <div class="card-title">国债收益率</div>
                     </div>
-                    <div id="cn-bonds">
+                    <div id="asia-bonds">
                         <div class="loading">Loading...</div>
                     </div>
                 </div>
@@ -142,7 +142,7 @@
 
 
         <!-- US Market -->
-        <section class="tab-content" id="market-us">
+        <section class="tab-content" id="market-western">
             <div class="section-header">
                 <h2 class="section-title">欧美市场</h2>
                 <button class="refresh-btn" onclick="window.app.refreshCurrentTab()" title="点击刷新"><i
@@ -150,51 +150,51 @@
             </div>
 
             <div class="grid">
-                <!-- US Gainers (Indices) -->
+                <!-- Western Gainers (Indices) -->
                 <div class="card">
                     <div class="card-header">
                         <div class="card-title">欧美指数</div>
                     </div>
-                    <div id="us-gainers" class="list-container">
+                    <div id="western-indices" class="list-container">
                         <div class="loading">Loading...</div>
                     </div>
                     <!-- Hidden placeholder for compat -->
-                    <div id="us-sp500" style="display:none;"></div>
+                    <div id="western-sp500" style="display:none;"></div>
                 </div>
 
-                <!-- US Fear & Greed -->
+                <!-- Western Fear & Greed -->
                 <div class="card hero">
                     <div class="card-header">
                         <div class="card-title">恐慌贪婪</div>
-                        <button class="info-btn" id="info-us-cnn" title="说明"><i data-lucide="help-circle"
+                        <button class="info-btn" id="info-western-fear" title="说明"><i data-lucide="help-circle"
                                 width="16"></i></button>
                     </div>
-                    <div id="us-cnn-fear" class="fg-container">
+                    <div id="western-fear-greed" class="fg-container">
                         <div class="loading">Loading...</div>
                     </div>
                     <!-- 超买超卖信号 -->
-                    <div id="us-obo-signal" class="obo-container"></div>
+                    <div id="western-obo-signal" class="obo-container"></div>
                 </div>
 
 
-                <!-- US Heat -->
+                <!-- Western Heat -->
                 <div class="card">
                     <div class="card-header">
                         <div class="card-title">板块热度</div>
                     </div>
-                    <div id="market-us-heat" class="heat-grid">
+                    <div id="market-western-heat" class="heat-grid">
                         <div class="loading">Loading...</div>
                     </div>
                 </div>
 
-                <!-- US Bonds -->
+                <!-- Western Bonds -->
                 <div class="card">
                     <div class="card-header">
                         <div class="card-title">美债收益率</div>
-                        <button class="info-btn" id="info-us-treasury" title="说明"><i data-lucide="help-circle"
+                        <button class="info-btn" id="info-western-treasury" title="说明"><i data-lucide="help-circle"
                                 width="16"></i></button>
                     </div>
-                    <div id="us-treasury">
+                    <div id="western-treasury">
                         <div class="loading">Loading...</div>
                     </div>
                 </div>
@@ -320,15 +320,15 @@
 
     <div id="tooltip" style="display:none;"></div>
 
-    <script src="js/echarts.min.js?v=18"></script>
-    <script src="js/api.js?v=18"></script>
-    <script src="js/charts.js?v=18"></script>
-    <script src="js/utils.js?v=18"></script>
-    <script src="js/modules/market-cn.js?v=18"></script>
-    <script src="js/modules/market-us.js?v=18"></script>
-    <script src="js/modules/metals.js?v=18"></script>
-    <script src="js/modules/etf.js?v=18"></script>
-    <script src="js/main.js?v=18"></script>
+    <script src="js/echarts.min.js?v=19"></script>
+    <script src="js/api.js?v=19"></script>
+    <script src="js/charts.js?v=19"></script>
+    <script src="js/utils.js?v=19"></script>
+    <script src="js/modules/market-asia.js?v=19"></script>
+    <script src="js/modules/market-western.js?v=19"></script>
+    <script src="js/modules/metals.js?v=19"></script>
+    <script src="js/modules/etf.js?v=19"></script>
+    <script src="js/main.js?v=19"></script>
     <script>lucide.createIcons();</script>
 </body>
 

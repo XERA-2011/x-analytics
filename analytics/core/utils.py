@@ -20,7 +20,7 @@ def is_trading_hours(market: str) -> bool:
     判断指定市场是否在交易时间内
 
     Args:
-        market: 市场类型 ('market_cn', 'market_us', 'metals')
+        market: 市场类型 ('market_asia', 'market_western', 'metals')
 
     Returns:
         bool: 是否在交易时间内
@@ -67,7 +67,7 @@ def is_trading_time(market: str, tolerance_minutes: int = TOLERANCE_MINUTES) -> 
     where a warmup task fires slightly before open or after close.
 
     Args:
-        market: Market type ('market_cn', 'market_us', 'metals').
+        market: Market type ('market_asia', 'market_western', 'metals').
         tolerance_minutes: Minutes to extend each end of the window.
 
     Returns:
@@ -93,7 +93,7 @@ def is_trading_time(market: str, tolerance_minutes: int = TOLERANCE_MINUTES) -> 
         if now.weekday() >= 5:
             return False
         # 暂时使用 A 股的节假日判断兜底 (仅适用于 A股/港股，美股不适用中国节假日)
-        if market in ("market_cn", "market_hk"):
+        if market in ("market_asia", "market_hk"):
             if not is_trading_day(now.date()):
                 return False
 
