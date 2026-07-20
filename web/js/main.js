@@ -15,7 +15,6 @@ class App {
         // Controllers
         this.modules = {
             'market-cn': new CNMarketController(),
-            'market-hk': new HKMarketController(),
             'market-us': new USMarketController(),
             'metals': new MetalsController(),
             'etf': new ETFController()
@@ -27,7 +26,6 @@ class App {
     getPageTitle(tabId) {
         const titles = {
             'market-cn': '中国市场',
-            'market-hk': '中国香港',
             'market-us': '美国市场',
             'metals': '金属',
             'etf': 'ETF',
@@ -200,7 +198,7 @@ class App {
 
     async loadInitialData() {
         const urlTab = utils.getUrlParam('tab');
-        if (urlTab && ['market-cn', 'market-hk', 'market-us', 'metals', 'etf'].includes(urlTab)) {
+        if (urlTab && ['market-cn', 'market-us', 'metals', 'etf'].includes(urlTab)) {
             this.switchTab(urlTab); // This calls refreshCurrentTab inside
         } else {
             // Default load

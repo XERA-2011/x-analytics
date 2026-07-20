@@ -126,7 +126,7 @@ body {
 }
 
 .market-cn-grid {
-    grid-template-columns: minmax(320px, 420px) minmax(0, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     align-items: start;
 }
 

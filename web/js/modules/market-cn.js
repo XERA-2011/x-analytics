@@ -3,16 +3,17 @@ class CNMarketController {
     }
 
     async loadData() {
-        console.log('📊 加载中国市场数据...');
+        console.log('📊 加载中国市场与香港市场数据...');
 
         const promises = [
             this.loadCNFearGreed(),
             this.loadCNOverboughtOversold(),
             this.loadCNIndices(),
-            this.loadSectorHeatmap(), // 新增: 加载全市场热力图
-
             this.loadCNBonds(),
-            this.loadLPR()
+            this.loadLPR(),
+            this.loadHKIndices(),
+            this.loadHKFearGreed(),
+            this.loadHKOverboughtOversold()
         ];
         await Promise.allSettled(promises);
     }
@@ -146,189 +147,176 @@ class CNMarketController {
     }
 
     // =========================================================================
-    // 全市场热力图
+    // 香港市场
     // =========================================================================
-    async loadSectorHeatmap() {
+    async loadHKOverboughtOversold() {
         try {
-            const data = await api.request("/market-cn/sectors/all");
-            this.renderSectorHeatmap(data);
+            const data = await api.getHKOverboughtOversold();
+            utils.renderOverboughtOversold('hk-obo-signal', data);
         } catch (error) {
-            console.error('加载全市场板块失败:', error);
-            utils.renderError('cn-sector-heatmap', '加载失败');
+            console.error('加载港股超买超卖信号失败:', error);
         }
     }
 
-    renderSectorHeatmap(data) {
-        if (!data || data.error || !data.sectors) {
-            utils.renderError('cn-sector-heatmap', data?.error || '暂无数据');
+    async loadHKIndices() {
+        try {
+            let data = await api.getHKIndices();
+
+            // 修复：处理可能的多层嵌套 (data.data)
+            if (data && data.data && (data.indices === undefined)) {
+                console.log('检测到嵌套数据结构，正在解包...');
+                data = data.data;
+            }
+
+            this.renderHKIndices(data.indices);
+            this.renderHKSectors(data.sectors);
+        } catch (error) {
+            console.error('加载港股数据失败:', error);
+            utils.renderError('hk-indices', '港股数据加载失败');
+            const sectorContainer = document.getElementById('hk-sectors-all');
+            if (sectorContainer) utils.renderError('hk-sectors-all', '数据加载失败');
+        }
+    }
+
+    async loadHKFearGreed() {
+        try {
+            let data = await api.getHKFearGreed();
+
+            // 修复：处理可能的多层嵌套
+            if (data && data.data && (data.score === undefined && data.error === undefined)) {
+                data = data.data;
+            }
+
+            this.renderHKFearGreed(data);
+        } catch (error) {
+            console.error('加载港股恐慌指数失败:', error);
+            utils.renderError('hk-fear-greed', '恐慌指数加载失败');
+        }
+    }
+
+    renderHKFearGreed(data) {
+        const container = document.getElementById('hk-fear-greed');
+        if (!container) return;
+
+        // Ensure container centers its content group
+        container.style.justifyContent = 'center';
+
+        if (data && data.error) {
+            utils.renderError('hk-fear-greed', data.error);
             return;
         }
 
-        // 渲染涨跌幅排行榜
-        this.renderSectorRanking(data.sectors, data.source);
-
-        // 渲染 ECharts Treemap
-        if (window.charts) {
-            window.charts.renderTreemap('cn-sector-heatmap', data.sectors);
+        const score = data.score;
+        // 如果没有分数，显示错误
+        if (score == null) {
+            utils.renderError('hk-fear-greed', '暂无数值');
+            return;
         }
 
-        // 绑定说明按钮
-        const infoBtn = document.getElementById('info-cn-heatmap');
-        if (infoBtn) {
-            infoBtn.onclick = () => utils.showInfoModal('行业板块热力图', `热力图展示 A 股一级行业板块的结构与强弱变化。
+        const level = data.level || '未知';
+        const indicators = data.indicators;
 
-图表口径：
-• 面积代表板块总市值
-• 颜色代表板块涨跌幅
-• 默认使用本地一级行业映射，低频刷新；运行时只聚合实时个股行情
-
-**情绪分析逻辑**（基于换手率+涨跌幅）：
-
-📈 上涨情况：
-• 极度超买：涨幅>8% + 换手>2%（情绪极度亢奋，追高风险极大）
-• 逼空拉升：涨幅>8% + 换手<2%（筹码高度集中，主力控盘拉升）
-• 严重超买：涨幅>4% + 换手>5%（放量大涨，短期获利盘丰厚）
-• 放量上攻：涨幅>4% 或 换手>3%（多头占优，量价配合需观察）
-• 缩量上涨：涨幅<2% + 换手<1.2%（持股惜售，上攻动能偏弱）
-• 温和上涨：其他上涨情况（常态运行，无明显异动）
-
-📉 下跌情况：
-• 恐慌抛售：跌幅>8% + 换手>2%（多杀多踩踏，恐慌情绪蔓延）
-• 闷杀出局：跌幅>8% + 换手<2%（抛盘稀少仍大跌，无人承接）
-• 放量杀跌：跌幅>4% 或 换手>3%（空方主导，抛压较重）
-• 无量下跌：跌幅<2% + 换手<1.2%（交投萎缩，市场信心不足）
-• 弱势调整：其他下跌情况（技术性回调，可关注支撑位）
-
-📊 其他：
-• 横盘震荡：涨跌幅<0.8%（多空僵持，等待突破方向）`);
+        // 绑定说明弹窗
+        const infoBtn = document.getElementById('info-hk-fear');
+        if (infoBtn && (data.explanation || data.description)) {
+            infoBtn.onclick = () => utils.showInfoModal('香港市场情绪指数', utils.buildFearGreedModalBody(data) || data.description);
             infoBtn.style.display = 'flex';
+        }
+
+        // Use flex: 0 1 auto to prevent stretching, allowing justify-content: center to work on the parent
+        let contentHtml = `
+            <div class="fg-gauge" id="hk-fear-gauge"></div>
+            <div class="fg-info" style="flex: 0 1 auto;">
+
+                <div class="fg-level">${level}</div>
+                <div class="fg-desc" style="font-size: 11px; color: var(--text-secondary); margin-top: 8px;">${utils.getFearGreedMetaLine(data)}</div>
+        `;
+
+        if (indicators) {
+            contentHtml += `<div class="fg-desc" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px;">`;
+            if (indicators.rsi) {
+                contentHtml += `
+                    <span class="heat-tag heat-gray" title="RSI (14)">
+                       RSI: ${indicators.rsi.score}
+                    </span>
+                 `;
+            }
+            if (indicators.momentum) {
+                contentHtml += `
+                    <span class="heat-tag heat-gray" title="偏离度 (60日)">
+                       动量: ${indicators.momentum.value}%
+                    </span>
+                 `;
+            }
+            contentHtml += `</div>`;
+        }
+
+        contentHtml += '</div>';
+        container.innerHTML = contentHtml;
+
+        if (window.charts) {
+            setTimeout(() => {
+                charts.createFearGreedGauge('hk-fear-gauge', { score: score, level: level });
+            }, 100);
         }
     }
 
-    renderSectorRanking(sectors, source) {
-        const container = document.getElementById('cn-sector-ranking');
-        if (!container || !sectors || sectors.length === 0) return;
+    renderHKIndices(indices) {
+        const container = document.getElementById('hk-indices');
+        if (!container) return;
 
-        const renderEmptyState = (text) => `
-            <div class="ranking-item" style="display:flex; align-items:center; justify-content:center; min-height:120px; color:var(--text-secondary);">
-                ${text}
-            </div>
-        `;
+        if (!indices || indices.length === 0) {
+            utils.renderError('hk-indices', '暂无指数数据');
+            return;
+        }
 
-        const sortedDesc = [...sectors].sort((a, b) => b.change_pct - a.change_pct);
-        const positives = sortedDesc.filter(item => (item.change_pct || 0) >= 0);
-        const negatives = [...sortedDesc]
-            .filter(item => (item.change_pct || 0) < 0)
-            .sort((a, b) => a.change_pct - b.change_pct);
-
-        const gainers = positives.slice(0, 5);
-        const losers = negatives.slice(0, 5);
-
-        // 情绪分析函数 (与 charts.js treemap tooltip 保持一致)
-        const getSentiment = (change, turnover) => {
-            const hasTurnover = turnover !== null && turnover !== undefined;
-            const t = hasTurnover ? turnover : null;
-            const c = change || 0;
-            const absC = Math.abs(c);
-
-            if (absC < 0.8) return { text: '横盘震荡', color: '#9ca3af' };
-
-            if (c > 0) {
-                if (t === null) {
-                    if (c > 8) return { text: '逼空拉升', color: '#dc2626' };
-                    if (c > 4) return { text: '放量上攻', color: '#ef4444' };
-                    return { text: '温和上涨', color: '#ef4444' };
-                }
-                if (c > 8) return t > 2 ? { text: '极度超买', color: '#dc2626' } : { text: '逼空拉升', color: '#dc2626' };
-                if (t > 5 && c > 4) return { text: '严重超买', color: '#dc2626' };
-                if (t > 3 || c > 4) return { text: '放量上攻', color: '#ef4444' };
-                if (t < 1.2 && c < 2) return { text: '缩量上涨', color: '#f59e0b' };
-                return { text: '温和上涨', color: '#ef4444' };
-            } else {
-                if (t === null) {
-                    if (c < -8) return { text: '恐慌抛售', color: '#16a34a' };
-                    if (c < -4) return { text: '放量杀跌', color: '#16a34a' };
-                    return { text: '弱势调整', color: '#22c55e' };
-                }
-                if (c < -8) return t > 2 ? { text: '恐慌抛售', color: '#16a34a' } : { text: '闷杀出局', color: '#16a34a' };
-                if (t > 5 && c < -4) return { text: '恐慌抛售', color: '#16a34a' };
-                if (t > 3 || c < -4) return { text: '放量杀跌', color: '#16a34a' };
-                if (t < 1.2 && c > -2) return { text: '无量下跌', color: '#10b981' };
-                return { text: '弱势调整', color: '#22c55e' };
-            }
-        };
-
-        const resolveStockName = (item, columnType) => {
-            let preferredName = columnType === 'down' ? item.lagging_stock : item.leading_stock;
-            let targetStock = null;
-
-            if (preferredName && Array.isArray(item.children)) {
-                targetStock = item.children.find(s => s.name === preferredName);
-            }
-
-            if (!targetStock && Array.isArray(item.children) && item.children.length > 0) {
-                const sortedChildren = [...item.children].sort((a, b) => {
-                    const changeA = Number.isFinite(Number(a.change_pct)) ? Number(a.change_pct) : 0;
-                    const changeB = Number.isFinite(Number(b.change_pct)) ? Number(b.change_pct) : 0;
-                    return columnType === 'down' ? changeA - changeB : changeB - changeA;
-                });
-                targetStock = sortedChildren[0];
-            }
-
-            if (targetStock) {
-                const change = Number.isFinite(Number(targetStock.change_pct)) ? Number(targetStock.change_pct) : 0;
-                const sign = change > 0 ? '+' : '';
-                return {
-                    name: targetStock.name,
-                    changeHtml: `<span class="${change > 0 ? 'text-up' : change < 0 ? 'text-down' : ''}">${sign}${change.toFixed(2)}%</span>`
-                };
-            } else if (preferredName) {
-                return { name: preferredName, changeHtml: '' };
-            }
-
-            return { name: '--', changeHtml: '' };
-        };
-
-        const renderItem = (item, columnType) => {
-            const changeVal = item.change_pct || 0;
+        const html = indices.map(item => {
+            const changeVal = item.change_pct;
             const changeClass = changeVal > 0 ? 'text-up' : changeVal < 0 ? 'text-down' : '';
             const sign = changeVal > 0 ? '+' : '';
-            const sentiment = getSentiment(changeVal, item.turnover);
-            const stockLabel = columnType === 'down' ? '领跌' : '领涨';
-            const stockInfo = resolveStockName(item, columnType);
-
-            const showStocks = source !== 'board_snapshot';
 
             return `
-                <div class="ranking-item">
-                    <div class="ranking-row" style="margin-bottom: 6px; align-items: baseline;">
-                        <span class="ranking-name" style="flex: 1; font-size: 12px;">${item.name}</span>
-                        <div style="display: flex; gap: 8px; align-items: baseline;">
-                            <span class="ranking-sentiment" style="color:${sentiment.color}; font-size: 12px;">${sentiment.text}</span>
-                            <span class="ranking-change ${changeClass}" style="font-size: 12px;">${sign}${changeVal.toFixed(2)}%</span>
-                        </div>
+                <div class="index-item">
+                    <div class="index-name">${item.name}</div>
+                    <div class="index-price ${changeClass}">${utils.formatNumber(item.price)}</div>
+                    <div class="index-change ${changeClass}">
+                        ${sign}${utils.formatNumber(item.change_amount)} 
+                        (${sign}${utils.formatPercentage(changeVal)})
                     </div>
-                    ${showStocks ? `<div class="ranking-row" style="display: flex; justify-content: space-between; align-items: baseline; margin-top: 2px;">
-                        <span class="ranking-turnover" style="font-size: 12px;">${stockLabel}</span>
-                        <div style="display: flex; gap: 8px; align-items: baseline;">
-                            <span class="ranking-name" style="font-size: 12px; font-weight: 400; color: var(--text-secondary);">${stockInfo.name}</span>
-                            <span style="font-size: 12px; font-weight: 700; font-family: var(--font-mono);">${stockInfo.changeHtml}</span>
-                        </div>
-                    </div>` : ''}
                 </div>
             `;
-        };
+        }).join('');
 
-        container.innerHTML = `
-            <div class="ranking-column">
-                <div class="ranking-header up" style="font-size: 12px;">📈 涨幅榜</div>
-                ${gainers.length > 0 ? gainers.map(item => renderItem(item, 'up')).join('') : renderEmptyState('暂无上涨行业')}
-            </div>
-            <div class="ranking-column">
-                <div class="ranking-header down" style="font-size: 12px;">📉 跌幅榜</div>
-                ${losers.length > 0 ? losers.map(item => renderItem(item, 'down')).join('') : renderEmptyState('暂无下跌行业')}
-            </div>
-        `;
+        container.innerHTML = html;
+        container.classList.remove('loading');
+    }
+
+    renderHKSectors(sectorsData) {
+        const container = document.getElementById('hk-sectors-all');
+        if (!container) return;
+
+        if (!sectorsData || !sectorsData.all) {
+            utils.renderError('hk-sectors-all', '暂无板块数据');
+            return;
+        }
+
+        // Sort by change_pct desc
+        const list = sectorsData.all.sort((a, b) => b.change_pct - a.change_pct);
+
+        const html = list.map(item => {
+            const change = utils.formatChange(item.change_pct);
+
+            // 模仿 US Market Heat 样式 (更简洁)
+            return `
+                <div class="heat-cell">
+                    <div class="item-sub" title="${item.code}">${item.name}</div>
+                    <div class="heat-val ${change.class}">${change.text}</div>
+                </div>
+            `;
+        }).join('');
+
+        container.innerHTML = html;
+        container.classList.remove('loading');
     }
 
     renderCNFearGreed(data) {
