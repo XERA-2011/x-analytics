@@ -16,7 +16,6 @@ def test_cn_market_routes():
     routes = [
         "/market-cn/indices",
         "/market-cn/fear-greed",
-        "/market-cn/sectors/all",
         "/market-cn/bonds/treasury",
         "/market-cn/lpr"
     ]

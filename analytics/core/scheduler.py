@@ -337,12 +337,12 @@ def setup_default_jobs():
 
 
 
-    scheduler.add_market_job(
-        job_id="warmup:cn:sectors",
-        func=CNMarketLeaders.get_all_sectors,
-        market="market_cn",
-        use_warmup_cache=True,
-    )
+    # scheduler.add_market_job(
+    #     job_id="warmup:cn:sectors",
+    #     func=CNMarketLeaders.get_all_sectors,
+    #     market="market_cn",
+    #     use_warmup_cache=True,
+    # )
 
     scheduler.add_market_job(
         job_id="warmup:cn:indices",
@@ -594,7 +594,7 @@ def initial_warmup():
         
         # CN
         warmup_cache(CNFearGreedIndex.calculate, symbol="sh000001", days=14)
-        warmup_cache(CNMarketLeaders.get_all_sectors)
+        # warmup_cache(CNMarketLeaders.get_all_sectors)
         warmup_cache(CNIndices.get_indices)
 
 
