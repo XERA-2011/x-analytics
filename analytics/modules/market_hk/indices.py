@@ -7,6 +7,7 @@ from ...core.cache import cached
 from ...core.config import settings
 from ...core.utils import safe_float, get_beijing_time, akshare_call_with_retry
 from ...core.logger import logger
+from ...core.data_provider import data_provider
 import akshare as ak  # type: ignore
 
 class HKIndices:
@@ -47,10 +48,7 @@ class HKIndices:
         """
         try:
             # 获取新浪港股指数列表
-            df = akshare_call_with_retry(
-                ak.stock_hk_index_spot_sina,
-                max_retries=3
-            )
+            df = data_provider.get_hk_indices_spot()
             
             if df.empty:
                 raise ValueError("获取港股指数数据为空")

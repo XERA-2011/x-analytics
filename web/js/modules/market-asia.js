@@ -166,16 +166,14 @@ class AsiaMarketController {
             let data = await api.getHKIndices();
 
             // 修复：处理可能的多层嵌套 (data.data)
-            if (data && data.data && (data.indices === undefined)) {
+            if (data && data.data && (data.sectors === undefined)) {
                 console.log('检测到嵌套数据结构，正在解包...');
                 data = data.data;
             }
 
-            this.renderHKIndices(data.indices);
             this.renderHKSectors(data.sectors);
         } catch (error) {
-            console.error('加载港股数据失败:', error);
-            utils.renderError('hk-indices', '港股数据加载失败');
+            console.error('加载港股行业数据失败:', error);
             const sectorContainer = document.getElementById('hk-sectors-all');
             if (sectorContainer) utils.renderError('hk-sectors-all', '数据加载失败');
         }
@@ -334,7 +332,7 @@ class AsiaMarketController {
         // Bind Info Button
         const infoBtn = document.getElementById('info-asia-fear');
         if (infoBtn && data.explanation) {
-            infoBtn.onclick = () => utils.showInfoModal('中国市场情绪指数', utils.buildFearGreedModalBody(data));
+            infoBtn.onclick = () => utils.showInfoModal('亚洲市场情绪指数 (上证指数)', utils.buildFearGreedModalBody(data));
             infoBtn.style.display = 'flex';
         }
 

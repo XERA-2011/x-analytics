@@ -17,12 +17,15 @@ class CNIndices:
     CORE_INDICES = {
         "000300": "沪深300",
         "HSI": "恒生指数", 
+        "HSTECH": "恒生科技",
+        "HSCEI": "国企指数",
+        "HSCCI": "红筹指数",
         "N225": "日经225",
         "KS11": "韩国KOSPI",
     }
 
     # 指定排序顺序
-    DISPLAY_ORDER = ["000300", "HSI", "N225", "KS11"]
+    DISPLAY_ORDER = ["000300", "HSI", "HSTECH", "HSCEI", "HSCCI", "N225", "KS11"]
 
     @staticmethod
     @cached(
@@ -32,23 +35,24 @@ class CNIndices:
     )
     def get_indices() -> Dict[str, Any]:
         """
-        获取主要亚洲指数实时行情
+        获取主要亚洲指数实时行情 (合并全球和港股数据源)
         
         Returns:
             指数列表数据
         """
         try:
-            # 使用全球实时指数接口
-            df = data_provider.get_global_indices_spot()
-            
-            if df.empty:
-                raise ValueError("获取指数数据为空")
+            # 1. 获取全球和港股指数数据
+            df_em = data_provider.get_global_indices_spot()
+            em_map = df_em.set_index("代码").to_dict(orient="index") if not df_em.empty else {}
+
+            df_hk = data_provider.get_hk_indices_spot()
+            hk_map = df_hk.set_index("代码").to_dict(orient="index") if not df_hk.empty else {}
+
+            # 合并映射以便按顺序查找
+            df_map = {**em_map, **hk_map}
 
             # 过滤出核心指数
             indices_data = []
-            
-            # 创建更高效的查找字典
-            df_map = df.set_index("代码").to_dict(orient="index")
             
             for code in CNIndices.DISPLAY_ORDER:
                 if code in df_map:

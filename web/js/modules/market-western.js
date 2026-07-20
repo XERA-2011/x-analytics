@@ -131,7 +131,7 @@ class WesternMarketController {
         // Bind Info Button
         const infoBtn = document.getElementById('info-western-fear');
         if (infoBtn && data.explanation) {
-            infoBtn.onclick = () => utils.showInfoModal('欧美市场情绪指数', utils.buildFearGreedModalBody(data));
+            infoBtn.onclick = () => utils.showInfoModal('欧美市场情绪指数 (标普500代理)', utils.buildFearGreedModalBody(data));
             infoBtn.style.display = 'flex';
         }
 

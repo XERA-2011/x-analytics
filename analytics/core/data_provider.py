@@ -571,6 +571,21 @@ class SharedDataProvider:
             return df
         raise ValueError("获取全球实时指数数据为空")
 
+    def get_hk_indices_spot(self) -> pd.DataFrame:
+        """
+        获取香港指数实时数据 (使用新浪港股指数行情接口)
+        """
+        cache_key = "hk_indices_spot"
+        cached_df = self._get_cached(cache_key)
+        if cached_df is not None:
+            return cached_df
+
+        df = self._fetch_with_retry(ak.stock_hk_index_spot_sina, max_retries=2)
+        if df is not None and not df.empty:
+            self._set_cached(cache_key, df)
+            return df
+        raise ValueError("获取港股实时指数数据为空")
+
     def get_stats(self) -> dict:
         """获取缓存统计"""
         with self._cache_lock:
