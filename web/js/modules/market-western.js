@@ -349,7 +349,7 @@ class WesternMarketController {
         container.classList.add('heat-grid');
         container.style.gridTemplateColumns = 'repeat(2, 1fr)';
 
-        const html = indices.map(item => {
+        let html = indices.map(item => {
             const changeVal = item.change_pct;
             // US Colors: Green Up, Red Down (Handled by styles.css logic via classes? 
             // text-up-us is green, text-down-us is red.
@@ -374,6 +374,10 @@ class WesternMarketController {
                 </div>
             `;
         }).join('');
+
+        if (indices.length % 2 !== 0) {
+            html += `<div class="index-item"></div>`;
+        }
 
         container.innerHTML = html;
         container.classList.remove('loading');

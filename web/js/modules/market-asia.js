@@ -43,7 +43,7 @@ class AsiaMarketController {
             return Number(value).toFixed(2);
         };
 
-        const html = indices.map(item => {
+        let html = indices.map(item => {
             const changeVal = item.change_pct;
             const changeClass = changeVal > 0 ? 'text-up' : changeVal < 0 ? 'text-down' : '';
             const sign = changeVal > 0 ? '+' : '';
@@ -63,6 +63,10 @@ class AsiaMarketController {
                 </div>
             `;
         }).join('');
+
+        if (indices.length % 2 !== 0) {
+            html += `<div class="index-item"></div>`;
+        }
 
         container.innerHTML = html;
         container.classList.remove('loading');
@@ -304,7 +308,7 @@ class AsiaMarketController {
         // Sort by change_pct desc
         const list = sectorsData.all.sort((a, b) => b.change_pct - a.change_pct);
 
-        const html = list.map(item => {
+        let html = list.map(item => {
             const change = utils.formatChange(item.change_pct);
 
             // 模仿 US Market Heat 样式 (更简洁)
@@ -315,6 +319,10 @@ class AsiaMarketController {
                 </div>
             `;
         }).join('');
+
+        if (list.length % 2 !== 0) {
+            html += `<div class="heat-cell"></div>`;
+        }
 
         container.innerHTML = html;
         container.classList.remove('loading');
