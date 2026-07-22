@@ -143,9 +143,12 @@ class AIMarketController {
                 if (layer.items && layer.items.length > 0) {
                     layer.items.forEach(item => {
                         const changeVal = item.change_pct || 0.0;
-                        const changeClass = changeVal > 0 ? 'text-up-us' : changeVal < 0 ? 'text-down-us' : '';
+                        const isCN = item.is_sector || layer.layer_id === 'L6';
+                        const upClass = isCN ? 'text-up' : 'text-up-us';
+                        const downClass = isCN ? 'text-down' : 'text-down-us';
+                        const changeClass = changeVal > 0 ? upClass : changeVal < 0 ? downClass : '';
                         const sign = changeVal > 0 ? '+' : '';
-                        const priceStr = item.price ? `$${item.price.toFixed(2)}` : '--';
+                        const priceHtml = (item.is_sector || !item.price) ? '' : `<span class="ai-item-price">$${item.price.toFixed(2)}</span>`;
 
                         html += `
                             <div class="ai-item-row">
@@ -154,7 +157,7 @@ class AIMarketController {
                                     <span class="ai-item-code">${item.symbol || ''}</span>
                                 </div>
                                 <div class="ai-item-price-box">
-                                    <span class="ai-item-price">${priceStr}</span>
+                                    ${priceHtml}
                                     <span class="ai-item-change ${changeClass}">${sign}${changeVal.toFixed(2)}%</span>
                                 </div>
                             </div>

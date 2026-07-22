@@ -17,9 +17,9 @@ class AIOverview:
 
     # AI 产业链代表性美股列表
     US_AI_SYMBOLS = [
-        "NVDA", "AMD", "AVGO", "MU", "MSFT", 
-        "GOOGL", "AMZN", "META", "SMCI", "VRT", 
-        "PLTR", "SOXX"
+        "NVDA", "AMD", "AVGO", "MU", "TSM", "ASML",
+        "MSFT", "GOOGL", "AMZN", "META", "SMCI", 
+        "VRT", "PLTR", "NOW", "CRM", "SOXX"
     ]
 
     @staticmethod
@@ -46,13 +46,15 @@ class AIOverview:
                         "symbol": symbol,
                         "name": default_name,
                         "price": item["price"],
-                        "change_pct": item["change_pct"]
+                        "change_pct": item["change_pct"],
+                        "is_sector": False
                     }
                 return {
                     "symbol": symbol,
                     "name": default_name,
                     "price": None,
-                    "change_pct": 0.0
+                    "change_pct": 0.0,
+                    "is_sector": False
                 }
 
             # 各代表标的行情
@@ -60,6 +62,8 @@ class AIOverview:
             amd = get_stock("AMD", "AMD")
             avgo = get_stock("AVGO", "博通")
             mu = get_stock("MU", "美光科技")
+            tsm = get_stock("TSM", "台积电")
+            asml = get_stock("ASML", "阿斯麦")
             msft = get_stock("MSFT", "微软")
             googl = get_stock("GOOGL", "谷歌")
             amzn = get_stock("AMZN", "亚马逊")
@@ -67,23 +71,31 @@ class AIOverview:
             smci = get_stock("SMCI", "超微电脑")
             vrt = get_stock("VRT", "维谛技术")
             pltr = get_stock("PLTR", "Palantir")
+            now = get_stock("NOW", "ServiceNow")
+            crm = get_stock("CRM", "Salesforce")
             soxx = get_stock("SOXX", "费半半导体ETF")
 
-            # 3. 获取 A股 AI 板块表现作为补充与 L6 投机情绪衡量
+            # 3. 获取 A股 AI 板块表现作为补充与 L6 投机情绪衡量 (去重)
             cn_ai_sectors = []
             try:
                 board_df = data_provider.get_board_industry_name()
                 if not board_df.empty:
-                    # 查找 A股 AI 关键板块
-                    target_boards = ["半导体", "电子元件", "通信设备", "计算机设备", "软件开发"]
-                    matched = board_df[board_df["板块名称"].isin(target_boards)]
-                    for _, row in matched.iterrows():
-                        cn_ai_sectors.append({
-                            "name": row["板块名称"],
-                            "change_pct": safe_float(row["涨跌幅"]),
-                            "top_stock": str(row.get("领涨股票", "")),
-                            "top_stock_pct": safe_float(row.get("领涨股票-涨跌幅"))
-                        })
+                    # 查找 A股 AI 关键板块，保证名称唯一
+                    target_boards = ["半导体", "通信设备", "计算机设备", "软件开发", "电子元件"]
+                    seen = set()
+                    for _, row in board_df.iterrows():
+                        bname = str(row["板块名称"])
+                        if bname in target_boards and bname not in seen:
+                            seen.add(bname)
+                            cn_ai_sectors.append({
+                                "name": bname,
+                                "symbol": "",
+                                "price": None,
+                                "change_pct": safe_float(row["涨跌幅"]),
+                                "top_stock": str(row.get("领涨股票", "")),
+                                "top_stock_pct": safe_float(row.get("领涨股票-涨跌幅")),
+                                "is_sector": True
+                            })
             except Exception as e:
                 logger.warning(f"⚠️ A股 AI 关联板块拉取失败: {e}")
 
@@ -92,9 +104,9 @@ class AIOverview:
             l1_stocks = [nvda, amd, avgo, soxx]
             l1_avg_change = sum(s["change_pct"] for s in l1_stocks) / len(l1_stocks) if l1_stocks else 0.0
 
-            # Layer 2: AI 存储芯片 (HBM/真实需求 ★★★★★)
-            l2_stocks = [mu]
-            l2_avg_change = mu["change_pct"]
+            # Layer 2: AI 存储与晶圆代工 (HBM/CoWoS ★★★★★)
+            l2_stocks = [mu, tsm, asml]
+            l2_avg_change = sum(s["change_pct"] for s in l2_stocks) / len(l2_stocks) if l2_stocks else 0.0
 
             # Layer 3: 数据中心与基础设施 (服务器/制冷/网络 ★★★★☆)
             l3_stocks = [smci, vrt]
@@ -105,8 +117,8 @@ class AIOverview:
             l4_avg_change = sum(s["change_pct"] for s in l4_stocks) / len(l4_stocks) if l4_stocks else 0.0
 
             # Layer 5: AI 软件与 Agent 应用 (商业化落地 ★★★☆☆)
-            l5_stocks = [pltr]
-            l5_avg_change = pltr["change_pct"]
+            l5_stocks = [pltr, now, crm]
+            l5_avg_change = sum(s["change_pct"] for s in l5_stocks) / len(l5_stocks) if l5_stocks else 0.0
 
             # Layer 6: AI 概念情绪 (A股与小票 ★)
             l6_avg_change = sum(s["change_pct"] for s in cn_ai_sectors) / len(cn_ai_sectors) if cn_ai_sectors else 0.0
@@ -123,12 +135,12 @@ class AIOverview:
                 },
                 {
                     "layer_id": "L2",
-                    "title": "第二层：AI 存储芯片 (HBM)",
+                    "title": "第二层：AI 存储与代工 (HBM/CoWoS)",
                     "star": "★★★★★",
-                    "importance": "真实需求验证",
+                    "importance": "真实需求与产能",
                     "avg_change": round(l2_avg_change, 2),
                     "items": l2_stocks,
-                    "desc": "包含美光科技 (HBM/DRAM)，验证算力需求是否成功传导至高带宽存储。"
+                    "desc": "包含美光 MU (HBM/存储)、台积电 TSM (先进封装) 及阿斯麦 ASML。"
                 },
                 {
                     "layer_id": "L3",
@@ -150,12 +162,12 @@ class AIOverview:
                 },
                 {
                     "layer_id": "L5",
-                    "title": "第五层：AI 软件与应用",
+                    "title": "第五层：AI 软件与 Agent 应用",
                     "star": "★★★☆☆",
                     "importance": "商业化与渗透",
                     "avg_change": round(l5_avg_change, 2),
                     "items": l5_stocks,
-                    "desc": "以 Palantir 为代表的 AI Agent 及 Enterprise SaaS 应用层。"
+                    "desc": "以 Palantir、ServiceNow、Salesforce 为代表的 AI Agent 与 Enterprise SaaS。"
                 },
                 {
                     "layer_id": "L6",
