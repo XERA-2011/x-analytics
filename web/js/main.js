@@ -82,15 +82,23 @@ class App {
                         break;
                     case '1':
                         event.preventDefault();
-                        this.switchTab('market-cn');
+                        this.switchTab('market-asia');
                         break;
                     case '2':
                         event.preventDefault();
-                        this.switchTab('market-us');
+                        this.switchTab('market-western');
                         break;
                     case '3':
                         event.preventDefault();
+                        this.switchTab('ai');
+                        break;
+                    case '4':
+                        event.preventDefault();
                         this.switchTab('metals');
+                        break;
+                    case '5':
+                        event.preventDefault();
+                        this.switchTab('etf');
                         break;
                 }
             }
@@ -200,10 +208,18 @@ class App {
 
     async loadInitialData() {
         const urlTab = utils.getUrlParam('tab');
-        if (urlTab && ['market-cn', 'market-us', 'metals', 'etf'].includes(urlTab)) {
-            this.switchTab(urlTab); // This calls refreshCurrentTab inside
+        const legacyMap = {
+            'market-cn': 'market-asia',
+            'cn': 'market-asia',
+            'market-us': 'market-western',
+            'us': 'market-western'
+        };
+        const validTabs = ['market-asia', 'market-western', 'ai', 'metals', 'etf'];
+        const targetTab = legacyMap[urlTab] || urlTab;
+
+        if (targetTab && validTabs.includes(targetTab)) {
+            this.switchTab(targetTab);
         } else {
-            // Default load
             await this.refreshCurrentTab();
         }
     }
