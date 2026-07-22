@@ -329,6 +329,11 @@ class API {
         return this.request('/etf/heatmap');
     }
 
+    // AI 产业链 API
+    async getAIOverview() {
+        return this.request('/ai/overview');
+    }
+
     async triggerWarmup() {
         return this.request('/api/cache/warmup', { method: 'POST' });
     }

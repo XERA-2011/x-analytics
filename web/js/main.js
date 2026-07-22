@@ -16,6 +16,7 @@ class App {
         this.modules = {
             'market-asia': new AsiaMarketController(),
             'market-western': new WesternMarketController(),
+            'ai': new AIMarketController(),
             'metals': new MetalsController(),
             'etf': new ETFController()
         };
@@ -27,6 +28,7 @@ class App {
         const titles = {
             'market-asia': '亚洲市场',
             'market-western': '欧美市场',
+            'ai': 'AI 产业',
             'metals': '金属',
             'etf': 'ETF',
         };

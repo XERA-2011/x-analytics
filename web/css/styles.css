@@ -958,3 +958,299 @@ footer {
     visibility: visible;
     transform: translateX(-50%) translateY(-8px);
 }
+
+/* ==========================================================================
+   AI 产业链专属样式 (AI Module Styles)
+   ========================================================================== */
+
+.ai-header-grid {
+    display: grid;
+    grid-template-columns: 200px 1.2fr 1.5fr;
+    gap: 16px;
+    align-items: stretch;
+}
+
+.ai-badge-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+    font-weight: 600;
+}
+
+.ai-score-box {
+    background: #f8fafc;
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.ai-score-num {
+    font-size: 38px;
+    font-weight: 800;
+    font-family: var(--font-mono);
+    line-height: 1.1;
+}
+
+.ai-score-max {
+    font-size: 14px;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.ai-score-tip {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    margin-top: 6px;
+}
+
+.ai-cycle-box {
+    background: #f8fafc;
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.ai-cycle-title {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 6px;
+}
+
+.ai-cycle-title.status-active { color: #16a34a; }
+.ai-cycle-title.status-warning { color: #dc2626; }
+.ai-cycle-title.status-cooling { color: #2563eb; }
+.ai-cycle-title.status-neutral { color: #475569; }
+
+.ai-cycle-desc {
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+.ai-signals-box {
+    background: #f8fafc;
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.ai-signals-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.ai-signal-item {
+    border-bottom: 1px dashed var(--border-light);
+    padding-bottom: 6px;
+}
+
+.ai-signal-item:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.ai-signal-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.ai-signal-sub {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    margin-top: 2px;
+}
+
+/* 资金扩散轮动 Roadmap */
+.ai-roadmap {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding: 8px 0;
+}
+
+.ai-step {
+    flex: 1;
+    min-width: 110px;
+    background: #f8fafc;
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    padding: 10px;
+    text-align: center;
+    transition: all 0.2s;
+}
+
+.ai-step.active {
+    background: rgba(37, 99, 235, 0.05);
+    border-color: #93c5fd;
+}
+
+.ai-step.warning {
+    background: rgba(220, 38, 38, 0.04);
+    border-color: #fca5a5;
+}
+
+.ai-step-num {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    margin-bottom: 2px;
+}
+
+.ai-step-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.ai-step-sub {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    margin-top: 2px;
+}
+
+.ai-arrow {
+    color: var(--text-tertiary);
+    font-size: 12px;
+    font-weight: bold;
+}
+
+/* 6 Layer Grid */
+.ai-layers-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+}
+
+.ai-layer-card {
+    display: flex;
+    flex-direction: column;
+}
+
+.ai-layer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 6px;
+}
+
+.ai-layer-id {
+    display: inline-block;
+    background: var(--bg-secondary, #e2e8f0);
+    color: var(--text-primary);
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-right: 6px;
+}
+
+.ai-layer-star {
+    font-size: 11px;
+    color: #f59e0b;
+}
+
+.ai-layer-title {
+    font-size: 14px;
+    font-weight: 700;
+    margin-top: 4px;
+}
+
+.ai-layer-avg {
+    font-size: 16px;
+    font-weight: 800;
+    font-family: var(--font-mono);
+}
+
+.ai-layer-importance {
+    font-size: 11px;
+    color: var(--accent-blue, #2563eb);
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.ai-layer-desc {
+    font-size: 11px;
+    color: var(--text-secondary);
+    line-height: 1.4;
+    margin-bottom: 12px;
+    min-height: 32px;
+}
+
+.ai-layer-items {
+    background: #f8fafc;
+    border: 1px solid var(--border-light);
+    border-radius: 6px;
+    padding: 6px 10px;
+    margin-top: auto;
+}
+
+.ai-item-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.ai-item-row:last-child {
+    border-bottom: none;
+}
+
+.ai-item-name {
+    font-size: 12px;
+    font-weight: 600;
+    display: block;
+}
+
+.ai-item-code {
+    font-size: 10px;
+    color: var(--text-tertiary);
+    font-family: var(--font-mono);
+}
+
+.ai-item-price-box {
+    text-align: right;
+}
+
+.ai-item-price {
+    font-size: 12px;
+    font-family: var(--font-mono);
+    color: var(--text-secondary);
+    margin-right: 6px;
+}
+
+.ai-item-change {
+    font-size: 12px;
+    font-weight: 700;
+    font-family: var(--font-mono);
+}
+
+@media (max-width: 900px) {
+    .ai-header-grid {
+        grid-template-columns: 1fr;
+    }
+    .ai-layers-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 640px) {
+    .ai-layers-grid {
+        grid-template-columns: 1fr;
+    }
+}

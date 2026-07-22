@@ -8,8 +8,8 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>x-analytics</title>
-    <script src="js/lucide.min.js?v=26"></script>
-    <link rel="stylesheet" href="css/styles.css?v=26">
+    <script src="js/lucide.min.js?v=27"></script>
+    <link rel="stylesheet" href="css/styles.css?v=27">
     <link rel="icon" href="favicon.ico" type="image/x-icon">
 </head>
 
@@ -42,6 +42,9 @@
             </button>
             <button class="tab-btn" data-tab="market-western">
                 欧美市场
+            </button>
+            <button class="tab-btn" data-tab="ai">
+                AI 产业
             </button>
             <button class="tab-btn" data-tab="metals">
                 金属
@@ -168,6 +171,16 @@
             </div>
         </section>
 
+        <!-- AI Industry -->
+        <section class="tab-content" id="ai">
+            <div class="section-header">
+                <h2 class="section-title">AI 产业链火热度 & 周期监测</h2>
+                <button class="refresh-btn" onclick="window.app.refreshCurrentTab()" title="点击刷新"><i
+                        data-lucide="refresh-cw" width="14"></i> 刷新</button>
+            </div>
+            <div id="ai-container" class="loading">Loading...</div>
+        </section>
+
         <!-- Metals -->
         <section class="tab-content" id="metals">
             <div class="section-header">
@@ -287,15 +300,16 @@
 
     <div id="tooltip" style="display:none;"></div>
 
-    <script src="js/echarts.min.js?v=26"></script>
-    <script src="js/api.js?v=26"></script>
-    <script src="js/charts.js?v=26"></script>
-    <script src="js/utils.js?v=26"></script>
-    <script src="js/modules/market-asia.js?v=26"></script>
-    <script src="js/modules/market-western.js?v=26"></script>
-    <script src="js/modules/metals.js?v=26"></script>
-    <script src="js/modules/etf.js?v=26"></script>
-    <script src="js/main.js?v=26"></script>
+    <script src="js/echarts.min.js?v=27"></script>
+    <script src="js/api.js?v=27"></script>
+    <script src="js/charts.js?v=27"></script>
+    <script src="js/utils.js?v=27"></script>
+    <script src="js/modules/market-asia.js?v=27"></script>
+    <script src="js/modules/market-western.js?v=27"></script>
+    <script src="js/modules/ai.js?v=27"></script>
+    <script src="js/modules/metals.js?v=27"></script>
+    <script src="js/modules/etf.js?v=27"></script>
+    <script src="js/main.js?v=27"></script>
     <script>lucide.createIcons();</script>
 </body>
 

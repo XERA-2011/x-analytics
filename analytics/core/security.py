@@ -27,12 +27,14 @@ PUBLIC_API_PATHS = [
     "/market-western/",
     "/metals/",
     "/etf/",
+    "/ai/",
     "/analytics/api/",
     "/analytics/market-asia/",
     "/analytics/market-hk/",
     "/analytics/market-western/",
     "/analytics/metals/",
     "/analytics/etf/",
+    "/analytics/ai/",
 ]
 
 # 静态资源 / 健康检查路径（不限流）

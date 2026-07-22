@@ -430,6 +430,14 @@ def setup_default_jobs():
         interval_minutes=240
     )
 
+    # 5. AI 产业链
+    from ..modules.ai import AIOverview
+    scheduler.add_simple_job(
+        job_id="warmup:ai:overview",
+        func=lambda: warmup_cache(AIOverview.get_overview),
+        interval_minutes=10
+    )
+
     # =========================================================================
     # 贵金属 (Metals)
     # =========================================================================
@@ -620,6 +628,10 @@ def initial_warmup():
         # ETF
         from ..modules.etf import ETFHeatmap
         warmup_cache(ETFHeatmap.get_heatmap_data)
+
+        # AI
+        from ..modules.ai import AIOverview
+        warmup_cache(AIOverview.get_overview)
 
         logger.info("✅ 核心指标预热完成")
         
