@@ -247,15 +247,6 @@ class API {
         return this.request('/market-asia/bonds/analysis');
     }
 
-    // 香港市场 API
-    async getHKIndices() {
-        return this.request('/market-hk/indices');
-    }
-
-    async getHKFearGreed() {
-        return this.request('/market-hk/fear-greed');
-    }
-
     async getCNIndices() {
         return this.request('/market-asia/indices');
     }
@@ -305,10 +296,6 @@ class API {
 
     async getUSOverboughtOversold(period = 'daily') {
         return this.request(`/market-western/signals/overbought-oversold?period=${period}`);
-    }
-
-    async getHKOverboughtOversold(period = 'daily') {
-        return this.request(`/market-hk/signals/overbought-oversold?period=${period}`);
     }
 
     async getGoldOverboughtOversold(period = 'daily') {

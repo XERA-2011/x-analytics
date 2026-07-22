@@ -363,31 +363,6 @@ def setup_default_jobs():
     )
 
     # =========================================================================
-    # 香港市场 (HK Market) - 注：港股行业表现已从前端移除，暂停预热
-    # =========================================================================
-
-    # from ..modules.market_hk import HKIndices
-    # from ..modules.market_hk.fear_greed import HKFearGreed
-
-    # 1. 港股指数 & 板块 (已移除前端展示)
-    # scheduler.add_market_job(
-    #     job_id="warmup:hk:indices",
-    #     func=HKIndices.get_market_data,
-    #     market="market_hk",
-    #     use_warmup_cache=True,
-    # )
-
-    # 2. 港股恐慌贪婪 (已并入亚洲情绪，不再单独展示)
-    # scheduler.add_market_job(
-    #     job_id="warmup:hk:fear_greed",
-    #     func=HKFearGreed.get_data,
-    #     market="market_hk",
-    #     use_warmup_cache=True,
-    #     trading_interval_minutes=5,
-    #     non_trading_max_age_seconds=settings.CACHE_TTL["fear_greed_stale"],
-    # )
-
-    # =========================================================================
     # 欧美市场 (Western Market)
     # =========================================================================
 
@@ -618,12 +593,6 @@ def initial_warmup():
         warmup_cache(GoldFearGreedIndex.calculate)
         from ..modules.metals.fear_greed import SilverFearGreedIndex
         warmup_cache(SilverFearGreedIndex.calculate)
-
-        # HK (已移除前端港股行业表现展示，暂停预热)
-        # from ..modules.market_hk import HKIndices
-        # from ..modules.market_hk.fear_greed import HKFearGreed
-        # warmup_cache(HKIndices.get_market_data)
-        # warmup_cache(HKFearGreed.get_data)
 
         # ETF
         from ..modules.etf import ETFHeatmap
