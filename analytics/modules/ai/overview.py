@@ -3,7 +3,7 @@ AI 产业链火热度、周期评估与中美竞争分析终端
 """
 
 import akshare as ak
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Tuple
 from ...core.cache import cached
 from ...core.config import settings
 from ...core.utils import safe_float, get_beijing_time
@@ -79,28 +79,71 @@ class AIOverview:
             crm = get_stock("CRM", "Salesforce")
             soxx = get_stock("SOXX", "费半半导体ETF")
 
-            # 2. 获取 A股 AI 板块表现作为补充
-            cn_ai_sectors = []
+            # 2. 获取 A股 AI 板块表现作为补充 (含多关键字匹配与真实个股兜底)
+            cn_ai_sectors: List[Dict[str, Any]] = []
+            
+            # 关键字组，兼容东方财富与新浪板块名称变种
+            board_keyword_groups: List[Tuple[str, List[str]]] = [
+                ("半导体", ["半导体"]),
+                ("通信设备", ["通信设备", "通讯行业", "通信"]),
+                ("计算机设备", ["计算机设备", "计算机", "IT设备"]),
+                ("软件开发", ["软件开发", "软件服务", "互联网服务"]),
+                ("电子元件", ["电子元件", "电子器件", "元器件", "电子"])
+            ]
+
             try:
                 board_df = data_provider.get_board_industry_name()
                 if not board_df.empty:
-                    target_boards = ["半导体", "通信设备", "计算机设备", "软件开发", "电子元件"]
-                    seen = set()
-                    for _, row in board_df.iterrows():
-                        bname = str(row["板块名称"])
-                        if bname in target_boards and bname not in seen:
-                            seen.add(bname)
-                            cn_ai_sectors.append({
-                                "name": bname,
-                                "symbol": "",
-                                "price": None,
-                                "change_pct": safe_float(row["涨跌幅"]),
-                                "top_stock": str(row.get("领涨股票", "")),
-                                "top_stock_pct": safe_float(row.get("领涨股票-涨跌幅")),
-                                "is_sector": True
-                            })
+                    matched_groups = set()
+                    for display_name, keywords in board_keyword_groups:
+                        if display_name in matched_groups:
+                            continue
+                        for _, row in board_df.iterrows():
+                            bname = str(row.get("板块名称", ""))
+                            if any(kw == bname or (len(kw) >= 2 and kw in bname) for kw in keywords):
+                                matched_groups.add(display_name)
+                                cn_ai_sectors.append({
+                                    "name": bname,
+                                    "symbol": "",
+                                    "price": None,
+                                    "change_pct": safe_float(row.get("涨跌幅")),
+                                    "top_stock": str(row.get("领涨股票", "")),
+                                    "top_stock_pct": safe_float(row.get("领涨股票-涨跌幅")),
+                                    "is_sector": True
+                                })
+                                break
             except Exception as e:
                 logger.warning(f"⚠️ A股 AI 关联板块拉取失败: {e}")
+
+            # 保底机制：若板块 API 完全失效或无匹配，使用 A股 AI 核心龙头个股进行真实行情数据兜底
+            if not cn_ai_sectors:
+                logger.info("ℹ️ A股 AI 板块匹配为空，启动 A股 AI 核心个股真实行情兜底...")
+                try:
+                    spot_df = data_provider.get_stock_zh_a_spot()
+                    if spot_df is not None and not spot_df.empty:
+                        fallback_codes = [
+                            ("300308", "中际旭创"),
+                            ("688256", "寒武纪"),
+                            ("688041", "海光信息"),
+                            ("601138", "工业富联"),
+                            ("000977", "浪潮信息")
+                        ]
+                        for code, default_name in fallback_codes:
+                            match_row = spot_df[spot_df["代码"].astype(str) == code]
+                            if not match_row.empty:
+                                r = match_row.iloc[0]
+                                cn_ai_sectors.append({
+                                    "name": str(r.get("名称", default_name)),
+                                    "symbol": code,
+                                    "price": safe_float(r.get("最新价")),
+                                    "change_pct": safe_float(r.get("涨跌幅")),
+                                    "top_stock": "",
+                                    "top_stock_pct": 0.0,
+                                    "is_sector": False
+                                })
+                except Exception as fb_err:
+                    logger.warning(f"⚠️ A股 AI 核心个股兜底拉取失败: {fb_err}")
+
 
             # 3. 6 层产业链数据
             l1_stocks = [nvda, amd, avgo, soxx]
