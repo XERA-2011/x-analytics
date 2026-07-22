@@ -1240,8 +1240,279 @@ footer {
     font-family: var(--font-mono);
 }
 
+.ai-meta-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 6px;
+}
+
+.ai-trend-tag {
+    font-size: 11px;
+    font-weight: 600;
+    color: #16a34a;
+    background: #dcfce7;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.ai-risk-tag {
+    font-size: 11px;
+    font-weight: 600;
+    color: #d97706;
+    background: #fef3c7;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+/* 中美 AI 产业五维对比 */
+.ai-matrix-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+}
+
+.ai-matrix-item {
+    background: #f8fafc;
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    padding: 10px;
+}
+
+.ai-matrix-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.ai-matrix-vals {
+    font-size: 10px;
+    font-family: var(--font-mono);
+    color: var(--text-tertiary);
+}
+
+.ai-matrix-vals .val-us { color: #2563eb; font-weight: 700; }
+.ai-matrix-vals .val-cn { color: #dc2626; font-weight: 700; }
+
+.ai-matrix-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.ai-bar-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.bar-tag {
+    font-size: 10px;
+    font-weight: 700;
+    width: 18px;
+    color: var(--text-secondary);
+}
+
+.bar-outer {
+    flex: 1;
+    height: 6px;
+    background: #e2e8f0;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.bar-inner.us-bg { background: #3b82f6; height: 100%; border-radius: 3px; }
+.bar-inner.cn-bg { background: #ef4444; height: 100%; border-radius: 3px; }
+
+/* Middle Grid */
+.ai-middle-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+/* 泡沫温度计 */
+.bubble-thermo-box {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.thermo-row {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.thermo-title {
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.thermo-sub {
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+
+.thermo-bar {
+    height: 8px;
+    background: #e2e8f0;
+    border-radius: 4px;
+    overflow: hidden;
+    margin: 2px 0;
+}
+
+.thermo-fill.us-fill { background: linear-gradient(90deg, #3b82f6, #f59e0b); height: 100%; }
+.thermo-fill.cn-fill { background: linear-gradient(90deg, #f59e0b, #ef4444); height: 100%; }
+
+.thermo-tag {
+    align-self: flex-start;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.thermo-tag.status-healthy { background: #dcfce7; color: #15803d; }
+.thermo-tag.status-warning { background: #fee2e2; color: #b91c1c; }
+
+/* 资金轮动 */
+.rotation-box {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.rotation-badge {
+    display: inline-block;
+    align-self: flex-start;
+    font-size: 14px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 6px;
+}
+
+.rotation-badge.rotation-healthy { background: #dcfce7; color: #15803d; }
+.rotation-badge.rotation-bubble { background: #fee2e2; color: #b91c1c; }
+.rotation-badge.rotation-neutral { background: #e0f2fe; color: #0369a1; }
+
+.rotation-desc {
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+.rotation-flow {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-top: 8px;
+    flex-wrap: wrap;
+}
+
+.flow-step {
+    background: #f1f5f9;
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: var(--text-primary);
+}
+
+/* 四象限投资时钟 */
+.clock-container {
+    position: relative;
+    height: 180px;
+    background: #f8fafc;
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 1px;
+}
+
+.clock-quadrant {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 600;
+    color: #94a3b8;
+    border: 1px dashed #e2e8f0;
+}
+
+.clock-dot {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+    z-index: 10;
+}
+
+.dot-pin {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+
+.us-dot .dot-pin { background: #2563eb; box-shadow: 0 0 8px rgba(37,99,235,0.6); }
+.cn-dot .dot-pin { background: #dc2626; box-shadow: 0 0 8px rgba(220,38,38,0.6); }
+
+.dot-label {
+    font-size: 10px;
+    font-weight: 700;
+    background: rgba(255,255,255,0.9);
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid var(--border-light);
+}
+
+/* 历史周期比对 */
+.history-box {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.history-match-era {
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--text-primary);
+}
+
+.history-sim-bar {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--accent-blue);
+    background: #eff6ff;
+    padding: 6px 10px;
+    border-radius: 6px;
+}
+
+.history-summary {
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+@media (max-width: 1024px) {
+    .ai-matrix-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
 @media (max-width: 900px) {
     .ai-header-grid {
+        grid-template-columns: 1fr;
+    }
+    .ai-middle-grid {
         grid-template-columns: 1fr;
     }
     .ai-layers-grid {
@@ -1250,6 +1521,9 @@ footer {
 }
 
 @media (max-width: 640px) {
+    .ai-matrix-grid {
+        grid-template-columns: 1fr;
+    }
     .ai-layers-grid {
         grid-template-columns: 1fr;
     }

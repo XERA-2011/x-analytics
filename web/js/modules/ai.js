@@ -3,13 +3,13 @@ class AIMarketController {
     }
 
     async loadData() {
-        console.log('🤖 加载 AI 产业链数据...');
+        console.log('🤖 加载 AI 产业周期终端数据...');
         try {
             const data = await api.getAIOverview();
             this.renderOverview(data);
         } catch (error) {
-            console.error('加载 AI 产业链数据失败:', error);
-            utils.renderError('ai-container', 'AI 产业链数据加载失败');
+            console.error('加载 AI 产业周期数据失败:', error);
+            utils.renderError('ai-container', 'AI 产业周期终端数据加载失败');
         }
     }
 
@@ -22,30 +22,36 @@ class AIMarketController {
             return;
         }
 
-        const { heat_score, cycle_phase, cycle_status, cycle_desc, signals, layers } = data;
+        const { 
+            heat_score, trend_str, risk_level, cycle_phase, cycle_status, cycle_desc,
+            us_cn_comparison, bubble_meter, rotation_mode, rotation_class, rotation_desc,
+            historical_match, investment_clock, signals, layers 
+        } = data;
 
-        // 渲染顶部：AI 仪表盘 & 周期分析
         const scoreClass = heat_score >= 70 ? 'text-up' : heat_score <= 40 ? 'text-down' : 'text-neutral';
-        
+
         let html = `
-            <!-- 顶部 AI 热度仪表盘 & 周期指示器 -->
+            <!-- 1. AI 全球产业周期总评分 Dashboard Header -->
             <div class="card hero ai-hero-card" style="margin-bottom: 16px;">
                 <div class="ai-header-grid">
-                    <!-- 左侧：热度得分 -->
+                    <!-- 左侧：AI Global Cycle Score -->
                     <div class="ai-score-box">
-                        <div class="ai-badge-label">AI 产业综合火热度</div>
+                        <div class="ai-badge-label">AI Global Cycle Score</div>
                         <div class="ai-score-num ${scoreClass}">${heat_score} <span class="ai-score-max">/ 100</span></div>
-                        <div class="ai-score-tip">基于算力/存储/巨头CapEx/软件加权推算</div>
+                        <div class="ai-meta-row">
+                            <span class="ai-trend-tag">${trend_str || '↑ 稳定'}</span>
+                            <span class="ai-risk-tag">风险: ${risk_level || '中等'}</span>
+                        </div>
                     </div>
 
-                    <!-- 中间：产业周期判定 -->
+                    <!-- 中间：当前产业周期阶段 -->
                     <div class="ai-cycle-box">
                         <div class="ai-badge-label">当前产业周期阶段</div>
                         <div class="ai-cycle-title status-${cycle_status}">${cycle_phase}</div>
                         <div class="ai-cycle-desc">${cycle_desc}</div>
                     </div>
 
-                    <!-- 右侧：三大关键监控信号 -->
+                    <!-- 右侧：三大核心验证信号 -->
                     <div class="ai-signals-box">
                         <div class="ai-badge-label">三大核心验证信号</div>
                         <div class="ai-signals-list">
@@ -72,45 +78,186 @@ class AIMarketController {
                 </div>
             </div>
 
-            <!-- 资金轮动与扩散路径 Roadmap -->
+            <!-- 2. 中美 AI 产业五维对比 (US vs CN 5D Matrix) -->
             <div class="card" style="margin-bottom: 16px; padding: 16px;">
                 <div class="card-header" style="margin-bottom: 12px; padding-bottom: 0; border-bottom: none;">
-                    <div class="card-title"><i data-lucide="git-commit" width="16" style="vertical-align: middle;"></i> AI 产业链资金扩散路径 (Capital Rotation Lifecycle)</div>
+                    <div class="card-title"><i data-lucide="git-compare" width="16" style="vertical-align: middle;"></i> 中美 AI 产业五维对比 (US vs CN Matrix)</div>
+                </div>
+                <div class="ai-matrix-grid">
+        `;
+
+        if (us_cn_comparison) {
+            Object.keys(us_cn_comparison).forEach(key => {
+                const item = us_cn_comparison[key];
+                const usPct = Math.round((item.us / item.max) * 100);
+                const cnPct = Math.round((item.cn / item.max) * 100);
+
+                html += `
+                    <div class="ai-matrix-item">
+                        <div class="ai-matrix-head">
+                            <span class="ai-matrix-label">${item.label}</span>
+                            <span class="ai-matrix-vals"><span class="val-us">美 ${item.us}</span> vs <span class="val-cn">中 ${item.cn}</span> (满分${item.max})</span>
+                        </div>
+                        <div class="ai-matrix-bars">
+                            <div class="ai-bar-wrap">
+                                <span class="bar-tag">US</span>
+                                <div class="bar-outer"><div class="bar-inner us-bg" style="width: ${usPct}%;"></div></div>
+                            </div>
+                            <div class="ai-bar-wrap">
+                                <span class="bar-tag">CN</span>
+                                <div class="bar-outer"><div class="bar-inner cn-bg" style="width: ${cnPct}%;"></div></div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        html += `
+                </div>
+            </div>
+
+            <!-- 3. AI 泡沫温度计 & 资金健康轮动 (Bubble Thermometer & Rotation) -->
+            <div class="ai-middle-grid" style="margin-bottom: 16px;">
+                <!-- 左侧：泡沫温度计 -->
+                <div class="card" style="padding: 16px;">
+                    <div class="card-header" style="margin-bottom: 12px; padding-bottom: 0; border-bottom: none;">
+                        <div class="card-title"><i data-lucide="thermometer" width="16" style="vertical-align: middle;"></i> AI 泡沫温度计 (Bubble Risk)</div>
+                    </div>
+        `;
+
+        if (bubble_meter) {
+            const usBM = bubble_meter.us || {};
+            const cnBM = bubble_meter.cn || {};
+            html += `
+                <div class="bubble-thermo-box">
+                    <div class="thermo-row">
+                        <div class="thermo-title">美国 AI</div>
+                        <div class="thermo-sub">产业价值: <strong>${usBM.value_score}</strong> | 泡沫风险: <strong class="text-down">${usBM.bubble_risk}</strong></div>
+                        <div class="thermo-bar"><div class="thermo-fill us-fill" style="width: ${usBM.bubble_risk}%;"></div></div>
+                        <div class="thermo-tag status-${usBM.status_class}">${usBM.status_text}</div>
+                    </div>
+                    <div class="thermo-divider"></div>
+                    <div class="thermo-row">
+                        <div class="thermo-title">中国 AI</div>
+                        <div class="thermo-sub">产业价值: <strong>${cnBM.value_score}</strong> | 泡沫风险: <strong class="text-down">${cnBM.bubble_risk}</strong></div>
+                        <div class="thermo-bar"><div class="thermo-fill cn-fill" style="width: ${cnBM.bubble_risk}%;"></div></div>
+                        <div class="thermo-tag status-${cnBM.status_class}">${cnBM.status_text}</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        html += `
+                </div>
+
+                <!-- 右侧：资金轮动监测 -->
+                <div class="card" style="padding: 16px;">
+                    <div class="card-header" style="margin-bottom: 12px; padding-bottom: 0; border-bottom: none;">
+                        <div class="card-title"><i data-lucide="repeat" width="16" style="vertical-align: middle;"></i> AI 资金轮动监测</div>
+                    </div>
+                    <div class="rotation-box">
+                        <div class="rotation-badge rotation-${rotation_class}">${rotation_mode}</div>
+                        <div class="rotation-desc">${rotation_desc}</div>
+                        <div class="rotation-flow">
+                            <span class="flow-step">AI 芯片</span>➔
+                            <span class="flow-step">HBM 存储</span>➔
+                            <span class="flow-step">基建电源</span>➔
+                            <span class="flow-step">云计算</span>➔
+                            <span class="flow-step">应用 Agent</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. 四象限 AI 投资时钟 & 历史周期比对 -->
+            <div class="ai-middle-grid" style="margin-bottom: 16px;">
+                <!-- 左侧：四象限 AI 投资时钟 -->
+                <div class="card" style="padding: 16px;">
+                    <div class="card-header" style="margin-bottom: 12px; padding-bottom: 0; border-bottom: none;">
+                        <div class="card-title"><i data-lucide="clock" width="16" style="vertical-align: middle;"></i> AI 四象限投资时钟</div>
+                    </div>
+                    <div class="clock-container">
+                        <div class="clock-quadrant q-top-left">泡沫期</div>
+                        <div class="clock-quadrant q-top-right">硬件爆发期</div>
+                        <div class="clock-quadrant q-bottom-left">需求验证期</div>
+                        <div class="clock-quadrant q-bottom-right">应用爆发期</div>
+                        
+                        <!-- 坐标打点 -->
+                        <div class="clock-dot us-dot" style="left: ${investment_clock?.us_position?.x || 68}%; top: ${100 - (investment_clock?.us_position?.y || 82)}%;">
+                            <span class="dot-pin"></span>
+                            <span class="dot-label">美国 (${investment_clock?.us_position?.stage})</span>
+                        </div>
+                        <div class="clock-dot cn-dot" style="left: ${investment_clock?.cn_position?.x || 48}%; top: ${100 - (investment_clock?.cn_position?.y || 62)}%;">
+                            <span class="dot-pin"></span>
+                            <span class="dot-label">中国 (${investment_clock?.cn_position?.stage})</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 右侧：AI 历史周期比对 -->
+                <div class="card" style="padding: 16px;">
+                    <div class="card-header" style="margin-bottom: 12px; padding-bottom: 0; border-bottom: none;">
+                        <div class="card-title"><i data-lucide="history" width="16" style="vertical-align: middle;"></i> 历史科技周期推演映射</div>
+                    </div>
+        `;
+
+        if (historical_match) {
+            html += `
+                <div class="history-box">
+                    <div class="history-match-era">${historical_match.matched_era}</div>
+                    <div class="history-sim-bar">
+                        <span>周期相似度: <strong>${historical_match.similarity_pct}%</strong></span>
+                        <span>${historical_match.bubble_distance}</span>
+                    </div>
+                    <div class="history-summary">${historical_match.summary}</div>
+                </div>
+            `;
+        }
+
+        html += `
+                </div>
+            </div>
+
+            <!-- 5. 产业链五阶段扩散 Roadmap -->
+            <div class="card" style="margin-bottom: 16px; padding: 16px;">
+                <div class="card-header" style="margin-bottom: 12px; padding-bottom: 0; border-bottom: none;">
+                    <div class="card-title"><i data-lucide="git-commit" width="16" style="vertical-align: middle;"></i> AI 产业链五阶段扩散模型 (Diffusion Lifecycle)</div>
                 </div>
                 <div class="ai-roadmap">
                     <div class="ai-step active">
-                        <div class="ai-step-num">1</div>
+                        <div class="ai-step-num">阶段 1</div>
                         <div class="ai-step-name">算力芯片</div>
                         <div class="ai-step-sub">NVDA / AMD</div>
                     </div>
                     <div class="ai-arrow">➔</div>
                     <div class="ai-step active">
-                        <div class="ai-step-num">2</div>
+                        <div class="ai-step-num">阶段 2</div>
                         <div class="ai-step-name">存储 HBM</div>
                         <div class="ai-step-sub">美光 MU</div>
                     </div>
                     <div class="ai-arrow">➔</div>
                     <div class="ai-step active">
-                        <div class="ai-step-num">3</div>
+                        <div class="ai-step-num">阶段 3</div>
                         <div class="ai-step-name">基建与电源</div>
                         <div class="ai-step-sub">SMCI / VRT</div>
                     </div>
                     <div class="ai-arrow">➔</div>
                     <div class="ai-step">
-                        <div class="ai-step-num">4</div>
+                        <div class="ai-step-num">阶段 4</div>
                         <div class="ai-step-name">应用与 Agent</div>
                         <div class="ai-step-sub">PLTR / SaaS</div>
                     </div>
                     <div class="ai-arrow">➔</div>
                     <div class="ai-step warning">
-                        <div class="ai-step-num">5</div>
+                        <div class="ai-step-num">阶段 5</div>
                         <div class="ai-step-name">概念炒作 (泡沫)</div>
                         <div class="ai-step-sub">边缘垃圾小票</div>
                     </div>
                 </div>
             </div>
 
-            <!-- 6 Layer AI Industry Grid -->
+            <!-- 6. 6 Layer AI Industry Grid -->
             <div class="card-header" style="margin-bottom: 12px;">
                 <h3 class="card-title"><i data-lucide="layers" width="16" style="vertical-align: middle;"></i> AI 产业链 6 层深度拆解</h3>
             </div>
