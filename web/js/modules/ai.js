@@ -267,7 +267,7 @@ class AIMarketController {
 
         if (layers && layers.length > 0) {
             layers.forEach(layer => {
-                const avgClass = layer.avg_change > 0 ? 'text-up-us' : layer.avg_change < 0 ? 'text-down-us' : '';
+                const avgClass = layer.avg_change > 0 ? 'text-up' : layer.avg_change < 0 ? 'text-down' : '';
                 const avgSign = layer.avg_change > 0 ? '+' : '';
                 
                 html += `
@@ -290,10 +290,7 @@ class AIMarketController {
                 if (layer.items && layer.items.length > 0) {
                     layer.items.forEach(item => {
                         const changeVal = item.change_pct || 0.0;
-                        const isCN = item.is_sector || layer.layer_id === 'L6';
-                        const upClass = isCN ? 'text-up' : 'text-up-us';
-                        const downClass = isCN ? 'text-down' : 'text-down-us';
-                        const changeClass = changeVal > 0 ? upClass : changeVal < 0 ? downClass : '';
+                        const changeClass = changeVal > 0 ? 'text-up' : changeVal < 0 ? 'text-down' : '';
                         const sign = changeVal > 0 ? '+' : '';
                         const priceHtml = (item.is_sector || !item.price) ? '' : `<span class="ai-item-price">$${item.price.toFixed(2)}</span>`;
 

@@ -39,16 +39,8 @@ class Utils {
         const formatted = num.toFixed(precision);
         const text = num > 0 ? `+${formatted}%` : `${formatted}%`;
 
-        // 根据市场确定颜色方案
-        let className = '';
-        if (market === 'us') {
-            // 美国市场: 绿涨红跌
-            className = num > 0 ? 'text-up-us' : num < 0 ? 'text-down-us' : '';
-        } else {
-            // 中国市场/金属: 红涨绿跌
-            className = num > 0 ? 'text-up' : num < 0 ? 'text-down' : '';
-        }
-
+        // 全项目统一颜色方案：红涨绿跌
+        const className = num > 0 ? 'text-up' : num < 0 ? 'text-down' : '';
         return { text, class: className };
     }
 
@@ -568,10 +560,10 @@ class Utils {
 
     // 颜色工具
     static color = {
-        // 根据数值获取颜色
+        // 根据数值获取颜色 (统一红涨绿跌)
         getChangeColor(value) {
-            if (value > 0) return '#10b981'; // 绿色
-            if (value < 0) return '#ef4444'; // 红色
+            if (value > 0) return '#ef4444'; // 红色涨
+            if (value < 0) return '#10b981'; // 绿色跌
             return '#6b7280'; // 灰色
         },
 
