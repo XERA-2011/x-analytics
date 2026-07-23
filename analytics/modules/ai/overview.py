@@ -324,6 +324,40 @@ class AIOverview:
                 }
             ]
 
+            # 11. 指标与公式透明化说明
+            explanations = {
+                "cycle_score": {
+                    "title": "AI Global Cycle Score (全球 AI 产业周期总得分) 计算模型",
+                    "formula": "得分范围 0~100 分。基于美股与A股 6 层产业链加权涨跌幅计算：weighted_pct = L1*35% + L2*25% + L3*20% + L4*15% + L5*5%，基准分 = Min(100, Max(0, 50.0 + weighted_pct * 7.5))。",
+                    "weights": [
+                        {"layer": "L1 算力芯片", "weight": "35%", "targets": "NVDA, AMD, AVGO, SOXX"},
+                        {"layer": "L2 存储与代工", "weight": "25%", "targets": "MU (HBM), TSM (CoWoS), ASML"},
+                        {"layer": "L3 数据中心基建", "weight": "20%", "targets": "SMCI (服务器), VRT (液冷电源)"},
+                        {"layer": "L4 云计算四大巨头", "weight": "15%", "targets": "MSFT, GOOGL, AMZN, META"},
+                        {"layer": "L5 AI 软件与 Agent", "weight": "5%", "targets": "PLTR, NOW, CRM"}
+                    ],
+                    "interpretation": "得分 70+ 分为强劲爆发期；50~70 分为稳健消化/应用探索期；低于 40 分为周期降温或回调期。"
+                },
+                "us_cn_matrix": {
+                    "title": "中美 AI 产业五维对比模型评定标准",
+                    "dimensions": [
+                        {"name": "算力基础", "max": 20, "desc": "考察先进 GPU 储备、HBM 供应与先进制程封装产能 (美 18.5 vs 中 12.0)"},
+                        {"name": "资本投入", "max": 20, "desc": "考察云巨头 CapEx 资本开支规模与研发投资 (美 17.5 vs 中 14.0)"},
+                        {"name": "商业化程度", "max": 20, "desc": "考察 Enterprise SaaS、云 AI 账单与 Agent 实际变现 (美 16.0 vs 中 13.5)"},
+                        {"name": "估值泡沫指数", "max": 30, "desc": "考察核心标的估值偏离度与题材炒作热度 (美 18.0 vs 中 23.5)"},
+                        {"name": "产业链完整度", "max": 10, "desc": "考察从芯片、封装到边缘端/工业落地的生态全貌 (美 9.0 vs 中 7.5)"}
+                    ]
+                },
+                "bubble_meter": {
+                    "title": "AI 泡沫温度计与风险判定",
+                    "desc": "区分“产业真实价值”与“股票估值泡沫”。若算力与云开支强劲增长，属【健康资本扩张】；若算力滞涨而边缘小票暴涨，则触发【泡沫风险预警】。"
+                },
+                "investment_clock": {
+                    "title": "AI 四象限投资时钟与 1997 年历史比对",
+                    "desc": "将 AI 产业分为【硬件爆发期➔需求验证期➔应用爆发期➔泡沫期】。当前映射 1997 年互联网大建设早期（基础设施卖铲人盈利阶段），尚未进入 2000 年全民炒作无业绩垃圾股的末期泡沫。"
+                }
+            }
+
             return {
                 "update_time": get_beijing_time(),
                 "heat_score": heat_score,
@@ -340,7 +374,8 @@ class AIOverview:
                 "historical_match": historical_match,
                 "investment_clock": investment_clock,
                 "signals": signals,
-                "layers": layers
+                "layers": layers,
+                "explanations": explanations
             }
             
         except Exception as e:
