@@ -38,7 +38,7 @@ class AIMarketController {
                     <div class="ai-score-box">
                         <div class="ai-badge-label" style="display: flex; align-items: center; justify-content: space-between;">
                             <span>AI Global Cycle Score</span>
-                            <button class="info-btn" id="info-ai-score" title="算法说明" style="margin-left: 6px;"><i data-lucide="help-circle" width="14"></i></button>
+                            <button class="info-btn" id="info-ai-score" title="算法说明" style="margin-left: 6px; display: inline-flex; align-items: center;"><i data-lucide="help-circle" width="14"></i></button>
                         </div>
                         <div class="ai-score-num ${scoreClass}">${heat_score} <span class="ai-score-max">/ 100</span></div>
                         <div class="ai-meta-row">
@@ -85,7 +85,7 @@ class AIMarketController {
             <div class="card" style="margin-bottom: 16px; padding: 16px;">
                 <div class="card-header" style="margin-bottom: 12px; padding-bottom: 0; border-bottom: none; display: flex; justify-content: space-between; align-items: center;">
                     <div class="card-title"><i data-lucide="git-compare" width="16" style="vertical-align: middle;"></i> 中美 AI 产业五维对比 (US vs CN Matrix)</div>
-                    <button class="info-btn" id="info-ai-matrix" title="模型说明"><i data-lucide="help-circle" width="14"></i></button>
+                    <button class="info-btn" id="info-ai-matrix" title="模型说明" style="display: inline-flex; align-items: center;"><i data-lucide="help-circle" width="14"></i></button>
                 </div>
                 <div class="ai-matrix-grid">
         `;
@@ -127,7 +127,7 @@ class AIMarketController {
                 <div class="card" style="padding: 16px;">
                     <div class="card-header" style="margin-bottom: 12px; padding-bottom: 0; border-bottom: none; display: flex; justify-content: space-between; align-items: center;">
                         <div class="card-title"><i data-lucide="thermometer" width="16" style="vertical-align: middle;"></i> AI 泡沫温度计 (Bubble Risk)</div>
-                        <button class="info-btn" id="info-ai-bubble" title="温度计说明"><i data-lucide="help-circle" width="14"></i></button>
+                        <button class="info-btn" id="info-ai-bubble" title="温度计说明" style="display: inline-flex; align-items: center;"><i data-lucide="help-circle" width="14"></i></button>
                     </div>
         `;
 
@@ -181,7 +181,7 @@ class AIMarketController {
                 <div class="card" style="padding: 16px;">
                     <div class="card-header" style="margin-bottom: 12px; padding-bottom: 0; border-bottom: none; display: flex; justify-content: space-between; align-items: center;">
                         <div class="card-title"><i data-lucide="clock" width="16" style="vertical-align: middle;"></i> AI 四象限投资时钟</div>
-                        <button class="info-btn" id="info-ai-clock" title="时钟说明"><i data-lucide="help-circle" width="14"></i></button>
+                        <button class="info-btn" id="info-ai-clock" title="时钟说明" style="display: inline-flex; align-items: center;"><i data-lucide="help-circle" width="14"></i></button>
                     </div>
                     <div class="clock-container">
                         <div class="clock-quadrant q-top-left">泡沫期</div>
@@ -266,7 +266,7 @@ class AIMarketController {
             <!-- 6. 6 Layer AI Industry Grid -->
             <div class="card-header" style="margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
                 <h3 class="card-title" style="margin-bottom: 0;"><i data-lucide="layers" width="16" style="vertical-align: middle;"></i> AI 产业链 6 层深度拆解</h3>
-                <button class="info-btn" id="info-ai-layers" title="拆解说明"><i data-lucide="help-circle" width="14"></i></button>
+                <button class="info-btn" id="info-ai-layers" title="拆解说明" style="display: inline-flex; align-items: center;"><i data-lucide="help-circle" width="14"></i></button>
             </div>
 
             <div class="ai-layers-grid">
