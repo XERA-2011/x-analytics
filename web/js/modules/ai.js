@@ -348,20 +348,20 @@ class AIMarketController {
                 let weightsHtml = '';
                 if (exp.weights) {
                     weightsHtml = `
-                        <table style="width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 13px;">
+                        <table style="width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 13px;">
                             <thead>
                                 <tr style="border-bottom: 1px solid var(--border-color); text-align: left;">
-                                    <th style="padding: 6px;">产业链层级</th>
-                                    <th style="padding: 6px;">算法权重</th>
-                                    <th style="padding: 6px;">代表标的</th>
+                                    <th style="padding: 6px 4px;">产业链层级</th>
+                                    <th style="padding: 6px 4px;">算法权重</th>
+                                    <th style="padding: 6px 4px;">代表标的</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 ${exp.weights.map(w => `
                                     <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                                        <td style="padding: 6px; font-weight: 500;">${w.layer}</td>
-                                        <td style="padding: 6px; color: var(--color-primary, #3b82f6); font-weight: 600;">${w.weight}</td>
-                                        <td style="padding: 6px; color: var(--text-secondary);">${w.targets}</td>
+                                        <td style="padding: 6px 4px; font-weight: 500;">${w.layer}</td>
+                                        <td style="padding: 6px 4px; color: var(--color-primary, #3b82f6); font-weight: 600;">${w.weight}</td>
+                                        <td style="padding: 6px 4px; color: var(--text-secondary);">${w.targets}</td>
                                     </tr>
                                 `).join('')}
                             </tbody>
@@ -369,11 +369,11 @@ class AIMarketController {
                     `;
                 }
                 const bodyHtml = `
-                    <div style="font-size: 13px; line-height: 1.6;">
-                        <p style="margin-bottom: 8px;"><strong>【算力加权计算模型】</strong><br/>${exp.formula || ''}</p>
+                    <div style="font-size: 13px; line-height: 1.5; white-space: normal;">
+                        <p style="margin: 0 0 6px 0;"><strong>【算力加权计算模型】</strong><br/>${exp.formula || ''}</p>
                         ${weightsHtml}
-                        <p style="margin-top: 10px; color: var(--text-secondary);"><strong>【得分区间解读】</strong><br/>${exp.interpretation || ''}</p>
-                        <p style="margin-top: 8px; font-size: 11px; color: var(--text-muted, #94a3b8);">数据来源：直连实时行情接口，后台每 10 分钟自动拉取预热更新。</p>
+                        <p style="margin: 8px 0 0 0; color: var(--text-secondary);"><strong>【得分区间解读】</strong><br/>${exp.interpretation || ''}</p>
+                        <p style="margin: 8px 0 0 0; font-size: 11px; color: var(--text-muted, #94a3b8);">数据来源：直连实时行情接口，后台每 10 分钟自动拉取预热更新。</p>
                     </div>
                 `;
                 utils.showInfoModal(exp.title || 'AI Global Cycle Score 算法说明', bodyHtml);
@@ -389,15 +389,15 @@ class AIMarketController {
                 let dimsHtml = '';
                 if (exp.dimensions) {
                     dimsHtml = exp.dimensions.map(d => `
-                        <div style="margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                        <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid rgba(255,255,255,0.05);">
                             <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 2px;">
                                 ${d.name} <span style="font-size: 11px; color: var(--text-secondary);">(满分 ${d.max} 分)</span>
                             </div>
-                            <div style="font-size: 12px; color: var(--text-secondary);">${d.desc}</div>
+                            <div style="font-size: 12px; color: var(--text-secondary); line-height: 1.4;">${d.desc}</div>
                         </div>
                     `).join('');
                 }
-                utils.showInfoModal(exp.title || '中美 AI 产业五维对比模型评定标准', dimsHtml);
+                utils.showInfoModal(exp.title || '中美 AI 产业五维对比模型评定标准', `<div style="white-space: normal;">${dimsHtml}</div>`);
             };
         }
 
@@ -407,7 +407,7 @@ class AIMarketController {
             bubbleBtn.onclick = (e) => {
                 e.stopPropagation();
                 const exp = explanations.bubble_meter || {};
-                utils.showInfoModal(exp.title || 'AI 泡沫温度计说明', `<p style="font-size: 13px; line-height: 1.6; color: var(--text-secondary);">${exp.desc || ''}</p>`);
+                utils.showInfoModal(exp.title || 'AI 泡沫温度计说明', `<div style="white-space: normal; font-size: 13px; line-height: 1.5; color: var(--text-secondary);">${exp.desc || ''}</div>`);
             };
         }
 
@@ -417,7 +417,7 @@ class AIMarketController {
             clockBtn.onclick = (e) => {
                 e.stopPropagation();
                 const exp = explanations.investment_clock || {};
-                utils.showInfoModal(exp.title || 'AI 四象限投资时钟说明', `<p style="font-size: 13px; line-height: 1.6; color: var(--text-secondary);">${exp.desc || ''}</p>`);
+                utils.showInfoModal(exp.title || 'AI 四象限投资时钟说明', `<div style="white-space: normal; font-size: 13px; line-height: 1.5; color: var(--text-secondary);">${exp.desc || ''}</div>`);
             };
         }
 
@@ -427,16 +427,16 @@ class AIMarketController {
             layersBtn.onclick = (e) => {
                 e.stopPropagation();
                 const bodyHtml = `
-                    <div style="font-size: 13px; line-height: 1.6;">
-                        <p><strong>AI 产业链 6 层逻辑划分体系：</strong></p>
-                        <ul style="margin-left: 16px; margin-top: 6px; color: var(--text-secondary); line-height: 1.8;">
-                            <li><strong>L1 算力芯片</strong>：包含 NVDA, AMD, AVGO 及费半 ETF，决定全线资金风向。</li>
-                            <li><strong>L2 存储与代工</strong>：美光 HBM 内存与台积电 CoWoS 先进制程封装，代表真实产能供需。</li>
-                            <li><strong>L3 数据中心基建</strong>：服务器与液冷/电源（SMCI / VRT），反映硬件资本开支落地。</li>
-                            <li><strong>L4 云计算四大巨头</strong>：微软/谷歌/亚马逊/Meta，其 AI 资本开支是上游繁荣上限。</li>
-                            <li><strong>L5 Agent 与应用</strong>：Palantir、Salesforce 等企业级软件，反映商业化变现与渗透。</li>
-                            <li><strong>L6 A股/边缘概念</strong>：游资偏好的题材小票，暴涨通常提示短线情绪高潮近尾声。</li>
-                        </ul>
+                    <div style="font-size: 13px; line-height: 1.5; white-space: normal;">
+                        <p style="margin: 0 0 10px 0; font-weight: 600;">AI 产业链 6 层逻辑划分体系：</p>
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <div><strong>L1 算力芯片</strong>：包含 NVDA, AMD, AVGO 及费半 ETF，决定全线资金风向。</div>
+                            <div><strong>L2 存储与代工</strong>：美光 HBM 内存与台积电 CoWoS 先进制程封装，代表真实产能供需。</div>
+                            <div><strong>L3 数据中心基建</strong>：服务器与液冷/电源（SMCI / VRT），反映硬件资本开支落地。</div>
+                            <div><strong>L4 云计算四大巨头</strong>：微软/谷歌/亚马逊/Meta，其 AI 资本开支是上游繁荣上限。</div>
+                            <div><strong>L5 Agent 与应用</strong>：Palantir、Salesforce 等企业级软件，反映商业化变现与渗透。</div>
+                            <div><strong>L6 A股/边缘概念</strong>：游资偏好的题材小票，暴涨通常提示短线情绪高潮近尾声。</div>
+                        </div>
                     </div>
                 `;
                 utils.showInfoModal('AI 产业链 6 层深度拆解说明', bodyHtml);
