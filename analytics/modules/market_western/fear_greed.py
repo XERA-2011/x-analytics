@@ -114,7 +114,7 @@ class USFearGreedIndex:
 
     @staticmethod
     @cached(
-        "market_us:fear_greed_v2",
+        "market_us:fear_greed_v3",
         ttl=settings.CACHE_TTL["fear_greed_realtime"],
         stale_ttl=settings.CACHE_TTL["fear_greed_stale"],
     )
@@ -173,7 +173,7 @@ class USFearGreedIndex:
         }
     @staticmethod
     @cached(
-        "market_us:custom_fear_greed_v2",
+        "market_us:custom_fear_greed_v3",
         ttl=settings.CACHE_TTL["fear_greed_realtime"],
         stale_ttl=settings.CACHE_TTL["fear_greed_stale"],
     )
@@ -184,16 +184,21 @@ class USFearGreedIndex:
         """
         try:
             update_time = get_beijing_time().strftime("%Y-%m-%d %H:%M:%S")
-            frames = USFearGreedIndex._fetch_market_frames((".INX", ".DJI", ".IXIC", ".VIX"))
+            symbols = (".INX", ".DJI", ".IXIC", ".VIX")
+            frames = USFearGreedIndex._fetch_market_frames(symbols)
+            
+            from ...core.us_spot_helper import get_us_spot_direct
+            spot_data = get_us_spot_direct(symbols)
+
             inx_df = frames.get(".INX")
             dji_df = frames.get(".DJI")
             ndx_df = frames.get(".IXIC")
             vix_df = frames.get(".VIX")
 
             indicators = {
-                "volatility": USFearGreedIndex._get_vix_data(vix_df=vix_df, sp500_df=inx_df),
+                "volatility": USFearGreedIndex._get_vix_data(vix_df=vix_df, sp500_df=inx_df, spot_vix=spot_data.get(".VIX")),
                 "momentum": USFearGreedIndex._get_sp500_data(inx_df=inx_df),
-                "daily_change": USFearGreedIndex._get_daily_change(inx_df=inx_df),
+                "daily_change": USFearGreedIndex._get_daily_change(inx_df=inx_df, spot_inx=spot_data.get(".INX")),
                 "breadth": USFearGreedIndex._get_market_breadth(dji_df=dji_df, ndx_df=ndx_df),
             }
 
@@ -237,13 +242,20 @@ class USFearGreedIndex:
     def _get_vix_data(
         vix_df: Optional[pd.DataFrame] = None,
         sp500_df: Optional[pd.DataFrame] = None,
+        spot_vix: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """
         获取 VIX 数据
-        策略: 优先尝试 API (.VIX), 失败则计算标普500历史波动率作为替代
+        策略: 优先使用实时快照 (.VIX), 其次尝试日线 API, 失败则计算标普500历史波动率作为替代
         """
         try:
-            # 1. 优先尝试直接获取 VIX 数据
+            # 0. 优先使用极速盘中快照
+            if spot_vix and spot_vix.get("price") and spot_vix["price"] > 0:
+                latest_vix = safe_float(spot_vix["price"])
+                if latest_vix is not None:
+                    return USFearGreedIndex._format_vix_score(latest_vix, is_estimated=False)
+
+            # 1. 其次尝试直接获取 VIX 日线数据
             try:
                 df = vix_df.copy() if vix_df is not None else akshare_call_with_retry(ak.stock_us_daily, symbol=".VIX")
                 if not df.empty:
@@ -252,30 +264,23 @@ class USFearGreedIndex:
                     if latest_vix is not None:
                         return USFearGreedIndex._format_vix_score(latest_vix)
             except (IndexError, KeyError, ValueError) as e:
-                # 常见错误：Sina 接口返回格式异常导致 akshare 全局 split 失败 (IndexError)
                 logger.info(f"VIX API 暫不可用 (.VIX), 将切换至计算模式: {e}")
             except Exception as e:
                 logger.warning(f"⚠️ VIX API 获取失败 (将使用计算回退): {e}")
 
             # 2. 回退模式: 计算标普500的历史波动率 (Realized Volatility)
-            # 逻辑: VIX ≈ 预期波动率，历史波动率是其良好近似
             logger.info("🔄 使用标普500波动率计算 VIX 替代值...")
             
-            # 获取标普500数据 (多取一些数据以计算滚动窗口)
             df_sp500 = sp500_df.copy() if sp500_df is not None else akshare_call_with_retry(ak.stock_us_daily, symbol=".INX")
             
             if df_sp500.empty or len(df_sp500) < 30:
                 return {"error": "数据不足无法计算VIX", "weight": USFearGreedIndex._get_weights()["volatility"]}
             df_sp500 = USFearGreedIndex._sort_by_date(df_sp500)
 
-            # 计算对数收益率
             df_sp500["close"] = pd.to_numeric(df_sp500["close"], errors="coerce")
             df_sp500["log_ret"] = np.log(df_sp500["close"] / df_sp500["close"].shift(1))
             
-            # 计算20日滚动波动率 (年化)
-            # window=20 (约一个月交易日), x 100 (百分比), x sqrt(252) (年化)
             rolling_vol = df_sp500["log_ret"].rolling(window=20).std() * np.sqrt(252) * 100
-            
             latest_vol = safe_float(rolling_vol.iloc[-1])
             
             if latest_vol is None:
@@ -288,24 +293,27 @@ class USFearGreedIndex:
             return {"error": str(e), "weight": USFearGreedIndex._get_weights()["volatility"]}
 
     @staticmethod
-    def _get_daily_change(inx_df: Optional[pd.DataFrame] = None) -> Dict[str, Any]:
+    def _get_daily_change(
+        inx_df: Optional[pd.DataFrame] = None,
+        spot_inx: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
         """获取标普500单日涨跌幅 (Sentiment Sensitivity)"""
         try:
-            df = inx_df.copy() if inx_df is not None else akshare_call_with_retry(ak.stock_us_daily, symbol=".INX")
-            if df.empty or len(df) < 2:
-                return {"error": "数据不足", "weight": USFearGreedIndex._get_weights()["daily_change"]}
-            df = USFearGreedIndex._sort_by_date(df)
-            
-            # 计算单日涨跌
-            # new akshare returns 'close'
-            current = df["close"].iloc[-1]
-            prev = df["close"].iloc[-2]
-            
-            change_pct = (current - prev) / prev * 100
+            change_pct = None
+            if spot_inx and "change_pct" in spot_inx and spot_inx["change_pct"] is not None:
+                change_pct = safe_float(spot_inx["change_pct"])
+
+            if change_pct is None:
+                df = inx_df.copy() if inx_df is not None else akshare_call_with_retry(ak.stock_us_daily, symbol=".INX")
+                if df.empty or len(df) < 2:
+                    return {"error": "数据不足", "weight": USFearGreedIndex._get_weights()["daily_change"]}
+                df = USFearGreedIndex._sort_by_date(df)
+                
+                current = df["close"].iloc[-1]
+                prev = df["close"].iloc[-2]
+                change_pct = (current - prev) / prev * 100
             
             # Map spread: -2% (Fear) to +2% (Greed)
-            # 0% = 50
-            # 1% = 60 (Sensitivity 10)
             score = score_percent_change(change_pct, sensitivity=10)
             
             return build_factor(
