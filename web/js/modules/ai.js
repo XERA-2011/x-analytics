@@ -134,19 +134,21 @@ class AIMarketController {
         if (bubble_meter) {
             const usBM = bubble_meter.us || {};
             const cnBM = bubble_meter.cn || {};
+            const usRisk = typeof usBM.bubble_risk === 'number' ? usBM.bubble_risk.toFixed(1) : (usBM.bubble_risk || 0);
+            const cnRisk = typeof cnBM.bubble_risk === 'number' ? cnBM.bubble_risk.toFixed(1) : (cnBM.bubble_risk || 0);
             html += `
                 <div class="bubble-thermo-box">
                     <div class="thermo-row">
                         <div class="thermo-title">美国 AI</div>
-                        <div class="thermo-sub">产业价值: <strong>${usBM.value_score}</strong> | 泡沫风险: <strong class="text-down">${usBM.bubble_risk}</strong></div>
-                        <div class="thermo-bar"><div class="thermo-fill us-fill" style="width: ${usBM.bubble_risk}%;"></div></div>
+                        <div class="thermo-sub">产业价值: <strong>${usBM.value_score}</strong> | 泡沫风险: <strong class="text-down">${usRisk}</strong></div>
+                        <div class="thermo-bar"><div class="thermo-fill us-fill" style="width: ${usRisk}%;"></div></div>
                         <div class="thermo-tag status-${usBM.status_class}">${usBM.status_text}</div>
                     </div>
                     <div class="thermo-divider"></div>
                     <div class="thermo-row">
                         <div class="thermo-title">中国 AI</div>
-                        <div class="thermo-sub">产业价值: <strong>${cnBM.value_score}</strong> | 泡沫风险: <strong class="text-down">${cnBM.bubble_risk}</strong></div>
-                        <div class="thermo-bar"><div class="thermo-fill cn-fill" style="width: ${cnBM.bubble_risk}%;"></div></div>
+                        <div class="thermo-sub">产业价值: <strong>${cnBM.value_score}</strong> | 泡沫风险: <strong class="text-down">${cnRisk}</strong></div>
+                        <div class="thermo-bar"><div class="thermo-fill cn-fill" style="width: ${cnRisk}%;"></div></div>
                         <div class="thermo-tag status-${cnBM.status_class}">${cnBM.status_text}</div>
                     </div>
                 </div>

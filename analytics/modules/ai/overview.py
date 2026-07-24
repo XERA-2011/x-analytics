@@ -304,13 +304,13 @@ class AIOverview:
             bubble_meter = {
                 "us": {
                     "value_score": round(min(100, max(50, 82 + l0_avg + l1_avg)), 1),
-                    "bubble_risk": us_bubble * 3.2,
+                    "bubble_risk": round(us_bubble * 3.2, 1),
                     "status_text": "健康资本扩张",
                     "status_class": "healthy"
                 },
                 "cn": {
                     "value_score": round(min(100, max(40, 64 + cn_core_avg)), 1),
-                    "bubble_risk": cn_bubble * 3.1,
+                    "bubble_risk": round(cn_bubble * 3.1, 1),
                     "status_text": "主题情绪扩散",
                     "status_class": "warning"
                 }
