@@ -1846,10 +1846,11 @@ footer {
     50% { r: 8; opacity: 0.7; }
 }
 
-/* 4. 五阶段扩散 SVG 管道能量流 */
+/* 4. 五阶段扩散 SVG 赛博流光管道能量流 */
 .svg-pipeline-box {
     width: 100%;
     margin-top: 10px;
+    position: relative;
 }
 
 .svg-pipeline-chart {
@@ -1858,23 +1859,45 @@ footer {
     overflow: visible;
 }
 
-.pipe-flow-line {
-    stroke-dasharray: 8 6;
-    animation: pipe-flow 1.5s linear infinite;
+.pipe-base-track {
+    stroke: rgba(226, 232, 240, 0.9);
 }
 
-@keyframes pipe-flow {
-    from { stroke-dashoffset: 28; }
+.pipe-stream-track {
+    stroke-dasharray: 14 10;
+    animation: pipe-stream-flow 1.2s linear infinite;
+}
+
+@keyframes pipe-stream-flow {
+    from { stroke-dashoffset: 48; }
     to { stroke-dashoffset: 0; }
 }
 
-.node-pulse-ring {
-    animation: ring-expand 2.5s infinite cubic-bezier(0.215, 0.61, 0.355, 1);
+/* 沿着管道穿梭的高亮流光气泡 (Cyberpunk Energy Orbs) */
+.pipe-orb {
+    animation: orb-travel 3.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-@keyframes ring-expand {
-    0% { r: 18; opacity: 0.8; }
-    100% { r: 28; opacity: 0; }
+.pipe-orb-1 { animation-delay: 0s; fill: #10b981; filter: drop-shadow(0 0 6px rgba(16, 185, 129, 0.9)); }
+.pipe-orb-2 { animation-delay: 0.8s; fill: #3b82f6; filter: drop-shadow(0 0 6px rgba(59, 130, 246, 0.9)); }
+.pipe-orb-3 { animation-delay: 1.6s; fill: #8b5cf6; filter: drop-shadow(0 0 6px rgba(139, 92, 246, 0.9)); }
+.pipe-orb-4 { animation-delay: 2.4s; fill: #ef4444; filter: drop-shadow(0 0 6px rgba(239, 68, 68, 0.9)); }
+
+@keyframes orb-travel {
+    0% { cx: 75px; opacity: 0; r: 3px; }
+    10% { opacity: 1; r: 6px; }
+    90% { opacity: 1; r: 6px; }
+    100% { cx: 675px; opacity: 0; r: 3px; }
+}
+
+/* 主线资金高亮节点的双重震荡波纹 */
+.node-active-ring {
+    animation: active-ring-pulse 1.8s ease-out infinite;
+}
+
+@keyframes active-ring-pulse {
+    0% { r: 20px; opacity: 0.9; stroke-width: 3.5px; }
+    100% { r: 34px; opacity: 0; stroke-width: 1px; }
 }
 
 /* ==========================================================================

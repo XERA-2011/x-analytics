@@ -25,7 +25,7 @@ class AIOverview:
 
     @staticmethod
     @cached(
-        "ai:overview", 
+        "ai:overview_v3", 
         ttl=settings.CACHE_TTL["market_heat"], 
         stale_ttl=settings.CACHE_TTL["market_heat"] * settings.STALE_TTL_RATIO
     )
@@ -408,14 +408,25 @@ class AIOverview:
                 }
             }
 
+            # 12. 扩散 Roadmap 动态阶段数据
+            diffusion_roadmap = {
+                "active_stages": [1, 2] if rotation_mode.startswith("健康轮动") else ([5] if "泡沫" in rotation_mode else [3, 4]),
+                "stages": [
+                    {"id": 1, "name": "阶段 1: 能源与算力芯片", "symbols": "GEV / NVDA / ARM", "avg_change": round(l0_avg * 0.4 + l1_avg * 0.6, 2), "status": "火热" if l1_avg >= 0 else "走弱"},
+                    {"id": 2, "name": "阶段 2: 存储与先进封装", "symbols": "美光 MU / 台积电 TSM", "avg_change": round(l2_avg, 2), "status": "火热" if l2_avg >= 0 else "走弱"},
+                    {"id": 3, "name": "阶段 3: 基建与液冷电源", "symbols": "SMCI / VRT / DELL", "avg_change": round(l3_avg, 2), "status": "稳健" if l3_avg >= 0 else "承压"},
+                    {"id": 4, "name": "阶段 4: 云巨头 & Agent", "symbols": "MSFT / PLTR / SaaS", "avg_change": round(l4_avg * 0.5 + l5_avg * 0.5, 2), "status": "稳健" if l4_avg >= 0 else "承压"},
+                    {"id": 5, "name": "阶段 5: 概念炒作 (泡沫)", "symbols": "边缘垃圾小票", "avg_change": round(l6_avg, 2), "status": "过热" if l6_avg > 2.0 else "平淡"},
+                ]
+            }
+
             return {
-                "update_time": get_beijing_time(),
+                "cycle_score": heat_score,
                 "heat_score": heat_score,
-                "trend_str": "↑ 本周 +2.5",
-                "risk_level": "中等",
                 "cycle_phase": cycle_phase,
                 "cycle_status": cycle_status,
                 "cycle_desc": cycle_desc,
+                "layers": layers,
                 "us_cn_comparison": us_cn_comparison,
                 "bubble_meter": bubble_meter,
                 "rotation_mode": rotation_mode,
@@ -424,8 +435,9 @@ class AIOverview:
                 "historical_match": historical_match,
                 "investment_clock": investment_clock,
                 "signals": signals,
-                "layers": layers,
-                "explanations": explanations
+                "diffusion_roadmap": diffusion_roadmap,
+                "explanations": explanations,
+                "update_time": get_beijing_time().strftime("%Y-%m-%d %H:%M:%S")
             }
             
         except Exception as e:
