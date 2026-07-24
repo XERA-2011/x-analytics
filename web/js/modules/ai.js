@@ -348,20 +348,20 @@ class AIMarketController {
                 let weightsHtml = '';
                 if (exp.weights) {
                     weightsHtml = `
-                        <table style="width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 13px;">
+                        <table style="width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 11px;">
                             <thead>
-                                <tr style="border-bottom: 1px solid var(--border-color); text-align: left;">
-                                    <th style="padding: 6px 4px;">产业链层级</th>
-                                    <th style="padding: 6px 4px;">算法权重</th>
-                                    <th style="padding: 6px 4px;">代表标的</th>
+                                <tr style="border-bottom: 1px solid var(--border-color); text-align: left; color: var(--text-secondary);">
+                                    <th style="padding: 4px 6px;">层级</th>
+                                    <th style="padding: 4px 6px; text-align: center;">权重</th>
+                                    <th style="padding: 4px 6px;">代表标的</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 ${exp.weights.map(w => `
-                                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                                        <td style="padding: 6px 4px; font-weight: 500;">${w.layer}</td>
-                                        <td style="padding: 6px 4px; color: var(--color-primary, #3b82f6); font-weight: 600;">${w.weight}</td>
-                                        <td style="padding: 6px 4px; color: var(--text-secondary);">${w.targets}</td>
+                                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);">
+                                        <td style="padding: 4px 6px; font-weight: 500;">${w.layer}</td>
+                                        <td style="padding: 4px 6px; text-align: center; color: var(--color-primary, #3b82f6); font-weight: 600;">${w.weight}</td>
+                                        <td style="padding: 4px 6px; color: var(--text-secondary);">${w.targets}</td>
                                     </tr>
                                 `).join('')}
                             </tbody>
@@ -369,11 +369,23 @@ class AIMarketController {
                     `;
                 }
                 const bodyHtml = `
-                    <div style="font-size: 13px; line-height: 1.5; white-space: normal;">
-                        <p style="margin: 0 0 6px 0;"><strong>【算力加权计算模型】</strong><br/>${exp.formula || ''}</p>
+                    <div class="ai-info-modal" style="white-space: normal; font-size: 12px; color: var(--text-primary);">
+                        <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-color); border-radius: 6px; padding: 8px 10px; margin-bottom: 10px;">
+                            <div style="font-weight: 600; font-size: 12px; color: var(--color-primary, #3b82f6); margin-bottom: 4px;">🧮 算力加权核心公式</div>
+                            <div style="font-family: monospace; font-size: 11px; background: rgba(0,0,0,0.25); padding: 4px 8px; border-radius: 4px; color: #e2e8f0; margin-bottom: 4px; line-height: 1.4;">
+                                weighted_pct = L1×35% + L2×25% + L3×20% + L4×15% + L5×5%<br/>
+                                heat_score = Min(100, Max(0, 50.0 + weighted_pct × 7.5))
+                            </div>
+                            <div style="font-size: 11px; color: var(--text-secondary);">综合得分区间为 0 ~ 100 分，反映当前全球 AI 产业链资本扩张的整体热度。</div>
+                        </div>
+
+                        <div style="font-weight: 600; font-size: 12px; margin-bottom: 4px; color: var(--text-secondary);">📊 各层级因子算法权重分配：</div>
                         ${weightsHtml}
-                        <p style="margin: 8px 0 0 0; color: var(--text-secondary);"><strong>【得分区间解读】</strong><br/>${exp.interpretation || ''}</p>
-                        <p style="margin: 8px 0 0 0; font-size: 11px; color: var(--text-muted, #94a3b8);">数据来源：直连实时行情接口，后台每 10 分钟自动拉取预热更新。</p>
+
+                        <div style="background: rgba(255, 255, 255, 0.02); border-left: 3px solid var(--color-primary, #3b82f6); padding: 6px 8px; font-size: 11px; color: var(--text-secondary); margin-top: 8px;">
+                            <div><strong>💡 得分区间：</strong>70+ 分强劲扩张 | 50~70 分稳健消化 | &lt;40 分周期回调</div>
+                            <div style="margin-top: 2px; color: var(--text-muted, #94a3b8);">⚡ 数据抓取：直连美股与A股盘中数据，后台每 10 分钟自动预热更新。</div>
+                        </div>
                     </div>
                 `;
                 utils.showInfoModal(exp.title || 'AI Global Cycle Score 算法说明', bodyHtml);
@@ -389,15 +401,26 @@ class AIMarketController {
                 let dimsHtml = '';
                 if (exp.dimensions) {
                     dimsHtml = exp.dimensions.map(d => `
-                        <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid rgba(255,255,255,0.05);">
-                            <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 2px;">
-                                ${d.name} <span style="font-size: 11px; color: var(--text-secondary);">(满分 ${d.max} 分)</span>
+                        <div style="background: rgba(255,255,255,0.03); padding: 6px 8px; border-radius: 4px; border-left: 3px solid #3b82f6;">
+                            <div style="font-weight: 600; color: var(--text-primary); display: flex; justify-content: space-between; font-size: 12px;">
+                                <span>${d.name}</span>
+                                <span style="color: var(--text-secondary); font-size: 11px;">(满分 ${d.max} 分)</span>
                             </div>
-                            <div style="font-size: 12px; color: var(--text-secondary); line-height: 1.4;">${d.desc}</div>
+                            <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px; line-height: 1.3;">${d.desc}</div>
                         </div>
                     `).join('');
                 }
-                utils.showInfoModal(exp.title || '中美 AI 产业五维对比模型评定标准', `<div style="white-space: normal;">${dimsHtml}</div>`);
+                const bodyHtml = `
+                    <div class="ai-info-modal" style="white-space: normal; font-size: 12px; color: var(--text-primary);">
+                        <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 8px;">
+                            从 5 大核心维度综合量化评估中美 AI 产业竞争力与阶段偏离：
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 6px;">
+                            ${dimsHtml}
+                        </div>
+                    </div>
+                `;
+                utils.showInfoModal(exp.title || '中美 AI 产业五维对比模型评定标准', bodyHtml);
             };
         }
 
@@ -407,7 +430,25 @@ class AIMarketController {
             bubbleBtn.onclick = (e) => {
                 e.stopPropagation();
                 const exp = explanations.bubble_meter || {};
-                utils.showInfoModal(exp.title || 'AI 泡沫温度计说明', `<div style="white-space: normal; font-size: 13px; line-height: 1.5; color: var(--text-secondary);">${exp.desc || ''}</div>`);
+                const bodyHtml = `
+                    <div class="ai-info-modal" style="white-space: normal; font-size: 12px; color: var(--text-primary); line-height: 1.4;">
+                        <div style="background: rgba(255,255,255,0.03); border-radius: 4px; padding: 8px 10px; margin-bottom: 8px;">
+                            <div style="font-weight: 600; color: var(--color-primary, #3b82f6); margin-bottom: 2px;">🌡️ 双维度剥离判定法则</div>
+                            <div style="color: var(--text-secondary); font-size: 11px;">
+                                系统将“产业真实价值分”与“二级市场估值泡沫风险分”分离计算：
+                            </div>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px;">
+                            <div style="padding: 6px 8px; background: rgba(34, 197, 94, 0.1); border-radius: 4px; color: #4ade80;">
+                                ✅ <strong>健康资本扩张期：</strong> 芯片需求爆满 + 云巨头 CapEx 资本开支激增，股价有强劲业绩支撑。
+                            </div>
+                            <div style="padding: 6px 8px; background: rgba(239, 68, 68, 0.1); border-radius: 4px; color: #f87171;">
+                                ⚠️ <strong>泡沫风险预警期：</strong> 算力龙头滞涨，资金转向无业绩的边缘垃圾题材暴涨，估值情绪过热。
+                            </div>
+                        </div>
+                    </div>
+                `;
+                utils.showInfoModal(exp.title || 'AI 泡沫温度计说明', bodyHtml);
             };
         }
 
@@ -417,7 +458,20 @@ class AIMarketController {
             clockBtn.onclick = (e) => {
                 e.stopPropagation();
                 const exp = explanations.investment_clock || {};
-                utils.showInfoModal(exp.title || 'AI 四象限投资时钟说明', `<div style="white-space: normal; font-size: 13px; line-height: 1.5; color: var(--text-secondary);">${exp.desc || ''}</div>`);
+                const bodyHtml = `
+                    <div class="ai-info-modal" style="white-space: normal; font-size: 12px; color: var(--text-primary); line-height: 1.4;">
+                        <div style="background: rgba(255,255,255,0.03); border-radius: 4px; padding: 8px 10px; margin-bottom: 8px;">
+                            <div style="font-weight: 600; color: var(--color-primary, #3b82f6); margin-bottom: 2px;">🕒 四象限轮动与历史基准比对</div>
+                            <div style="color: var(--text-secondary); font-size: 11px;">
+                                借鉴美林时钟原理，将 AI 周期划分为【硬件爆发期 ➔ 需求验证期 ➔ 应用爆发期 ➔ 泡沫破裂期】。
+                            </div>
+                        </div>
+                        <div style="font-size: 11px; color: var(--text-secondary); line-height: 1.4; background: rgba(255,255,255,0.02); padding: 8px 10px; border-radius: 4px;">
+                            📌 <strong>历史参考映射：</strong> 当前 AI 处于类似 1997 年 Dot-Com 互联网大建设初期（卖路由器/服务器的基础设施盈利阶段），尚未演变为 2000 年全民炒作带.com垃圾小票的末期泡沫破裂阶段。
+                        </div>
+                    </div>
+                `;
+                utils.showInfoModal(exp.title || 'AI 四象限投资时钟说明', bodyHtml);
             };
         }
 
@@ -427,15 +481,27 @@ class AIMarketController {
             layersBtn.onclick = (e) => {
                 e.stopPropagation();
                 const bodyHtml = `
-                    <div style="font-size: 13px; line-height: 1.5; white-space: normal;">
-                        <p style="margin: 0 0 10px 0; font-weight: 600;">AI 产业链 6 层逻辑划分体系：</p>
-                        <div style="display: flex; flex-direction: column; gap: 8px;">
-                            <div><strong>L1 算力芯片</strong>：包含 NVDA, AMD, AVGO 及费半 ETF，决定全线资金风向。</div>
-                            <div><strong>L2 存储与代工</strong>：美光 HBM 内存与台积电 CoWoS 先进制程封装，代表真实产能供需。</div>
-                            <div><strong>L3 数据中心基建</strong>：服务器与液冷/电源（SMCI / VRT），反映硬件资本开支落地。</div>
-                            <div><strong>L4 云计算四大巨头</strong>：微软/谷歌/亚马逊/Meta，其 AI 资本开支是上游繁荣上限。</div>
-                            <div><strong>L5 Agent 与应用</strong>：Palantir、Salesforce 等企业级软件，反映商业化变现与渗透。</div>
-                            <div><strong>L6 A股/边缘概念</strong>：游资偏好的题材小票，暴涨通常提示短线情绪高潮近尾声。</div>
+                    <div class="ai-info-modal" style="white-space: normal; font-size: 12px; color: var(--text-primary);">
+                        <div style="font-weight: 600; font-size: 12px; margin-bottom: 6px; color: var(--text-primary);">AI 产业链 6 层结构与传导逻辑：</div>
+                        <div style="display: flex; flex-direction: column; gap: 5px; font-size: 11px;">
+                            <div style="padding: 5px 8px; background: rgba(255,255,255,0.03); border-radius: 4px;">
+                                <strong style="color: var(--color-primary, #3b82f6);">L1 算力芯片</strong>：包含 NVDA, AMD, AVGO 及费半 ETF，资本最核心风向标。
+                            </div>
+                            <div style="padding: 5px 8px; background: rgba(255,255,255,0.03); border-radius: 4px;">
+                                <strong style="color: var(--color-primary, #3b82f6);">L2 存储与代工</strong>：美光 HBM 内存与台积电 CoWoS 封装，体现真实硬件瓶颈。
+                            </div>
+                            <div style="padding: 5px 8px; background: rgba(255,255,255,0.03); border-radius: 4px;">
+                                <strong style="color: var(--color-primary, #3b82f6);">L3 数据中心基建</strong>：服务器与液冷/电源（SMCI / VRT），反映基建落地开支。
+                            </div>
+                            <div style="padding: 5px 8px; background: rgba(255,255,255,0.03); border-radius: 4px;">
+                                <strong style="color: var(--color-primary, #3b82f6);">L4 云计算四大巨头</strong>：微软/谷歌/亚马逊/Meta，其 AI 资本开支是全产业链上限。
+                            </div>
+                            <div style="padding: 5px 8px; background: rgba(255,255,255,0.03); border-radius: 4px;">
+                                <strong style="color: var(--color-primary, #3b82f6);">L5 Agent 与应用</strong>：Palantir、Salesforce 等 SaaS 软件，体现商业化变现成果。
+                            </div>
+                            <div style="padding: 5px 8px; background: rgba(255,255,255,0.03); border-radius: 4px;">
+                                <strong style="color: #ef4444;">L6 A股/边缘概念</strong>：游资偏好题材小票，狂热暴涨往往预示短线情绪见顶。
+                            </div>
                         </div>
                     </div>
                 `;
