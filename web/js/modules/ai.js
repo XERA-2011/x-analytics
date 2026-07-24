@@ -54,9 +54,9 @@ class AIMarketController {
                         <div class="ai-cycle-desc">${cycle_desc}</div>
                     </div>
 
-                    <!-- 右侧：三大核心验证信号 -->
+                    <!-- 右侧：四大核心验证信号 -->
                     <div class="ai-signals-box">
-                        <div class="ai-badge-label">三大核心验证信号</div>
+                        <div class="ai-badge-label">四大核心验证信号</div>
                         <div class="ai-signals-list">
         `;
 
@@ -165,11 +165,12 @@ class AIMarketController {
                         <div class="rotation-badge rotation-${rotation_class}">${rotation_mode}</div>
                         <div class="rotation-desc">${rotation_desc}</div>
                         <div class="rotation-flow">
+                            <span class="flow-step">能源电力</span>➔
                             <span class="flow-step">AI 芯片</span>➔
                             <span class="flow-step">HBM 存储</span>➔
-                            <span class="flow-step">基建电源</span>➔
+                            <span class="flow-step">基建液冷</span>➔
                             <span class="flow-step">云计算</span>➔
-                            <span class="flow-step">应用 Agent</span>
+                            <span class="flow-step">Agent 应用</span>
                         </div>
                     </div>
                 </div>
@@ -185,7 +186,7 @@ class AIMarketController {
                     </div>
                     <div class="clock-container">
                         <div class="clock-quadrant q-top-left">泡沫期</div>
-                        <div class="clock-quadrant q-top-right">硬件爆发期</div>
+                        <div class="clock-quadrant q-top-right">硬件与能源爆发期</div>
                         <div class="clock-quadrant q-bottom-left">需求验证期</div>
                         <div class="clock-quadrant q-bottom-right">应用爆发期</div>
                         
@@ -227,32 +228,33 @@ class AIMarketController {
 
             <!-- 5. 产业链五阶段扩散 Roadmap -->
             <div class="card" style="margin-bottom: 16px; padding: 16px;">
-                <div class="card-header" style="margin-bottom: 12px; padding-bottom: 0; border-bottom: none;">
+                <div class="card-header" style="margin-bottom: 12px; padding-bottom: 0; border-bottom: none; display: flex; justify-content: space-between; align-items: center;">
                     <div class="card-title"><i data-lucide="git-commit" width="16" style="vertical-align: middle;"></i> AI 产业链五阶段扩散模型 (Diffusion Lifecycle)</div>
+                    <span style="font-size: 11px; background: rgba(59,130,246,0.15); color: #60a5fa; padding: 2px 8px; border-radius: 4px;">2026 演进：具身智能与工业落地验证中</span>
                 </div>
                 <div class="ai-roadmap">
                     <div class="ai-step active">
                         <div class="ai-step-num">阶段 1</div>
-                        <div class="ai-step-name">算力芯片</div>
-                        <div class="ai-step-sub">NVDA / AMD</div>
+                        <div class="ai-step-name">能源与算力芯片</div>
+                        <div class="ai-step-sub">GEV / NVDA / ARM</div>
                     </div>
                     <div class="ai-arrow">➔</div>
                     <div class="ai-step active">
                         <div class="ai-step-num">阶段 2</div>
-                        <div class="ai-step-name">存储 HBM</div>
-                        <div class="ai-step-sub">美光 MU</div>
+                        <div class="ai-step-name">存储与先进封装</div>
+                        <div class="ai-step-sub">美光 MU / 台积电</div>
                     </div>
                     <div class="ai-arrow">➔</div>
                     <div class="ai-step active">
                         <div class="ai-step-num">阶段 3</div>
-                        <div class="ai-step-name">基建与电源</div>
-                        <div class="ai-step-sub">SMCI / VRT</div>
+                        <div class="ai-step-name">基建与液冷电源</div>
+                        <div class="ai-step-sub">SMCI / VRT / DELL</div>
                     </div>
                     <div class="ai-arrow">➔</div>
                     <div class="ai-step">
                         <div class="ai-step-num">阶段 4</div>
-                        <div class="ai-step-name">应用与 Agent</div>
-                        <div class="ai-step-sub">PLTR / SaaS</div>
+                        <div class="ai-step-name">Agent 与具身智能</div>
+                        <div class="ai-step-sub">PLTR / 机器人 / SaaS</div>
                     </div>
                     <div class="ai-arrow">➔</div>
                     <div class="ai-step warning">
@@ -263,9 +265,9 @@ class AIMarketController {
                 </div>
             </div>
 
-            <!-- 6. 6 Layer AI Industry Grid -->
+            <!-- 6. 7 Layer AI Industry Grid -->
             <div class="card-header" style="margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
-                <h3 class="card-title" style="margin-bottom: 0;"><i data-lucide="layers" width="16" style="vertical-align: middle;"></i> AI 产业链 6 层深度拆解</h3>
+                <h3 class="card-title" style="margin-bottom: 0;"><i data-lucide="layers" width="16" style="vertical-align: middle;"></i> AI 产业链 7 层深度拆解 (L0 - L6)</h3>
                 <button class="info-btn" id="info-ai-layers" title="拆解说明" style="display: inline-flex; align-items: center;"><i data-lucide="help-circle" width="14"></i></button>
             </div>
 
@@ -371,19 +373,19 @@ class AIMarketController {
                 const bodyHtml = `
                     <div class="ai-info-modal" style="white-space: normal; font-size: 12px; color: var(--text-primary);">
                         <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-color); border-radius: 6px; padding: 8px 10px; margin-bottom: 10px;">
-                            <div style="font-weight: 600; font-size: 12px; color: var(--color-primary, #3b82f6); margin-bottom: 4px;">🧮 算力加权核心公式</div>
+                            <div style="font-weight: 600; font-size: 12px; color: var(--color-primary, #3b82f6); margin-bottom: 4px;">🧮 算力加权六因子核心公式</div>
                             <div style="font-family: monospace; font-size: 11px; background: rgba(0,0,0,0.25); padding: 4px 8px; border-radius: 4px; color: #e2e8f0; margin-bottom: 4px; line-height: 1.4;">
-                                weighted_pct = L1×35% + L2×25% + L3×20% + L4×15% + L5×5%<br/>
+                                weighted_pct = L0×15% + L1×30% + L2×20% + L3×15% + L4×10% + L5×10%<br/>
                                 heat_score = Min(100, Max(0, 50.0 + weighted_pct × 7.5))
                             </div>
-                            <div style="font-size: 11px; color: var(--text-secondary);">综合得分区间为 0 ~ 100 分，反映当前全球 AI 产业链资本扩张的整体热度。</div>
+                            <div style="font-size: 11px; color: var(--text-secondary);">包含 2026 年核心约束因子：L0 能源电力 (15%) 与 L1-L5 全链条动能。</div>
                         </div>
 
                         <div style="font-weight: 600; font-size: 12px; margin-bottom: 4px; color: var(--text-secondary);">📊 各层级因子算法权重分配：</div>
                         ${weightsHtml}
 
                         <div style="background: rgba(255, 255, 255, 0.02); border-left: 3px solid var(--color-primary, #3b82f6); padding: 6px 8px; font-size: 11px; color: var(--text-secondary); margin-top: 8px;">
-                            <div><strong>💡 得分区间：</strong>70+ 分强劲扩张 | 50~70 分稳健消化 | &lt;40 分周期回调</div>
+                            <div><strong>💡 得分区间：</strong>70+ 分能源与算力爆发 | 50~70 分稳健消化 | &lt;40 分周期回调</div>
                             <div style="margin-top: 2px; color: var(--text-muted, #94a3b8);">⚡ 数据抓取：直连美股与A股盘中数据，后台每 10 分钟自动预热更新。</div>
                         </div>
                     </div>
@@ -475,37 +477,40 @@ class AIMarketController {
             };
         }
 
-        // 5. 产业链 6 层拆解说明弹窗
+        // 5. 产业链 7 层拆解说明弹窗
         const layersBtn = document.getElementById('info-ai-layers');
         if (layersBtn) {
             layersBtn.onclick = (e) => {
                 e.stopPropagation();
                 const bodyHtml = `
                     <div class="ai-info-modal" style="white-space: normal; font-size: 12px; color: var(--text-primary);">
-                        <div style="font-weight: 600; font-size: 12px; margin-bottom: 6px; color: var(--text-primary);">AI 产业链 6 层结构与传导逻辑：</div>
+                        <div style="font-weight: 600; font-size: 12px; margin-bottom: 6px; color: var(--text-primary);">AI 产业链 7 层结构与传导逻辑 (L0 - L6)：</div>
                         <div style="display: flex; flex-direction: column; gap: 5px; font-size: 11px;">
                             <div style="padding: 5px 8px; background: rgba(255,255,255,0.03); border-radius: 4px;">
-                                <strong style="color: var(--color-primary, #3b82f6);">L1 算力芯片</strong>：包含 NVDA, AMD, AVGO 及费半 ETF，资本最核心风向标。
+                                <strong style="color: var(--color-primary, #3b82f6);">L0 能源电力基建</strong>：GEV (电气)、CEG (核电)、VST 及 ETN，2026 AI 瓶颈红利。
                             </div>
                             <div style="padding: 5px 8px; background: rgba(255,255,255,0.03); border-radius: 4px;">
-                                <strong style="color: var(--color-primary, #3b82f6);">L2 存储与代工</strong>：美光 HBM 内存与台积电 CoWoS 封装，体现真实硬件瓶颈。
+                                <strong style="color: var(--color-primary, #3b82f6);">L1 算力芯片与架构</strong>：包含 NVDA, AMD, AVGO, ARM, MRVL 及费半 ETF，资本最核心风向标。
                             </div>
                             <div style="padding: 5px 8px; background: rgba(255,255,255,0.03); border-radius: 4px;">
-                                <strong style="color: var(--color-primary, #3b82f6);">L3 数据中心基建</strong>：服务器与液冷/电源（SMCI / VRT），反映基建落地开支。
+                                <strong style="color: var(--color-primary, #3b82f6);">L2 存储与代工</strong>：美光 HBM 内存与台积电 CoWoS 封装，体现真实硬件产能供需。
                             </div>
                             <div style="padding: 5px 8px; background: rgba(255,255,255,0.03); border-radius: 4px;">
-                                <strong style="color: var(--color-primary, #3b82f6);">L4 云计算四大巨头</strong>：微软/谷歌/亚马逊/Meta，其 AI 资本开支是全产业链上限。
+                                <strong style="color: var(--color-primary, #3b82f6);">L3 数据中心基建</strong>：服务器与液冷/电源（SMCI / VRT / DELL），反映基建落地开支。
                             </div>
                             <div style="padding: 5px 8px; background: rgba(255,255,255,0.03); border-radius: 4px;">
-                                <strong style="color: var(--color-primary, #3b82f6);">L5 Agent 与应用</strong>：Palantir、Salesforce 等 SaaS 软件，体现商业化变现成果。
+                                <strong style="color: var(--color-primary, #3b82f6);">L4 云计算四大巨头</strong>：微软/谷歌/亚马逊/Meta/甲骨文，其 AI 资本开支是全产业链上限。
                             </div>
                             <div style="padding: 5px 8px; background: rgba(255,255,255,0.03); border-radius: 4px;">
-                                <strong style="color: #ef4444;">L6 A股/边缘概念</strong>：游资偏好题材小票，狂热暴涨往往预示短线情绪见顶。
+                                <strong style="color: var(--color-primary, #3b82f6);">L5 Agent 与应用</strong>：Palantir、ServiceNow、Salesforce 等 SaaS 软件，体现商业化变现成果。
+                            </div>
+                            <div style="padding: 5px 8px; background: rgba(255,255,255,0.03); border-radius: 4px;">
+                                <strong style="color: #ef4444;">L6 A股/边缘概念</strong>：寒武纪/海光等龙头与游资偏好题材，狂热暴涨预示短线情绪近尾声。
                             </div>
                         </div>
                     </div>
                 `;
-                utils.showInfoModal('AI 产业链 6 层深度拆解说明', bodyHtml);
+                utils.showInfoModal('AI 产业链 7 层深度拆解说明', bodyHtml);
             };
         }
     }
