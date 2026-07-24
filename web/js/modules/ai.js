@@ -174,7 +174,7 @@ class AIMarketController {
                 ${(() => {
                     if (!us_cn_comparison) return '';
                     const keys = Object.keys(us_cn_comparison);
-                    const cx = 140, cy = 115, r = 75;
+                    const cx = 180, cy = 135, r = 98;
                     const angles = [-Math.PI / 2, -Math.PI / 2 + (2 * Math.PI / 5), -Math.PI / 2 + (4 * Math.PI / 5), -Math.PI / 2 + (6 * Math.PI / 5), -Math.PI / 2 + (8 * Math.PI / 5)];
 
                     const usPoints = [];
@@ -201,9 +201,9 @@ class AIMarketController {
                         const axY = cy + r * Math.sin(angle);
                         axisLines.push(`<line x1="${cx}" y1="${cy}" x2="${axX.toFixed(1)}" y2="${axY.toFixed(1)}" stroke="rgba(203,213,225,0.6)" stroke-dasharray="3 3"/>`);
 
-                        const lx = cx + (r + 18) * Math.cos(angle);
-                        const ly = cy + (r + 12) * Math.sin(angle);
-                        labels.push(`<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="middle" font-size="10" font-weight="600" fill="var(--text-secondary)">${item.label}</text>`);
+                        const lx = cx + (r + 22) * Math.cos(angle);
+                        const ly = cy + (r + 14) * Math.sin(angle);
+                        labels.push(`<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="middle" font-size="11" font-weight="600" fill="var(--text-secondary)">${item.label}</text>`);
                     });
 
                     const webPolysHtml = gridPolys.map(scale => {
@@ -214,7 +214,7 @@ class AIMarketController {
                     return `
                         <div class="svg-radar-layout">
                             <div class="svg-radar-chart-box">
-                                <svg viewBox="0 0 280 230" class="svg-radar-chart">
+                                <svg viewBox="0 0 360 280" class="svg-radar-chart">
                                     ${webPolysHtml}
                                     ${axisLines.join('')}
                                     <polygon points="${usPoints.join(' ')}" fill="rgba(59,130,246,0.25)" stroke="#3b82f6" stroke-width="2" class="radar-poly-us"/>

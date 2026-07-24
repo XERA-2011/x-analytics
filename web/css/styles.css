@@ -1714,15 +1714,15 @@ footer {
 /* 1. 中美 AI 五维对比 SVG 雷达图 */
 .svg-radar-layout {
     display: grid;
-    grid-template-columns: 280px 1fr;
-    gap: 20px;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
     align-items: center;
 }
 
 .svg-radar-chart-box {
     position: relative;
     width: 100%;
-    max-width: 280px;
+    max-width: 440px;
     margin: 0 auto;
 }
 
