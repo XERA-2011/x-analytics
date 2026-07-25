@@ -41,15 +41,24 @@ class CNIndices:
             指数列表数据
         """
         try:
-            # 1. 获取全球和港股指数数据
+            # 1. 获取全球、国内 A 股和港股指数数据
             df_em = data_provider.get_global_indices_spot()
             em_map = df_em.set_index("代码").to_dict(orient="index") if not df_em.empty else {}
 
             df_hk = data_provider.get_hk_indices_spot()
             hk_map = df_hk.set_index("代码").to_dict(orient="index") if not df_hk.empty else {}
 
+            df_cn = data_provider.get_index_spot_sina_with_fallback()
+            cn_map = {}
+            if not df_cn.empty:
+                for idx, row in df_cn.iterrows():
+                    code = str(row["代码"])
+                    cn_map[code] = row
+                    if code.startswith("sh") or code.startswith("sz"):
+                        cn_map[code[2:]] = row
+
             # 合并映射以便按顺序查找
-            df_map = {**em_map, **hk_map}
+            df_map = {**em_map, **hk_map, **cn_map}
 
             # 过滤出核心指数
             indices_data = []

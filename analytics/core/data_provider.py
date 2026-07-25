@@ -28,6 +28,7 @@ class _SourceCircuitBreaker:
         "eastmoney_stock_direct": ["eastmoney_stock", "eastmoney_stock_direct"],
         "eastmoney_board": ["eastmoney_board", "eastmoney_board_direct"],
         "eastmoney_board_direct": ["eastmoney_board", "eastmoney_board_direct"],
+        "eastmoney_global": ["eastmoney_global"],
     }
 
     def __init__(self):
@@ -556,19 +557,135 @@ class SharedDataProvider:
 
         raise ValueError("所有指数回退源均不可用")
 
+    def _fallback_global_indices_sina(self) -> pd.DataFrame:
+        """
+        新浪全球指数回退接口 (当东方财富全球指数 API 断连/被封时使用)
+        使用经过实测验证的 Sina 编码及多格式解析器
+        """
+        indices_map = [
+            {"code": "NDX", "sina": "gb_$ndx", "name": "纳斯达克"},
+            {"code": "SPX", "sina": "b_SPX", "name": "标普500"},
+            {"code": "DJIA", "sina": "gb_$dji", "name": "道琼斯"},
+            {"code": "SX5E", "sina": "b_SX5E", "name": "欧洲斯托克50"},
+            {"code": "FTSE", "sina": "b_UKX", "name": "英国富时100"},
+            {"code": "GDAXI", "sina": "b_DAX", "name": "德国DAX30"},
+            {"code": "FCHI", "sina": "b_CAC", "name": "法国CAC40"},
+            {"code": "N225", "sina": "int_nikkei", "name": "日经225"},
+            {"code": "KOSPI", "sina": "b_KOSPI", "name": "韩国KOSPI"},
+            {"code": "KS11", "sina": "b_KOSPI", "name": "韩国KOSPI"},
+            {"code": "HSI", "sina": "int_hangseng", "name": "恒生指数"},
+        ]
+
+        sina_codes = ",".join(set(item["sina"] for item in indices_map))
+        url = f"http://hq.sinajs.cn/list={sina_codes}"
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "Referer": "https://finance.sina.com.cn",
+        }
+
+        try:
+            import requests
+            from .utils import safe_float
+            r = requests.get(url, headers=headers, timeout=8)
+            r.encoding = "gbk"
+            lines = r.text.strip().split("\n")
+
+            line_map = {}
+            for line in lines:
+                if '="' in line:
+                    var_name = line.split('="')[0].replace("var hq_str_", "")
+                    content = line.split('="')[1].rstrip('";')
+                    if content.strip():
+                        line_map[var_name] = content.split(",")
+
+            rows = []
+            for item in indices_map:
+                code = item["code"]
+                sina_key = item["sina"]
+                parts = line_map.get(sina_key)
+                if not parts or len(parts) < 4:
+                    continue
+
+                name = item["name"]
+                price = None
+                change_amount = None
+                change_pct = None
+
+                try:
+                    if sina_key.startswith("gb_"):
+                        # gb_ 格式 (美股): 名称,最新价,涨跌幅%,时间,涨跌额,...
+                        name = parts[0] or item["name"]
+                        price = safe_float(parts[1], default=None)
+                        change_pct = safe_float(parts[2], default=None)
+                        change_amount = safe_float(parts[4], default=None) if len(parts) > 4 else None
+                    elif sina_key.startswith("b_"):
+                        # b_ 格式 (欧洲/美股): 名称,最新价,涨跌额,涨跌幅%,...
+                        name = parts[0] or item["name"]
+                        price = safe_float(parts[1], default=None)
+                        change_amount = safe_float(parts[2], default=None)
+                        change_pct = safe_float(parts[3], default=None)
+                    elif sina_key.startswith("int_"):
+                        # int_ 格式 (亚太/港股): 名称,最新价,涨跌额,涨跌幅%
+                        name = parts[0] or item["name"]
+                        price = safe_float(parts[1], default=None)
+                        change_amount = safe_float(parts[2], default=None)
+                        change_pct = safe_float(parts[3], default=None)
+
+                    if change_amount is None and price is not None and change_pct is not None and change_pct != -100:
+                        prev = price / (1 + change_pct / 100)
+                        change_amount = price - prev
+
+                    if price is not None:
+                        rows.append({
+                            "代码": code,
+                            "名称": name,
+                            "最新价": price,
+                            "涨跌额": change_amount,
+                            "涨跌幅": change_pct,
+                        })
+                except Exception as parse_err:
+                    logger.warning(f"⚠️ 解析新浪指数 {code} ({sina_key}) 失败: {parse_err}")
+                    continue
+
+            if not rows:
+                raise ValueError("新浪全球指数接口未解析到有效数据")
+
+            df = pd.DataFrame(rows)
+            logger.info(f"✅ 新浪全球指数降级回退成功, 获取 {len(df)} 个指数")
+            return df
+        except Exception as e:
+            logger.error(f"❌ 新浪全球指数回退失败: {e}")
+            raise
+
     def get_global_indices_spot(self) -> pd.DataFrame:
         """
-        获取全球指数实时数据 (使用东方财富全球指数行情接口)
+        获取全球指数实时数据 (支持东方财富与新浪回退，支持熔断器模式)
         """
         cache_key = "global_indices_spot"
         cached_df = self._get_cached(cache_key)
         if cached_df is not None:
             return cached_df
 
-        df = self._fetch_with_retry(ak.index_global_spot_em, max_retries=2)
+        # --- 1. 尝试东方财富接口 (可被熔断跳过) ---
+        if not self._breaker.should_skip("eastmoney_global"):
+            try:
+                df = self._fetch_with_retry(ak.index_global_spot_em, max_retries=2)
+                if df is not None and not df.empty:
+                    self._breaker.record_success("eastmoney_global")
+                    self._set_cached(cache_key, df)
+                    return df
+            except Exception as e:
+                self._breaker.record_failure("eastmoney_global")
+                logger.warning(f"⚠️ ak.index_global_spot_em 调用失败: {e}, 使用新浪全球指数回退源")
+        else:
+            logger.info("跳过东方财富全球指数接口 (熔断冷却中)，使用新浪接口")
+
+        # --- 2. 新浪全球指数降级回退 ---
+        df = self._fallback_global_indices_sina()
         if df is not None and not df.empty:
             self._set_cached(cache_key, df)
             return df
+
         raise ValueError("获取全球实时指数数据为空")
 
     def get_hk_indices_spot(self) -> pd.DataFrame:

@@ -62,9 +62,22 @@ class WesternMarketController {
     async loadUSLeaders() {
         try {
             const data = await api.getUSMarketLeaders();
-            if (data.error || data._warming_up) {
-                console.error('加载欧美主要指数API返回错误:', data.error);
-                utils.renderError('western-indices', data.error || 'warming_up');
+            if (data._warming_up) {
+                console.info('欧美主要指数数据预热中...');
+                utils.renderWarmingUp('western-indices');
+                this._leadersRetryCount = (this._leadersRetryCount || 0) + 1;
+                if (this._leadersRetryCount <= 12 && !this._leadersRetryTimer) {
+                    this._leadersRetryTimer = setTimeout(() => {
+                        this._leadersRetryTimer = null;
+                        this.loadUSLeaders();
+                    }, 5000);
+                }
+                return;
+            }
+            this._leadersRetryCount = 0; // 成功或非预热状态时重置重试计数
+            if (data.error || data._error) {
+                console.error('加载欧美主要指数API返回错误:', data.error || data.message);
+                utils.renderError('western-indices', data.error || data.message || '主要指数加载失败');
                 return;
             }
             this.renderUSLeaders(data);

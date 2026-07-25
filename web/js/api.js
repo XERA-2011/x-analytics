@@ -180,7 +180,6 @@ class API {
             case 'warming_up':
                 return {
                     _warming_up: true,
-                    error: 'warming_up',
                     message: response.message || '数据预热中，请稍后刷新'
                 };
 
