@@ -440,108 +440,56 @@ class AIMarketController {
                 </div>
             </div>
 
-            <!-- 5. 产业链五阶段扩散 Roadmap (SVG 赛博流光管道 - 动态粒子穿梭版) -->
+            <!-- 5. 产业链五阶段扩散 Roadmap (极简素雅步进流 Track) -->
             <div class="card" style="margin-bottom: 16px; padding: 16px;">
-                <div class="card-header" style="margin-bottom: 12px; padding-bottom: 0; border-bottom: none; display: flex; justify-content: space-between; align-items: center;">
-                    <div class="card-title"><i data-lucide="git-commit" width="16" style="vertical-align: middle;"></i> AI 产业链五阶段扩散模型 (SVG Pipeline Flow)</div>
-                    <span style="font-size: 11px; background: rgba(59,130,246,0.15); color: #60a5fa; padding: 2px 10px; border-radius: 12px; font-weight: 600;">2026 演进：具身智能与工业落地验证中</span>
+                <div class="card-header" style="margin-bottom: 14px; padding-bottom: 0; border-bottom: none; display: flex; justify-content: space-between; align-align: center;">
+                    <div class="card-title"><i data-lucide="git-commit" width="16" style="vertical-align: middle;"></i> AI 产业链五阶段扩散模型</div>
+                    <span class="ai-diffusion-badge">2026 演进：具身智能与工业落地验证中</span>
                 </div>
-                <div class="svg-pipeline-box">
+                <div class="minimal-pipeline-container">
                     ${(() => {
                         const roadmap = data.diffusion_roadmap || {};
                         const activeStages = roadmap.active_stages || [1, 2];
                         const stageMap = {};
                         (roadmap.stages || []).forEach(s => { stageMap[s.id] = s; });
 
-                        const getStageChangeBadge = (stageId) => {
-                            const s = stageMap[stageId];
-                            if (!s || s.avg_change === undefined) return '';
-                            const val = s.avg_change;
-                            const isUp = val >= 0;
-                            const color = isUp ? '#059669' : '#dc2626';
-                            const prefix = isUp ? '+' : '';
-                            return `<tspan fill="${color}">${prefix}${val.toFixed(2)}%</tspan>`;
-                        };
+                        const stagesInfo = [
+                            { id: 1, name: "阶段 1: 能源与算力芯片", stocks: "GEV / NVDA / ARM" },
+                            { id: 2, name: "阶段 2: 存储与先进封装", stocks: "美光 MU / 台积电" },
+                            { id: 3, name: "阶段 3: 基建与液冷电源", stocks: "SMCI / VRT / DELL" },
+                            { id: 4, name: "阶段 4: Agent 与具身智能", stocks: "PLTR / 机器人 / SaaS" },
+                            { id: 5, name: "阶段 5: 概念炒作 (泡沫)", stocks: "边缘垃圾小票" },
+                        ];
 
-                        return `
-                        <svg viewBox="0 0 750 125" class="svg-pipeline-chart">
-                            <defs>
-                                <linearGradient id="pipe-grad" x1="0%" y1="0%" x2="100%" y2="0%">
-                                    <stop offset="0%" stop-color="#10b981" />
-                                    <stop offset="35%" stop-color="#3b82f6" />
-                                    <stop offset="70%" stop-color="#8b5cf6" />
-                                    <stop offset="100%" stop-color="#ef4444" />
-                                </linearGradient>
-                                <filter id="glow-orb" x="-50%" y="-50%" width="200%" height="200%">
-                                    <feGaussianBlur stdDeviation="3" result="blur" />
-                                    <feMerge>
-                                        <feMergeNode in="blur" />
-                                        <feMergeNode in="SourceGraphic" />
-                                    </feMerge>
-                                </filter>
-                            </defs>
+                        let htmlStr = '<div class="minimal-pipeline-track">';
+                        stagesInfo.forEach(st => {
+                            const isActive = activeStages.includes(st.id);
+                            const sData = stageMap[st.id] || {};
+                            const val = sData.avg_change;
+                            let changeStr = '--';
+                            let changeClass = 'text-neutral';
 
-                            <!-- 1. 连接管道双层轨道 -->
-                            <line x1="75" y1="58" x2="675" y2="58" stroke="rgba(226,232,240,0.9)" stroke-width="10" stroke-linecap="round" class="pipe-base-track"/>
-                            <line x1="75" y1="58" x2="675" y2="58" stroke="url(#pipe-grad)" stroke-width="6" stroke-linecap="round" class="pipe-stream-track"/>
+                            if (val !== undefined && val !== null) {
+                                const isUp = val >= 0;
+                                const prefix = isUp ? '+' : '';
+                                changeStr = `${prefix}${val.toFixed(2)}%`;
+                                changeClass = isUp ? 'text-up' : 'text-down';
+                            }
 
-                            <!-- 2. 沿着管道流动穿梭的高亮流光能量珠 (4 气泡粒子) -->
-                            <circle class="pipe-orb pipe-orb-1" cy="58" />
-                            <circle class="pipe-orb pipe-orb-2" cy="58" />
-                            <circle class="pipe-orb pipe-orb-3" cy="58" />
-                            <circle class="pipe-orb pipe-orb-4" cy="58" />
-
-                            <!-- 节点 1: 能源与算力 -->
-                            <g transform="translate(75, 58)">
-                                ${activeStages.includes(1) ? '<circle r="22" fill="none" stroke="#10b981" class="node-active-ring"/>' : ''}
-                                <circle r="20" fill="#ecfdf5" stroke="#10b981" stroke-width="3.5"/>
-                                <text y="4" text-anchor="middle" font-size="11" font-weight="800" fill="#059669">01</text>
-                                <text y="-32" text-anchor="middle" font-size="11" font-weight="700" fill="#059669">阶段 1: 能源与算力芯片</text>
-                                <text y="36" text-anchor="middle" font-size="10" font-weight="600" fill="#10b981">GEV / NVDA / ARM</text>
-                                <text y="50" text-anchor="middle" font-size="10" font-weight="700">${getStageChangeBadge(1)}</text>
-                            </g>
-
-                            <!-- 节点 2: 存储封装 -->
-                            <g transform="translate(225, 58)">
-                                ${activeStages.includes(2) ? '<circle r="22" fill="none" stroke="#3b82f6" class="node-active-ring"/>' : ''}
-                                <circle r="20" fill="#eff6ff" stroke="#3b82f6" stroke-width="3.5"/>
-                                <text y="4" text-anchor="middle" font-size="11" font-weight="800" fill="#1d4ed8">02</text>
-                                <text y="-32" text-anchor="middle" font-size="11" font-weight="700" fill="#1d4ed8">阶段 2: 存储与先进封装</text>
-                                <text y="36" text-anchor="middle" font-size="10" font-weight="600" fill="#3b82f6">美光 MU / 台积电</text>
-                                <text y="50" text-anchor="middle" font-size="10" font-weight="700">${getStageChangeBadge(2)}</text>
-                            </g>
-
-                            <!-- 节点 3: 基建电源 -->
-                            <g transform="translate(375, 58)">
-                                ${activeStages.includes(3) ? '<circle r="22" fill="none" stroke="#3b82f6" class="node-active-ring"/>' : ''}
-                                <circle r="20" fill="#eff6ff" stroke="#3b82f6" stroke-width="3.5"/>
-                                <text y="4" text-anchor="middle" font-size="11" font-weight="800" fill="#1d4ed8">03</text>
-                                <text y="-32" text-anchor="middle" font-size="11" font-weight="700" fill="#1d4ed8">阶段 3: 基建与液冷电源</text>
-                                <text y="36" text-anchor="middle" font-size="10" font-weight="600" fill="#3b82f6">SMCI / VRT / DELL</text>
-                                <text y="50" text-anchor="middle" font-size="10" font-weight="700">${getStageChangeBadge(3)}</text>
-                            </g>
-
-                            <!-- 节点 4: Agent & 具身智能 -->
-                            <g transform="translate(525, 58)">
-                                ${activeStages.includes(4) ? '<circle r="22" fill="none" stroke="#8b5cf6" class="node-active-ring"/>' : ''}
-                                <circle r="20" fill="#f5f3ff" stroke="#8b5cf6" stroke-width="3.5"/>
-                                <text y="4" text-anchor="middle" font-size="11" font-weight="800" fill="#6d28d9">04</text>
-                                <text y="-32" text-anchor="middle" font-size="11" font-weight="700" fill="#6d28d9">阶段 4: Agent 与具身智能</text>
-                                <text y="36" text-anchor="middle" font-size="10" font-weight="600" fill="#8b5cf6">PLTR / 机器人 / SaaS</text>
-                                <text y="50" text-anchor="middle" font-size="10" font-weight="700">${getStageChangeBadge(4)}</text>
-                            </g>
-
-                            <!-- 节点 5: 概念炒作 (泡沫) -->
-                            <g transform="translate(675, 58)">
-                                ${activeStages.includes(5) ? '<circle r="22" fill="none" stroke="#ef4444" class="node-active-ring"/>' : ''}
-                                <circle r="20" fill="#fef2f2" stroke="#ef4444" stroke-width="3.5"/>
-                                <text y="4" text-anchor="middle" font-size="11" font-weight="800" fill="#b91c1c">05</text>
-                                <text y="-32" text-anchor="middle" font-size="11" font-weight="700" fill="#b91c1c">阶段 5: 概念炒作 (泡沫)</text>
-                                <text y="36" text-anchor="middle" font-size="10" font-weight="600" fill="#ef4444">边缘垃圾小票</text>
-                                <text y="50" text-anchor="middle" font-size="10" font-weight="700">${getStageChangeBadge(5)}</text>
-                            </g>
-                        </svg>
-                        `;
+                            htmlStr += `
+                                <div class="minimal-step-card ${isActive ? 'active' : ''}">
+                                    <div class="minimal-step-head">
+                                        <span class="minimal-step-num">0${st.id}</span>
+                                        ${isActive ? '<span class="minimal-step-tag">主导</span>' : ''}
+                                    </div>
+                                    <div class="minimal-step-title">${st.name}</div>
+                                    <div class="minimal-step-stocks" title="${st.stocks}">${st.stocks}</div>
+                                    <div class="minimal-step-change ${changeClass}">${changeStr}</div>
+                                </div>
+                            `;
+                        });
+                        htmlStr += '</div>';
+                        return htmlStr;
                     })()}
                 </div>
             </div>
@@ -574,6 +522,8 @@ class AIMarketController {
                         
                         <div class="ai-layer-importance">${layer.importance}</div>
                         <div class="ai-layer-desc">${layer.desc}</div>
+
+                        <div class="divider" style="margin: 10px 0;"></div>
 
                         <div class="ai-layer-items">
                 `;
