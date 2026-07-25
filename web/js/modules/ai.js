@@ -17,8 +17,22 @@ class AIMarketController {
         const container = document.getElementById('ai-container');
         if (!container) return;
 
-        if (data.error) {
-            utils.renderError('ai-container', data.error);
+        if (data._warming_up) {
+            console.info('AI 产业周期数据预热中...');
+            utils.renderWarmingUp('ai-container');
+            this._retryCount = (this._retryCount || 0) + 1;
+            if (this._retryCount <= 12 && !this._retryTimer) {
+                this._retryTimer = setTimeout(() => {
+                    this._retryTimer = null;
+                    this.loadData();
+                }, 5000);
+            }
+            return;
+        }
+        this._retryCount = 0;
+
+        if (data.error || data._error) {
+            utils.renderError('ai-container', data.error || data.message || 'AI 产业数据加载失败');
             return;
         }
 
@@ -780,6 +794,10 @@ class AIMarketController {
                 `;
                 utils.showInfoModal('AI 产业链 7 层深度拆解说明', bodyHtml);
             };
+        }
+
+        if (window.lucide) {
+            lucide.createIcons();
         }
     }
 }
