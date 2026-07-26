@@ -14,7 +14,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from analytics.core.cache import cache, request_refresh_var
 from analytics.core import scheduler, settings
 from analytics.core.scheduler import setup_default_jobs, initial_warmup
-from analytics.api import market_asia, metals, market_western, market_hk, etf, ai
+from analytics.api import market_asia, metals, market_western, market_hk, etf, ai, qdii
 from analytics.core.patch import apply_patches
 from analytics.core.security import SecurityMiddleware
 from analytics.core.logger import logger
@@ -28,7 +28,7 @@ async def lifespan(app: FastAPI):
     from analytics.core.db import init_db, close_db
 
     # 启动时
-    logger.info("🚀 x-analytics 服务启动中...")
+    logger.info("🚀 X-ANALYTICS 服务启动中...")
     
     # 初始化数据库
     await init_db()
@@ -68,14 +68,14 @@ async def lifespan(app: FastAPI):
     yield
 
     # 关闭时
-    logger.info("🛑 x-analytics 服务关闭中...")
+    logger.info("🛑 X-ANALYTICS 服务关闭中...")
     scheduler.shutdown(wait=False)
     await close_db()
 
 
 # 创建 FastAPI 应用
 app = FastAPI(
-    title="x-analytics API",
+    title="X-ANALYTICS API",
     description="三大板块金融数据分析服务：中国市场、美国市场、有色金属",
     version=settings.VERSION,
     root_path="/analytics",
@@ -127,6 +127,7 @@ app.include_router(metals.router, prefix="/metals", tags=["Precious Metals"])
 app.include_router(market_hk.router, prefix="/market-hk", tags=["HK Market"])
 app.include_router(etf.router, prefix="/etf", tags=["ETF"])
 app.include_router(ai.router, prefix="/ai", tags=["AI 产业链"])
+app.include_router(qdii.router, prefix="/qdii", tags=["QDII基金"])
 
 
 
@@ -156,7 +157,7 @@ def health_check():
 
     return {
         "status": "ok",
-        "service": "x-analytics",
+        "service": "X-ANALYTICS",
         "version": settings.VERSION,
         "cache": {
             "connected": cache.connected,
@@ -186,7 +187,7 @@ def trigger_warmup():
 
 @app.delete("/api/cache/clear", tags=["系统"], summary="清除所有缓存")
 def clear_cache():
-    """清除所有 x-analytics 相关缓存"""
+    """清除所有 X-ANALYTICS 相关缓存"""
     deleted = cache.delete_pattern(f"{settings.CACHE_PREFIX}:*")
     return {"status": "ok", "deleted_keys": deleted}
 

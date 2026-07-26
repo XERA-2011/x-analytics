@@ -1,4 +1,4 @@
-/* x-analytics - Unified Design System */
+/* X-ANALYTICS - Unified Design System */
 
 :root {
     /* Colors */
@@ -2013,6 +2013,307 @@ footer {
         text-align: center;
     }
     .ai-cycle-desc {
-        text-align: left;
+        text-align: center;
     }
+}
+
+/* QDII Funds Component Styles */
+.table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 8px;
+    border: 1px solid var(--border-light);
+    background: var(--bg-card);
+}
+
+.qdii-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    min-width: 760px;
+}
+
+.qdii-table th {
+    background: var(--bg-body);
+    color: var(--text-secondary);
+    font-weight: 600;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border-light);
+    white-space: nowrap;
+}
+
+.qdii-table td {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border-light);
+    color: var(--text-primary);
+}
+
+.qdii-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.qdii-table tbody tr:hover {
+    background: var(--bg-hover);
+}
+
+.rank-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.rank-top1 { background: #ef4444; color: #ffffff; }
+.rank-top2 { background: #f97316; color: #ffffff; }
+.rank-top3 { background: #eab308; color: #ffffff; }
+.rank-other { background: var(--bg-body); color: var(--text-secondary); }
+
+.index-tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.tag-nasdaq {
+}
+
+.minimal-step-card {
+    background: var(--bg-card, #ffffff);
+    border: 1px solid var(--border-color, #e2e8f0);
+    border-radius: 8px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    position: relative;
+    transition: border-color 0.2s, background-color 0.2s;
+}
+
+.minimal-step-card.active {
+    border-color: var(--text-primary, #000000);
+    background: var(--bg-body, #f8fafc);
+}
+
+.minimal-step-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.minimal-step-num {
+    font-family: var(--font-mono, monospace);
+    font-size: 11px;
+    font-weight: 700;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 1.5px solid var(--text-primary, #000000);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-primary, #000000);
+}
+
+.minimal-step-card.active .minimal-step-num {
+    background: var(--text-primary, #000000);
+    color: var(--bg-card, #ffffff);
+}
+
+.minimal-step-tag {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 1px 6px;
+    border-radius: 4px;
+    background: var(--text-primary, #000000);
+    color: var(--bg-card, #ffffff);
+    line-height: 1.4;
+}
+
+.minimal-step-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-primary, #000000);
+    margin-top: 2px;
+    line-height: 1.3;
+}
+
+.minimal-step-stocks {
+    font-size: 11px;
+    font-family: var(--font-mono, monospace);
+    color: var(--text-secondary, #64748b);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.minimal-step-change {
+    font-size: 12px;
+    font-weight: 700;
+    font-family: var(--font-mono, monospace);
+    margin-top: auto;
+    padding-top: 4px;
+}
+
+/* ==========================================================================
+   移动端响应式适配 (Mobile & Tablet Responsive Rules)
+   ========================================================================== */
+
+@media (max-width: 900px) {
+    .ai-header-grid {
+        grid-template-columns: 1fr;
+    }
+    .svg-radar-layout {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+    .svg-radar-chart-box {
+        max-width: 240px;
+    }
+    .ai-middle-grid {
+        grid-template-columns: 1fr;
+    }
+    .ai-layers-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .svg-pipeline-box {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 8px;
+    }
+    .svg-pipeline-chart {
+        min-width: 650px;
+    }
+}
+
+@media (max-width: 640px) {
+    .ai-matrix-grid {
+        grid-template-columns: 1fr;
+    }
+    .ai-signals-grid {
+        grid-template-columns: 1fr;
+    }
+    .ai-layers-grid {
+        grid-template-columns: 1fr;
+    }
+    .ai-cycle-content {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+    .ai-cycle-desc {
+        text-align: center;
+    }
+}
+
+/* QDII Funds Component Styles */
+.table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 8px;
+    border: 1px solid var(--border-light);
+    background: var(--bg-card);
+}
+
+.qdii-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    min-width: 760px;
+}
+
+.qdii-table th {
+    background: var(--bg-body);
+    color: var(--text-secondary);
+    font-weight: 600;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border-light);
+    white-space: nowrap;
+}
+
+.qdii-table td {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border-light);
+    color: var(--text-primary);
+}
+
+.qdii-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.qdii-table tbody tr:hover {
+    background: var(--bg-hover);
+}
+
+.rank-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.rank-top1 { background: #ef4444; color: #ffffff; }
+.rank-top2 { background: #f97316; color: #ffffff; }
+.rank-top3 { background: #eab308; color: #ffffff; }
+.rank-other { background: var(--bg-body); color: var(--text-secondary); }
+
+.index-tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.tag-nasdaq {
+    background: rgba(59, 130, 246, 0.12);
+    color: #3b82f6;
+}
+
+
+.tag-sp500 {
+    background: rgba(168, 85, 247, 0.12);
+    color: #a855f7;
+}
+
+.qdii-filter-group {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.qdii-filter-btn {
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.qdii-filter-btn:hover {
+    color: var(--primary);
+    border-color: var(--primary);
+}
+
+.qdii-filter-btn.active {
+    background: var(--primary);
+    color: var(--bg-card);
+    border-color: var(--primary);
 }

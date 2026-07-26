@@ -602,6 +602,10 @@ def initial_warmup():
         from ..modules.ai import AIOverview
         warmup_cache(AIOverview.get_overview)
 
+        # QDII
+        from ..modules.qdii import get_qdii_passive_funds
+        warmup_cache(get_qdii_passive_funds)
+
         logger.info("✅ 核心指标预热完成")
         
         # 超买超卖信号 (延迟执行，避免与核心数据预热同时请求导致 IP 被封)

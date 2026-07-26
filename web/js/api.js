@@ -320,6 +320,11 @@ class API {
         return this.request('/ai/overview');
     }
 
+    // QDII 基金 API
+    async getQDIIFunds() {
+        return this.request('/qdii/funds');
+    }
+
     async triggerWarmup() {
         return this.request('/api/cache/warmup', { method: 'POST' });
     }

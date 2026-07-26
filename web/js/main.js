@@ -17,7 +17,8 @@ class App {
             'market': new MarketController(),
             'ai': new AIMarketController(),
             'metals': new MetalsController(),
-            'etf': new ETFController()
+            'etf': new ETFController(),
+            'qdii': new QDIIController()
         };
 
         this.init();
@@ -29,9 +30,10 @@ class App {
             'ai': 'AI 产业',
             'metals': '金属',
             'etf': 'ETF',
+            'qdii': 'QDII 基金',
         };
-        const sectionTitle = titles[tabId] || 'x-analytics';
-        return sectionTitle === 'x-analytics' ? sectionTitle : `${sectionTitle}｜x-analytics`;
+        const sectionTitle = titles[tabId] || 'X-ANALYTICS';
+        return sectionTitle === 'X-ANALYTICS' ? sectionTitle : `${sectionTitle}｜X-ANALYTICS`;
     }
 
     updatePageTitle(tabId) {
@@ -39,7 +41,7 @@ class App {
     }
 
     async init() {
-        console.log('🚀 x-analytics 启动中...');
+        console.log('🚀 X-ANALYTICS 启动中...');
 
         // 设置事件监听器
         this.setupEventListeners();
@@ -59,7 +61,7 @@ class App {
         // 加载初始数据
         await this.loadInitialData();
 
-        console.log('✅ x-analytics 启动完成');
+        console.log('✅ X-ANALYTICS 启动完成');
     }
 
     setupEventListeners() {
@@ -93,6 +95,10 @@ class App {
                     case '4':
                         event.preventDefault();
                         this.switchTab('etf');
+                        break;
+                    case '5':
+                        event.preventDefault();
+                        this.switchTab('qdii');
                         break;
                 }
             }
@@ -210,7 +216,7 @@ class App {
             'market-us': 'market',
             'us': 'market'
         };
-        const validTabs = ['market', 'ai', 'metals', 'etf'];
+        const validTabs = ['market', 'ai', 'metals', 'etf', 'qdii'];
         const targetTab = legacyMap[urlTab] || urlTab;
 
         if (targetTab && validTabs.includes(targetTab)) {
