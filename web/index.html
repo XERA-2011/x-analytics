@@ -56,11 +56,8 @@
     <main class="main-container">
         <!-- Tabs -->
         <nav class="tabs">
-            <button class="tab-btn active" data-tab="market-asia">
-                亚洲市场
-            </button>
-            <button class="tab-btn" data-tab="market-western">
-                欧美市场
+            <button class="tab-btn active" data-tab="market">
+                全球市场
             </button>
             <button class="tab-btn" data-tab="ai">
                 AI 产业
@@ -73,118 +70,115 @@
             </button>
         </nav>
 
-        <!-- CN Market -->
-        <section class="tab-content active" id="market-asia">
+        <!-- Global Market -->
+        <section class="tab-content active" id="market">
             <div class="section-header">
-                <h2 class="section-title">亚洲市场</h2>
+                <h2 class="section-title">全球市场</h2>
                 <button class="refresh-btn" onclick="window.app.refreshCurrentTab()" title="点击刷新"><i
                         data-lucide="refresh-cw" width="14"></i> 刷新</button>
             </div>
 
-            <div class="grid">
-                <!-- 亚洲指数 -->
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-title">亚洲指数</div>
-                    </div>
-                    <div id="asia-indices" class="heat-grid" style="grid-template-columns: repeat(2, 1fr);">
-                        <div class="loading">Loading...</div>
-                    </div>
-                </div>
-
-                <!-- 亚洲恐慌贪婪 -->
-                <div class="card hero">
-                    <div class="card-header">
-                        <div class="card-title">恐慌贪婪(上证指数)</div>
-                        <button class="info-btn" id="info-asia-fear" title="说明"><i data-lucide="help-circle"
-                                width="16"></i></button>
-                    </div>
-                    <div id="asia-fear-greed" class="fg-container">
-                        <div class="loading">Loading...</div>
-                    </div>
-                    <!-- 超买超卖信号 -->
-                    <div id="asia-obo-signal" class="obo-container"></div>
-                </div>
-
-                <!-- LPR + 国债 -->
-                <div class="card">
-                    <div class="card-header" style="margin-bottom: 12px; padding-bottom: 0; border-bottom: none;">
-                        <div class="card-title">LPR 利率</div>
-                        <button class="info-btn" id="info-lpr" title="说明"><i data-lucide="help-circle"
-                                width="14"></i></button>
-                    </div>
-                    <div id="macro-lpr">
-                        <div class="loading">Loading...</div>
+            <!-- 亚洲市场子区域 -->
+            <div class="market-section">
+                <h3 class="subsection-title">亚洲市场</h3>
+                <div class="grid">
+                    <!-- 亚洲指数 -->
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">亚洲指数</div>
+                        </div>
+                        <div id="asia-indices" class="heat-grid" style="grid-template-columns: repeat(2, 1fr);">
+                            <div class="loading">Loading...</div>
+                        </div>
                     </div>
 
-                    <div class="divider"></div>
-
-                    <div class="card-header" style="margin-bottom: 12px; padding-bottom: 0; border-bottom: none;">
-                        <div class="card-title">国债收益率</div>
+                    <!-- 亚洲恐慌贪婪 -->
+                    <div class="card hero">
+                        <div class="card-header">
+                            <div class="card-title">恐慌贪婪(上证指数)</div>
+                            <button class="info-btn" id="info-asia-fear" title="说明"><i data-lucide="help-circle"
+                                    width="16"></i></button>
+                        </div>
+                        <div id="asia-fear-greed" class="fg-container">
+                            <div class="loading">Loading...</div>
+                        </div>
+                        <!-- 超买超卖信号 -->
+                        <div id="asia-obo-signal" class="obo-container"></div>
                     </div>
-                    <div id="asia-bonds">
-                        <div class="loading">Loading...</div>
+
+                    <!-- LPR + 国债 -->
+                    <div class="card">
+                        <div class="card-header" style="margin-bottom: 12px; padding-bottom: 0; border-bottom: none;">
+                            <div class="card-title">LPR 利率</div>
+                            <button class="info-btn" id="info-lpr" title="说明"><i data-lucide="help-circle"
+                                    width="14"></i></button>
+                        </div>
+                        <div id="macro-lpr">
+                            <div class="loading">Loading...</div>
+                        </div>
+
+                        <div class="divider"></div>
+
+                        <div class="card-header" style="margin-bottom: 12px; padding-bottom: 0; border-bottom: none;">
+                            <div class="card-title">国债收益率</div>
+                        </div>
+                        <div id="asia-bonds">
+                            <div class="loading">Loading...</div>
+                        </div>
                     </div>
                 </div>
             </div>
-        </section>
 
+            <!-- 欧美市场子区域 -->
+            <div class="market-section" style="margin-top: 28px;">
+                <h3 class="subsection-title">欧美市场</h3>
+                <div class="grid">
+                    <!-- Western Gainers (Indices) -->
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">欧美指数</div>
+                        </div>
+                        <div id="western-indices" class="list-container">
+                            <div class="loading">Loading...</div>
+                        </div>
+                        <!-- Hidden placeholder for compat -->
+                        <div id="western-sp500" style="display:none;"></div>
+                    </div>
 
-        <!-- US Market -->
-        <section class="tab-content" id="market-western">
-            <div class="section-header">
-                <h2 class="section-title">欧美市场</h2>
-                <button class="refresh-btn" onclick="window.app.refreshCurrentTab()" title="点击刷新"><i
-                        data-lucide="refresh-cw" width="14"></i> 刷新</button>
-            </div>
+                    <!-- Western Fear & Greed -->
+                    <div class="card hero">
+                        <div class="card-header">
+                            <div class="card-title">恐慌贪婪(标普500)</div>
+                            <button class="info-btn" id="info-western-fear" title="说明"><i data-lucide="help-circle"
+                                    width="16"></i></button>
+                        </div>
+                        <div id="western-fear-greed" class="fg-container">
+                            <div class="loading">Loading...</div>
+                        </div>
+                        <!-- 超买超卖信号 -->
+                        <div id="western-obo-signal" class="obo-container"></div>
+                    </div>
 
-            <div class="grid">
-                <!-- Western Gainers (Indices) -->
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-title">欧美指数</div>
+                    <!-- Western Heat -->
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">板块热度</div>
+                        </div>
+                        <div id="market-western-heat" class="heat-grid">
+                            <div class="loading">Loading...</div>
+                        </div>
                     </div>
-                    <div id="western-indices" class="list-container">
-                        <div class="loading">Loading...</div>
-                    </div>
-                    <!-- Hidden placeholder for compat -->
-                    <div id="western-sp500" style="display:none;"></div>
-                </div>
 
-                <!-- Western Fear & Greed -->
-                <div class="card hero">
-                    <div class="card-header">
-                        <div class="card-title">恐慌贪婪(标普500)</div>
-                        <button class="info-btn" id="info-western-fear" title="说明"><i data-lucide="help-circle"
-                                width="16"></i></button>
-                    </div>
-                    <div id="western-fear-greed" class="fg-container">
-                        <div class="loading">Loading...</div>
-                    </div>
-                    <!-- 超买超卖信号 -->
-                    <div id="western-obo-signal" class="obo-container"></div>
-                </div>
-
-
-                <!-- Western Heat -->
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-title">板块热度</div>
-                    </div>
-                    <div id="market-western-heat" class="heat-grid">
-                        <div class="loading">Loading...</div>
-                    </div>
-                </div>
-
-                <!-- Western Bonds -->
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-title">美债收益率</div>
-                        <button class="info-btn" id="info-western-treasury" title="说明"><i data-lucide="help-circle"
-                                width="16"></i></button>
-                    </div>
-                    <div id="western-treasury">
-                        <div class="loading">Loading...</div>
+                    <!-- Western Bonds -->
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">美债收益率</div>
+                            <button class="info-btn" id="info-western-treasury" title="说明"><i data-lucide="help-circle"
+                                    width="16"></i></button>
+                        </div>
+                        <div id="western-treasury">
+                            <div class="loading">Loading...</div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -323,8 +317,7 @@
     <script src="js/api.js?v=33"></script>
     <script src="js/charts.js?v=33"></script>
     <script src="js/utils.js?v=33"></script>
-    <script src="js/modules/market-asia.js?v=33"></script>
-    <script src="js/modules/market-western.js?v=33"></script>
+    <script src="js/modules/market.js?v=34"></script>
     <script src="js/modules/ai.js?v=33"></script>
     <script src="js/modules/metals.js?v=33"></script>
     <script src="js/modules/etf.js?v=33"></script>

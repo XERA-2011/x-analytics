@@ -1,3 +1,251 @@
+// 全球市场模块 (整合亚洲市场与欧美市场)
+// 依赖: utils.js, api.js, charts.js
+
+class AsiaMarketController {
+    constructor() {
+    }
+
+    async loadData() {
+        console.log('📊 加载亚洲市场数据...');
+
+        const promises = [
+            this.loadCNFearGreed(),
+            this.loadCNOverboughtOversold(),
+            this.loadCNIndices(),
+            this.loadCNBonds(),
+            this.loadLPR()
+        ];
+        await Promise.allSettled(promises);
+    }
+
+    async loadCNIndices() {
+        try {
+            const data = await api.getCNIndices();
+            this.renderCNIndices(data);
+        } catch (error) {
+            console.error('加载亚洲指数失败:', error);
+            utils.renderError('asia-indices', '亚洲指数加载失败');
+        }
+    }
+
+    renderCNIndices(data) {
+        const container = document.getElementById('asia-indices');
+        if (!container) return;
+
+        if (data.error || !data.indices) {
+            utils.renderError('asia-indices', data.error || '暂无数据');
+            return;
+        }
+
+        const indices = data.indices || [];
+        const formatIndexPoint = (value) => {
+            if (value === null || value === undefined || isNaN(value)) return '--';
+            return Number(value).toFixed(2);
+        };
+
+        let html = indices.map(item => {
+            const changeVal = item.change_pct;
+            const changeClass = changeVal > 0 ? 'text-up' : changeVal < 0 ? 'text-down' : '';
+            const sign = changeVal > 0 ? '+' : '';
+            const volHtml = (item.amount && item.amount > 0) 
+                ? `<div class="index-vol">成交 ${utils.formatNumber(item.amount / 100000000)}亿</div>` 
+                : `<div class="index-vol" style="visibility: hidden;">&nbsp;</div>`;
+
+            return `
+                <div class="index-item">
+                    <div class="index-name">${item.name}</div>
+                    <div class="index-price ${changeClass}">${formatIndexPoint(item.price)}</div>
+                    <div class="index-change ${changeClass}">
+                        ${sign}${formatIndexPoint(item.change_amount)} 
+                        (${sign}${utils.formatPercentage(changeVal)})
+                    </div>
+                    ${volHtml}
+                </div>
+            `;
+        }).join('');
+
+        if (indices.length % 2 !== 0) {
+            html += `<div class="index-item"></div>`;
+        }
+
+        container.innerHTML = html;
+        container.classList.remove('loading');
+    }
+
+    async loadLPR() {
+        try {
+            const data = await api.getLPR();
+            this.renderLPR(data);
+        } catch (error) {
+            console.error('加载 LPR 失败:', error);
+            utils.renderError('macro-lpr', 'LPR 数据加载失败');
+        }
+    }
+
+    renderLPR(data) {
+        const container = document.getElementById('macro-lpr');
+        if (!container) return;
+
+        if (data.error || !data.current) {
+            utils.renderError('macro-lpr', data.error || '暂无数据');
+            return;
+        }
+
+        // Bind info button
+        const infoBtn = document.getElementById('info-lpr');
+        if (infoBtn) {
+            infoBtn.onclick = () => utils.showInfoModal('LPR 利率', data.description || 'LPR 贷款市场报价利率，每月 20 日公布');
+        }
+
+        const { current } = data;
+        const change1y = current.lpr_1y_change;
+        const change5y = current.lpr_5y_change;
+
+        const html = `
+            <div class="heat-grid" style="grid-template-columns: 1fr 1fr;">
+                <div class="heat-cell">
+                    <div class="item-sub">1年期 LPR</div>
+                    <div class="fg-score" style="font-size: 28px;">${current.lpr_1y}%</div>
+                    ${change1y !== 0 ? `<div class="item-sub ${change1y < 0 ? 'text-down' : 'text-up'}">${change1y > 0 ? '+' : ''}${change1y}bp</div>` : '<div class="item-sub">持平</div>'}
+                </div>
+                <div class="heat-cell">
+                    <div class="item-sub">5年期 LPR</div>
+                    <div class="fg-score" style="font-size: 28px;">${current.lpr_5y}%</div>
+                    ${change5y !== 0 ? `<div class="item-sub ${change5y < 0 ? 'text-down' : 'text-up'}">${change5y > 0 ? '+' : ''}${change5y}bp</div>` : '<div class="item-sub">持平</div>'}
+                </div>
+            </div>
+            <div style="text-align: center; font-size: 11px; color: var(--text-tertiary); margin-top: 8px;">
+                最新报价日期: ${current.date}
+            </div>
+        `;
+        container.innerHTML = html;
+    }
+
+    async loadCNFearGreed() {
+        try {
+            const data = await api.getCNFearGreed();
+            this.renderCNFearGreed(data);
+        } catch (error) {
+            console.error('加载恐慌贪婪指数失败:', error);
+            utils.renderError('asia-fear-greed', '恐慌贪婪指数加载失败');
+        }
+    }
+
+    async loadCNOverboughtOversold() {
+        try {
+            const data = await api.getCNOverboughtOversold();
+            utils.renderOverboughtOversold('asia-obo-signal', data);
+        } catch (error) {
+            console.error('加载超买超卖信号失败:', error);
+        }
+    }
+
+    async loadCNBonds() {
+        try {
+            const data = await api.getCNTreasuryYields();
+            this.renderCNBonds(data);
+        } catch (error) {
+            console.error('加载国债数据失败:', error);
+            utils.renderError('asia-bonds', '国债数据加载失败');
+        }
+    }
+
+    renderCNFearGreed(data) {
+        const container = document.getElementById('asia-fear-greed');
+        if (!container) return;
+
+        if (data.error) {
+            utils.renderError('asia-fear-greed', data.error);
+            return;
+        }
+
+        // Bind Info Button
+        const infoBtn = document.getElementById('info-asia-fear');
+        if (infoBtn && data.explanation) {
+            infoBtn.onclick = () => utils.showInfoModal('亚洲市场情绪指数 (上证指数)', utils.buildFearGreedModalBody(data));
+            infoBtn.style.display = 'flex';
+        }
+
+        // Center content
+        container.style.justifyContent = 'center';
+
+        container.innerHTML = `
+            <div class="fg-gauge" id="asia-fear-greed-gauge"></div>
+            <div class="fg-info" style="flex: 0 1 auto;">
+                <div class="fg-level">${data.level}</div>
+                <div class="fg-desc">${data.description}</div>
+                <div class="fg-desc" style="font-size: 11px; color: var(--text-secondary); margin-top: 8px;">${utils.getFearGreedMetaLine(data)}</div>
+            </div>
+        `;
+
+        if (window.charts) {
+            setTimeout(() => {
+                charts.createFearGreedGauge('asia-fear-greed-gauge', data);
+            }, 100);
+        }
+    }
+
+    renderCNBonds(data) {
+        const container = document.getElementById('asia-bonds');
+        if (!container) return;
+
+        if (!data || data.error) {
+            utils.renderError('asia-bonds', data && data.error ? data.error : '暂无数据');
+            return;
+        }
+
+        if (data.status === 'warming_up') {
+            utils.renderWarmingUp('asia-bonds');
+            return;
+        }
+
+        const yieldCurve = data.yield_curve || {};
+        const keyRates = data.key_rates;
+
+        let curveItems = [];
+        if (Array.isArray(yieldCurve)) {
+            curveItems = yieldCurve;
+        } else {
+            curveItems = Object.entries(yieldCurve).map(([period, rate]) => ({
+                period: period.toUpperCase(),
+                yield: rate,
+                change_bp: data.yield_changes ? (data.yield_changes[period] || 0) : 0
+            }));
+        }
+
+        if (keyRates) {
+            const html = `
+                <div class="bond-scroll">
+                    ${curveItems.map(item => `
+                        <div class="bond-item">
+                            <span class="bond-name">${item.period}</span>
+                            <span class="bond-rate">${utils.formatPercentage(item.yield)}</span>
+                             <span class="bond-change ${utils.formatChange(item.change_bp).class}" style="font-size: 10px; display: block;">
+                                ${item.change_bp > 0 ? '+' : ''}${item.change_bp}bp
+                            </span>
+                        </div>
+                    `).join('')}
+                </div>
+                <div style="font-size: 12px; padding: 8px; color: var(--text-secondary); border-top: 1px solid var(--border-light); text-align: center;">
+                    <div>10年期-2年期 = 期限利差: <span style="font-weight: 600;">${utils.formatNumber(keyRates.spread_10y_2y, 3)}%</span></div>
+                    <div style="margin-top: 4px; color: ${keyRates.spread_10y_2y < 0 ? 'var(--accent-red)' : 'var(--text-primary)'}">
+                        ${data.curve_analysis?.comment || ''}
+                    </div>
+                </div>
+            `;
+            container.innerHTML = html;
+        } else {
+            const html = curveItems.map(item => `
+                <div class="bond-item">
+                    <span class="bond-name">${item.period || item.name}</span>
+                    <span class="bond-rate">${item.yield || item.value}%</span>
+                </div>
+            `).join('');
+            container.innerHTML = html;
+        }
+    }
+}
+
 class WesternMarketController {
     constructor() {
     }
@@ -23,16 +271,12 @@ class WesternMarketController {
         }
     }
 
-
-
     async loadUSFearGreed() {
         try {
-            // Load only custom data (CNN direct fetch is deprecated/banned)
             const data = await api.getUSCustomFearGreed();
             this.renderUSFearGreed(data);
 
             if (window.lucide) lucide.createIcons();
-
         } catch (error) {
             console.error('加载美国市场恐慌指数失败:', error);
             utils.renderError('western-fear-greed', '美国市场恐慌指数加载失败');
@@ -74,7 +318,7 @@ class WesternMarketController {
                 }
                 return;
             }
-            this._leadersRetryCount = 0; // 成功或非预热状态时重置重试计数
+            this._leadersRetryCount = 0;
             if (data.error || data._error) {
                 console.error('加载欧美主要指数API返回错误:', data.error || data.message);
                 utils.renderError('western-indices', data.error || data.message || '主要指数加载失败');
@@ -94,8 +338,6 @@ class WesternMarketController {
             breadth: '广度',
             flow: '资金流',
             rsi: 'RSI',
-
-            // Legacy/CNN concept keys
             vix: 'VIX波动率',
             sp500_momentum: '标普动量',
             market_breadth: '市场分化',
@@ -115,7 +357,6 @@ class WesternMarketController {
         const container = document.getElementById('western-fear-greed');
         if (!container) return;
 
-        // Center content
         container.style.justifyContent = 'center';
 
         const renderFallback = (message) => {
@@ -141,7 +382,6 @@ class WesternMarketController {
             return;
         }
 
-        // Bind Info Button
         const infoBtn = document.getElementById('info-western-fear');
         if (infoBtn && data.explanation) {
             infoBtn.onclick = () => utils.showInfoModal('欧美市场情绪指数 (标普500代理)', utils.buildFearGreedModalBody(data));
@@ -152,7 +392,6 @@ class WesternMarketController {
         const level = data.level || '未知';
         const indicators = data.indicators;
 
-        // 如果没有分数，显示Fallback
         if (score == null) {
             renderFallback('恐慌指数数据不可用');
             return;
@@ -166,7 +405,6 @@ class WesternMarketController {
                 <div class="fg-desc" style="font-size: 11px; color: var(--text-secondary); margin-top: 8px;">${utils.getFearGreedMetaLine(data)}</div>
         `;
 
-        // Add indicators if available (using unified 'heat-tag' style)
         if (indicators) {
             contentHtml += `<div class="fg-desc" style="display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 8px;">`;
             for (const [key, val] of Object.entries(indicators)) {
@@ -180,7 +418,6 @@ class WesternMarketController {
             contentHtml += `</div>`;
         }
 
-        // Add permanent CNN link (reference only)
         contentHtml += `
             <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-color); width: 100%; display: flex; justify-content: center;">
                 <a href="https://edition.cnn.com/markets/fear-and-greed" target="_blank" style="display: inline-flex; align-items: center; gap: 4px; color: var(--text-secondary); text-decoration: none; font-size: 11px; transition: color 0.2s;">
@@ -190,7 +427,7 @@ class WesternMarketController {
             </div>
         `;
 
-        contentHtml += '</div>'; // Close fg-info
+        contentHtml += '</div>';
 
         container.innerHTML = contentHtml;
 
@@ -205,7 +442,6 @@ class WesternMarketController {
         const container = document.getElementById('market-western-heat');
         if (!container) return;
 
-        // Handle error/warming_up response
         if (data && data.error) {
             container.classList.remove('heat-grid');
             utils.renderError('market-western-heat', data.error);
@@ -218,7 +454,6 @@ class WesternMarketController {
             return;
         }
 
-        // Restore grid layout
         container.classList.add('heat-grid');
 
         const html = data.map(item => {
@@ -241,7 +476,6 @@ class WesternMarketController {
         const container = document.getElementById('western-treasury');
         if (!container) return;
 
-        // Handle error/warming_up response
         if (data && data.error) {
             utils.renderError('western-treasury', data.error);
             return;
@@ -252,7 +486,6 @@ class WesternMarketController {
             return;
         }
 
-        // Bind Info Button
         const infoBtn = document.getElementById('info-western-treasury');
         if (infoBtn) {
             infoBtn.onclick = () => utils.showInfoModal('美债收益率指标说明',
@@ -285,38 +518,29 @@ class WesternMarketController {
             return;
         }
 
-        // Render using bond-scroll layout but optimized for analysis text
-        // Force flex-wrap to ensure it forms a grid-like structure on mobile
         let html = `<div class="bond-scroll" style="flex-wrap: wrap;">`;
 
         metrics.forEach(item => {
             let changeHtml = '';
             if (item.change !== undefined) {
-                // US Market: usually Green Up, Red Down for prices, but for yields?
-                // Visual consistency: If yields go UP (Bad for stocks), maybe Red? 
-                // But let's stick to standard math: + is Green, - is Red (or local habit).
-                // Actually standard project rule: US Market = Green Up.
                 const changeClass = item.change > 0 ? 'text-up-us' : item.change < 0 ? 'text-down-us' : '';
                 const sign = item.change > 0 ? '+' : '';
                 changeHtml = `<span class="${changeClass}" style="font-size: 12px; margin-left: 6px;">${sign}${item.change}</span>`;
             }
 
-            // Analysis Color
             let analysisHtml = '';
             if (item.analysis) {
                 let color = 'var(--text-secondary)';
                 if (item.analysis.level === 'danger') color = 'var(--accent-red)';
-                if (item.analysis.level === 'warning') color = '#f59e0b'; // Amber
+                if (item.analysis.level === 'warning') color = '#f59e0b';
                 if (item.analysis.level === 'good') color = 'var(--accent-green)';
 
                 analysisHtml = `<div style="font-size: 11px; margin-top: 6px; color: ${color}; line-height: 1.3;">${item.analysis.text}</div>`;
             }
 
-            // Highlighting Spreads
             let valClass = '';
             if (item.is_spread) {
                 valClass = item.value < 0 ? 'text-down-us' : 'text-up-us';
-                // Override changeHtml for spread often doesn't have daily change in this simple API
             }
 
             html += `
@@ -340,8 +564,6 @@ class WesternMarketController {
 
     renderUSLeaders(data) {
         const container = document.getElementById('western-indices');
-
-        // Hide compatibility container if exists
         const container2 = document.getElementById('western-sp500');
         if (container2) {
             container2.style.display = 'none';
@@ -357,23 +579,15 @@ class WesternMarketController {
             return;
         }
 
-        // Switch to grid layout
         container.classList.remove('list-container');
         container.classList.add('heat-grid');
         container.style.gridTemplateColumns = 'repeat(2, 1fr)';
 
         let html = indices.map(item => {
             const changeVal = item.change_pct;
-            // US Colors: Green Up, Red Down (Handled by styles.css logic via classes? 
-            // text-up-us is green, text-down-us is red.
-            // But wait, CN/HK uses text-up (Red), text-down (Green).
-            // US Market requires specific color logic.
-            // utils.formatChange uses 'us' param to switch colors.
-            // But here I am constructing manually.
             const changeClass = changeVal > 0 ? 'text-up-us' : changeVal < 0 ? 'text-down-us' : '';
             const sign = changeVal > 0 ? '+' : '';
 
-            // Should verify if change_amount exists, if not calculate or hide
             const changeAmt = item.change_amount != null ? item.change_amount : (item.price * item.change_pct / 100);
 
             return `
@@ -394,5 +608,20 @@ class WesternMarketController {
 
         container.innerHTML = html;
         container.classList.remove('loading');
+    }
+}
+
+class MarketController {
+    constructor() {
+        this.asiaController = new AsiaMarketController();
+        this.westernController = new WesternMarketController();
+    }
+
+    async loadData() {
+        console.log('📊 加载全球市场数据 (亚洲市场 + 欧美市场)...');
+        await Promise.allSettled([
+            this.asiaController.loadData(),
+            this.westernController.loadData()
+        ]);
     }
 }

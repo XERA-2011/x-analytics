@@ -3,7 +3,7 @@
 
 class App {
     constructor() {
-        this.currentTab = 'market-asia';
+        this.currentTab = 'market';
         this.lastUpdateTime = null;
         this.isRefreshing = false;
         this.loadedTabs = new Set();
@@ -14,8 +14,7 @@ class App {
 
         // Controllers
         this.modules = {
-            'market-asia': new AsiaMarketController(),
-            'market-western': new WesternMarketController(),
+            'market': new MarketController(),
             'ai': new AIMarketController(),
             'metals': new MetalsController(),
             'etf': new ETFController()
@@ -26,8 +25,7 @@ class App {
 
     getPageTitle(tabId) {
         const titles = {
-            'market-asia': '亚洲市场',
-            'market-western': '欧美市场',
+            'market': '全球市场',
             'ai': 'AI 产业',
             'metals': '金属',
             'etf': 'ETF',
@@ -82,21 +80,17 @@ class App {
                         break;
                     case '1':
                         event.preventDefault();
-                        this.switchTab('market-asia');
+                        this.switchTab('market');
                         break;
                     case '2':
                         event.preventDefault();
-                        this.switchTab('market-western');
+                        this.switchTab('ai');
                         break;
                     case '3':
                         event.preventDefault();
-                        this.switchTab('ai');
-                        break;
-                    case '4':
-                        event.preventDefault();
                         this.switchTab('metals');
                         break;
-                    case '5':
+                    case '4':
                         event.preventDefault();
                         this.switchTab('etf');
                         break;
@@ -209,12 +203,14 @@ class App {
     async loadInitialData() {
         const urlTab = utils.getUrlParam('tab');
         const legacyMap = {
-            'market-cn': 'market-asia',
-            'cn': 'market-asia',
-            'market-us': 'market-western',
-            'us': 'market-western'
+            'market-asia': 'market',
+            'market-western': 'market',
+            'market-cn': 'market',
+            'cn': 'market',
+            'market-us': 'market',
+            'us': 'market'
         };
-        const validTabs = ['market-asia', 'market-western', 'ai', 'metals', 'etf'];
+        const validTabs = ['market', 'ai', 'metals', 'etf'];
         const targetTab = legacyMap[urlTab] || urlTab;
 
         if (targetTab && validTabs.includes(targetTab)) {

@@ -74,6 +74,21 @@ body {
     color: var(--primary);
 }
 
+.subsection-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--primary);
+    margin: 0 0 14px 0;
+    padding-left: 8px;
+    border-left: 3px solid var(--accent-blue);
+    display: flex;
+    align-items: center;
+}
+
+.market-section {
+    width: 100%;
+}
+
 .card-subtitle {
     margin-top: 2px;
     font-size: 12px;
