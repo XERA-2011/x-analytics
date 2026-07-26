@@ -10,7 +10,7 @@ This workflow is for deep, intelligent analysis of code structure, logic, and de
 ### 1. Structured Review
 Ask the agent to review a specific file or module against the project guidelines.
 > "Run Architect Review on `analytics/modules/metals/fear_greed.py` focusing on caching strategy."
-> "Run Architect Review on `web/js/modules/market-cn.js` checking for UI compliance."
+> "Run Architect Review on `web/js/modules/market.js` checking for UI compliance."
 
 ### 2. Architecture Plan
 Before starting a big feature, ask for an architectural plan.

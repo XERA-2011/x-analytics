@@ -96,8 +96,8 @@ For series data (Yield Curves) that exceeds screen width.
 ## 6. JavaScript Architecture
 ### Modular Design (Controller Pattern)
 Complex logic must be split by business domain into separate modules under `web/js/modules/`:
-- **Modules**: Separate files for distinct business logic (e.g., `market-cn.js`, `metals.js`).
-  - Each module exports a Controller class (e.g., `CNMarketController`).
+- **Modules**: Separate files for distinct business logic (e.g., `market.js`, `metals.js`).
+  - Each module exports Controller class(es) (e.g., `MarketController`, `AsiaMarketController`, `WesternMarketController`).
   - Controllers handle data fetching (`loadData`) and rendering (`render*`).
   - Modules **must not** hardcode global event listeners; they should focus on their specific DOM section.
 
@@ -116,10 +116,10 @@ Complex logic must be split by business domain into separate modules under `web/
 ### Module Files (`web/js/modules/`)
 | Module | File | Description |
 |:-------|:-----|:------------|
-| CN Market | `market-cn.js` | A-share indices, sector heatmap, fear & greed, bonds, LPR |
-| HK Market | `market-hk.js` | Hong Kong indices, fear & greed |
-| US Market | `market-us.js` | US indices, leaders, treasury, heat map, fear & greed |
-| Metals | `metals.js` | Precious metals spot prices, fear & greed |
+| Global Market | `market.js` | Combined Asia & Western markets (indices, fear & greed, bonds, LPR, treasury, heat map) |
+| AI Industry | `ai.js` | AI 7-layer supply chain monitoring & cycle indicators |
+| Metals | `metals.js` | Precious metals spot prices, gold/silver ratio, fear & greed |
+| ETF | `etf.js` | ETF heatmaps and rankings |
 
 ## 7. User Experience & Resilience
 ### Error Handling & Loading
