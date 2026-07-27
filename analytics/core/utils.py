@@ -237,15 +237,22 @@ def akshare_call_with_retry(
 def fetch_url_via_proxy(
     url: str,
     session: Optional[Any] = None,
-    timeout: int = 6,
+    timeout: int = 10,
     headers: Optional[Dict[str, str]] = None
 ) -> Optional[Any]:
-    """通过 Cloudflare Worker (xera.cc.cd) 中继代理抓取目标 URL
+    """必须通过 Cloudflare Worker 中继代理抓取目标 URL
     
-    自动附加 X-Target-URL 与 X-Proxy-Secret 进行安全请求转发与鉴权。
-    若未开启 Worker 代理或代理中继失败，自动无缝降级为直连 HTTP 请求。
+    严格规则：代理链接为必选项。若未配置 CF_WORKER_PROXY_URL，或代理中继失败/非200，则绝不发起直连请求，直接放弃返回 None。
     """
     import requests
+
+    proxy_url = getattr(settings, "CF_WORKER_PROXY_URL", None)
+    secret = getattr(settings, "CF_WORKER_SECRET_KEY", None)
+
+    # 1. 代理链接为必选项：未配置代理链接时，严格禁止发起任何网络请求
+    if not proxy_url:
+        logger.warning(f"⛔ CF_WORKER_PROXY_URL 未配置，严格放弃请求 [{url}]")
+        return None
 
     req_headers = headers.copy() if headers else {}
     if "User-Agent" not in req_headers:
@@ -254,29 +261,21 @@ def fetch_url_via_proxy(
             "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         )
 
-    proxy_url = getattr(settings, "CF_WORKER_PROXY_URL", None)
-    secret = getattr(settings, "CF_WORKER_SECRET_KEY", None)
+    p_headers = dict(req_headers)
+    p_headers["X-Target-URL"] = url
+    if secret:
+        p_headers["X-Proxy-Secret"] = secret
 
-    if proxy_url:
-        p_headers = dict(req_headers)
-        p_headers["X-Target-URL"] = url
-        if secret:
-            p_headers["X-Proxy-Secret"] = secret
-
-        try:
-            fetcher = session.get if session else requests.get
-            res = fetcher(proxy_url, headers=p_headers, timeout=timeout)
-            if res.status_code == 200:
-                return res
-            logger.warning(f"⚠️ Proxy fetch status {res.status_code} for [{url}], falling back to direct fetch")
-        except Exception as e:
-            logger.warning(f"⚠️ Proxy fetch failed for [{url}]: {e}, falling back to direct fetch")
-
-    # 降级备选：直接 HTTP 请求
+    # 2. 仅向代理中继发起请求；失败或状态码非 200 时直接放弃，绝不直连
     try:
         fetcher = session.get if session else requests.get
-        return fetcher(url, headers=req_headers, timeout=timeout)
-    except Exception as e:
-        logger.error(f"⚠️ Direct fetch failed for [{url}]: {e}")
+        res = fetcher(proxy_url, headers=p_headers, timeout=timeout)
+        if res.status_code == 200:
+            return res
+        logger.error(f"⛔ Worker 代理返回异常状态码 {res.status_code}，放弃请求 [{url}]")
         return None
+    except Exception as e:
+        logger.error(f"⛔ Worker 代理连接失败 [{url}]: {e}，放弃请求")
+        return None
+
 
