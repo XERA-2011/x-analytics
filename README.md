@@ -4,6 +4,40 @@
 
 ---
 
+## 🏗️ 全局项目架构与三库联动
+
+![全局项目架构图](./web/img/architecture.svg)
+
+<details>
+<summary><b>📐 展开查看 Mermaid 流程图源码</b></summary>
+
+```mermaid
+graph TD
+    Client["📱 用户浏览器 / 移动端"] -->|访问 /analytics| Nginx Gateway["🛡️ Nginx 网关 (x-actions)"]
+    Nginx Gateway -->|反向代理 :8080| App["⚡ FastAPI Backend (x-analytics)"]
+    
+    subgraph x-analytics ["核心应用 (x-analytics)"]
+        App -->|静态资源| WebUI["📱 Web 仪表盘 (Vanilla JS/CSS)"]
+        App -->|读请求 (500ms)| Redis["🔴 Redis Cache (Single Source of Truth)"]
+        App -->|历史存取| Postgres["🐘 Postgres DB"]
+        
+        Scheduler["⏰ Task Scheduler (Background)"] -->|定时抓取/预热| ExternalAPIs["🌐 外部 API (AkShare/Sina/EastMoney)"]
+        Scheduler -->|写缓存| Redis
+        Scheduler -->|写历史| Postgres
+    end
+
+    ExternalAPIs -.->|代理防护中继| ProxyWorker["⚡ Cloudflare Worker (x-worker)"]
+```
+
+</details>
+
+本平台由 3 个关联仓库协同联动组成：
+- **`x-analytics`**（本仓库）：核心应用服务，包含 FastAPI 后端、前端 Web 仪表盘、后台 Task Scheduler 数据抓取与 Redis 缓存管理。
+- **[`x-actions`](../x-actions)**：基础设施与部署编排中心，提供 Nginx 网关反向代理、Docker Compose 容器编排与 CI/CD 自动化部署。
+- **[`x-worker`](../x-worker)**：Cloudflare Worker 通用代理中继，防护数据抓取时的源站 IP 安全。
+
+---
+
 ## 📊 五大核心模块
 
 1. **全球市场**：亚洲市场（沪深/港股动能、估值水位）、美股及西方市场动能与对标。
