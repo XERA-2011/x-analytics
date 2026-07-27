@@ -699,22 +699,25 @@ class AIMarketController {
                 e.stopPropagation();
                 const exp = explanations.rotation || {};
                 const bodyHtml = `
-                    <div class="ai-info-modal" style="white-space: normal; font-size: 12px; color: var(--text-primary); line-height: 1.4;">
-                        <div style="background: rgba(255,255,255,0.03); border-radius: 4px; padding: 8px 10px; margin-bottom: 8px;">
-                            <div style="font-weight: 600; color: var(--color-primary, #3b82f6); margin-bottom: 2px;">🔄 资金轮动监测与动态判定原则</div>
-                            <div style="color: var(--text-secondary); font-size: 11px;">
-                                ${exp.desc || '基于 L0(能源电力)、L1(算力芯片)、L5(应用) 和 L6(边缘题材) 的盘中实时动能对比动态推演。'}
+                    <div class="ai-info-modal" style="white-space: normal; font-size: 12px; color: var(--text-primary); line-height: 1.5;">
+                        <div style="background: var(--bg-tertiary, rgba(0,0,0,0.03)); border-radius: 6px; padding: 10px 12px; margin-bottom: 10px;">
+                            <div style="font-weight: 600; color: var(--color-primary, #3b82f6); margin-bottom: 4px;">🔄 资金轮动监测与动态判定原则</div>
+                            <div style="color: var(--text-secondary); font-size: 12px;">
+                                基于 L0 (能源电力)、L1 (算力芯片)、L5 (应用) 和 L6 (边缘题材) 的盘中实时动能对比动态推演。
                             </div>
                         </div>
-                        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px;">
-                            <div style="padding: 6px 8px; background: rgba(34, 197, 94, 0.1); border-radius: 4px; color: #4ade80;">
-                                🟢 <strong>健康轮动：</strong> 资金优先集中于电力基础设施 ($L_0$) 与算力芯片 ($L_1$)，硬件及能源动能强劲。
+                        <div style="display: flex; flex-direction: column; gap: 8px; font-size: 12px;">
+                            <div style="padding: 8px 12px; border-radius: 6px; display: flex; align-items: flex-start; gap: 6px; font-size: 12px;" class="rotation-badge rotation-healthy">
+                                <span style="font-weight: 600; white-space: nowrap;">健康轮动：</span>
+                                <span>资金优先集中于电力基础设施 (L0) 与算力芯片 (L1)，硬件及能源动能强劲。</span>
                             </div>
-                            <div style="padding: 6px 8px; background: rgba(239, 68, 68, 0.1); border-radius: 4px; color: #f87171;">
-                                🔴 <strong>泡沫轮动：</strong> 边缘小票 ($L_6$) 狂热暴涨，而龙头芯片与能源停滞，警惕概念炒作近尾声。
+                            <div style="padding: 8px 12px; border-radius: 6px; display: flex; align-items: flex-start; gap: 6px; font-size: 12px;" class="rotation-badge rotation-bubble">
+                                <span style="font-weight: 600; white-space: nowrap;">泡沫轮动：</span>
+                                <span>边缘小票 (L6) 狂热暴涨，而龙头芯片与能源停滞，警惕概念炒作近尾声。</span>
                             </div>
-                            <div style="padding: 6px 8px; background: rgba(59, 130, 246, 0.1); border-radius: 4px; color: #60a5fa;">
-                                🔵 <strong>均衡传导：</strong> 资金沿“能源 ➔ 芯片 ➔ 存储 ➔ 液冷 ➔ 云计算 ➔ Agent 应用”平稳扩散。
+                            <div style="padding: 8px 12px; border-radius: 6px; display: flex; align-items: flex-start; gap: 6px; font-size: 12px;" class="rotation-badge rotation-neutral">
+                                <span style="font-weight: 600; white-space: nowrap;">均衡传导：</span>
+                                <span>资金沿“能源 ➔ 芯片 ➔ 存储 ➔ 液冷 ➔ 云计算 ➔ Agent 应用”平稳扩散。</span>
                             </div>
                         </div>
                     </div>
