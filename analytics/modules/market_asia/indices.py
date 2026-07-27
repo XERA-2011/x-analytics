@@ -15,6 +15,7 @@ class CNIndices:
     
     # 关注的核心指数
     CORE_INDICES = {
+        "000001": "上证指数",
         "000300": "沪深300",
         "HSI": "恒生指数", 
         "HSTECH": "恒生科技",
@@ -25,7 +26,7 @@ class CNIndices:
     }
 
     # 指定排序顺序
-    DISPLAY_ORDER = ["000300", "HSI", "HSTECH", "HSCEI", "HSCCI", "N225", "KS11"]
+    DISPLAY_ORDER = ["000001", "000300", "HSI", "HSTECH", "HSCEI", "HSCCI", "N225", "KS11"]
 
     @staticmethod
     @cached(
