@@ -25,7 +25,7 @@ class AIOverview:
 
     @staticmethod
     @cached(
-        "ai:overview_v3", 
+        "ai:overview_v4", 
         ttl=settings.CACHE_TTL["market_heat"], 
         stale_ttl=settings.CACHE_TTL["market_heat"] * settings.STALE_TTL_RATIO
     )
@@ -269,18 +269,30 @@ class AIOverview:
                 cycle_phase = "能源与算力共振爆发期"
                 cycle_status = "active"
                 cycle_desc = "AI 电力基础设施、算力芯片与存储代工强劲共振，产业资本扩张加速。"
+                trend_str = "↑ 强劲"
+                risk_level = "低"
+                risk_class = "low"
             elif nvda["change_pct"] <= 0 and l6_avg > 2.0:
                 cycle_phase = "估值过热 / 泡沫预警"
                 cycle_status = "warning"
                 cycle_desc = "算力龙头开始滞涨，资金向边缘小票与投机概念疯狂扩散，警惕高位见顶风险。"
+                trend_str = "⚠️ 预警"
+                risk_level = "偏高"
+                risk_class = "high"
             elif nvda["change_pct"] < -2.0 and l4_avg < -1.5:
                 cycle_phase = "周期回调降温期"
                 cycle_status = "cooling"
                 cycle_desc = "芯片与云巨头 CapEx 情绪同步回落，市场进入阶段性消化与降温阶段。"
+                trend_str = "↓ 回调"
+                risk_level = "偏高"
+                risk_class = "high"
             else:
                 cycle_phase = "稳健消化与应用探索期"
                 cycle_status = "neutral"
                 cycle_desc = "产业链高基数消化，资金逐步寻找商业化落地与 Agent 应用点。"
+                trend_str = "→ 震荡"
+                risk_level = "中等"
+                risk_class = "medium"
 
             # 5. 中美 AI 五维对比模型 (根据盘中 A股龙头与美股芯片动态微调分值)
             cn_core_avg = sum(s["change_pct"] for s in cn_ai_leaders) / len(cn_ai_leaders) if cn_ai_leaders else l6_avg
@@ -426,6 +438,9 @@ class AIOverview:
                 "cycle_phase": cycle_phase,
                 "cycle_status": cycle_status,
                 "cycle_desc": cycle_desc,
+                "trend_str": trend_str,
+                "risk_level": risk_level,
+                "risk_class": risk_class,
                 "layers": layers,
                 "us_cn_comparison": us_cn_comparison,
                 "bubble_meter": bubble_meter,

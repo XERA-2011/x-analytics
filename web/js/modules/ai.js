@@ -68,6 +68,10 @@ class AIMarketController {
             shortStageLabel = '降温期';
         }
 
+        const trendTag = trend_str || (cycle_status === 'warning' ? '⚠️ 预警' : cycle_status === 'cooling' ? '↓ 回调' : cycle_status === 'active' ? '↑ 强劲' : '→ 震荡');
+        const riskTag = risk_level || (cycle_status === 'warning' || cycle_status === 'cooling' ? '偏高' : '中等');
+        const riskClassAttr = (risk_class === 'high' || cycle_status === 'warning' || cycle_status === 'cooling') ? 'style="color: var(--color-danger); border-color: rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.1);"' : '';
+
         let html = `
             <!-- 1. AI 全球产业周期总评分 Dashboard Header -->
             <div class="card hero ai-hero-card" style="margin-bottom: 16px;">
@@ -80,8 +84,8 @@ class AIMarketController {
                         </div>
                         <div class="ai-score-num ${scoreClass}">${cycleScore} <span class="ai-score-max">/ 100</span></div>
                         <div class="ai-meta-row">
-                            <span class="ai-trend-tag">${trend_str || '↑ 稳定'}</span>
-                            <span class="ai-risk-tag">风险: ${risk_level || '中等'}</span>
+                            <span class="ai-trend-tag">${trendTag}</span>
+                            <span class="ai-risk-tag" ${riskClassAttr}>风险: ${riskTag}</span>
                         </div>
                     </div>
 
