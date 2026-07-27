@@ -33,8 +33,8 @@ graph TD
 
 本平台由 3 个关联仓库协同联动组成：
 - **`x-analytics`**（本仓库）：核心应用服务，包含 FastAPI 后端、前端 Web 仪表盘、后台 Task Scheduler 数据抓取与 Redis 缓存管理。
-- **[`x-actions`](../x-actions)**：基础设施与部署编排中心，提供 Nginx 网关反向代理、Docker Compose 容器编排与 CI/CD 自动化部署。
-- **[`x-worker`](../x-worker)**：Cloudflare Worker 通用代理中继，防护数据抓取时的源站 IP 安全。
+- **[`x-actions`](https://github.com/XERA-2011/x-actions)**：基础设施与部署编排中心，提供 Nginx 网关反向代理、Docker Compose 容器编排与 CI/CD 自动化部署。
+- **[`x-worker`](https://github.com/XERA-2011/x-worker)**：Cloudflare Worker 通用代理中继，防护数据抓取时的源站 IP 安全。
 
 ---
 
