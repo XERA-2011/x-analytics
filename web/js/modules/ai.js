@@ -341,8 +341,9 @@ class AIMarketController {
 
                 <!-- 右侧：资金轮动监测 -->
                 <div class="card" style="padding: 16px;">
-                    <div class="card-header" style="margin-bottom: 12px; padding-bottom: 0; border-bottom: none;">
+                    <div class="card-header" style="margin-bottom: 12px; padding-bottom: 0; border-bottom: none; display: flex; justify-content: space-between; align-items: center;">
                         <div class="card-title"><i data-lucide="repeat" width="16" style="vertical-align: middle;"></i> AI 资金轮动监测</div>
+                        <button class="info-btn" id="info-ai-rotation" title="轮动说明" style="display: inline-flex; align-items: center;"><i data-lucide="help-circle" width="14"></i></button>
                     </div>
                     <div class="rotation-box">
                         <div class="rotation-badge rotation-${rotation_class}">${rotation_mode}</div>
@@ -688,6 +689,37 @@ class AIMarketController {
                     </div>
                 `;
                 utils.showInfoModal(exp.title || 'AI 泡沫温度计说明', bodyHtml);
+            };
+        }
+
+        // 3.5 AI 资金轮动监测说明弹窗
+        const rotationBtn = document.getElementById('info-ai-rotation');
+        if (rotationBtn) {
+            rotationBtn.onclick = (e) => {
+                e.stopPropagation();
+                const exp = explanations.rotation || {};
+                const bodyHtml = `
+                    <div class="ai-info-modal" style="white-space: normal; font-size: 12px; color: var(--text-primary); line-height: 1.4;">
+                        <div style="background: rgba(255,255,255,0.03); border-radius: 4px; padding: 8px 10px; margin-bottom: 8px;">
+                            <div style="font-weight: 600; color: var(--color-primary, #3b82f6); margin-bottom: 2px;">🔄 资金轮动监测与动态判定原则</div>
+                            <div style="color: var(--text-secondary); font-size: 11px;">
+                                ${exp.desc || '基于 L0(能源电力)、L1(算力芯片)、L5(应用) 和 L6(边缘题材) 的盘中实时动能对比动态推演。'}
+                            </div>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px;">
+                            <div style="padding: 6px 8px; background: rgba(34, 197, 94, 0.1); border-radius: 4px; color: #4ade80;">
+                                🟢 <strong>健康轮动：</strong> 资金优先集中于电力基础设施 ($L_0$) 与算力芯片 ($L_1$)，硬件及能源动能强劲。
+                            </div>
+                            <div style="padding: 6px 8px; background: rgba(239, 68, 68, 0.1); border-radius: 4px; color: #f87171;">
+                                🔴 <strong>泡沫轮动：</strong> 边缘小票 ($L_6$) 狂热暴涨，而龙头芯片与能源停滞，警惕概念炒作近尾声。
+                            </div>
+                            <div style="padding: 6px 8px; background: rgba(59, 130, 246, 0.1); border-radius: 4px; color: #60a5fa;">
+                                🔵 <strong>均衡传导：</strong> 资金沿“能源 ➔ 芯片 ➔ 存储 ➔ 液冷 ➔ 云计算 ➔ Agent 应用”平稳扩散。
+                            </div>
+                        </div>
+                    </div>
+                `;
+                utils.showInfoModal(exp.title || 'AI 资金轮动监测说明', bodyHtml);
             };
         }
 
