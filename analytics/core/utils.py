@@ -232,3 +232,51 @@ def akshare_call_with_retry(
                 logger.error(f"API调用失败 [{func_name}] (已重试{max_retries}次): {str(e)[:150]}")
 
     raise last_exception  # type: ignore
+
+
+def fetch_url_via_proxy(
+    url: str,
+    session: Optional[Any] = None,
+    timeout: int = 6,
+    headers: Optional[Dict[str, str]] = None
+) -> Optional[Any]:
+    """通过 Cloudflare Worker (xera.cc.cd) 中继代理抓取目标 URL
+    
+    自动附加 X-Target-URL 与 X-Proxy-Secret 进行安全请求转发与鉴权。
+    若未开启 Worker 代理或代理中继失败，自动无缝降级为直连 HTTP 请求。
+    """
+    import requests
+
+    req_headers = headers.copy() if headers else {}
+    if "User-Agent" not in req_headers:
+        req_headers["User-Agent"] = (
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        )
+
+    proxy_url = getattr(settings, "CF_WORKER_PROXY_URL", None)
+    secret = getattr(settings, "CF_WORKER_SECRET_KEY", None)
+
+    if proxy_url:
+        p_headers = dict(req_headers)
+        p_headers["X-Target-URL"] = url
+        if secret:
+            p_headers["X-Proxy-Secret"] = secret
+
+        try:
+            fetcher = session.get if session else requests.get
+            res = fetcher(proxy_url, headers=p_headers, timeout=timeout)
+            if res.status_code == 200:
+                return res
+            logger.warning(f"⚠️ Proxy fetch status {res.status_code} for [{url}], falling back to direct fetch")
+        except Exception as e:
+            logger.warning(f"⚠️ Proxy fetch failed for [{url}]: {e}, falling back to direct fetch")
+
+    # 降级备选：直接 HTTP 请求
+    try:
+        fetcher = session.get if session else requests.get
+        return fetcher(url, headers=req_headers, timeout=timeout)
+    except Exception as e:
+        logger.error(f"⚠️ Direct fetch failed for [{url}]: {e}")
+        return None
+

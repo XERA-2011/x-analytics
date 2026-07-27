@@ -13,7 +13,7 @@ import bs4
 import pandas as pd
 import akshare as ak
 from ..core.cache import cached
-from ..core.utils import akshare_call_with_retry, safe_float
+from ..core.utils import akshare_call_with_retry, safe_float, fetch_url_via_proxy
 
 # 目标 QDII 基金基础元数据注册表 (纳斯达克100 与 标普500 场外 A类基金，提供基准行情与后备数据)
 QDII_FUND_METADATA: List[Dict[str, Any]] = [
@@ -369,11 +369,8 @@ def fetch_fund_asset_allocation(session: requests.Session, code: str) -> Optiona
     """获取指定 QDII 场外联接/被动基金的最新真实资产/持仓配置（股票/权益 %、现金/货币 %）"""
     try:
         url = f"https://fundf10.eastmoney.com/zcpz_{code}.html"
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-        }
-        res = session.get(url, headers=headers, timeout=6)
-        if res.status_code != 200:
+        res = fetch_url_via_proxy(url, session=session, timeout=6)
+        if not res or res.status_code != 200:
             return None
         soup = bs4.BeautifulSoup(res.content.decode("utf-8", errors="ignore"), "html.parser")
         table = soup.find("table", class_="tzxq")
@@ -421,11 +418,8 @@ def fetch_fund_fee_rate(session: requests.Session, code: str) -> Optional[str]:
     """获取指定基金的最新综合运营费率（管理费率 + 托管费率 + 销售服务费率）"""
     try:
         url = f"https://fundf10.eastmoney.com/jjfl_{code}.html"
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-        }
-        res = session.get(url, headers=headers, timeout=6)
-        if res.status_code != 200:
+        res = fetch_url_via_proxy(url, session=session, timeout=6)
+        if not res or res.status_code != 200:
             return None
         soup = bs4.BeautifulSoup(res.content.decode("utf-8", errors="ignore"), "html.parser")
 
