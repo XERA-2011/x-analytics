@@ -36,7 +36,7 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "name": "摩根纳斯达克100指数(QDII)A",
         "index_code": "NDX",
         "index_name": "纳斯达克100",
-        "fee_rate": "0.75%",
+        "fee_rate": "0.60%",
         "tracking_error": "0.30%",
         "inception_date": "2023-09-06",
         "default_return_1y": 15.76,
@@ -49,7 +49,7 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "name": "招商纳斯达克100ETF发起式联接(QDII)A",
         "index_code": "NDX",
         "index_name": "纳斯达克100",
-        "fee_rate": "0.60%",
+        "fee_rate": "0.65%",
         "tracking_error": "0.28%",
         "inception_date": "2023-11-15",
         "default_return_1y": 15.35,
@@ -62,7 +62,7 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "name": "建信纳斯达克100指数(QDII)A",
         "index_code": "NDX",
         "index_name": "纳斯达克100",
-        "fee_rate": "0.75%",
+        "fee_rate": "1.00%",
         "tracking_error": "0.33%",
         "inception_date": "2021-09-29",
         "default_return_1y": 15.33,
@@ -75,7 +75,7 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "name": "广发纳斯达克100ETF联接(QDII)A",
         "index_code": "NDX",
         "index_name": "纳斯达克100",
-        "fee_rate": "0.80%",
+        "fee_rate": "1.00%",
         "tracking_error": "0.32%",
         "inception_date": "2012-08-15",
         "default_return_1y": 15.27,
@@ -88,7 +88,7 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "name": "万家纳斯达克100指数发起式(QDII)A",
         "index_code": "NDX",
         "index_name": "纳斯达克100",
-        "fee_rate": "0.60%",
+        "fee_rate": "0.65%",
         "tracking_error": "0.29%",
         "inception_date": "2023-10-25",
         "default_return_1y": 15.23,
@@ -101,7 +101,7 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "name": "宝盈纳斯达克100指数发起(QDII)A",
         "index_code": "NDX",
         "index_name": "纳斯达克100",
-        "fee_rate": "0.60%",
+        "fee_rate": "0.65%",
         "tracking_error": "0.31%",
         "inception_date": "2023-11-28",
         "default_return_1y": 15.19,
@@ -114,7 +114,7 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "name": "大成纳斯达克100ETF联接(QDII)A",
         "index_code": "NDX",
         "index_name": "纳斯达克100",
-        "fee_rate": "0.80%",
+        "fee_rate": "1.00%",
         "tracking_error": "0.38%",
         "inception_date": "2014-11-13",
         "default_return_1y": 15.15,
@@ -127,7 +127,7 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "name": "南方纳斯达克100指数发起(QDII)A",
         "index_code": "NDX",
         "index_name": "纳斯达克100",
-        "fee_rate": "0.60%",
+        "fee_rate": "0.65%",
         "tracking_error": "0.27%",
         "inception_date": "2023-03-08",
         "default_return_1y": 15.01,
@@ -140,7 +140,7 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "name": "华泰柏瑞纳斯达克100ETF发起式联接(QDII)A",
         "index_code": "NDX",
         "index_name": "纳斯达克100",
-        "fee_rate": "0.60%",
+        "fee_rate": "0.65%",
         "tracking_error": "0.26%",
         "inception_date": "2023-12-19",
         "default_return_1y": 14.82,
@@ -153,7 +153,7 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "name": "国泰纳斯达克100(QDII-LOF)A",
         "index_code": "NDX",
         "index_name": "纳斯达克100",
-        "fee_rate": "0.80%",
+        "fee_rate": "1.00%",
         "tracking_error": "0.35%",
         "inception_date": "2010-04-29",
         "default_return_1y": 15.50,
@@ -166,7 +166,7 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "name": "易方达纳斯达克100(QDII-LOF)A",
         "index_code": "NDX",
         "index_name": "纳斯达克100",
-        "fee_rate": "0.80%",
+        "fee_rate": "0.60%",
         "tracking_error": "0.32%",
         "inception_date": "2017-06-21",
         "default_return_1y": 15.45,
@@ -179,7 +179,7 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "name": "汇添富纳斯达克100ETF发起式联接(QDII)A",
         "index_code": "NDX",
         "index_name": "纳斯达克100",
-        "fee_rate": "0.60%",
+        "fee_rate": "0.65%",
         "tracking_error": "0.30%",
         "inception_date": "2023-08-22",
         "default_return_1y": 13.72,
@@ -194,7 +194,7 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "name": "易方达标普500指数(QDII-LOF)A",
         "index_code": "SPX",
         "index_name": "标普500",
-        "fee_rate": "0.80%",
+        "fee_rate": "1.00%",
         "tracking_error": "0.30%",
         "inception_date": "2016-12-02",
         "default_return_1y": 11.10,
@@ -220,7 +220,7 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "name": "摩根标普500指数(QDII)A",
         "index_code": "SPX",
         "index_name": "标普500",
-        "fee_rate": "0.75%",
+        "fee_rate": "0.65%",
         "tracking_error": "0.28%",
         "inception_date": "2023-01-18",
         "default_return_1y": 10.70,
@@ -233,7 +233,7 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "name": "汇添富标普500指数(QDII)A",
         "index_code": "SPX",
         "index_name": "标普500",
-        "fee_rate": "0.80%",
+        "fee_rate": "1.40%",
         "tracking_error": "0.35%",
         "inception_date": "2019-06-25",
         "default_return_1y": 10.85,
@@ -259,7 +259,7 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "name": "博时纳斯达克100ETF发起式联接(QDII)A",
         "index_code": "NDX",
         "index_name": "纳斯达克100",
-        "fee_rate": "0.60%",
+        "fee_rate": "0.65%",
         "tracking_error": "0.26%",
         "inception_date": "2022-08-17",
         "default_return_1y": 15.20,
@@ -272,7 +272,7 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "name": "工银标普500ETF联接(QDII)A",
         "index_code": "SPX",
         "index_name": "标普500",
-        "fee_rate": "0.80%",
+        "fee_rate": "1.60%",
         "tracking_error": "0.32%",
         "inception_date": "2020-08-19",
         "default_return_1y": 10.90,
@@ -298,7 +298,7 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "name": "华夏标普500ETF发起式联接(QDII)A",
         "index_code": "SPX",
         "index_name": "标普500",
-        "fee_rate": "0.60%",
+        "fee_rate": "0.50%",
         "tracking_error": "0.24%",
         "inception_date": "2023-09-08",
         "default_return_1y": 11.40,
@@ -417,11 +417,44 @@ def fetch_fund_asset_allocation(session: requests.Session, code: str) -> Optiona
         return None
 
 
-@cached("qdii:passive_funds_v9", ttl=86400)
+def fetch_fund_fee_rate(session: requests.Session, code: str) -> Optional[str]:
+    """获取指定基金的最新综合运营费率（管理费率 + 托管费率 + 销售服务费率）"""
+    try:
+        url = f"https://fundf10.eastmoney.com/jjfl_{code}.html"
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        }
+        res = session.get(url, headers=headers, timeout=6)
+        if res.status_code != 200:
+            return None
+        soup = bs4.BeautifulSoup(res.content.decode("utf-8", errors="ignore"), "html.parser")
+
+        def parse_fee(text: str, keyword: str) -> float:
+            m = re.search(keyword + r"[^\d]*(\d+\.\d+)%", text)
+            return float(m.group(1)) if m else 0.0
+
+        m_val, c_val, s_val = 0.0, 0.0, 0.0
+        for box in soup.find_all("div", class_="box"):
+            txt = box.text
+            if "运作费用" in txt:
+                m_val = parse_fee(txt, "管理费率")
+                c_val = parse_fee(txt, "托管费率")
+                s_val = parse_fee(txt, "销售服务费率")
+                break
+        total = round(m_val + c_val + s_val, 2)
+        if total > 0:
+            return f"{total:.2f}%"
+        return None
+    except Exception as e:
+        print(f"⚠️ 费率获取跳过 [{code}]: {e}")
+        return None
+
+
+@cached("qdii:passive_funds_v10", ttl=86400)
 def get_qdii_passive_funds() -> Dict[str, Any]:
     """获取国内纳斯达克100 & 标普500 场外被动 QDII A类基金数据列表
 
-    数据一天刷新一次 (86400s)。包含标的指数原生收益率对标、实时排行、净值与真实资产配置仓位。
+    数据一天刷新一次 (86400s)。包含标的指数原生收益率对标、实时排行、净值、综合费率与真实资产配置仓位。
     """
     rank_map: Dict[str, Dict[str, Any]] = {}
     target_codes = [item["code"] for item in QDII_FUND_METADATA]
@@ -454,22 +487,34 @@ def get_qdii_passive_funds() -> Dict[str, Any]:
     except Exception as err:
         print(f"⚠️ 东财实时排行获取跳过 (已使用高质量基准/新浪行情): {err}")
 
-    # 3. 并发获取所有 QDII 基金的真实资产配置仓位数据
+    # 3. 并发获取所有 QDII 基金的真实资产配置仓位与动态费率
     alloc_map: Dict[str, Dict[str, Any]] = {}
+    fee_map: Dict[str, str] = {}
     try:
         session = requests.Session()
-        with ThreadPoolExecutor(max_workers=10) as executor:
-            future_to_code = {executor.submit(fetch_fund_asset_allocation, session, code): code for code in target_codes}
-            for future in future_to_code:
-                c = future_to_code[future]
+        with ThreadPoolExecutor(max_workers=12) as executor:
+            alloc_futures = {executor.submit(fetch_fund_asset_allocation, session, code): code for code in target_codes}
+            fee_futures = {executor.submit(fetch_fund_fee_rate, session, code): code for code in target_codes}
+            
+            for future in alloc_futures:
+                c = alloc_futures[future]
                 try:
                     res = future.result()
                     if res:
                         alloc_map[c] = res
                 except Exception:
                     pass
+
+            for future in fee_futures:
+                c = fee_futures[future]
+                try:
+                    res = future.result()
+                    if res:
+                        fee_map[c] = res
+                except Exception:
+                    pass
     except Exception as err:
-        print(f"⚠️ 资产配置并发抓取跳过: {err}")
+        print(f"⚠️ 资产配置与费率并发抓取跳过: {err}")
 
     # 4. 获取原生指数收益对标基准
     benchmarks = fetch_us_index_returns()
@@ -488,15 +533,16 @@ def get_qdii_passive_funds() -> Dict[str, Any]:
         final_nav = nav_val if nav_val is not None else item["default_nav"]
         final_date = nav_date if nav_date else item["default_nav_date"]
 
-        # 优先使用实时并发抓取的仓位配置，若失败退回该基金真实的元数据配置
+        # 优先使用实时并发抓取的仓位配置与费率，若失败退回该基金真实的元数据配置
         asset_alloc = alloc_map.get(code) or item.get("default_asset_allocation")
+        fee_rate = fee_map.get(code) or item["fee_rate"]
 
         funds_list.append({
             "code": code,
             "name": item["name"],
             "index_code": item["index_code"],
             "index_name": item["index_name"],
-            "fee_rate": item["fee_rate"],
+            "fee_rate": fee_rate,
             "tracking_error": item["tracking_error"],
             "inception_date": item["inception_date"],
             "nav": final_nav,
