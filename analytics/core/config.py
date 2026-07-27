@@ -36,9 +36,9 @@ class Settings:
 
     CACHE_PREFIX = "xanalytics"
 
-    # Cloudflare Worker 中继代理配置 (xera.cc.cd)
-    CF_WORKER_PROXY_URL: Optional[str] = os.getenv("CF_WORKER_PROXY_URL", "https://xera.cc.cd")
-    CF_WORKER_SECRET_KEY: Optional[str] = os.getenv("CF_WORKER_SECRET_KEY", "my_super_secret_token_888")
+    # Cloudflare Worker 中继代理配置 (通过环境变量读取，不硬编码在公开代码中)
+    CF_WORKER_PROXY_URL: Optional[str] = os.getenv("CF_WORKER_PROXY_URL")
+    CF_WORKER_SECRET_KEY: Optional[str] = os.getenv("CF_WORKER_SECRET_KEY")
 
     # 交易时间配置
     TRADING_HOURS: Dict[str, Dict[str, Any]] = {
