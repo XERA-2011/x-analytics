@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
 """
-X-ANALYTICS 核心分析模块
+X-Analytics 核心分析模块
 重构为三大板块：中国市场、美国市场、有色金属
 """
 

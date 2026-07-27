@@ -32,8 +32,8 @@ class App {
             'etf': 'ETF',
             'qdii': 'QDII 基金',
         };
-        const sectionTitle = titles[tabId] || 'X-ANALYTICS';
-        return sectionTitle === 'X-ANALYTICS' ? sectionTitle : `${sectionTitle}｜X-ANALYTICS`;
+        const sectionTitle = titles[tabId] || 'X-Analytics';
+        return sectionTitle === 'X-Analytics' ? sectionTitle : `${sectionTitle}｜X-Analytics`;
     }
 
     updatePageTitle(tabId) {
@@ -41,7 +41,7 @@ class App {
     }
 
     async init() {
-        console.log('🚀 X-ANALYTICS 启动中...');
+        console.log('🚀 X-Analytics 启动中...');
 
         // 设置事件监听器
         this.setupEventListeners();
@@ -61,7 +61,7 @@ class App {
         // 加载初始数据
         await this.loadInitialData();
 
-        console.log('✅ X-ANALYTICS 启动完成');
+        console.log('✅ X-Analytics 启动完成');
     }
 
     setupEventListeners() {

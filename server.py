@@ -28,7 +28,7 @@ async def lifespan(app: FastAPI):
     from analytics.core.db import init_db, close_db
 
     # 启动时
-    logger.info("🚀 X-ANALYTICS 服务启动中...")
+    logger.info("🚀 X-Analytics 服务启动中...")
     
     # 初始化数据库
     await init_db()
@@ -68,14 +68,14 @@ async def lifespan(app: FastAPI):
     yield
 
     # 关闭时
-    logger.info("🛑 X-ANALYTICS 服务关闭中...")
+    logger.info("🛑 X-Analytics 服务关闭中...")
     scheduler.shutdown(wait=False)
     await close_db()
 
 
 # 创建 FastAPI 应用
 app = FastAPI(
-    title="X-ANALYTICS API",
+    title="X-Analytics API",
     description="三大板块金融数据分析服务：中国市场、美国市场、有色金属",
     version=settings.VERSION,
     root_path="/analytics",
@@ -157,7 +157,7 @@ def health_check():
 
     return {
         "status": "ok",
-        "service": "X-ANALYTICS",
+        "service": "X-Analytics",
         "version": settings.VERSION,
         "cache": {
             "connected": cache.connected,
@@ -187,7 +187,7 @@ def trigger_warmup():
 
 @app.delete("/api/cache/clear", tags=["系统"], summary="清除所有缓存")
 def clear_cache():
-    """清除所有 X-ANALYTICS 相关缓存"""
+    """清除所有 X-Analytics 相关缓存"""
     deleted = cache.delete_pattern(f"{settings.CACHE_PREFIX}:*")
     return {"status": "ok", "deleted_keys": deleted}
 

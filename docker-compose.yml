@@ -21,7 +21,7 @@ services:
         max-size: "10m"
         max-file: "3"
 
-  # X-ANALYTICS 主服务
+  # X-Analytics 主服务
   xanalytics:
     build: .
     # 使用无横杠名称，避免 Docker Compose 将 x- 前缀误识别为扩展字段 (Extension Fields)

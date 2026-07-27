@@ -1,5 +1,5 @@
 """
-X-ANALYTICS 核心模块
+X-Analytics 核心模块
 提供缓存、调度、配置等基础功能
 """
 
