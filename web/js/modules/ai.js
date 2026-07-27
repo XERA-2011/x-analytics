@@ -38,7 +38,7 @@ class AIMarketController {
 
         const cycleScore = data.cycle_score !== undefined ? data.cycle_score : (data.heat_score || 46.3);
         const { 
-            trend_str, risk_level, cycle_phase, cycle_status, cycle_desc,
+            trend_str, risk_level, risk_class, cycle_phase, cycle_status, cycle_desc,
             us_cn_comparison, bubble_meter, rotation_mode, rotation_class, rotation_desc,
             historical_match, investment_clock, signals, layers 
         } = data;
@@ -70,7 +70,8 @@ class AIMarketController {
 
         const trendTag = trend_str || (cycle_status === 'warning' ? '⚠️ 预警' : cycle_status === 'cooling' ? '↓ 回调' : cycle_status === 'active' ? '↑ 强劲' : '→ 震荡');
         const riskTag = risk_level || (cycle_status === 'warning' || cycle_status === 'cooling' ? '偏高' : '中等');
-        const riskClassAttr = (risk_class === 'high' || cycle_status === 'warning' || cycle_status === 'cooling') ? 'style="color: var(--color-danger); border-color: rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.1);"' : '';
+        const riskCls = risk_class || '';
+        const riskClassAttr = (riskCls === 'high' || cycle_status === 'warning' || cycle_status === 'cooling') ? 'style="color: var(--color-danger); border-color: rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.1);"' : '';
 
         let html = `
             <!-- 1. AI 全球产业周期总评分 Dashboard Header -->
