@@ -93,6 +93,12 @@ docker compose logs -f xanalytics
 ## 🧹 常用运维命令
 
 ```bash
+# 重启容器服务 (更新 .env 环境变量或生效改动)
+docker compose restart xanalytics
+
+# 平滑重新构建并更新运行容器
+docker compose up -d --build xanalytics
+
 # 清空 Redis 所有缓存 (强制刷新全局数据)
 python -c "import redis, os; from dotenv import load_dotenv; load_dotenv('.env.local'); r = redis.from_url(os.getenv('REDIS_URL')); r.flushdb(); print('✅ Redis 缓存已清空')"
 
