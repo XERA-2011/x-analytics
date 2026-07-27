@@ -6,7 +6,10 @@
 """
 
 from typing import Dict, Any, List, Optional
+from concurrent.futures import ThreadPoolExecutor
 import requests
+import re
+import bs4
 import pandas as pd
 import akshare as ak
 from ..core.cache import cached
@@ -26,6 +29,7 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "default_return_1y": 15.79,
         "default_nav": 7.9540,
         "default_nav_date": "2026-07-23",
+        "default_asset_allocation": {"stock_pct": 91.18, "cash_pct": 8.82, "bond_pct": 0.0},
     },
     {
         "code": "019172",
@@ -38,6 +42,7 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "default_return_1y": 15.76,
         "default_nav": 1.6955,
         "default_nav_date": "2026-07-23",
+        "default_asset_allocation": {"stock_pct": 90.03, "cash_pct": 9.29, "bond_pct": 0.0},
     },
     {
         "code": "019547",
@@ -50,6 +55,7 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "default_return_1y": 15.35,
         "default_nav": 1.5223,
         "default_nav_date": "2026-07-23",
+        "default_asset_allocation": {"stock_pct": 93.39, "cash_pct": 6.50, "bond_pct": 0.11},
     },
     {
         "code": "539001",
@@ -62,6 +68,7 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "default_return_1y": 15.33,
         "default_nav": 3.3468,
         "default_nav_date": "2026-07-23",
+        "default_asset_allocation": {"stock_pct": 89.10, "cash_pct": 8.86, "bond_pct": 0.0},
     },
     {
         "code": "270042",
@@ -74,6 +81,7 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "default_return_1y": 15.27,
         "default_nav": 7.9076,
         "default_nav_date": "2026-07-23",
+        "default_asset_allocation": {"stock_pct": 90.96, "cash_pct": 9.04, "bond_pct": 0.0},
     },
     {
         "code": "019441",
@@ -86,6 +94,7 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "default_return_1y": 15.23,
         "default_nav": 1.6285,
         "default_nav_date": "2026-07-23",
+        "default_asset_allocation": {"stock_pct": 92.56, "cash_pct": 5.37, "bond_pct": 0.0},
     },
     {
         "code": "019736",
@@ -98,6 +107,7 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "default_return_1y": 15.19,
         "default_nav": 1.4426,
         "default_nav_date": "2026-07-23",
+        "default_asset_allocation": {"stock_pct": 93.15, "cash_pct": 7.26, "bond_pct": 0.0},
     },
     {
         "code": "000834",
@@ -110,6 +120,7 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "default_return_1y": 15.15,
         "default_nav": 6.1081,
         "default_nav_date": "2026-07-23",
+        "default_asset_allocation": {"stock_pct": 90.09, "cash_pct": 9.91, "bond_pct": 0.0},
     },
     {
         "code": "016452",
@@ -122,6 +133,7 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "default_return_1y": 15.01,
         "default_nav": 2.2147,
         "default_nav_date": "2026-07-23",
+        "default_asset_allocation": {"stock_pct": 87.41, "cash_pct": 7.99, "bond_pct": 0.0},
     },
     {
         "code": "019524",
@@ -134,6 +146,7 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "default_return_1y": 14.82,
         "default_nav": 1.5972,
         "default_nav_date": "2026-07-23",
+        "default_asset_allocation": {"stock_pct": 90.89, "cash_pct": 9.11, "bond_pct": 0.0},
     },
     {
         "code": "160213",
@@ -146,6 +159,7 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "default_return_1y": 15.50,
         "default_nav": 7.4210,
         "default_nav_date": "2026-07-23",
+        "default_asset_allocation": {"stock_pct": 79.63, "cash_pct": 18.10, "bond_pct": 0.0},
     },
     {
         "code": "161130",
@@ -158,6 +172,7 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "default_return_1y": 15.45,
         "default_nav": 4.0846,
         "default_nav_date": "2026-07-23",
+        "default_asset_allocation": {"stock_pct": 93.25, "cash_pct": 3.69, "bond_pct": 3.06},
     },
     {
         "code": "018966",
@@ -170,6 +185,7 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "default_return_1y": 13.72,
         "default_nav": 1.5921,
         "default_nav_date": "2026-07-23",
+        "default_asset_allocation": {"stock_pct": 89.44, "cash_pct": 9.92, "bond_pct": 0.64},
     },
 
     # --- 标普 500 场外 QDII (A类) ---
@@ -184,6 +200,7 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "default_return_1y": 11.10,
         "default_nav": 3.1377,
         "default_nav_date": "2026-07-23",
+        "default_asset_allocation": {"stock_pct": 89.10, "cash_pct": 1.28, "bond_pct": 7.93},
     },
     {
         "code": "050025",
@@ -196,6 +213,7 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "default_return_1y": 11.20,
         "default_nav": 5.5649,
         "default_nav_date": "2026-07-23",
+        "default_asset_allocation": {"stock_pct": 92.49, "cash_pct": 7.51, "bond_pct": 0.0},
     },
     {
         "code": "017641",
@@ -208,6 +226,7 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "default_return_1y": 10.70,
         "default_nav": 1.6496,
         "default_nav_date": "2026-07-23",
+        "default_asset_allocation": {"stock_pct": 94.03, "cash_pct": 6.90, "bond_pct": 0.0},
     },
     {
         "code": "007308",
@@ -220,6 +239,7 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "default_return_1y": 10.85,
         "default_nav": 1.8540,
         "default_nav_date": "2026-07-23",
+        "default_asset_allocation": {"stock_pct": 91.89, "cash_pct": 8.71, "bond_pct": 0.0},
     },
     {
         "code": "018043",
@@ -232,6 +252,7 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "default_return_1y": 15.40,
         "default_nav": 1.8664,
         "default_nav_date": "2026-07-23",
+        "default_asset_allocation": {"stock_pct": 88.96, "cash_pct": 4.21, "bond_pct": 2.77},
     },
     {
         "code": "016055",
@@ -244,6 +265,7 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "default_return_1y": 15.20,
         "default_nav": 1.8130,
         "default_nav_date": "2026-07-23",
+        "default_asset_allocation": {"stock_pct": 93.24, "cash_pct": 6.76, "bond_pct": 0.0},
     },
     {
         "code": "009975",
@@ -256,6 +278,7 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "default_return_1y": 10.90,
         "default_nav": 2.1250,
         "default_nav_date": "2026-07-23",
+        "default_asset_allocation": {"stock_pct": 94.63, "cash_pct": 7.15, "bond_pct": 0.0},
     },
     {
         "code": "017056",
@@ -268,6 +291,7 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "default_return_1y": 11.35,
         "default_nav": 1.5120,
         "default_nav_date": "2026-07-23",
+        "default_asset_allocation": {"stock_pct": 92.80, "cash_pct": 7.20, "bond_pct": 0.0},
     },
     {
         "code": "018703",
@@ -280,6 +304,7 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "default_return_1y": 11.40,
         "default_nav": 1.4980,
         "default_nav_date": "2026-07-23",
+        "default_asset_allocation": {"stock_pct": 94.20, "cash_pct": 5.80, "bond_pct": 0.0},
     },
 ]
 
@@ -340,11 +365,63 @@ def fetch_us_index_returns() -> Dict[str, Dict[str, Any]]:
     return benchmarks
 
 
-@cached("qdii:passive_funds_v6", ttl=86400)
+def fetch_fund_asset_allocation(session: requests.Session, code: str) -> Optional[Dict[str, Any]]:
+    """获取指定 QDII 场外联接/被动基金的最新真实资产/持仓配置（股票/权益 %、现金/货币 %）"""
+    try:
+        url = f"https://fundf10.eastmoney.com/zcpz_{code}.html"
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        }
+        res = session.get(url, headers=headers, timeout=6)
+        if res.status_code != 200:
+            return None
+        soup = bs4.BeautifulSoup(res.content.decode("utf-8", errors="ignore"), "html.parser")
+        table = soup.find("table", class_="tzxq")
+        if not table:
+            return None
+        rows = table.find_all("tr")
+        if len(rows) < 2:
+            return None
+
+        def parse_pct(val: str) -> float:
+            try:
+                return float(val.replace("%", "").strip())
+            except (ValueError, AttributeError):
+                return 0.0
+
+        # 筛选最新的定期季报 (避开基金成立建仓期的临时公告 99% 现金数据)
+        selected_row = None
+        for tr in rows[1:]:
+            cells = [td.text.strip() for td in tr.find_all(["td", "th"])]
+            if len(cells) >= 4:
+                date_str = cells[0]
+                cash = parse_pct(cells[3])
+                if re.search(r"(03-31|06-30|09-30|12-31)$", date_str) and cash < 50.0:
+                    selected_row = cells
+                    break
+        if not selected_row:
+            selected_row = [td.text.strip() for td in rows[1].find_all(["td", "th"])]
+
+        cash_val = parse_pct(selected_row[3])
+        # 被动 QDII 权益/股票/目标ETF持仓 = 100% - 现金货币比例
+        equity_val = max(0.0, round(100.0 - cash_val, 2))
+
+        return {
+            "stock_pct": equity_val,
+            "cash_pct": cash_val,
+            "bond_pct": 0.0,
+            "report_date": selected_row[0]
+        }
+    except Exception as e:
+        print(f"⚠️ 资产配置获取跳过 [{code}]: {e}")
+        return None
+
+
+@cached("qdii:passive_funds_v9", ttl=86400)
 def get_qdii_passive_funds() -> Dict[str, Any]:
     """获取国内纳斯达克100 & 标普500 场外被动 QDII A类基金数据列表
 
-    数据一天刷新一次 (86400s)。包含标的指数原生收益率对标、实时排行与净值。
+    数据一天刷新一次 (86400s)。包含标的指数原生收益率对标、实时排行、净值与真实资产配置仓位。
     """
     rank_map: Dict[str, Dict[str, Any]] = {}
     target_codes = [item["code"] for item in QDII_FUND_METADATA]
@@ -377,7 +454,24 @@ def get_qdii_passive_funds() -> Dict[str, Any]:
     except Exception as err:
         print(f"⚠️ 东财实时排行获取跳过 (已使用高质量基准/新浪行情): {err}")
 
-    # 3. 获取原生指数收益对标基准
+    # 3. 并发获取所有 QDII 基金的真实资产配置仓位数据
+    alloc_map: Dict[str, Dict[str, Any]] = {}
+    try:
+        session = requests.Session()
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            future_to_code = {executor.submit(fetch_fund_asset_allocation, session, code): code for code in target_codes}
+            for future in future_to_code:
+                c = future_to_code[future]
+                try:
+                    res = future.result()
+                    if res:
+                        alloc_map[c] = res
+                except Exception:
+                    pass
+    except Exception as err:
+        print(f"⚠️ 资产配置并发抓取跳过: {err}")
+
+    # 4. 获取原生指数收益对标基准
     benchmarks = fetch_us_index_returns()
 
     funds_list: List[Dict[str, Any]] = []
@@ -390,10 +484,12 @@ def get_qdii_passive_funds() -> Dict[str, Any]:
         nav_val = live_data.get("nav")
         nav_date = live_data.get("nav_date")
 
-        # 优雅退回基准默认值，确保 100% 呈现有效数值
         final_r1y = r_1y if r_1y is not None else item["default_return_1y"]
         final_nav = nav_val if nav_val is not None else item["default_nav"]
         final_date = nav_date if nav_date else item["default_nav_date"]
+
+        # 优先使用实时并发抓取的仓位配置，若失败退回该基金真实的元数据配置
+        asset_alloc = alloc_map.get(code) or item.get("default_asset_allocation")
 
         funds_list.append({
             "code": code,
@@ -406,6 +502,7 @@ def get_qdii_passive_funds() -> Dict[str, Any]:
             "nav": final_nav,
             "nav_date": final_date,
             "return_1y": final_r1y,
+            "asset_allocation": asset_alloc,
         })
 
     # 按 近1年收益 (return_1y) 降序排序

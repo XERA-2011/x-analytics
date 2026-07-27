@@ -2030,21 +2030,20 @@ footer {
 .qdii-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 13px;
-    min-width: 760px;
+    font-size: clamp(0.72rem, 2.5vw, 0.82rem);
 }
 
 .qdii-table th {
     background: var(--bg-body);
     color: var(--text-secondary);
     font-weight: 600;
-    padding: 12px 14px;
+    padding: clamp(6px, 1.8vw, 12px) clamp(6px, 2vw, 12px);
     border-bottom: 1px solid var(--border-light);
     white-space: nowrap;
 }
 
 .qdii-table td {
-    padding: 12px 14px;
+    padding: clamp(6px, 1.8vw, 12px) clamp(6px, 2vw, 12px);
     border-bottom: 1px solid var(--border-light);
     color: var(--text-primary);
 }
@@ -2055,6 +2054,181 @@ footer {
 
 .qdii-table tbody tr:hover {
     background: var(--bg-hover);
+}
+
+.qdii-name-wrapper {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+}
+
+.qdii-code-text {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-tertiary);
+    font-family: var(--font-mono, monospace);
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.qdii-name-text {
+    font-weight: 600;
+    color: var(--primary);
+    line-height: 1.25;
+}
+
+.col-rank {
+    width: 38px;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.col-name {
+    width: auto;
+    text-align: left;
+}
+
+.col-allocation {
+    width: 220px;
+    min-width: 180px;
+    text-align: left;
+}
+
+.allocation-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 2px 0;
+}
+
+.allocation-text {
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.allocation-bar-track {
+    display: flex;
+    width: 100%;
+    height: 5px;
+    border-radius: 3px;
+    background: var(--bg-body);
+    overflow: hidden;
+    gap: 1px;
+}
+
+.allocation-bar-stock {
+    background: #3b82f6;
+    height: 100%;
+    border-radius: 2px 0 0 2px;
+}
+
+.allocation-bar-cash {
+    background: #10b981;
+    height: 100%;
+}
+
+.allocation-bar-bond {
+    background: #f59e0b;
+    height: 100%;
+    border-radius: 0 2px 2px 0;
+}
+
+.col-fee {
+    width: 68px;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.col-return {
+    width: 78px;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.col-gap {
+    width: 72px;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.col-tracking {
+    width: 80px;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.col-date {
+    width: 105px;
+    text-align: center;
+    white-space: nowrap !important;
+}
+
+.qdii-alloc-mobile {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .qdii-name-wrapper {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 2px;
+    }
+    .qdii-code-text {
+        font-size: 0.68rem;
+    }
+    .qdii-alloc-mobile {
+        display: block;
+        margin-top: 4px;
+        width: 100%;
+    }
+    .qdii-alloc-mobile .allocation-cell {
+        gap: 2px;
+        padding: 0;
+    }
+    .qdii-alloc-mobile .allocation-text {
+        font-size: 0.65rem;
+    }
+    .qdii-alloc-mobile .allocation-bar-track {
+        height: 4px;
+        max-width: 150px;
+    }
+    .qdii-table {
+        min-width: 100%;
+    }
+    .qdii-table th,
+    .qdii-table td {
+        padding: 8px 3px;
+    }
+    .col-rank {
+        width: 30px;
+    }
+    .col-fee {
+        width: 58px;
+    }
+    .col-return {
+        width: 66px;
+    }
+    .col-gap {
+        width: 62px;
+    }
+    .col-allocation {
+        display: none !important;
+    }
+    .rank-badge {
+        width: clamp(18px, 4.5vw, 22px);
+        height: clamp(18px, 4.5vw, 22px);
+        font-size: clamp(10px, 2.5vw, 12px);
+    }
+}
+
+@media (max-width: 560px) {
+    .col-optional {
+        display: none;
+    }
 }
 
 .rank-badge {
@@ -2212,45 +2386,7 @@ footer {
     }
 }
 
-/* QDII Funds Component Styles */
-.table-wrapper {
-    width: 100%;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    border-radius: 8px;
-    border: 1px solid var(--border-light);
-    background: var(--bg-card);
-}
-
-.qdii-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 13px;
-    min-width: 760px;
-}
-
-.qdii-table th {
-    background: var(--bg-body);
-    color: var(--text-secondary);
-    font-weight: 600;
-    padding: 12px 14px;
-    border-bottom: 1px solid var(--border-light);
-    white-space: nowrap;
-}
-
-.qdii-table td {
-    padding: 12px 14px;
-    border-bottom: 1px solid var(--border-light);
-    color: var(--text-primary);
-}
-
-.qdii-table tbody tr:last-child td {
-    border-bottom: none;
-}
-
-.qdii-table tbody tr:hover {
-    background: var(--bg-hover);
-}
+/* QDII Filter & Tag Styles */
 
 .rank-badge {
     display: inline-flex;
