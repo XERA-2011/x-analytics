@@ -309,6 +309,20 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
 
     # --- 主动型 QDII 精选 (参考 DCA HUB 推荐列表) ---
     {
+        "code": "019043",
+        "name": "华泰柏瑞中韩半导体发起联接(QDII)A",
+        "index_code": "ACTIVE",
+        "index_name": "主动管理型",
+        "type": "active",
+        "fee_rate": "0.60%",
+        "tracking_error": "--",
+        "inception_date": "2023-09-05",
+        "default_return_1y": 38.50,
+        "default_nav": 1.0314,
+        "default_nav_date": "2026-07-27",
+        "default_asset_allocation": {"stock_pct": 90.0, "stock_cn_pct": 50.0, "stock_other_pct": 40.0, "cash_pct": 10.0, "bond_pct": 0.0},
+    },
+    {
         "code": "270023",
         "name": "广发全球精选股票(QDII)A",
         "index_code": "ACTIVE",
@@ -740,7 +754,7 @@ def fetch_fund_fee_rate(session: requests.Session, code: str) -> Optional[str]:
         return None
 
 
-@cached("qdii:passive_funds_v16", ttl=86400)
+@cached("qdii:passive_funds_v17", ttl=86400)
 def get_qdii_passive_funds() -> Dict[str, Any]:
     """获取国内纳斯达克100 & 标普500 场外被动 QDII A类基金数据列表
 
