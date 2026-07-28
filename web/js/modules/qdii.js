@@ -3,7 +3,7 @@
 
 class QDIIController {
     constructor() {
-        this.currentFilter = 'nasdaq100';
+        this.currentFilter = 'active';
         this.rawFunds = [];
         this.benchmarks = {
             'NDX': { name: '纳斯达克100 原生指数', return_1y: 21.14 },
