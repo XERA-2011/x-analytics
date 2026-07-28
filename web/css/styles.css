@@ -2158,6 +2158,12 @@ footer {
     border-radius: 0 2px 2px 0;
 }
 
+.allocation-bar-unclassified {
+    background: var(--border-light, #cbd5e1);
+    height: 100%;
+    opacity: 0.6;
+}
+
 .col-fee {
     width: 68px;
     text-align: right;
