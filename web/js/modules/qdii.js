@@ -213,7 +213,7 @@ class QDIIController {
                     🎯 <strong>【主动型 QDII 精选】由基金经理团队进行全球多市场（美/港/A/日韩/台/印）主动选股与仓位管理</strong>
                 </div>
                 <div style="color: var(--text-tertiary); font-size: 0.9em;">
-                    按近 1 年收益率降序排列 · 🔵 表示美股，🟣 表示港股，🔴 表示A股，🟠 表示日韩/台股等
+                    按近 1 年收益率降序排列 · 🔵 表示美股，🟣 表示港股，🔴 表示A股，🟠 表示日韩/台股等，⚪ 表示其他/未披露资产
                 </div>
             </div>
         ` : '');
