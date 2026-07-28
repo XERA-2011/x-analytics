@@ -2109,59 +2109,79 @@ footer {
     color: var(--text-secondary);
     font-weight: 500;
     white-space: nowrap;
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 4px;
+}
+
+.alloc-text-item {
+    display: inline-block;
+    font-weight: 600;
+}
+
+.alloc-text-us { color: #2563eb; }
+.alloc-text-hk { color: #9333ea; }
+.alloc-text-cn { color: #ef4444; }
+.alloc-text-other { color: #ea580c; }
+.alloc-text-cash { color: #059669; }
+.alloc-text-bond { color: #d97706; }
+.alloc-text-stock { color: #3b82f6; }
+
+.alloc-sep {
+    color: var(--text-tertiary, #a3a3a3);
+    margin: 0 2px;
 }
 
 .allocation-bar-track {
     display: flex;
     width: 100%;
-    height: 5px;
+    height: 6px;
     border-radius: 3px;
-    background: var(--bg-body);
+    background: rgba(0, 0, 0, 0.06);
     overflow: hidden;
     gap: 1px;
 }
 
+.allocation-bar-track > div {
+    height: 100%;
+    flex-shrink: 0;
+    box-sizing: border-box;
+}
+
 .allocation-bar-stock {
     background: #3b82f6;
-    height: 100%;
     border-radius: 2px 0 0 2px;
 }
 
 .allocation-bar-us {
-    background: #0284c7;
-    height: 100%;
+    background: #2563eb;
 }
 
 .allocation-bar-hk {
     background: #9333ea;
-    height: 100%;
 }
 
 .allocation-bar-cn {
     background: #ef4444;
-    height: 100%;
 }
 
 .allocation-bar-other {
     background: #f97316;
-    height: 100%;
 }
 
 .allocation-bar-cash {
     background: #10b981;
-    height: 100%;
 }
 
 .allocation-bar-bond {
     background: #f59e0b;
-    height: 100%;
     border-radius: 0 2px 2px 0;
 }
 
 .allocation-bar-unclassified {
-    background: var(--border-light, #cbd5e1);
-    height: 100%;
-    opacity: 0.6;
+    background: #9ca3af;
+    opacity: 0.5;
 }
 
 .col-fee {

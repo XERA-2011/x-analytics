@@ -128,17 +128,17 @@ class QDIIController {
                 let subParts = [];
                 const hasDetailed = (usPct != null && parseFloat(usPct) > 0) || (hkPct != null && parseFloat(hkPct) > 0) || (cnPct != null && parseFloat(cnPct) > 0) || (otherPct != null && parseFloat(otherPct) > 0);
                 if (hasDetailed) {
-                    if (usPct != null && parseFloat(usPct) > 0) subParts.push(`${usPct}% 美股`);
-                    if (hkPct != null && parseFloat(hkPct) > 0) subParts.push(`${hkPct}% 港股`);
-                    if (cnPct != null && parseFloat(cnPct) > 0) subParts.push(`${cnPct}% A股`);
-                    if (otherPct != null && parseFloat(otherPct) > 0) subParts.push(`${otherPct}% 其他/日韩`);
+                    if (usPct != null && parseFloat(usPct) > 0) subParts.push(`<span class="alloc-text-item alloc-text-us">${usPct}% 美股</span>`);
+                    if (hkPct != null && parseFloat(hkPct) > 0) subParts.push(`<span class="alloc-text-item alloc-text-hk">${hkPct}% 港股</span>`);
+                    if (cnPct != null && parseFloat(cnPct) > 0) subParts.push(`<span class="alloc-text-item alloc-text-cn">${cnPct}% A股</span>`);
+                    if (otherPct != null && parseFloat(otherPct) > 0) subParts.push(`<span class="alloc-text-item alloc-text-other">${otherPct}% 其他/日韩</span>`);
                 } else {
-                    subParts.push(`${stockPct}% 股票`);
+                    subParts.push(`<span class="alloc-text-item alloc-text-stock">${stockPct}% 股票</span>`);
                 }
-                if (alloc.cash_pct > 0.1) subParts.push(`${cashPct}% 现金`);
-                if (alloc.bond_pct > 0.5) subParts.push(`${bondPct}% 债券`);
+                if (alloc.cash_pct > 0.1) subParts.push(`<span class="alloc-text-item alloc-text-cash">${cashPct}% 现金</span>`);
+                if (alloc.bond_pct > 0.5) subParts.push(`<span class="alloc-text-item alloc-text-bond">${bondPct}% 债券</span>`);
 
-                let allocLabel = subParts.join(' · ');
+                let allocLabel = subParts.join('<span class="alloc-sep">·</span>');
 
                 // 严格遵循金融数据真实性：使用真实比例渲染色块，未披露/其他资产保留中性灰色背景轨道，容器左右边界 100% 对齐
                 let barSegments = [];
@@ -154,18 +154,18 @@ class QDIIController {
                 if (alloc.bond_pct > 0.5) barSegments.push({ cls: 'allocation-bar-bond', val: parseFloat(bondPct), title: `债券: ${bondPct}%` });
 
                 const totalVal = barSegments.reduce((sum, s) => sum + s.val, 0);
-                let barHtml = barSegments.map(s => `<div class="${s.cls}" style="width: ${s.val}%;" title="${s.title}"></div>`).join('');
+                let barHtml = barSegments.map(s => `<div class="${s.cls}" style="flex: 0 0 ${s.val}%; width: ${s.val}%;" title="${s.title}"></div>`).join('');
                 
                 // 若存在未披露/其他杂项资产 (100% - totalVal)，用中性灰色条填充
                 if (totalVal < 99.5) {
                     const unclassifiedPct = (100.0 - totalVal).toFixed(1);
-                    barHtml += `<div class="allocation-bar-unclassified" style="width: ${unclassifiedPct}%;" title="其他/未披露资产: ${unclassifiedPct}%"></div>`;
+                    barHtml += `<div class="allocation-bar-unclassified" style="flex: 0 0 ${unclassifiedPct}%; width: ${unclassifiedPct}%;" title="其他/未披露资产: ${unclassifiedPct}%"></div>`;
                 }
 
                 allocHtml = `
                     <div class="allocation-cell" title="股票: ${stockPct}%${hasDetailed ? ' (美股 ' + (usPct || '0.0') + '%, 港股 ' + (hkPct || '0.0') + '%' + (cnPct ? ', A股 ' + cnPct + '%' : '') + (otherPct ? ', 其他/日韩 ' + otherPct + '%' : '') + ')' : ''}, 现金: ${cashPct}%">
                         <div class="allocation-text">
-                            <span>${allocLabel}</span>
+                            ${allocLabel}
                         </div>
                         <div class="allocation-bar-track">
                             ${barHtml}
@@ -204,7 +204,7 @@ class QDIIController {
                     📌 <strong>【标的基准】${indexName} 原生指数近1年收益：<span class="text-up-us">+${utils.formatPercentage(activeBenchmark)}</span></strong>
                 </div>
                 <div style="color: var(--text-tertiary); font-size: 0.9em;">
-                    对比差距为基金与原生指数收益差（含费率、汇率及仓位损耗）
+                    🔵 美股 · 🟣 港股 · 🔴 A股 · 🟠 日韩/台股 · 🟢 现金 · ⚪ 未披露/其他
                 </div>
             </div>
         ` : (this.currentFilter === 'active' ? `
@@ -213,7 +213,7 @@ class QDIIController {
                     🎯 <strong>【主动型 QDII 精选】由基金经理团队进行全球多市场（美/港/A/日韩/台/印）主动选股与仓位管理</strong>
                 </div>
                 <div style="color: var(--text-tertiary); font-size: 0.9em;">
-                    按近 1 年收益率降序排列 · 🔵 表示美股，🟣 表示港股，🔴 表示A股，🟠 表示日韩/台股等，⚪ 表示其他/未披露资产
+                    按近 1 年收益率降序排列 · 🔵 美股 · 🟣 港股 · 🔴 A股 · 🟠 日韩/台股 · 🟢 现金 · ⚪ 未披露/其他
                 </div>
             </div>
         ` : '');
