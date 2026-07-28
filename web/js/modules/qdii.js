@@ -84,12 +84,18 @@ class QDIIController {
             filtered = this.rawFunds.filter(f => f.index_code === 'SPX');
             activeBenchmark = this.benchmarks.SPX?.return_1y || 16.48;
             indexName = '标普500';
+        } else if (this.currentFilter === 'active') {
+            filtered = this.rawFunds.filter(f => f.index_code === 'ACTIVE' || f.type === 'active');
+            activeBenchmark = null;
+            indexName = '主动管理型';
         }
 
         if (!filtered.length) {
             utils.renderError('qdii-table-container', '该分类下暂无基金数据');
             return;
         }
+
+        const isActiveTab = this.currentFilter === 'active';
 
         let rowsHtml = filtered.map((item, index) => {
             const rank = index + 1;
@@ -112,22 +118,47 @@ class QDIIController {
 
             if (alloc && alloc.stock_pct != null) {
                 const stockPct = alloc.stock_pct.toFixed(1);
+                const usPct = alloc.stock_us_pct != null ? alloc.stock_us_pct.toFixed(1) : null;
+                const hkPct = alloc.stock_hk_pct != null ? alloc.stock_hk_pct.toFixed(1) : null;
+                const cnPct = alloc.stock_cn_pct != null ? alloc.stock_cn_pct.toFixed(1) : null;
+                const otherPct = alloc.stock_other_pct != null ? alloc.stock_other_pct.toFixed(1) : null;
                 const cashPct = alloc.cash_pct != null ? alloc.cash_pct.toFixed(1) : '0.0';
                 const bondPct = alloc.bond_pct != null ? alloc.bond_pct.toFixed(1) : '0.0';
 
-                let allocLabel = `${stockPct}% 股票`;
-                if (alloc.cash_pct > 0.1) allocLabel += ` · ${cashPct}% 现金`;
-                if (alloc.bond_pct > 0.5) allocLabel += ` · ${bondPct}% 债券`;
+                let subParts = [];
+                const hasDetailed = (usPct != null && parseFloat(usPct) > 0) || (hkPct != null && parseFloat(hkPct) > 0) || (cnPct != null && parseFloat(cnPct) > 0) || (otherPct != null && parseFloat(otherPct) > 0);
+                if (hasDetailed) {
+                    if (usPct != null && parseFloat(usPct) > 0) subParts.push(`${usPct}% 美股`);
+                    if (hkPct != null && parseFloat(hkPct) > 0) subParts.push(`${hkPct}% 港股`);
+                    if (cnPct != null && parseFloat(cnPct) > 0) subParts.push(`${cnPct}% A股`);
+                    if (otherPct != null && parseFloat(otherPct) > 0) subParts.push(`${otherPct}% 其他/日韩`);
+                } else {
+                    subParts.push(`${stockPct}% 股票`);
+                }
+                if (alloc.cash_pct > 0.1) subParts.push(`${cashPct}% 现金`);
+                if (alloc.bond_pct > 0.5) subParts.push(`${bondPct}% 债券`);
+
+                let allocLabel = subParts.join(' · ');
+
+                let barHtml = '';
+                if (hasDetailed) {
+                    if (usPct != null && parseFloat(usPct) > 0) barHtml += `<div class="allocation-bar-us" style="width: ${usPct}%;" title="美股股票: ${usPct}%"></div>`;
+                    if (hkPct != null && parseFloat(hkPct) > 0) barHtml += `<div class="allocation-bar-hk" style="width: ${hkPct}%;" title="港股股票: ${hkPct}%"></div>`;
+                    if (cnPct != null && parseFloat(cnPct) > 0) barHtml += `<div class="allocation-bar-cn" style="width: ${cnPct}%;" title="A股股票: ${cnPct}%"></div>`;
+                    if (otherPct != null && parseFloat(otherPct) > 0) barHtml += `<div class="allocation-bar-other" style="width: ${otherPct}%;" title="日韩/其他股票: ${otherPct}%"></div>`;
+                } else {
+                    barHtml += `<div class="allocation-bar-stock" style="width: ${stockPct}%;"></div>`;
+                }
+                if (alloc.cash_pct > 0.1) barHtml += `<div class="allocation-bar-cash" style="width: ${cashPct}%;"></div>`;
+                if (alloc.bond_pct > 0.5) barHtml += `<div class="allocation-bar-bond" style="width: ${bondPct}%;"></div>`;
 
                 allocHtml = `
-                    <div class="allocation-cell" title="股票/权益持仓: ${stockPct}%, 现金货币: ${cashPct}%${alloc.bond_pct > 0.5 ? ', 债券: ' + bondPct + '%' : ''}">
+                    <div class="allocation-cell" title="股票: ${stockPct}%${hasDetailed ? ' (美股 ' + (usPct || '0.0') + '%, 港股 ' + (hkPct || '0.0') + '%' + (cnPct ? ', A股 ' + cnPct + '%' : '') + (otherPct ? ', 其他/日韩 ' + otherPct + '%' : '') + ')' : ''}, 现金: ${cashPct}%">
                         <div class="allocation-text">
                             <span>${allocLabel}</span>
                         </div>
                         <div class="allocation-bar-track">
-                            <div class="allocation-bar-stock" style="width: ${stockPct}%;"></div>
-                            <div class="allocation-bar-cash" style="width: ${cashPct}%;"></div>
-                            ${alloc.bond_pct > 0.5 ? `<div class="allocation-bar-bond" style="width: ${bondPct}%;"></div>` : ''}
+                            ${barHtml}
                         </div>
                     </div>
                 `;
@@ -148,8 +179,10 @@ class QDIIController {
                     <td class="col-allocation">${allocHtml}</td>
                     <td class="col-fee font-mono">${item.fee_rate}</td>
                     <td class="col-return font-mono ${r1yClass}" style="font-weight: 700;">${r1yStr}</td>
-                    <td class="col-gap font-mono" style="color: var(--text-tertiary);">${benchmarkGapStr}</td>
-                    <td class="col-tracking col-optional font-mono">${item.tracking_error || '--'}</td>
+                    ${!isActiveTab ? `
+                        <td class="col-gap font-mono" style="color: var(--text-tertiary);">${benchmarkGapStr}</td>
+                        <td class="col-tracking col-optional font-mono">${item.tracking_error || '--'}</td>
+                    ` : ''}
                     <td class="col-date col-optional" style="color: var(--text-secondary);">${item.inception_date || '--'}</td>
                 </tr>
             `;
@@ -164,7 +197,16 @@ class QDIIController {
                     对比差距为基金与原生指数收益差（含费率、汇率及仓位损耗）
                 </div>
             </div>
-        ` : '';
+        ` : (this.currentFilter === 'active' ? `
+            <div style="padding: 10px 14px; margin-bottom: 12px; border-radius: 6px; background: var(--bg-body); border: 1px solid var(--border-light); font-size: clamp(0.72rem, 2.5vw, 0.78rem); color: var(--text-secondary); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                <div>
+                    🎯 <strong>【主动型 QDII 精选】由基金经理团队进行全球多市场（美/港/A/日韩/台/印）主动选股与仓位管理</strong>
+                </div>
+                <div style="color: var(--text-tertiary); font-size: 0.9em;">
+                    按近 1 年收益率降序排列 · 🔵 表示美股，🟣 表示港股，🔴 表示A股，🟠 表示日韩/台股等
+                </div>
+            </div>
+        ` : '');
 
         container.innerHTML = `
             ${benchmarkNotice}
@@ -177,8 +219,10 @@ class QDIIController {
                             <th class="col-allocation">资产配置 / 仓位</th>
                             <th class="col-fee">综合费率</th>
                             <th class="col-return">近1年收益</th>
-                            <th class="col-gap">对标差距</th>
-                            <th class="col-tracking col-optional">跟踪偏离度</th>
+                            ${!isActiveTab ? `
+                                <th class="col-gap">对标差距</th>
+                                <th class="col-tracking col-optional">跟踪偏离度</th>
+                            ` : ''}
                             <th class="col-date col-optional">成立时间</th>
                         </tr>
                     </thead>

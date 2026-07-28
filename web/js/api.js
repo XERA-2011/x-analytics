@@ -163,7 +163,7 @@ class API {
                 if (typeof data === 'object') {
                     data._cached_at = response.cached_at;
                     data._ttl = response.ttl;
-                    if (response.message) {
+                    if (response.message && response.message !== '数据刷新中') {
                         data._stale = true;
                     }
                 }

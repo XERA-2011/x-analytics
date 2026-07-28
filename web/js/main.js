@@ -318,7 +318,7 @@ class App {
                     setTimeout(() => {
                         if (!this.isRefreshing && this.currentCycleStale) {
                             api.clearLocalCache();
-                            this.refreshCurrentTab(false);
+                            this.refreshCurrentTab(true);
                         }
                     }, 5000);
                 }

@@ -2126,6 +2126,26 @@ footer {
     border-radius: 2px 0 0 2px;
 }
 
+.allocation-bar-us {
+    background: #0284c7;
+    height: 100%;
+}
+
+.allocation-bar-hk {
+    background: #9333ea;
+    height: 100%;
+}
+
+.allocation-bar-cn {
+    background: #ef4444;
+    height: 100%;
+}
+
+.allocation-bar-other {
+    background: #f97316;
+    height: 100%;
+}
+
 .allocation-bar-cash {
     background: #10b981;
     height: 100%;
