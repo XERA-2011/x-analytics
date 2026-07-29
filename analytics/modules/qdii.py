@@ -420,20 +420,7 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "default_nav_date": "2026-07-23",
         "default_asset_allocation": {"stock_pct": 88.2, "stock_us_pct": 61.4, "stock_hk_pct": 26.8, "cash_pct": 11.8, "bond_pct": 0.0},
     },
-    {
-        "code": "018706",
-        "name": "博时数字经济混合发起(QDII)A",
-        "index_code": "ACTIVE",
-        "index_name": "主动管理型",
-        "type": "active",
-        "fee_rate": "1.40%",
-        "tracking_error": "--",
-        "inception_date": "2023-05-15",
-        "default_return_1y": 28.5,
-        "default_nav": 1.7104,
-        "default_nav_date": "2026-07-23",
-        "default_asset_allocation": {"stock_pct": 86.5, "stock_us_pct": 68.2, "stock_hk_pct": 18.3, "cash_pct": 13.5, "bond_pct": 0.0},
-    },
+
     {
         "code": "539002",
         "name": "建信新兴市场混合(QDII)A",
