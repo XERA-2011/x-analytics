@@ -887,19 +887,37 @@ def get_qdii_passive_funds() -> Dict[str, Any]:
     }
 
 
-@cached("qdii:top_holdings_v2", ttl=86400 * 7, stale_ttl=86400 * 30)
+@cached("qdii:top_holdings_v3", ttl=86400 * 7, stale_ttl=86400 * 30)
 def get_qdii_top_holdings(code: str) -> Dict[str, Any]:
     """获取 QDII 基金最新披露的前十大重仓股票列表"""
     try:
         session = requests.Session()
         url = f"http://fundf10.eastmoney.com/FundArchivesDatas.aspx?type=jjcc&code={code}&topline=10"
+        
+        # 优先使用代理获取
         res = fetch_url_via_proxy(url, session=session, timeout=6)
-        if not res or res.status_code != 200:
-            return {"status": "error", "message": f"无法连接 EastMoney 接口 (code: {code})", "holdings": []}
+        
+        # 代理失败或超时，降级尝试直连
+        if res is None:
+            try:
+                res = session.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=5)
+            except Exception:
+                pass
+                
+        if res is None:
+            return {"status": "error", "error": True, "message": f"网络请求超时 (code: {code})", "holdings": []}
+            
+        if res.status_code == 404:
+            # 404 表示该基金无相关持仓披露页面 (如某些联接基金或刚成立无数据)
+            # 正常返回空持仓，让其进入缓存以避免持续报错请求
+            return {"status": "ok", "code": code, "report_date": "暂无季报", "count": 0, "holdings": []}
+            
+        if res.status_code != 200:
+            return {"status": "error", "error": True, "message": f"接口异常 HTTP {res.status_code} (code: {code})", "holdings": []}
 
         match = re.search(r'content:\"(.*?)\"', res.text, re.DOTALL)
         if not match:
-            return {"status": "error", "message": f"解析持仓响应失败 (code: {code})", "holdings": []}
+            return {"status": "ok", "code": code, "report_date": "暂无季报", "count": 0, "holdings": []}
 
         html_content = match.group(1)
         soup = bs4.BeautifulSoup(html_content, "html.parser")
@@ -908,7 +926,7 @@ def get_qdii_top_holdings(code: str) -> Dict[str, Any]:
 
         table = soup.find("table", class_="tzxq")
         if not table:
-            return {"status": "error", "message": f"暂无重仓持仓披露数据 (code: {code})", "holdings": []}
+            return {"status": "ok", "code": code, "report_date": report_date, "count": 0, "holdings": []}
 
         holdings = []
         for tr in table.find_all("tr")[1:]:
