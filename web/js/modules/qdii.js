@@ -177,16 +177,16 @@ class QDIIController {
             return `
                 <tr>
                     <td class="col-rank"><span class="rank-badge ${rankBadgeClass}">${rank}</span></td>
-                    <td class="col-name">
+                    <td class="col-name qdii-clickable" data-code="${item.code}" data-name="${item.name}" title="点击查看 ${item.name} 前十大重仓股">
                         <div class="qdii-name-wrapper">
                             <span class="qdii-code-text">${item.code}</span>
-                            <span class="qdii-name-text">${item.name}</span>
+                            <span class="qdii-name-text" style="color: var(--primary); font-weight: 600;">${item.name} 💡</span>
                             <div class="qdii-alloc-mobile">
                                 ${allocHtml}
                             </div>
                         </div>
                     </td>
-                    <td class="col-allocation">${allocHtml}</td>
+                    <td class="col-allocation qdii-clickable" data-code="${item.code}" data-name="${item.name}" title="点击查看 ${item.name} 前十大重仓股">${allocHtml}</td>
                     <td class="col-return font-mono ${r1yClass}" style="font-weight: 700;">${r1yStr}</td>
                     <td class="col-fee font-mono">${item.fee_rate}</td>
                     ${!isActiveTab ? `
@@ -204,7 +204,7 @@ class QDIIController {
                     📌 <strong>【标的基准】${indexName} 原生指数近1年收益：<span class="text-up-us">+${utils.formatPercentage(activeBenchmark)}</span></strong>
                 </div>
                 <div style="color: var(--text-tertiary); font-size: 0.9em;">
-                    🔵 美股 · 🟣 港股 · 🔴 A股 · 🟠 日韩/台股 · 🟢 现金 · ⚪ 未披露/其他
+                    🔵 美股 · 🟣 港股 · 🔴 A股 · 🟠 日韩/台股 · 🟢 现金 · ⚪ 未披露/其他 · 💡 点击基金名称/仓位查看重仓股
                 </div>
             </div>
         ` : (this.currentFilter === 'active' ? `
@@ -213,7 +213,7 @@ class QDIIController {
                     🎯 <strong>【主动型 QDII 精选】由基金经理团队进行全球多市场（美/港/A/日韩/台/印）主动选股与仓位管理</strong>
                 </div>
                 <div style="color: var(--text-tertiary); font-size: 0.9em;">
-                    按近 1 年收益率降序排列 · 🔵 美股 · 🟣 港股 · 🔴 A股 · 🟠 日韩/台股 · 🟢 现金 · ⚪ 未披露/其他
+                    按近 1 年收益降序 · 🔵 美股 · 🟣 港股 · 🔴 A股 · 🟠 日韩/台股 · 🟢 现金 · ⚪ 未披露 · 💡 点击基金名称/仓位查看重仓股
                 </div>
             </div>
         ` : '');
@@ -242,5 +242,126 @@ class QDIIController {
                 </table>
             </div>
         `;
+
+        // 绑定重仓持仓点击事件
+        container.querySelectorAll('.qdii-clickable').forEach(el => {
+            el.onclick = (e) => {
+                const code = el.dataset.code;
+                const name = el.dataset.name;
+                if (code && name) {
+                    this.openHoldingsModal(code, name);
+                }
+            };
+        });
+    }
+
+    async openHoldingsModal(code, name) {
+        let overlay = document.getElementById('qdii-holdings-modal');
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = 'qdii-holdings-modal';
+            overlay.className = 'qdii-modal-overlay';
+            document.body.appendChild(overlay);
+
+            overlay.onclick = (e) => {
+                if (e.target === overlay) this.closeHoldingsModal();
+            };
+
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && overlay.classList.contains('active')) {
+                    this.closeHoldingsModal();
+                }
+            });
+        }
+
+        overlay.innerHTML = `
+            <div class="qdii-modal-card">
+                <div class="qdii-modal-header">
+                    <h3 class="qdii-modal-title">
+                        📊 ${name} <span style="font-size: 0.8rem; font-weight: normal; color: var(--text-tertiary);">(${code})</span>
+                    </h3>
+                    <button class="qdii-modal-close" onclick="window.qdiiController.closeHoldingsModal()">&times;</button>
+                </div>
+                <div class="qdii-modal-body">
+                    <div class="loading"><i data-lucide="loader-2" class="spin"></i> 正在获取最新重仓持仓明细...</div>
+                </div>
+            </div>
+        `;
+        overlay.classList.add('active');
+        if (window.lucide) lucide.createIcons();
+
+        try {
+            const res = await api.getQDIIHoldings(code);
+            const data = res.data || res;
+
+            if (data.status === 'warming_up') {
+                const bodyEl = overlay.querySelector('.qdii-modal-body');
+                if (bodyEl) bodyEl.innerHTML = '<div class="loading">数据计算中，请稍后刷新...</div>';
+                return;
+            }
+
+            const holdings = data.holdings || [];
+            const reportDate = data.report_date || '最新季报';
+
+            const bodyEl = overlay.querySelector('.qdii-modal-body');
+            if (!bodyEl) return;
+
+            if (holdings.length === 0) {
+                bodyEl.innerHTML = `<div style="text-align: center; color: var(--text-tertiary); padding: 24px;">暂无该基金的前十大重仓披露信息</div>`;
+                return;
+            }
+
+            const maxRatio = Math.max(...holdings.map(h => h.ratio_val || 0), 1.0);
+
+            const rowsHtml = holdings.map(h => {
+                const barWidth = Math.min(100, (h.ratio_val / maxRatio) * 100);
+                return `
+                    <tr>
+                        <td style="width: 36px; text-align: center; font-weight: bold; color: var(--text-secondary);">${h.rank}</td>
+                        <td style="font-weight: 600;">
+                            <div>${h.stock_name}</div>
+                            <div style="font-size: 0.72rem; color: var(--text-tertiary); font-family: monospace;">${h.stock_code}</div>
+                        </td>
+                        <td style="width: 45%;">
+                            <div class="qdii-holding-ratio-wrapper">
+                                <div class="qdii-holding-bar-bg">
+                                    <div class="qdii-holding-bar-fill" style="width: ${barWidth}%;"></div>
+                                </div>
+                                <span style="font-weight: 700; font-family: monospace; min-width: 50px; text-align: right;">${h.ratio_pct}</span>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            bodyEl.innerHTML = `
+                <div class="qdii-holding-meta">
+                    <span>📌 统计截止日期：<strong>${reportDate}</strong></span>
+                    <span>数据来源：基金定期报告</span>
+                </div>
+                <table class="qdii-holding-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 36px; text-align: center;">#</th>
+                            <th>股票名称 / 代码</th>
+                            <th style="width: 45%;">占净值比例</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rowsHtml}
+                    </tbody>
+                </table>
+            `;
+        } catch (err) {
+            console.error('获取持仓明细失败:', err);
+            const bodyEl = overlay.querySelector('.qdii-modal-body');
+            if (bodyEl) bodyEl.innerHTML = `<div style="text-align: center; color: var(--danger-color); padding: 24px;">获取持仓明细失败，请稍后重试</div>`;
+        }
+    }
+
+    closeHoldingsModal() {
+        const overlay = document.getElementById('qdii-holdings-modal');
+        if (overlay) overlay.classList.remove('active');
     }
 }
+

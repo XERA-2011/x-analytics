@@ -325,6 +325,10 @@ class API {
         return this.request('/qdii/funds');
     }
 
+    async getQDIIHoldings(code) {
+        return this.request(`/qdii/holdings/${code}`);
+    }
+
     async triggerWarmup() {
         return this.request('/api/cache/warmup', { method: 'POST' });
     }

@@ -885,3 +885,64 @@ def get_qdii_passive_funds() -> Dict[str, Any]:
         "funds": funds_list,
         "update_strategy": "daily (24h cache)"
     }
+
+
+@cached("qdii:top_holdings_v1", ttl=86400 * 7, stale_ttl=86400 * 30)
+def get_qdii_top_holdings(code: str) -> Dict[str, Any]:
+    """获取 QDII 基金最新披露的前十大重仓股票列表"""
+    try:
+        session = requests.Session()
+        url = f"http://fundf10.eastmoney.com/FundArchivesDatas.aspx?type=jjcc&code={code}&topline=10"
+        res = fetch_url_via_proxy(url, session=session, timeout=6)
+        if not res or res.status_code != 200:
+            return {"status": "error", "message": f"无法连接 EastMoney 接口 (code: {code})", "holdings": []}
+
+        match = re.search(r'content:\"(.*)\"', res.text, re.DOTALL)
+        if not match:
+            return {"status": "error", "message": f"解析持仓响应失败 (code: {code})", "holdings": []}
+
+        html_content = match.group(1)
+        soup = bs4.BeautifulSoup(html_content, "html.parser")
+        date_font = soup.find("font", class_="px12")
+        report_date = date_font.text.strip() if date_font else "最新季报"
+
+        table = soup.find("table", class_="tzxq")
+        if not table:
+            return {"status": "error", "message": f"暂无重仓持仓披露数据 (code: {code})", "holdings": []}
+
+        holdings = []
+        for tr in table.find_all("tr")[1:]:
+            cols = [td.text.strip() for td in tr.find_all(["td", "th"])]
+            if len(cols) >= 7:
+                rank_str = cols[0]
+                stock_code = cols[1]
+                stock_name = cols[2]
+                ratio_pct_str = cols[6]
+                share_amount = cols[7] if len(cols) > 7 else "--"
+                market_value = cols[8] if len(cols) > 8 else "--"
+
+                try:
+                    ratio_val = float(ratio_pct_str.replace("%", "").strip())
+                except ValueError:
+                    ratio_val = 0.0
+
+                holdings.append({
+                    "rank": rank_str,
+                    "stock_code": stock_code,
+                    "stock_name": stock_name,
+                    "ratio_pct": ratio_pct_str,
+                    "ratio_val": ratio_val,
+                    "share_amount": share_amount,
+                    "market_value": market_value
+                })
+
+        return {
+            "status": "ok",
+            "code": code,
+            "report_date": report_date,
+            "count": len(holdings),
+            "holdings": holdings
+        }
+    except Exception as e:
+        return {"status": "error", "message": str(e), "holdings": []}
+

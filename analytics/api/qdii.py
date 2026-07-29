@@ -5,7 +5,7 @@ QDII 基金 API 路由
 from fastapi import APIRouter
 from typing import Dict, Any
 from ..core.decorators import safe_endpoint
-from ..modules.qdii import get_qdii_passive_funds
+from ..modules.qdii import get_qdii_passive_funds, get_qdii_top_holdings
 
 router = APIRouter(tags=["QDII基金"])
 
@@ -15,3 +15,11 @@ router = APIRouter(tags=["QDII基金"])
 def get_qdii_funds() -> Dict[str, Any]:
     """获取场外被动 QDII A类基金数据列表（支持排名、费率、近一年收益、跟踪偏离度等）"""
     return get_qdii_passive_funds()
+
+
+@router.get("/holdings/{code}", summary="获取指定 QDII 基金最新披露前十大重仓股票列表")
+@safe_endpoint
+def get_qdii_holdings(code: str) -> Dict[str, Any]:
+    """获取指定 QDII 基金最新季报披露的前十大重仓股票及持仓比例"""
+    return get_qdii_top_holdings(code)
+

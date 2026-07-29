@@ -2500,3 +2500,149 @@ footer {
     color: var(--bg-card);
     border-color: var(--primary);
 }
+
+/* QDII 重仓持仓弹窗及可点击组件 */
+.qdii-clickable {
+    cursor: pointer;
+    transition: background-color 0.2s ease, opacity 0.2s ease;
+}
+.qdii-clickable:hover {
+    opacity: 0.85;
+}
+
+.qdii-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.25s ease, visibility 0.25s ease;
+}
+
+.qdii-modal-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.qdii-modal-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+    width: 100%;
+    max-width: 580px;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transform: scale(0.95);
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.qdii-modal-overlay.active .qdii-modal-card {
+    transform: scale(1);
+}
+
+.qdii-modal-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border-light);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--bg-body);
+}
+
+.qdii-modal-title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.qdii-modal-close {
+    background: transparent;
+    border: none;
+    font-size: 1.5rem;
+    line-height: 1;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: color 0.2s, background 0.2s;
+}
+
+.qdii-modal-close:hover {
+    color: var(--text-primary);
+    background: var(--border-light);
+}
+
+.qdii-modal-body {
+    padding: 16px 20px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.qdii-holding-meta {
+    font-size: 0.78rem;
+    color: var(--text-tertiary);
+    margin-bottom: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.qdii-holding-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+}
+
+.qdii-holding-table th {
+    background: var(--bg-body);
+    color: var(--text-secondary);
+    font-weight: 600;
+    text-align: left;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.qdii-holding-table td {
+    padding: 10px 10px;
+    border-bottom: 1px solid var(--border-light);
+    color: var(--text-primary);
+}
+
+.qdii-holding-ratio-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.qdii-holding-bar-bg {
+    flex: 1;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--bg-body);
+    overflow: hidden;
+    min-width: 60px;
+}
+
+.qdii-holding-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #0284c7, #38bdf8);
+    border-radius: 3px;
+}
+
