@@ -887,7 +887,7 @@ def get_qdii_passive_funds() -> Dict[str, Any]:
     }
 
 
-@cached("qdii:top_holdings_v1", ttl=86400 * 7, stale_ttl=86400 * 30)
+@cached("qdii:top_holdings_v2", ttl=86400 * 7, stale_ttl=86400 * 30)
 def get_qdii_top_holdings(code: str) -> Dict[str, Any]:
     """获取 QDII 基金最新披露的前十大重仓股票列表"""
     try:
@@ -897,7 +897,7 @@ def get_qdii_top_holdings(code: str) -> Dict[str, Any]:
         if not res or res.status_code != 200:
             return {"status": "error", "message": f"无法连接 EastMoney 接口 (code: {code})", "holdings": []}
 
-        match = re.search(r'content:\"(.*)\"', res.text, re.DOTALL)
+        match = re.search(r'content:\"(.*?)\"', res.text, re.DOTALL)
         if not match:
             return {"status": "error", "message": f"解析持仓响应失败 (code: {code})", "holdings": []}
 

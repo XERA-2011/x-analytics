@@ -9,6 +9,7 @@ class QDIIController {
             'NDX': { name: '纳斯达克100 原生指数', return_1y: 21.14 },
             'SPX': { name: '标普500 原生指数', return_1y: 16.48 }
         };
+        window.qdiiController = this;
     }
 
     async loadData() {
@@ -280,13 +281,17 @@ class QDIIController {
                     <h3 class="qdii-modal-title">
                         📊 ${name} <span style="font-size: 0.8rem; font-weight: normal; color: var(--text-tertiary);">(${code})</span>
                     </h3>
-                    <button class="qdii-modal-close" onclick="window.qdiiController.closeHoldingsModal()">&times;</button>
+                    <button class="qdii-modal-close" aria-label="关闭">&times;</button>
                 </div>
                 <div class="qdii-modal-body">
                     <div class="loading"><i data-lucide="loader-2" class="spin"></i> 正在获取最新重仓持仓明细...</div>
                 </div>
             </div>
         `;
+        const closeBtn = overlay.querySelector('.qdii-modal-close');
+        if (closeBtn) {
+            closeBtn.onclick = () => this.closeHoldingsModal();
+        }
         overlay.classList.add('active');
         if (window.lucide) lucide.createIcons();
 
