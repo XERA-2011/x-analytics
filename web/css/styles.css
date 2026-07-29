@@ -2237,7 +2237,7 @@ footer {
         padding: 0;
     }
     .qdii-alloc-mobile .allocation-text {
-        font-size: 0.65rem;
+        display: none;
     }
     .qdii-alloc-mobile .allocation-bar-track {
         height: 4px;

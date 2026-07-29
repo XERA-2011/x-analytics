@@ -187,8 +187,8 @@ class QDIIController {
                         </div>
                     </td>
                     <td class="col-allocation">${allocHtml}</td>
-                    <td class="col-fee font-mono">${item.fee_rate}</td>
                     <td class="col-return font-mono ${r1yClass}" style="font-weight: 700;">${r1yStr}</td>
+                    <td class="col-fee font-mono">${item.fee_rate}</td>
                     ${!isActiveTab ? `
                         <td class="col-gap font-mono" style="color: var(--text-tertiary);">${benchmarkGapStr}</td>
                         <td class="col-tracking col-optional font-mono">${item.tracking_error || '--'}</td>
@@ -227,8 +227,8 @@ class QDIIController {
                             <th class="col-rank">排名</th>
                             <th class="col-name">基金名称</th>
                             <th class="col-allocation">资产配置 / 仓位</th>
-                            <th class="col-fee">综合费率</th>
                             <th class="col-return">近1年收益</th>
+                            <th class="col-fee">综合费率</th>
                             ${!isActiveTab ? `
                                 <th class="col-gap">对标差距</th>
                                 <th class="col-tracking col-optional">跟踪偏离度</th>
