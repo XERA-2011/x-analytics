@@ -424,7 +424,7 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "default_return_1y": 113.55,
         "default_nav": 4.0901,
         "default_nav_date": "2026-07-23",
-        "default_asset_allocation": {"stock_pct": 79.68, "stock_us_pct": 72.4, "stock_hk_pct": 7.28, "cash_pct": 10.34, "bond_pct": 0.0},
+        "default_asset_allocation": {"stock_pct": 79.68, "stock_us_pct": 60.4, "stock_hk_pct": 7.28, "stock_cn_pct": 12.0, "cash_pct": 10.34, "bond_pct": 0.0},
     },
     {
         "code": "100055",
@@ -438,7 +438,7 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "default_return_1y": 68.04,
         "default_nav": 5.2659,
         "default_nav_date": "2026-07-23",
-        "default_asset_allocation": {"stock_pct": 89.18, "stock_us_pct": 71.1, "stock_hk_pct": 18.08, "cash_pct": 10.82, "bond_pct": 0.0},
+        "default_asset_allocation": {"stock_pct": 89.18, "stock_us_pct": 59.1, "stock_hk_pct": 18.08, "stock_cn_pct": 12.0, "cash_pct": 10.82, "bond_pct": 0.0},
     },
     {
         "code": "501312",
@@ -478,9 +478,9 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "tracking_error": "--",
         "inception_date": "2012-02-01",
         "default_return_1y": 89.9,
-        "default_nav": 2.7733,
+        "default_nav": 2.456,
         "default_nav_date": "2026-07-23",
-        "default_asset_allocation": {"stock_pct": 77.35, "stock_us_pct": 25.1, "stock_hk_pct": 52.25, "cash_pct": 12.82, "bond_pct": 0.0},
+        "default_asset_allocation": {"stock_pct": 87.18, "stock_hk_pct": 52.25, "stock_other_pct": 28.33, "stock_us_pct": 6.6, "cash_pct": 12.82, "bond_pct": 0.0},
     },
     {
         "code": "016664",
@@ -536,7 +536,7 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "default_return_1y": 64.18,
         "default_nav": 2.1056,
         "default_nav_date": "2026-07-23",
-        "default_asset_allocation": {"stock_pct": 74.55, "stock_us_pct": 52.1, "stock_hk_pct": 22.45, "cash_pct": 25.45, "bond_pct": 0.0},
+        "default_asset_allocation": {"stock_pct": 74.55, "stock_us_pct": 43.6, "stock_hk_pct": 22.45, "stock_cn_pct": 8.5, "cash_pct": 25.45, "bond_pct": 0.0},
     },
     {
         "code": "519696",
@@ -690,7 +690,7 @@ def fetch_fund_fee_rate(session: requests.Session, code: str) -> Optional[str]:
         return None
 
 
-@cached("qdii:passive_funds_v21", ttl=86400)
+@cached("qdii:passive_funds_v22", ttl=86400)
 def get_qdii_passive_funds() -> Dict[str, Any]:
     """获取国内纳斯达克100 & 标普500 场外被动 QDII A类基金数据列表
 
