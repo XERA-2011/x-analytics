@@ -338,7 +338,7 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "default_return_1y": 34.2,
         "default_nav": 4.3588,
         "default_nav_date": "2026-07-23",
-        "default_asset_allocation": {"stock_pct": 88.5, "stock_us_pct": 65.2, "stock_hk_pct": 23.3, "cash_pct": 11.5, "bond_pct": 0.0},
+        "default_asset_allocation": {"stock_pct": 88.5, "stock_us_pct": 48.0, "stock_hk_pct": 22.0, "stock_cn_pct": 18.5, "cash_pct": 11.5, "bond_pct": 0.0},
     },
     {
         "code": "005698",
@@ -690,7 +690,7 @@ def fetch_fund_fee_rate(session: requests.Session, code: str) -> Optional[str]:
         return None
 
 
-@cached("qdii:passive_funds_v20", ttl=86400)
+@cached("qdii:passive_funds_v21", ttl=86400)
 def get_qdii_passive_funds() -> Dict[str, Any]:
     """获取国内纳斯达克100 & 标普500 场外被动 QDII A类基金数据列表
 
