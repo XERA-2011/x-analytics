@@ -240,11 +240,19 @@ def fetch_url_via_proxy(
     timeout: int = 10,
     headers: Optional[Dict[str, str]] = None
 ) -> Optional[Any]:
-    """通过 Cloudflare Worker 中继代理抓取目标 URL（若未配置代理或代理失败，自动降级为直连抓取）"""
+    """必须通过 Cloudflare Worker 中继代理抓取目标 URL
+    
+    严格规则：代理链接为必选项。若未配置 CF_WORKER_PROXY_URL，或代理中继失败/非200，则绝不发起直连请求，直接放弃返回 None。
+    """
     import requests
 
     proxy_url = getattr(settings, "CF_WORKER_PROXY_URL", None)
     secret = getattr(settings, "CF_WORKER_SECRET_KEY", None)
+
+    # 1. 代理链接为必选项：未配置代理链接时，严格禁止发起任何直连网络请求
+    if not proxy_url:
+        logger.warning(f"⛔ CF_WORKER_PROXY_URL 未配置，严格放弃请求 [{url}]")
+        return None
 
     req_headers = headers.copy() if headers else {}
     if "User-Agent" not in req_headers:
@@ -253,27 +261,19 @@ def fetch_url_via_proxy(
             "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         )
 
-    fetcher = session.get if session else requests.get
+    p_headers = dict(req_headers)
+    p_headers["X-Target-URL"] = url
+    if secret:
+        p_headers["X-Proxy-Secret"] = secret
 
-    # 1. 若配置了代理链接，优先尝试代理抓取
-    if proxy_url:
-        try:
-            p_headers = dict(req_headers)
-            p_headers["X-Target-URL"] = url
-            if secret:
-                p_headers["X-Proxy-Secret"] = secret
-
-            res = fetcher(proxy_url, headers=p_headers, timeout=timeout)
-            if res.status_code == 200:
-                return res
-            logger.warning(f"⚠️ Worker 代理返回状态码 {res.status_code}，降级为直连请求 [{url}]")
-        except Exception as e:
-            logger.warning(f"⚠️ Worker 代理连接异常 [{url}]: {e}，降级为直连请求")
-
-    # 2. 未配置代理或代理中继失败时，自动降级发起直连请求
+    # 2. 仅向代理中继发起请求；失败或状态码非 200 时严格放弃，绝不发起直连
     try:
-        res = fetcher(url, headers=req_headers, timeout=timeout)
-        return res
+        fetcher = session.get if session else requests.get
+        res = fetcher(proxy_url, headers=p_headers, timeout=timeout)
+        if res.status_code == 200:
+            return res
+        logger.error(f"⛔ Worker 代理返回异常状态码 {res.status_code}，放弃请求 [{url}]")
+        return None
     except Exception as e:
-        logger.error(f"⛔ 直连请求失败 [{url}]: {e}")
+        logger.error(f"⛔ Worker 代理连接失败 [{url}]: {e}，放弃请求")
         return None
