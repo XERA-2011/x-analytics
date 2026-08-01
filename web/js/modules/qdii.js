@@ -205,7 +205,7 @@ class QDIIController {
                     📌 <strong>【标的基准】${indexName} 原生指数近1年收益：<span class="text-up-us">+${utils.formatPercentage(activeBenchmark)}</span></strong>
                 </div>
                 <div style="color: var(--text-tertiary); font-size: 0.9em;">
-                    🔵 美股 · 🟣 港股 · 🔴 A股 · 🟠 日韩/台股 · 🟢 现金 · ⚪ 未披露/其他 · 💡 点击基金名称/仓位查看重仓股
+                    🔵 美股 · 🟣 港股 · 🔴 A股 · 🟠 日韩/台股 · 🟢 现金 · ⚪ 未披露/其他
                 </div>
             </div>
         ` : (this.currentFilter === 'active' ? `
@@ -214,7 +214,7 @@ class QDIIController {
                     🎯 <strong>【主动型 QDII 精选】由基金经理团队进行全球多市场（美/港/A/日韩/台/印）主动选股与仓位管理</strong>
                 </div>
                 <div style="color: var(--text-tertiary); font-size: 0.9em;">
-                    按近 1 年收益降序 · 🔵 美股 · 🟣 港股 · 🔴 A股 · 🟠 日韩/台股 · 🟢 现金 · ⚪ 未披露 · 💡 点击基金名称/仓位查看重仓股
+                    🔵 美股 · 🟣 港股 · 🔴 A股 · 🟠 日韩/台股 · 🟢 现金 · ⚪ 未披露 
                 </div>
             </div>
         ` : '');
