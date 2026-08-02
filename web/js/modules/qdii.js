@@ -163,10 +163,15 @@ class QDIIController {
                     barHtml += `<div class="allocation-bar-unclassified" style="flex: 0 0 ${unclassifiedPct}%; width: ${unclassifiedPct}%;" title="其他/未披露资产: ${unclassifiedPct}%"></div>`;
                 }
 
+                let warningHtml = '';
+                if (item.allocation_estimated) {
+                    warningHtml = `<span class="alloc-warning-wrapper" title="提示：二季报官方国家/地区明细未完全披露，各地区占比为基于底层资产或历史持仓的估算参考值" style="cursor: help; display: inline-flex; align-items: center; margin-left: 2px;"><i data-lucide="alert-circle" style="width: 12px; height: 12px; color: var(--accent-red); vertical-align: middle;"></i></span>`;
+                }
+
                 allocHtml = `
                     <div class="allocation-cell" title="股票: ${stockPct}%${hasDetailed ? ' (美股 ' + (usPct || '0.0') + '%, 港股 ' + (hkPct || '0.0') + '%' + (cnPct ? ', A股 ' + cnPct + '%' : '') + (otherPct ? ', 其他/日韩 ' + otherPct + '%' : '') + ')' : ''}, 现金: ${cashPct}%">
                         <div class="allocation-text">
-                            ${allocLabel}
+                            ${allocLabel}${warningHtml}
                         </div>
                         <div class="allocation-bar-track">
                             ${barHtml}
@@ -254,6 +259,9 @@ class QDIIController {
                 }
             };
         });
+
+        // 渲染 Lucide 图标
+        if (window.lucide) lucide.createIcons();
     }
 
     async openHoldingsModal(code, name) {
