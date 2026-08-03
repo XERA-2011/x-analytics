@@ -1517,7 +1517,7 @@ footer {
 }
 
 .bar-inner.us-bg { background: #3b82f6; height: 100%; border-radius: 3px; }
-.bar-inner.cn-bg { background: #ef4444; height: 100%; border-radius: 3px; }
+.bar-inner.cn-bg { background: #b91c1c; height: 100%; border-radius: 3px; }
 
 /* Middle Grid */
 .ai-middle-grid {
@@ -1771,7 +1771,7 @@ footer {
 }
 
 .legend-dot-us { width: 10px; height: 10px; border-radius: 50%; background: #3b82f6; box-shadow: 0 0 6px rgba(59,130,246,0.5); }
-.legend-dot-cn { width: 10px; height: 10px; border-radius: 50%; background: #ef4444; box-shadow: 0 0 6px rgba(239,68,68,0.5); }
+.legend-dot-cn { width: 10px; height: 10px; border-radius: 50%; background: #b91c1c; box-shadow: 0 0 6px rgba(185,28,28,0.5); }
 
 /* 2. AI 泡沫温度计 SVG 熔炉刻度条 */
 .svg-thermo-container {
@@ -2122,7 +2122,7 @@ footer {
 
 .alloc-text-us { color: #2563eb; }
 .alloc-text-hk { color: #9333ea; }
-.alloc-text-cn { color: #ef4444; }
+.alloc-text-cn { color: #b91c1c; }
 .alloc-text-other { color: #ea580c; }
 .alloc-text-cash { color: #059669; }
 .alloc-text-bond { color: #d97706; }
@@ -2163,7 +2163,7 @@ footer {
 }
 
 .allocation-bar-cn {
-    background: #ef4444;
+    background: #b91c1c;
 }
 
 .allocation-bar-other {
@@ -2674,7 +2674,7 @@ footer {
 }
 .legend-us { background: #2563eb; }
 .legend-hk { background: #9333ea; }
-.legend-cn { background: #ef4444; }
+.legend-cn { background: #b91c1c; }
 .legend-other { background: #f97316; }
 .legend-cash { background: #10b981; }
 .legend-unclassified { background: #9ca3af; }
