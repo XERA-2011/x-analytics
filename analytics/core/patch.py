@@ -60,12 +60,12 @@ def _patched_request(self, method, url, *args, **kwargs):
     if "Cache-Control" not in headers:
         headers["Cache-Control"] = "max-age=0"
 
-    # 针对东方财富的特定伪装
+    # 针对东方财富的特定伪装 (仅在未显式指定时注入，避免覆盖第三方库自备的正确 Referer/Origin)
     if "eastmoney.com" in url or "em" in url:
-        headers["Referer"] = "https://quote.eastmoney.com/center/gridlist.html"
-        headers["Origin"] = "https://quote.eastmoney.com"
-        # 移除可能暴露身份的 Host (requests 会自动管理)
-        # headers["Host"] = "push2.eastmoney.com"
+        if "Referer" not in headers:
+            headers["Referer"] = "https://quote.eastmoney.com/center/gridlist.html"
+        if "Origin" not in headers:
+            headers["Origin"] = "https://quote.eastmoney.com"
 
     if "Upgrade-Insecure-Requests" not in headers:
         headers["Upgrade-Insecure-Requests"] = "1"
