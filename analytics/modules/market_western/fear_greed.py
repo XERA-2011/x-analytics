@@ -130,6 +130,10 @@ class USFearGreedIndex:
             # 使用自定义计算逻辑 (基于 AkShare 的 VIX 和 SP500)
             custom_data = USFearGreedIndex.calculate_custom_index()
             
+            # 由于 calculate_custom_index 带有 @cached 装饰器，其返回值可能已被 wrap_response 包装为 {"status": "ok", "data": {...}}
+            if isinstance(custom_data, dict) and "status" in custom_data and "data" in custom_data:
+                custom_data = custom_data["data"]
+
             if "error" in custom_data:
                 return build_fear_greed_error(
                     error=custom_data["error"],
