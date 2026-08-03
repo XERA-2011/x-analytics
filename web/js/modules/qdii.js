@@ -209,8 +209,13 @@ class QDIIController {
                 <div>
                     📌 <strong>【标的基准】${indexName} 原生指数近1年收益：<span class="text-up-us">+${utils.formatPercentage(activeBenchmark)}</span></strong>
                 </div>
-                <div style="color: var(--text-tertiary); font-size: 0.9em;">
-                    🔵 美股 · 🟣 港股 · 🔴 A股 · 🟠 日韩/台股 · 🟢 现金 · ⚪ 未披露/其他
+                <div style="color: var(--text-tertiary); font-size: 0.9em; display: flex; align-items: center; gap: 4px; flex-wrap: wrap;">
+                    <span class="legend-dot legend-us"></span>美股 · 
+                    <span class="legend-dot legend-hk"></span>港股 · 
+                    <span class="legend-dot legend-cn"></span>A股 · 
+                    <span class="legend-dot legend-other"></span>日韩/台股 · 
+                    <span class="legend-dot legend-cash"></span>现金 · 
+                    <span class="legend-dot legend-unclassified"></span>未披露/其他
                 </div>
             </div>
         ` : (this.currentFilter === 'active' ? `
@@ -218,8 +223,13 @@ class QDIIController {
                 <div>
                     🎯 <strong>【主动型 QDII 精选】由基金经理团队进行全球多市场（美/港/A/日韩/台/印）主动选股与仓位管理</strong>
                 </div>
-                <div style="color: var(--text-tertiary); font-size: 0.9em;">
-                    🔵 美股 · 🟣 港股 · 🔴 A股 · 🟠 日韩/台股 · 🟢 现金 · ⚪ 未披露 
+                <div style="color: var(--text-tertiary); font-size: 0.9em; display: flex; align-items: center; gap: 4px; flex-wrap: wrap;">
+                    <span class="legend-dot legend-us"></span>美股 · 
+                    <span class="legend-dot legend-hk"></span>港股 · 
+                    <span class="legend-dot legend-cn"></span>A股 · 
+                    <span class="legend-dot legend-other"></span>日韩/台股 · 
+                    <span class="legend-dot legend-cash"></span>现金 · 
+                    <span class="legend-dot legend-unclassified"></span>未披露
                 </div>
             </div>
         ` : '');

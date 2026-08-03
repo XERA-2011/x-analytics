@@ -2661,3 +2661,22 @@ footer {
     }
 }
 
+/* Legend Dots */
+.legend-dot {
+    display: inline-block;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    margin-right: 4px;
+    margin-left: 2px;
+    vertical-align: middle;
+    transform: translateY(-1px);
+}
+.legend-us { background: #2563eb; }
+.legend-hk { background: #9333ea; }
+.legend-cn { background: #ef4444; }
+.legend-other { background: #f97316; }
+.legend-cash { background: #10b981; }
+.legend-unclassified { background: #9ca3af; }
+
+
