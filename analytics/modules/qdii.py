@@ -833,9 +833,14 @@ def get_qdii_passive_funds() -> Dict[str, Any]:
 @cached("qdii:top_holdings_v3", ttl=86400 * 7, stale_ttl=86400 * 30, sync_on_cold=True)
 def get_qdii_top_holdings(code: str) -> Dict[str, Any]:
     """获取 QDII 基金最新披露的前十大重仓股票列表"""
+    # 联接基金到目标 ETF 的映射，当联接基金本身无持仓披露时，自动穿透到目标 ETF 获取底层持仓
+    FEEDER_TO_TARGET_ETF = {
+        "019454": "513310",  # 华泰柏瑞中韩半导体联接A -> 华泰柏瑞中韩半导体ETF
+    }
+    fetch_code = FEEDER_TO_TARGET_ETF.get(code, code)
     try:
         session = requests.Session()
-        url = f"http://fundf10.eastmoney.com/FundArchivesDatas.aspx?type=jjcc&code={code}&topline=10"
+        url = f"http://fundf10.eastmoney.com/FundArchivesDatas.aspx?type=jjcc&code={fetch_code}&topline=10"
         
         # 使用代理获取 (根据项目安全规范，严格禁止直连回退)
         res = fetch_url_via_proxy(url, session=session, timeout=6)
