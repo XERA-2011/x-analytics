@@ -12,7 +12,8 @@ import re
 import bs4
 import pandas as pd
 import akshare as ak
-from ..core.cache import cached
+from ..core.cache import cached, cache
+from ..core.config import settings
 from ..core.utils import akshare_call_with_retry, safe_float, fetch_url_via_proxy
 
 # 目标 QDII 基金基础元数据注册表 (纳斯达克100 与 标普500 场外 A类基金，提供基准行情与后备数据)
@@ -619,6 +620,13 @@ def fetch_us_index_returns() -> Dict[str, Dict[str, Any]]:
 
 def fetch_fund_asset_allocation(session: requests.Session, code: str) -> Optional[Dict[str, Any]]:
     """获取指定 QDII 场外联接/被动基金的最新真实资产/持仓配置（股票/权益 %、现金/货币 %）"""
+    cache_key = f"{settings.CACHE_PREFIX}:qdii:asset_alloc:{code}"
+    try:
+        cached_val = cache.get(cache_key)
+        if cached_val is not None:
+            return cached_val
+    except Exception:
+        pass
     try:
         url = f"https://fundf10.eastmoney.com/zcpz_{code}.html"
         res = fetch_url_via_proxy(url, session=session, timeout=6)
@@ -655,12 +663,17 @@ def fetch_fund_asset_allocation(session: requests.Session, code: str) -> Optiona
         # 被动 QDII 权益/股票/目标ETF持仓 = 100% - 现金货币比例
         equity_val = max(0.0, round(100.0 - cash_val, 2))
 
-        return {
+        result = {
             "stock_pct": equity_val,
             "cash_pct": cash_val,
             "bond_pct": 0.0,
             "report_date": selected_row[0]
         }
+        try:
+            cache.set(cache_key, result, ttl=86400 * 15)
+        except Exception:
+            pass
+        return result
     except Exception as e:
         print(f"⚠️ 资产配置获取跳过 [{code}]: {e}")
         return None
@@ -668,6 +681,13 @@ def fetch_fund_asset_allocation(session: requests.Session, code: str) -> Optiona
 
 def fetch_fund_fee_rate(session: requests.Session, code: str) -> Optional[str]:
     """获取指定基金的最新综合运营费率（管理费率 + 托管费率 + 销售服务费率）"""
+    cache_key = f"{settings.CACHE_PREFIX}:qdii:fee_rate:{code}"
+    try:
+        cached_val = cache.get(cache_key)
+        if cached_val is not None:
+            return cached_val
+    except Exception:
+        pass
     try:
         url = f"https://fundf10.eastmoney.com/jjfl_{code}.html"
         res = fetch_url_via_proxy(url, session=session, timeout=6)
@@ -689,7 +709,12 @@ def fetch_fund_fee_rate(session: requests.Session, code: str) -> Optional[str]:
                 break
         total = round(m_val + c_val + s_val, 2)
         if total > 0:
-            return f"{total:.2f}%"
+            result = f"{total:.2f}%"
+            try:
+                cache.set(cache_key, result, ttl=86400 * 30)
+            except Exception:
+                pass
+            return result
         return None
     except Exception as e:
         print(f"⚠️ 费率获取跳过 [{code}]: {e}")
