@@ -10,6 +10,8 @@ from concurrent.futures import ThreadPoolExecutor
 import requests
 import re
 import bs4
+import time
+from datetime import datetime
 import pandas as pd
 import akshare as ak
 from ..core.cache import cached, cache
@@ -618,16 +620,46 @@ def fetch_us_index_returns() -> Dict[str, Dict[str, Any]]:
     return benchmarks
 
 
+
+def _is_quarterly_report_window() -> bool:
+    """判断当前是否处于公募基金季报集中披露窗口期（每季末后15天~40天左右）"""
+    today = datetime.now()
+    month, day = today.month, today.day
+    # 季报披露集中期：1/15~2/5, 4/15~5/5, 7/15~8/5, 10/15~11/5
+    windows = [(1, 15, 2, 5), (4, 15, 5, 5), (7, 15, 8, 5), (10, 15, 11, 5)]
+    for sm, sd, em, ed in windows:
+        if (month == sm and day >= sd) or (month == em and day <= ed):
+            return True
+    return False
+
+
 def fetch_fund_asset_allocation(session: requests.Session, code: str) -> Optional[Dict[str, Any]]:
     """获取指定 QDII 场外联接/被动基金的最新真实资产/持仓配置（股票/权益 %、现金/货币 %）"""
     cache_key = f"{settings.CACHE_PREFIX}:qdii:asset_alloc:{code}"
     try:
         cached_val = cache.get(cache_key)
         if cached_val is not None:
-            return cached_val
+            # 智能判断：如果不处于季报发布窗口期，直接返回缓存
+            if not _is_quarterly_report_window():
+                return cached_val
+            # 如果处于窗口期，检查已有的 report_date 是不是就是最新的目标季度报告
+            report_date = cached_val.get("report_date", "")
+            if report_date:
+                today = datetime.now()
+                # 季报截止日预测映射：4-5月最新为 3-31；7-8月为 6-30；10-11月为 9-30；1-2月为上年 12-31
+                expected_quarters = {
+                    1: f"{today.year-1}-12-31", 2: f"{today.year-1}-12-31",
+                    4: f"{today.year}-03-31", 5: f"{today.year}-03-31",
+                    7: f"{today.year}-06-30", 8: f"{today.year}-06-30",
+                    10: f"{today.year}-09-30", 11: f"{today.year}-09-30"
+                }
+                expected_date = expected_quarters.get(today.month)
+                if expected_date and report_date == expected_date:
+                    return cached_val
     except Exception:
         pass
     try:
+        time.sleep(0.2)  # 延时分散并发请求，防代理超时
         url = f"https://fundf10.eastmoney.com/zcpz_{code}.html"
         res = fetch_url_via_proxy(url, session=session, timeout=6)
         if not res or res.status_code != 200:
@@ -670,7 +702,7 @@ def fetch_fund_asset_allocation(session: requests.Session, code: str) -> Optiona
             "report_date": selected_row[0]
         }
         try:
-            cache.set(cache_key, result, ttl=86400 * 15)
+            cache.set(cache_key, result, ttl=86400 * 50)  # 资产配置缓存 50 天
         except Exception:
             pass
         return result
@@ -689,6 +721,7 @@ def fetch_fund_fee_rate(session: requests.Session, code: str) -> Optional[str]:
     except Exception:
         pass
     try:
+        time.sleep(0.2)  # 延时分散并发请求，防代理超时
         url = f"https://fundf10.eastmoney.com/jjfl_{code}.html"
         res = fetch_url_via_proxy(url, session=session, timeout=6)
         if not res or res.status_code != 200:
@@ -711,7 +744,7 @@ def fetch_fund_fee_rate(session: requests.Session, code: str) -> Optional[str]:
         if total > 0:
             result = f"{total:.2f}%"
             try:
-                cache.set(cache_key, result, ttl=86400 * 30)
+                cache.set(cache_key, result, ttl=86400 * 90)  # 费率缓存 90 天
             except Exception:
                 pass
             return result
@@ -763,7 +796,7 @@ def get_qdii_passive_funds() -> Dict[str, Any]:
     fee_map: Dict[str, str] = {}
     try:
         session = requests.Session()
-        with ThreadPoolExecutor(max_workers=12) as executor:
+        with ThreadPoolExecutor(max_workers=4) as executor:  # 降到 4 线程并发，保证代理接口稳定性
             alloc_futures = {executor.submit(fetch_fund_asset_allocation, session, code): code for code in target_codes}
             fee_futures = {executor.submit(fetch_fund_fee_rate, session, code): code for code in target_codes}
             
