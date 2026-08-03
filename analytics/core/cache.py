@@ -255,7 +255,7 @@ def wrap_response(
     return response
 
 
-def cached(key_prefix: str, ttl: int = 60, stale_ttl: Optional[int] = None):
+def cached(key_prefix: str, ttl: int = 60, stale_ttl: Optional[int] = None, sync_on_cold: bool = False):
     """
     缓存装饰器 (支持防雪崩和陈旧数据返回)
 
@@ -348,12 +348,53 @@ def cached(key_prefix: str, ttl: int = 60, stale_ttl: Optional[int] = None):
             # 3. 需要刷新数据
             if should_refresh:
                 
-                # 使用后台线程进行异步刷新，确保不阻塞当前请求
-                # 这种模式保证了：
-                # 1. 用户请求永远立即返回 (要么是数据，要么是 warming_up)
-                # 2. 只有在此进程中未运行任务时才启动新线程 (减少开销)
-                # 3. 利用 Redis 锁确保分布式环境下的单一执行
+                # 冷启动同步模式：首次无缓存时阻塞等待结果，避免返回 warming_up
+                if sync_on_cold and not return_stale:
+                    lock_key = f"refresh:{cache_key}"
+                    try:
+                        lock = cache.lock(lock_key, timeout=30, blocking_timeout=0)
+                        if lock.acquire(blocking=False):
+                            try:
+                                logger.info(f"[Sync] 冷启动同步计算: {key_prefix}")
+                                result = func(*args, **kwargs)
+                                if result is not None:
+                                    is_error = False
+                                    if isinstance(result, dict) and "error" in result:
+                                        is_valid = False
+                                        for k in ["sectors", "stocks", "data", "indices", "items"]:
+                                            if k in result and result[k]:
+                                                is_valid = True
+                                                break
+                                        if not is_valid:
+                                            is_error = True
+                                    if not is_error:
+                                        current_now = time.time()
+                                        p_ttl = ttl + (stale_ttl if stale_ttl else 0)
+                                        val = {
+                                            "_meta": {
+                                                "expire_at": current_now + ttl,
+                                                "cached_at": current_now,
+                                                "ttl": ttl
+                                            },
+                                            "data": result
+                                        }
+                                        cache.set(cache_key, val, p_ttl)
+                                        logger.info(f"[Sync] 冷启动缓存写入完成: {key_prefix}")
+                                        return wrap_response(
+                                            status="ok",
+                                            data=result,
+                                            cached_at=current_now,
+                                            ttl=ttl
+                                        )
+                            finally:
+                                try:
+                                    lock.release()
+                                except Exception:
+                                    pass
+                    except Exception as e:
+                        logger.warning(f"[Sync] 冷启动同步计算失败，降级为异步: {e}")
                 
+                # 异步刷新：后台线程计算，主线程立即返回
                 if cache_key not in cache._inflight_tasks:
                     
                     def async_refresh_task():

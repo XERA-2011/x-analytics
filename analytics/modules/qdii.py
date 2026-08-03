@@ -830,7 +830,7 @@ def get_qdii_passive_funds() -> Dict[str, Any]:
     }
 
 
-@cached("qdii:top_holdings_v3", ttl=86400 * 7, stale_ttl=86400 * 30)
+@cached("qdii:top_holdings_v3", ttl=86400 * 7, stale_ttl=86400 * 30, sync_on_cold=True)
 def get_qdii_top_holdings(code: str) -> Dict[str, Any]:
     """获取 QDII 基金最新披露的前十大重仓股票列表"""
     try:
