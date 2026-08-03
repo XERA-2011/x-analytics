@@ -28,6 +28,7 @@ PUBLIC_API_PATHS = [
     "/metals/",
     "/etf/",
     "/ai/",
+    "/qdii/",
     "/analytics/api/",
     "/analytics/market-asia/",
     "/analytics/market-hk/",
@@ -35,6 +36,7 @@ PUBLIC_API_PATHS = [
     "/analytics/metals/",
     "/analytics/etf/",
     "/analytics/ai/",
+    "/analytics/qdii/",
 ]
 
 # 静态资源 / 健康检查路径（不限流）
