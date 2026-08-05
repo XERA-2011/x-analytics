@@ -771,25 +771,28 @@ def get_qdii_passive_funds() -> Dict[str, Any]:
             "nav_date": info.get("nav_date"),
         }
 
-    # 2. 尝试 AKShare / 东方财富获取实时近1年收益率
+    # 2. 尝试 雪球 并发获取每个基金的真实近1年收益率 (复权净值计算，精确剔除分拆与折算误差)
     try:
-        df_rank = akshare_call_with_retry(ak.fund_open_fund_rank_em, symbol="QDII")
-        if df_rank is not None and not df_rank.empty:
-            for _, row in df_rank.iterrows():
-                code = str(row.get("基金代码", "")).zfill(6)
-                r_1y = safe_float(row.get("近1年"), default=None)
-                nav = safe_float(row.get("单位净值"), default=None)
-                date_str = str(row.get("日期", ""))
+        def fetch_xq_return(code):
+            try:
+                df = ak.fund_individual_achievement_xq(symbol=code)
+                if df is not None and not df.empty:
+                    row = df[(df["业绩类型"] == "阶段业绩") & (df["周期"] == "近1年")]
+                    if not row.empty:
+                        return code, float(row.iloc[0]["本产品区间收益"])
+            except Exception as e:
+                print(f"⚠️ 雪球获取收益率失败 [{code}]: {e}")
+            return code, None
 
-                if code not in rank_map:
-                    rank_map[code] = {}
-                if r_1y is not None:
-                    rank_map[code]["return_1y"] = r_1y
-                if nav is not None and "nav" not in rank_map[code]:
-                    rank_map[code]["nav"] = nav
-                    rank_map[code]["nav_date"] = date_str
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            results = executor.map(fetch_xq_return, target_codes)
+            for c, r_val in results:
+                if r_val is not None:
+                    if c not in rank_map:
+                        rank_map[c] = {}
+                    rank_map[c]["return_1y"] = r_val
     except Exception as err:
-        print(f"⚠️ 东财实时排行获取跳过 (已使用高质量基准/新浪行情): {err}")
+        print(f"⚠️ 雪球并发获取收益率总入口报错: {err}")
 
     # 3. 并发获取所有 QDII 基金的真实资产配置仓位与动态费率
     alloc_map: Dict[str, Dict[str, Any]] = {}
