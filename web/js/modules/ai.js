@@ -238,7 +238,7 @@ class AIMarketController {
                                     ${webPolysHtml}
                                     ${axisLines.join('')}
                                     <polygon points="${usPoints.join(' ')}" fill="rgba(59,130,246,0.25)" stroke="#3b82f6" stroke-width="2" class="radar-poly-us"/>
-                                    <polygon points="${cnPoints.join(' ')}" fill="rgba(239,68,68,0.25)" stroke="#ef4444" stroke-width="2" class="radar-poly-cn"/>
+                                    <polygon points="${cnPoints.join(' ')}" fill="rgba(222,41,16,0.25)" stroke="#de2910" stroke-width="2" class="radar-poly-cn"/>
                                     ${labels.join('')}
                                 </svg>
                                 <div class="svg-radar-legend">
@@ -418,9 +418,9 @@ class AIMarketController {
 
                                     <!-- 中国打点 -->
                                     <g transform="translate(${cnX}, ${cnY})">
-                                        <circle r="6" fill="#dc2626" class="clock-point-pulse"/>
-                                        <rect x="8" y="-10" width="115" height="18" rx="4" fill="rgba(255,255,255,0.92)" stroke="rgba(220,38,38,0.3)"/>
-                                        <text x="12" y="2" font-size="9" font-weight="700" fill="#991b1b">中 (${investment_clock?.cn_position?.stage})</text>
+                                        <circle r="6" fill="#de2910" class="clock-point-pulse"/>
+                                        <rect x="8" y="-10" width="115" height="18" rx="4" fill="rgba(255,255,255,0.92)" stroke="rgba(222,41,16,0.3)"/>
+                                        <text x="12" y="2" font-size="9" font-weight="700" fill="#de2910">中 (${investment_clock?.cn_position?.stage})</text>
                                     </g>
                                 </svg>
                             </div>
