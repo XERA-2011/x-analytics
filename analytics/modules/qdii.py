@@ -839,7 +839,7 @@ def fetch_fund_fee_rate(session: requests.Session, code: str) -> Optional[str]:
         return None
 
 
-@cached("qdii:passive_funds_v23", ttl=86400)
+@cached("qdii:passive_funds_v24", ttl=86400)
 def get_qdii_passive_funds() -> Dict[str, Any]:
     """获取国内纳斯达克100 & 标普500 场外被动 QDII A类基金数据列表
 
@@ -908,7 +908,21 @@ def get_qdii_passive_funds() -> Dict[str, Any]:
     except Exception as err:
         print(f"⚠️ 资产配置与费率并发抓取跳过: {err}")
 
-    # 4. 获取原生指数收益对标基准
+    # 4. 获取所有注册基金的场外日常申购限额状态 (开放申购/限大额/暂停申购)
+    status_map: Dict[str, str] = {}
+    try:
+        df_daily = ak.fund_open_fund_daily_em()
+        if df_daily is not None and not df_daily.empty:
+            for _, row in df_daily.iterrows():
+                code = row.get("基金代码")
+                if code in target_codes:
+                    status = row.get("申购状态")
+                    if status:
+                        status_map[code] = status
+    except Exception as err:
+        print(f"⚠️ 天天基金获取每日申购状态报错: {err}")
+
+    # 5. 获取原生指数收益对标基准
     benchmarks = fetch_us_index_returns()
 
     funds_list: List[Dict[str, Any]] = []
@@ -945,6 +959,7 @@ def get_qdii_passive_funds() -> Dict[str, Any]:
             asset_alloc = default_alloc
 
         fee_rate = fee_map.get(code) or item["fee_rate"]
+        buy_status = status_map.get(code) or "开放申购"
 
         funds_list.append({
             "code": code,
@@ -960,6 +975,7 @@ def get_qdii_passive_funds() -> Dict[str, Any]:
             "asset_allocation": asset_alloc,
             "allocation_estimated": item.get("allocation_estimated", False),
             "tag": item.get("tag"),
+            "buy_status": buy_status,
         })
 
     # 按 近1年收益 (return_1y) 降序排序

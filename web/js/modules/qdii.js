@@ -182,6 +182,17 @@ class QDIIController {
 
             const tagHtml = item.tag ? `<span class="fund-tag" style="background: rgba(222,41,16,0.08); color: #de2910; font-size: 10px; padding: 1px 4px; border-radius: 3px; font-weight: 600; margin-left: 6px; border: 1px solid rgba(222,41,16,0.25); display: inline-block; vertical-align: middle; transform: translateY(-1.5px);">${item.tag}</span>` : '';
 
+            const buyStatus = item.buy_status || '开放申购';
+            let statusText = '开放';
+            let statusClass = 'status-open';
+            if (buyStatus === '限大额') {
+                statusText = '限额';
+                statusClass = 'status-limit';
+            } else if (buyStatus.includes('暂停')) {
+                statusText = '暂停';
+                statusClass = 'status-paused';
+            }
+
             return `
                 <tr>
                     <td class="col-rank"><span class="rank-badge ${rankBadgeClass}">${rank}</span></td>
@@ -195,8 +206,15 @@ class QDIIController {
                         </div>
                     </td>
                     <td class="col-allocation qdii-clickable" data-code="${item.code}" data-name="${item.name}" title="点击查看 ${item.name} 前十大重仓股">${allocHtml}</td>
-                    <td class="col-return font-mono ${r1yClass}" style="font-weight: 700;">${r1yStr}</td>
+                    <td class="col-return font-mono ${r1yClass}" style="font-weight: 700;">
+                        <span class="desktop-return">${r1yStr}</span>
+                        <div class="mobile-return-layout">
+                            <span class="mobile-return-val">${r1yStr}</span>
+                            <span class="mobile-fee-val">${item.fee_rate}</span>
+                        </div>
+                    </td>
                     <td class="col-fee font-mono">${item.fee_rate}</td>
+                    <td class="col-status"><span class="status-badge ${statusClass}">${statusText}</span></td>
                     ${!isActiveTab ? `
                         <td class="col-gap font-mono" style="color: var(--text-tertiary);">${benchmarkGapStr}</td>
                         <td class="col-tracking col-optional font-mono">${item.tracking_error || '--'}</td>
@@ -245,8 +263,12 @@ class QDIIController {
                             <th class="col-rank">排名</th>
                             <th class="col-name">基金名称</th>
                             <th class="col-allocation">资产配置 / 仓位</th>
-                            <th class="col-return">近1年收益</th>
+                            <th class="col-return">
+                                <span class="desktop-header">近1年收益</span>
+                                <span class="mobile-header">收益/费率</span>
+                            </th>
                             <th class="col-fee">综合费率</th>
+                            <th class="col-status">状态</th>
                             ${!isActiveTab ? `
                                 <th class="col-gap">对标差距</th>
                                 <th class="col-tracking col-optional">跟踪偏离度</th>
