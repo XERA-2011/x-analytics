@@ -2337,7 +2337,7 @@ footer {
         width: 76px;
     }
     .col-gap {
-        width: 62px;
+        display: none !important;
     }
     .col-allocation {
         display: none !important;
