@@ -162,7 +162,18 @@ class AIOverview:
             except Exception as fb_err:
                 logger.warning(f"⚠️ A股 AI 核心龙头拉取失败: {fb_err}")
 
-            if not cn_ai_sectors:
+            # 检查 A股 板块行情是否为空或处于非交易时间（所有板块涨跌幅为 0 且无有效领涨股）
+            is_empty_market = True
+            if cn_ai_sectors:
+                for s in cn_ai_sectors:
+                    if s.get("change_pct", 0.0) != 0.0 or (s.get("top_stock") and s["top_stock"] not in ("", "--")):
+                        is_empty_market = False
+                        break
+            else:
+                is_empty_market = True
+
+            # 若板块无有效数据，强制使用 A股 核心龙头个股（有收盘价/实时价格）支撑 L6，避免展示空白占位符
+            if is_empty_market and cn_ai_leaders:
                 cn_ai_sectors = cn_ai_leaders[:]
 
             # 3. 7 层产业链数据计算
