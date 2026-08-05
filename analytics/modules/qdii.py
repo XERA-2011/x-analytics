@@ -297,6 +297,20 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "default_asset_allocation": {"stock_pct": 96.02, "cash_pct": 3.98, "bond_pct": 0.0},
     },
     {
+        "code": "017091",
+        "name": "景顺长城纳斯达克科技ETF联接(QDII)A",
+        "index_code": "NDX",
+        "index_name": "纳指科技",
+        "fee_rate": "1.00%",
+        "tracking_error": "--",
+        "inception_date": "2023-08-31",
+        "default_return_1y": 31.28,
+        "default_nav": 2.8137,
+        "default_nav_date": "2026-08-03",
+        "default_asset_allocation": {"stock_pct": 93.46, "cash_pct": 6.54, "bond_pct": 0.0},
+        "tag": "纳指科技",
+    },
+    {
         "code": "007721",
         "name": "天弘标普500发起(QDII-FOF)A",
         "index_code": "SPX",
@@ -945,6 +959,7 @@ def get_qdii_passive_funds() -> Dict[str, Any]:
             "return_1y": final_r1y,
             "asset_allocation": asset_alloc,
             "allocation_estimated": item.get("allocation_estimated", False),
+            "tag": item.get("tag"),
         })
 
     # 按 近1年收益 (return_1y) 降序排序

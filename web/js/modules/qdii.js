@@ -180,13 +180,15 @@ class QDIIController {
                 `;
             }
 
+            const tagHtml = item.tag ? `<span class="fund-tag" style="background: rgba(222,41,16,0.08); color: #de2910; font-size: 10px; padding: 1px 4px; border-radius: 3px; font-weight: 600; margin-left: 6px; border: 1px solid rgba(222,41,16,0.25); display: inline-block; vertical-align: middle; transform: translateY(-1.5px);">${item.tag}</span>` : '';
+
             return `
                 <tr>
                     <td class="col-rank"><span class="rank-badge ${rankBadgeClass}">${rank}</span></td>
                     <td class="col-name qdii-clickable" data-code="${item.code}" data-name="${item.name}" title="点击查看 ${item.name} 前十大重仓股">
                         <div class="qdii-name-wrapper">
                             <span class="qdii-code-text">${item.code}</span>
-                            <span class="qdii-name-text" style="color: var(--primary); font-weight: 600;">${item.name}</span>
+                            <span class="qdii-name-text" style="color: var(--primary); font-weight: 600;">${item.name}</span>${tagHtml}
                             <div class="qdii-alloc-mobile">
                                 ${allocHtml}
                             </div>
