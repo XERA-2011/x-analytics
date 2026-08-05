@@ -270,6 +270,57 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "default_nav": 1.4980,
         "default_nav_date": "2026-07-23",
         "default_asset_allocation": {"stock_pct": 94.20, "cash_pct": 5.80, "bond_pct": 0.0},
+    },    {
+        "code": "016532",
+        "name": "嘉实纳斯达克100ETF发起联接(QDII)A人民币",
+        "index_code": "NDX",
+        "index_name": "纳斯达克100",
+        "fee_rate": "0.60%",
+        "tracking_error": "0.32%",
+        "inception_date": "2022-11-18",
+        "default_return_1y": 18.44,
+        "default_nav": 2.1243,
+        "default_nav_date": "2026-08-03",
+        "default_asset_allocation": {"stock_pct": 91.04, "cash_pct": 8.96, "bond_pct": 0.0},
+    },
+    {
+        "code": "015299",
+        "name": "华夏纳斯达克100ETF发起式联接(QDII)A",
+        "index_code": "NDX",
+        "index_name": "纳斯达克100",
+        "fee_rate": "0.80%",
+        "tracking_error": "0.29%",
+        "inception_date": "2022-09-20",
+        "default_return_1y": 18.10,
+        "default_nav": 1.9916,
+        "default_nav_date": "2026-08-03",
+        "default_asset_allocation": {"stock_pct": 96.02, "cash_pct": 3.98, "bond_pct": 0.0},
+    },
+    {
+        "code": "007721",
+        "name": "天弘标普500发起(QDII-FOF)A",
+        "index_code": "SPX",
+        "index_name": "标普500",
+        "fee_rate": "0.80%",
+        "tracking_error": "0.28%",
+        "inception_date": "2019-09-24",
+        "default_return_1y": 14.51,
+        "default_nav": 2.2380,
+        "default_nav_date": "2026-08-03",
+        "default_asset_allocation": {"stock_pct": 96.18, "cash_pct": 3.82, "bond_pct": 0.0},
+    },
+    {
+        "code": "017028",
+        "name": "国泰标普500ETF发起联接(QDII)A人民币",
+        "index_code": "SPX",
+        "index_name": "标普500",
+        "fee_rate": "0.75%",
+        "tracking_error": "0.27%",
+        "inception_date": "2023-03-01",
+        "default_return_1y": 14.94,
+        "default_nav": 1.7096,
+        "default_nav_date": "2026-08-03",
+        "default_asset_allocation": {"stock_pct": 95.89, "cash_pct": 4.11, "bond_pct": 0.0},
     },
 
     # --- 主动型 QDII 精选 (参考 DCA HUB 推荐列表) ---
@@ -568,7 +619,12 @@ def fetch_sina_fund_navs(codes: List[str]) -> Dict[str, Dict[str, Any]]:
     """使用新浪财经 API 极速批量获取基金最新净值 (毫秒级响应，防封禁)"""
     res: Dict[str, Dict[str, Any]] = {}
     try:
-        query = ",".join([f"fu_{c}" for c in codes])
+        # 同时查询 fu_ (QDII类) 和 f_ (普通开放式类) 两种前缀，确保新发行或不同分类基金均有数据
+        query_items = []
+        for c in codes:
+            query_items.append(f"fu_{c}")
+            query_items.append(f"f_{c}")
+        query = ",".join(query_items)
         url = f"http://hq.sinajs.cn/list={query}"
         headers = {"Referer": "http://finance.sina.com.cn"}
         r = requests.get(url, headers=headers, timeout=3)
@@ -576,18 +632,33 @@ def fetch_sina_fund_navs(codes: List[str]) -> Dict[str, Dict[str, Any]]:
             for line in r.text.strip().split("\n"):
                 if "=" in line and '""' not in line:
                     parts = line.split("=")
-                    code = parts[0].strip().replace("var hq_str_fu_", "")
+                    var_name = parts[0].strip()
+                    is_fu = "hq_str_fu_" in var_name
+                    code = var_name.replace("var hq_str_fu_", "").replace("var hq_str_f_", "")
                     content = parts[1].strip('";').split(",")
-                    if len(content) >= 8 and content[2]:
-                        try:
-                            nav_val = float(content[2])
-                            date_str = content[7]
+                    
+                    try:
+                        if is_fu:
+                            if len(content) >= 8 and content[2]:
+                                nav_val = float(content[2])
+                                date_str = content[7]
+                            else:
+                                continue
+                        else:
+                            if len(content) >= 5 and content[1]:
+                                nav_val = float(content[1])
+                                date_str = content[4]
+                            else:
+                                continue
+                                
+                        # 如果是新数据，或者日期更新，则进行覆盖/保存
+                        if code not in res or date_str > res[code]["nav_date"]:
                             res[code] = {
                                 "nav": nav_val,
                                 "nav_date": date_str
                             }
-                        except (ValueError, IndexError):
-                            pass
+                    except (ValueError, IndexError):
+                        pass
     except Exception as e:
         print(f"⚠️ 新浪基金行情抓取跳过: {e}")
     return res
