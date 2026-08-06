@@ -200,9 +200,9 @@ class QDIIController {
                         <div class="qdii-name-wrapper">
                             <div style="display: flex; align-items: center; gap: 4px; flex-wrap: wrap;">
                                 <span class="qdii-code-text">${item.code}</span>
-                                <span class="tag-mobile">${tagHtml}</span>
+                                ${tagHtml}
                             </div>
-                            <span class="qdii-name-text" style="color: var(--primary); font-weight: 600;">${item.name}</span><span class="tag-desktop">${tagHtml}</span>
+                            <span class="qdii-name-text" style="color: var(--primary); font-weight: 600;">${item.name}</span>
                             <div class="qdii-alloc-mobile">
                                 ${allocHtml}
                             </div>
