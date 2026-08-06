@@ -1147,12 +1147,22 @@ def _fetch_full_holdings_count(session: requests.Session, fetch_code: str, defau
     return default_count
 
 
-@cached("qdii:top_holdings_v9", ttl=86400 * 7, stale_ttl=86400 * 30, sync_on_cold=True)
+@cached("qdii:top_holdings_v10", ttl=86400 * 7, stale_ttl=86400 * 30, sync_on_cold=True)
 def get_qdii_top_holdings(code: str) -> Dict[str, Any]:
     """获取 QDII 基金最新披露的重仓持仓股票列表（升级支持最大100只完整持仓）"""
     # 联接基金到目标 ETF 的映射，当联接基金本身无持仓披露时，自动穿透到目标 ETF 获取底层持仓
     FEEDER_TO_TARGET_ETF = {
         "019454": "513310",  # 华泰柏瑞中韩半导体联接A -> 华泰柏瑞中韩半导体ETF
+        "017894": "513290",  # 汇添富纳斯达克生物科技联接A -> 纳斯达克生物科技ETF
+        "019547": "513100",  # 招商纳斯达克100联接A -> 国泰纳斯达克100ETF
+        "019441": "513100",  # 万家纳斯达克100联接A -> 国泰纳斯达克100ETF
+        "016452": "513100",  # 南方纳斯达克100联接A -> 国泰纳斯达克100ETF
+        "019524": "513100",  # 华泰柏瑞纳斯达克100联接A -> 国泰纳斯达克100ETF
+        "018966": "513100",  # 汇添富纳斯达克100联接A -> 国泰纳斯达克100ETF
+        "015299": "513100",  # 华夏纳斯达克100联接A -> 国泰纳斯达克100ETF
+        "050025": "513500",  # 博时标普500联接A -> 博时标普500ETF
+        "007721": "513500",  # 天弘标普500 FOF -> 博时标普500ETF
+        "017028": "513500",  # 国泰标普500联接A -> 博时标普500ETF
     }
     fetch_code = FEEDER_TO_TARGET_ETF.get(code, code)
     try:
