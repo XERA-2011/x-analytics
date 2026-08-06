@@ -921,8 +921,8 @@ def _generate_active_fund_tag(item: Dict[str, Any], total_count: int, top10_conc
         return "新能源车"
     if "半导体" in name or "芯片" in name or code == "019454":
         return "中韩芯片"
-    if "新兴市场" in name:
-        return "新兴市场"
+    if "新兴市场" in name or code == "539002":
+        return "全球芯片"
     if total_count >= 150:
         return "广泛分散"
     stock_pct = alloc.get("stock_pct", 0.0)
@@ -955,7 +955,7 @@ def _generate_active_fund_tag(item: Dict[str, Any], total_count: int, top10_conc
     return "均衡配置"
 
 
-@cached("qdii:passive_funds_v28", ttl=86400)
+@cached("qdii:passive_funds_v29", ttl=86400)
 def get_qdii_passive_funds() -> Dict[str, Any]:
     """获取国内纳斯达克100 & 标普500 场外被动 QDII A类基金数据列表
 
