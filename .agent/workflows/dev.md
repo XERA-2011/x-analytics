@@ -16,8 +16,8 @@ Determine which file types will be modified based on the user's request:
 
 Read the relevant skill documents:
 
-- **For Python files**: Read `.agent/skills/python_development/SKILL.md`
-- **For Frontend files**: Read `.agent/skills/frontend_development/SKILL.md`
+- **For Python files**: Read `.agent/skills/python-development/SKILL.md`
+- **For Frontend files**: Read `.agent/skills/frontend-development/SKILL.md`
 - **For Deployment & Operations**: Read `.agent/skills/deployment-and-ops/SKILL.md`
 
 If multiple types are involved, read all relevant skills.

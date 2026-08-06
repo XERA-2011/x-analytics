@@ -1,5 +1,5 @@
 ---
-name: Python Development Standards
+name: python-development
 description: "⚠️ MANDATORY: Read before modifying ANY .py files. Contains Python 3.9 syntax requirements, caching patterns, and anti-scraping rules."
 ---
 
@@ -134,8 +134,8 @@ grep -rn " | None" analytics/ --include="*.py"
 ## 📚 Lessons Learned Reminder
 
 > After resolving major issues or discovering new best practices, check if the following files need updates:
-> - `.agent/skills/python_development/SKILL.md` - Python development guidelines
-> - `.agent/skills/frontend_development/SKILL.md` - Frontend development guidelines
+> - `.agent/skills/python-development/SKILL.md` - Python development guidelines
+> - `.agent/skills/frontend-development/SKILL.md` - Frontend development guidelines
 > - `.agent/workflows/*.md` - Workflow configurations
 
 ---

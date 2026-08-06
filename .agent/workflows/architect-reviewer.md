@@ -21,7 +21,7 @@ Before starting a big feature, ask for an architectural plan.
 The reviewer must enforce all standards defined in the Skills documents:
 
 ### Backend (Python)
-Refer to [Python Development Standards](../skills/python_development/SKILL.md) for the full rules. Key areas:
+Refer to [Python Development Standards](../skills/python-development/SKILL.md) for the full rules. Key areas:
 - **Type Safety**: All functions typed (`mypy` compliant)
 - **No Magic Numbers**: Constants extracted (e.g., `MAX_RETRIES = 5`)
 - **Python 3.9 Compatibility**: No `X | Y`, `dict[K, V]`, `list[T]` syntax
@@ -29,7 +29,7 @@ Refer to [Python Development Standards](../skills/python_development/SKILL.md) f
 - **Anti-Scraping**: Uses `akshare_call_with_retry`, never direct `ak.xxx()` calls
 
 ### Frontend (JS/HTML/CSS)
-Refer to [Frontend Development Standards](../skills/frontend_development/SKILL.md) for the full rules. Key areas:
+Refer to [Frontend Development Standards](../skills/frontend-development/SKILL.md) for the full rules. Key areas:
 - **Mobile-First**: Layout functional on iPhone SE/mini
 - **Color Conventions**: CN/HK = red-up/green-down, US = green-up/red-down
 - **CSS Variables**: Uses design tokens from `styles.css`, no hardcoded hex

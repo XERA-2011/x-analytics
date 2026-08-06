@@ -1,5 +1,5 @@
 ---
-name: Frontend Development Standards
+name: frontend-development
 description: "⚠️ MANDATORY: Read before modifying ANY .js/.html/.css files. Contains critical mobile-first layout, color conventions (CN=red-up, US=green-up), and JS architecture rules."
 ---
 
@@ -140,8 +140,8 @@ Complex logic must be split by business domain into separate modules under `web/
 ## 📚 Lessons Learned Reminder
 
 > After resolving major issues or discovering new best practices, check if the following files need updates:
-> - `.agent/skills/python_development/SKILL.md` - Python development guidelines
-> - `.agent/skills/frontend_development/SKILL.md` - Frontend development guidelines
+> - `.agent/skills/python-development/SKILL.md` - Python development guidelines
+> - `.agent/skills/frontend-development/SKILL.md` - Frontend development guidelines
 > - `.agent/workflows/*.md` - Workflow configurations
 
 ---

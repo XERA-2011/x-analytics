@@ -1,11 +1,11 @@
 ---
-name: Project Standards
+name: project-standards
 description: "⚠️ MANDATORY: Core principles governing data integrity, user experience, and development philosophy. Read this FIRST before any development work."
 ---
 
 # Project Standards
 
-> **Priority**: This document defines project-level constraints. Technical implementation details are in the domain-specific skills (`frontend_development`, `python_development`).
+> **Priority**: This document defines project-level constraints. Technical implementation details are in the domain-specific skills (`frontend-development`, `python-development`).
 
 ---
 
@@ -334,8 +334,8 @@ async function loadData(endpoint) {
 
 | Skill | Path | When to Read |
 |:------|:-----|:-------------|
-| Frontend Standards | `.agent/skills/frontend_development/SKILL.md` | Modifying `.js`, `.html`, `.css` |
-| Python Standards | `.agent/skills/python_development/SKILL.md` | Modifying `.py` files |
+| Frontend Standards | `.agent/skills/frontend-development/SKILL.md` | Modifying `.js`, `.html`, `.css` |
+| Python Standards | `.agent/skills/python-development/SKILL.md` | Modifying `.py` files |
 
 ---
 
