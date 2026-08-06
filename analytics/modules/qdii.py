@@ -993,7 +993,32 @@ def get_qdii_passive_funds() -> Dict[str, Any]:
     }
 
 
-@cached("qdii:top_holdings_v7", ttl=86400 * 7, stale_ttl=86400 * 30, sync_on_cold=True)
+def _fetch_full_holdings_count(session: requests.Session, fetch_code: str, default_count: int) -> int:
+    """尝试从历史半年报及年报中获取全量持仓只数（用于主动管理型基金在季报仅披露前十重仓时的总持仓数兜底）"""
+    if default_count > 10:
+        return default_count
+    
+    current_year = datetime.now().year
+    years_to_check = [current_year - 1, current_year - 2]
+    months_to_check = [12, 6]
+    
+    for y in years_to_check:
+        for m in months_to_check:
+            url_full = f"http://fundf10.eastmoney.com/FundArchivesDatas.aspx?type=jjcc&code={fetch_code}&topline=1000&year={y}&month={m}"
+            res = fetch_url_via_proxy(url_full, session=session, timeout=4)
+            if res and res.status_code == 200:
+                match = re.search(r'content:\"(.*?)\"', res.text, re.DOTALL)
+                if match:
+                    soup = bs4.BeautifulSoup(match.group(1), "html.parser")
+                    table = soup.find("table", class_="tzxq")
+                    if table:
+                        cnt = len(table.find_all("tr")) - 1
+                        if cnt > default_count:
+                            return cnt
+    return default_count
+
+
+@cached("qdii:top_holdings_v8", ttl=86400 * 7, stale_ttl=86400 * 30, sync_on_cold=True)
 def get_qdii_top_holdings(code: str) -> Dict[str, Any]:
     """获取 QDII 基金最新披露的重仓持仓股票列表（升级支持最大100只完整持仓）"""
     # 联接基金到目标 ETF 的映射，当联接基金本身无持仓披露时，自动穿透到目标 ETF 获取底层持仓
@@ -1118,15 +1143,16 @@ def get_qdii_top_holdings(code: str) -> Dict[str, Any]:
                     "market_value": market_value
                 })
 
-        # 计算前十集中度
+        # 计算前十集中度与全量持仓只数
         top10_concentration = round(sum(h["ratio_val"] for h in holdings[:10]), 2)
+        total_count = _fetch_full_holdings_count(session, fetch_code, len(holdings))
 
         return {
             "status": "ok",
             "code": code,
             "report_date": report_date,
             "count": len(holdings),
-            "total_count": len(holdings),
+            "total_count": total_count,
             "top10_concentration": top10_concentration,
             "is_penetrated": fetch_code != code,
             "target_code": fetch_code if fetch_code != code else None,
