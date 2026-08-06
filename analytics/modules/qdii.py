@@ -791,7 +791,7 @@ def _is_quarterly_report_window() -> bool:
 
 def fetch_fund_asset_allocation(session: requests.Session, code: str) -> Optional[Dict[str, Any]]:
     """获取指定 QDII 场外联接/被动基金的最新真实资产/持仓配置（股票/权益 %、现金/货币 %）"""
-    cache_key = f"{settings.CACHE_PREFIX}:qdii:asset_alloc_v4:{code}"
+    cache_key = f"{settings.CACHE_PREFIX}:qdii:asset_alloc_v5:{code}"
     try:
         cached_val = cache.get(cache_key)
         if cached_val is not None:
@@ -834,36 +834,58 @@ def fetch_fund_asset_allocation(session: requests.Session, code: str) -> Optiona
             except (ValueError, AttributeError):
                 return 0.0
 
+        # 动态根据表头匹配各资产类别所在列
+        header_row = [td.text.strip() for td in rows[0].find_all(["td", "th"])]
+        stock_cols: List[int] = []
+        bond_cols: List[int] = []
+        cash_cols: List[int] = []
+
+        for idx, col_name in enumerate(header_row):
+            if any(k in col_name for k in ["股票", "存托凭证", "基金"]):
+                stock_cols.append(idx)
+            elif "债券" in col_name:
+                bond_cols.append(idx)
+            elif "现金" in col_name:
+                cash_cols.append(idx)
+
         # 筛选最新的定期季报 (避开基金成立建仓期的临时公告 99% 现金数据)
         selected_row = None
         for tr in rows[1:]:
             cells = [td.text.strip() for td in tr.find_all(["td", "th"])]
             if len(cells) >= 4:
                 date_str = cells[0]
-                cash = parse_pct(cells[3])
-                if re.search(r"(03-31|06-30|09-30|12-31)$", date_str) and cash < 50.0:
+                # 寻找现金列的值判断是否非新建仓期
+                cash_val_check = 0.0
+                for c_idx in cash_cols:
+                    if c_idx < len(cells):
+                        cash_val_check += parse_pct(cells[c_idx])
+                if re.search(r"(03-31|06-30|09-30|12-31)$", date_str) and cash_val_check < 50.0:
                     selected_row = cells
                     break
         if not selected_row:
             selected_row = [td.text.strip() for td in rows[1].find_all(["td", "th"])]
 
-        # 东方财富资产配置表列：报告期(0) | 股票占净比(1) | 债券占净比(2) | 现金占净比(3) | 净资产亿元(4)
-        # ETF联接基金的股票/债券列为 "---"（不直接持股，持有目标ETF份额）
-        # 当股票列有真实数据时使用真实值（保留未披露差额）；为 "---" 时回退到 100-现金-债券
-        raw_stock_str = selected_row[1] if len(selected_row) > 1 else "---"
-        raw_bond_str = selected_row[2] if len(selected_row) > 2 else "---"
-        cash_val = parse_pct(selected_row[3]) if len(selected_row) > 3 else 0.0
+        def get_sum(cols: List[int], row: List[str]) -> float:
+            total = 0.0
+            for idx in cols:
+                if idx < len(row) and "---" not in row[idx]:
+                    total += parse_pct(row[idx])
+            return total
 
-        has_stock_data = "---" not in raw_stock_str and raw_stock_str.strip() != ""
-        has_bond_data = "---" not in raw_bond_str and raw_bond_str.strip() != ""
+        def has_valid_data(cols: List[int], row: List[str]) -> bool:
+            for idx in cols:
+                if idx < len(row) and "---" not in row[idx] and row[idx].strip() != "":
+                    return True
+            return False
 
-        bond_val = parse_pct(raw_bond_str) if has_bond_data else 0.0
+        cash_val = round(get_sum(cash_cols, selected_row), 2)
+        bond_val = round(get_sum(bond_cols, selected_row), 2)
 
-        if has_stock_data:
-            # 直接持股基金：使用真实股票占比，差额为未披露资产
-            stock_val = parse_pct(raw_stock_str)
+        if has_valid_data(stock_cols, selected_row):
+            # 直接持股 / 含存托凭证 / 含基金份额：汇总真实权益敞口
+            stock_val = round(get_sum(stock_cols, selected_row), 2)
         else:
-            # ETF联接/被动基金：股票列为 "---"，权益敞口 = 100% - 现金 - 债券
+            # 被动 / ETF 联接基金（各权益列均为 "---"）：回退计算权益敞口 = 100% - 现金 - 债券
             stock_val = max(0.0, round(100.0 - cash_val - bond_val, 2))
 
         result = {
