@@ -190,6 +190,48 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "default_nav_date": "2026-07-23",
         "default_asset_allocation": {"stock_pct": 89.44, "cash_pct": 9.92, "bond_pct": 0.64},
     },
+    {
+        "code": "001092",
+        "name": "广发纳斯达克生物科技指数(QDII)A",
+        "index_code": "NDX",
+        "index_name": "纳斯达克100",
+        "fee_rate": "0.80%",
+        "tracking_error": "0.33%",
+        "inception_date": "2015-03-30",
+        "default_return_1y": 8.50,
+        "default_nav": 1.5720,
+        "default_nav_date": "2026-07-23",
+        "default_asset_allocation": {"stock_pct": 85.00, "cash_pct": 15.00, "bond_pct": 0.0},
+        "tag": "生物科技",
+    },
+    {
+        "code": "017894",
+        "name": "汇添富纳斯达克生物科技ETF发起式联接(QDII)A",
+        "index_code": "NDX",
+        "index_name": "纳斯达克100",
+        "fee_rate": "0.50%",
+        "tracking_error": "0.30%",
+        "inception_date": "2023-03-14",
+        "default_return_1y": 11.50,
+        "default_nav": 1.4740,
+        "default_nav_date": "2026-08-03",
+        "default_asset_allocation": {"stock_pct": 90.00, "cash_pct": 10.00, "bond_pct": 0.0},
+        "tag": "生物科技",
+    },
+    {
+        "code": "017436",
+        "name": "华宝纳斯达克精选股票发起式(QDII)A",
+        "index_code": "NDX",
+        "index_name": "纳斯达克100",
+        "fee_rate": "1.20%",
+        "tracking_error": "0.40%",
+        "inception_date": "2023-03-02",
+        "default_return_1y": 35.20,
+        "default_nav": 2.3255,
+        "default_nav_date": "2026-08-04",
+        "default_asset_allocation": {"stock_pct": 88.42, "cash_pct": 11.58, "bond_pct": 0.0},
+        "tag": "风味纳指",
+    },
 
     # --- 标普 500 场外 QDII (A类) ---
     {
@@ -867,7 +909,7 @@ def fetch_fund_fee_rate(session: requests.Session, code: str) -> Optional[str]:
         return None
 
 
-@cached("qdii:passive_funds_v25", ttl=86400)
+@cached("qdii:passive_funds_v27", ttl=86400)
 def get_qdii_passive_funds() -> Dict[str, Any]:
     """获取国内纳斯达克100 & 标普500 场外被动 QDII A类基金数据列表
 
