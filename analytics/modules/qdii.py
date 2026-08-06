@@ -992,7 +992,7 @@ def _generate_active_fund_tag(item: Dict[str, Any], total_count: int, top10_conc
     return "均衡配置"
 
 
-@cached("qdii:passive_funds_v30", ttl=86400)
+@cached("qdii:passive_funds_v30", ttl=86400, sync_on_cold=True)
 def get_qdii_passive_funds() -> Dict[str, Any]:
     """获取国内纳斯达克100 & 标普500 场外被动 QDII A类基金数据列表
 
