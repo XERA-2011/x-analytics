@@ -336,6 +336,34 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "default_nav_date": "2026-08-03",
         "default_asset_allocation": {"stock_pct": 95.89, "cash_pct": 4.11, "bond_pct": 0.0},
     },
+    {
+        "code": "096001",
+        "name": "大成标普500等权重指数(QDII)A",
+        "index_code": "SPX",
+        "index_name": "标普500",
+        "fee_rate": "1.00%",
+        "tracking_error": "0.35%",
+        "inception_date": "2011-03-23",
+        "default_return_1y": 12.50,
+        "default_nav": 2.8280,
+        "default_nav_date": "2026-08-03",
+        "default_asset_allocation": {"stock_pct": 94.50, "cash_pct": 5.50, "bond_pct": 0.0},
+        "tag": "等权重",
+    },
+    {
+        "code": "159529",
+        "name": "景顺长城标普消费精选ETF(QDII)",
+        "index_code": "SPX",
+        "index_name": "标普500",
+        "fee_rate": "0.50%",
+        "tracking_error": "0.20%",
+        "inception_date": "2024-01-24",
+        "default_return_1y": 14.20,
+        "default_nav": 1.2869,
+        "default_nav_date": "2026-08-04",
+        "default_asset_allocation": {"stock_pct": 95.00, "cash_pct": 5.00, "bond_pct": 0.0},
+        "tag": "消费精选",
+    },
 
     # --- 主动型 QDII 精选 (参考 DCA HUB 推荐列表) ---
     {
@@ -839,7 +867,7 @@ def fetch_fund_fee_rate(session: requests.Session, code: str) -> Optional[str]:
         return None
 
 
-@cached("qdii:passive_funds_v24", ttl=86400)
+@cached("qdii:passive_funds_v25", ttl=86400)
 def get_qdii_passive_funds() -> Dict[str, Any]:
     """获取国内纳斯达克100 & 标普500 场外被动 QDII A类基金数据列表
 
