@@ -180,7 +180,7 @@ class QDIIController {
                 `;
             }
 
-            const tagHtml = item.tag ? `<span class="fund-tag" style="background: rgba(222,41,16,0.08); color: #de2910; font-size: 10px; padding: 1px 4px; border-radius: 3px; font-weight: 600; margin-left: 6px; border: 1px solid rgba(222,41,16,0.25); display: inline-block; vertical-align: middle; transform: translateY(-1.5px);">${item.tag}</span>` : '';
+            const tagHtml = item.tag ? `<span class="fund-tag" style="background: rgba(115,115,115,0.08); color: var(--text-secondary); font-size: 10px; padding: 1px 4px; border-radius: 3px; font-weight: 600; margin-left: 6px; border: 1px solid rgba(115,115,115,0.25); display: inline-block; vertical-align: middle; transform: translateY(-1.5px);">${item.tag}</span>` : '';
 
             const buyStatus = item.buy_status || '开放申购';
             let statusText = '开放';
