@@ -18,8 +18,9 @@ Read the relevant skill documents:
 
 - **For Python files**: Read `.agent/skills/python_development/SKILL.md`
 - **For Frontend files**: Read `.agent/skills/frontend_development/SKILL.md`
+- **For Deployment & Operations**: Read `.agent/skills/deployment-and-ops/SKILL.md`
 
-If both types are involved, read both.
+If multiple types are involved, read all relevant skills.
 
 ## 3. Confirm Key Constraints
 
