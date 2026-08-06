@@ -362,12 +362,39 @@ class QDIIController {
 
             const rowsHtml = holdings.map(h => {
                 const barWidth = Math.min(100, (h.ratio_val / maxRatio) * 100);
+                
+                // 渲染持仓证券类型徽章
+                let badgeHtml = '';
+                if (h.stock_type) {
+                    let bgColor = 'rgba(115, 115, 115, 0.1)';
+                    let textColor = 'var(--text-secondary)';
+                    
+                    if (h.stock_type === 'A股') {
+                        bgColor = 'rgba(239, 68, 68, 0.1)';
+                        textColor = 'var(--accent-red)';
+                    } else if (h.stock_type === '美股') {
+                        bgColor = 'rgba(59, 130, 246, 0.1)';
+                        textColor = 'var(--accent-blue)';
+                    } else if (h.stock_type === '港股') {
+                        bgColor = 'rgba(34, 197, 94, 0.1)';
+                        textColor = 'var(--accent-green)';
+                    } else if (h.stock_type === '现金') {
+                        bgColor = 'rgba(115, 115, 115, 0.1)';
+                        textColor = 'var(--text-secondary)';
+                    }
+                    
+                    badgeHtml = `<span style="font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; font-weight: bold; background: ${bgColor}; color: ${textColor}; display: inline-flex; align-items: center; justify-content: center; line-height: 1; vertical-align: middle;">${h.stock_type}</span>`;
+                }
+
                 return `
                     <tr>
                         <td style="width: 36px; text-align: center; font-weight: bold; color: var(--text-secondary);">${h.rank}</td>
                         <td style="font-weight: 600;">
-                            <div>${h.stock_name}</div>
-                            <div style="font-size: 0.72rem; color: var(--text-tertiary); font-family: monospace;">${h.stock_code}</div>
+                            <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                                <span>${h.stock_name}</span>
+                                ${badgeHtml}
+                            </div>
+                            <div style="font-size: 0.72rem; color: var(--text-tertiary); font-family: monospace; margin-top: 2px;">${h.stock_code}</div>
                         </td>
                         <td style="width: 45%;">
                             <div class="qdii-holding-ratio-wrapper">
