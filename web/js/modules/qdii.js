@@ -238,6 +238,7 @@ class QDIIController {
                     <span class="legend-dot legend-cn"></span>A股 · 
                     <span class="legend-dot legend-other"></span>日韩/台股 · 
                     <span class="legend-dot legend-cash"></span>现金 · 
+                    <span class="legend-dot legend-bond"></span>债券 · 
                     <span class="legend-dot legend-unclassified"></span>未披露/其他
                 </div>
             </div>
@@ -252,6 +253,7 @@ class QDIIController {
                     <span class="legend-dot legend-cn"></span>A股 · 
                     <span class="legend-dot legend-other"></span>日韩/台股 · 
                     <span class="legend-dot legend-cash"></span>现金 · 
+                    <span class="legend-dot legend-bond"></span>债券 · 
                     <span class="legend-dot legend-unclassified"></span>未披露
                 </div>
             </div>

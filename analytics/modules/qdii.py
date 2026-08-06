@@ -791,7 +791,7 @@ def _is_quarterly_report_window() -> bool:
 
 def fetch_fund_asset_allocation(session: requests.Session, code: str) -> Optional[Dict[str, Any]]:
     """获取指定 QDII 场外联接/被动基金的最新真实资产/持仓配置（股票/权益 %、现金/货币 %）"""
-    cache_key = f"{settings.CACHE_PREFIX}:qdii:asset_alloc_v5:{code}"
+    cache_key = f"{settings.CACHE_PREFIX}:qdii:asset_alloc_v6:{code}"
     try:
         cached_val = cache.get(cache_key)
         if cached_val is not None:
@@ -885,7 +885,17 @@ def fetch_fund_asset_allocation(session: requests.Session, code: str) -> Optiona
             # 直接持股 / 含存托凭证 / 含基金份额：汇总真实权益敞口
             stock_val = round(get_sum(stock_cols, selected_row), 2)
         else:
-            # 被动 / ETF 联接基金（各权益列均为 "---"）：回退计算权益敞口 = 100% - 现金 - 债券
+            stock_val = 0.0
+
+        # 判断是否为主动型基金
+        is_active = False
+        for item in QDII_FUND_METADATA:
+            if item.get("code") == code and item.get("type") == "active":
+                is_active = True
+                break
+
+        # 如果是联接/被动型基金，且算出来的股票占比极小（如 0.00%），说明实质为主投目标ETF，需回退至 100% - 现金 - 债券
+        if not is_active and stock_val < 1.0:
             stock_val = max(0.0, round(100.0 - cash_val - bond_val, 2))
 
         result = {
@@ -992,7 +1002,7 @@ def _generate_active_fund_tag(item: Dict[str, Any], total_count: int, top10_conc
     return "均衡配置"
 
 
-@cached("qdii:passive_funds_v30", ttl=86400, sync_on_cold=True)
+@cached("qdii:passive_funds_v31", ttl=86400)
 def get_qdii_passive_funds() -> Dict[str, Any]:
     """获取国内纳斯达克100 & 标普500 场外被动 QDII A类基金数据列表
 
