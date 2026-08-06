@@ -2079,6 +2079,14 @@ footer {
     line-height: 1.25;
 }
 
+.tag-mobile {
+    display: none !important;
+}
+
+.tag-desktop {
+    display: inline-block !important;
+}
+
 .col-rank {
     width: 38px;
     text-align: center;
@@ -2276,6 +2284,12 @@ footer {
     }
     .qdii-code-text {
         font-size: 0.68rem;
+    }
+    .tag-mobile {
+        display: inline-block !important;
+    }
+    .tag-desktop {
+        display: none !important;
     }
     .qdii-alloc-mobile {
         display: block;
