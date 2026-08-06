@@ -139,8 +139,6 @@ class QDIIController {
                 if (alloc.cash_pct > 0.1) subParts.push(`<span class="alloc-text-item alloc-text-cash">${cashPct}% 现金</span>`);
                 if (alloc.bond_pct > 0.5) subParts.push(`<span class="alloc-text-item alloc-text-bond">${bondPct}% 债券</span>`);
 
-                let allocLabel = subParts.join('<span class="alloc-sep">·</span>');
-
                 // 严格遵循金融数据真实性：使用真实比例渲染色块，未披露/其他资产保留中性灰色背景轨道，容器左右边界 100% 对齐
                 let barSegments = [];
                 if (hasDetailed) {
@@ -157,11 +155,14 @@ class QDIIController {
                 const totalVal = barSegments.reduce((sum, s) => sum + s.val, 0);
                 let barHtml = barSegments.map(s => `<div class="${s.cls}" style="flex: 0 0 ${s.val}%; width: ${s.val}%;" title="${s.title}"></div>`).join('');
                 
-                // 若存在未披露/其他杂项资产 (100% - totalVal)，用中性灰色条填充
+                // 若存在未披露/其他杂项资产 (100% - totalVal)，用中性灰色条填充并呈现到文本明细中
                 if (totalVal < 99.5) {
                     const unclassifiedPct = (100.0 - totalVal).toFixed(1);
                     barHtml += `<div class="allocation-bar-unclassified" style="flex: 0 0 ${unclassifiedPct}%; width: ${unclassifiedPct}%;" title="其他/未披露资产: ${unclassifiedPct}%"></div>`;
+                    subParts.push(`<span class="alloc-text-item alloc-text-unclassified" style="color: var(--text-tertiary);">${unclassifiedPct}% 未披露</span>`);
                 }
+
+                let allocLabel = subParts.join('<span class="alloc-sep">·</span>');
 
                 let warningHtml = '';
                 if (item.allocation_estimated) {
