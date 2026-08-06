@@ -463,6 +463,7 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "default_nav": 2.1777,
         "default_nav_date": "2026-07-23",
         "default_asset_allocation": {"stock_pct": 88.42, "stock_us_pct": 88.42, "cash_pct": 11.72, "bond_pct": 0.0},
+        "tag": "风味纳指",
     },
     {
         "code": "012920",
@@ -909,7 +910,52 @@ def fetch_fund_fee_rate(session: requests.Session, code: str) -> Optional[str]:
         return None
 
 
-@cached("qdii:passive_funds_v27", ttl=86400)
+def _generate_active_fund_tag(item: Dict[str, Any], total_count: int, top10_concentration: float) -> Optional[str]:
+    """根据持仓数量、持仓风格与资产配置动态计算主动基金风格标签"""
+    if item.get("tag"):
+        return item["tag"]
+    name = item.get("name", "")
+    code = item.get("code", "")
+    alloc = item.get("default_asset_allocation", {})
+    if "新能源" in name or "车" in name:
+        return "新能源车"
+    if "半导体" in name or "芯片" in name or code == "019454":
+        return "中韩芯片"
+    if "新兴市场" in name:
+        return "新兴市场"
+    if total_count >= 150:
+        return "广泛分散"
+    stock_pct = alloc.get("stock_pct", 0.0)
+    if stock_pct > 0:
+        stock_us_pct = alloc.get("stock_us_pct", 0.0)
+        stock_hk_pct = alloc.get("stock_hk_pct", 0.0)
+        stock_cn_pct = alloc.get("stock_cn_pct", 0.0)
+        us_ratio = stock_us_pct / stock_pct
+        hk_ratio = stock_hk_pct / stock_pct
+        if us_ratio >= 0.8:
+            if any(k in name for k in ["科技", "互联", "移动", "纳斯达克", "智能"]):
+                return "美股科技"
+            return "美股精选"
+        if hk_ratio >= 0.6:
+            if any(k in name for k in ["科技", "互联", "移动"]):
+                return "港股科技"
+            return "港股精选"
+        if hk_ratio >= 0.4 and any(k in name for k in ["科技", "互联"]):
+            return "港股互联网"
+        if stock_us_pct > 0 and (stock_cn_pct > 0 or stock_hk_pct > 0):
+            if any(k in name for k in ["科技", "互联", "移动"]):
+                return "全球科技"
+            return "全球配置"
+        if us_ratio >= 0.2 and hk_ratio >= 0.2:
+            if any(k in name for k in ["科技", "互联", "移动"]):
+                return "全球科技"
+            return "全球配置"
+    if total_count > 0 and total_count <= 40:
+        return "集中重仓"
+    return "均衡配置"
+
+
+@cached("qdii:passive_funds_v28", ttl=86400)
 def get_qdii_passive_funds() -> Dict[str, Any]:
     """获取国内纳斯达克100 & 标普500 场外被动 QDII A类基金数据列表
 
@@ -1031,6 +1077,19 @@ def get_qdii_passive_funds() -> Dict[str, Any]:
         fee_rate = fee_map.get(code) or item["fee_rate"]
         buy_status = status_map.get(code) or "开放申购"
 
+        # 针对主动型基金动态计算其风格标签
+        fund_tag = item.get("tag")
+        if item.get("type") == "active":
+            try:
+                holdings_res = get_qdii_top_holdings(code)
+                h_data = holdings_res.get("data", {})
+                total_count = h_data.get("total_count", 0)
+                top10_concentration = h_data.get("top10_concentration", 0.0)
+            except Exception:
+                total_count = 0
+                top10_concentration = 0.0
+            fund_tag = _generate_active_fund_tag(item, total_count, top10_concentration)
+
         funds_list.append({
             "code": code,
             "name": item["name"],
@@ -1044,7 +1103,7 @@ def get_qdii_passive_funds() -> Dict[str, Any]:
             "return_1y": final_r1y,
             "asset_allocation": asset_alloc,
             "allocation_estimated": item.get("allocation_estimated", False),
-            "tag": item.get("tag"),
+            "tag": fund_tag,
             "buy_status": buy_status,
         })
 
