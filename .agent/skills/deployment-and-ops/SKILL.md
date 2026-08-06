@@ -53,7 +53,7 @@ gh run watch --repo XERA-2011/x-actions
 ### 3.1 Verifying Live Deployment
 To verify if new code or script changes are successfully serving on the production site, curl the base path and search for the script version parameters (cache bumps):
 ```bash
-curl -s http://8.129.84.229/analytics/ | grep qdii.js
+curl -s http://<vps-ip>/analytics/ | grep qdii.js
 ```
 
 ### 3.2 Cache Control APIs
