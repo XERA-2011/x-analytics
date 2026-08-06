@@ -378,6 +378,15 @@ class QDIIController {
                     } else if (h.stock_type === '港股') {
                         bgColor = 'rgba(34, 197, 94, 0.1)';
                         textColor = 'var(--accent-green)';
+                    } else if (h.stock_type === '台股') {
+                        bgColor = 'rgba(168, 85, 247, 0.1)';
+                        textColor = '#a855f7';
+                    } else if (h.stock_type === '韩股') {
+                        bgColor = 'rgba(249, 115, 22, 0.1)';
+                        textColor = '#f97316';
+                    } else if (h.stock_type === '日股') {
+                        bgColor = 'rgba(20, 184, 166, 0.1)';
+                        textColor = '#14b8a6';
                     } else if (h.stock_type === '现金') {
                         bgColor = 'rgba(115, 115, 115, 0.1)';
                         textColor = 'var(--text-secondary)';
