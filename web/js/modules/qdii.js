@@ -365,7 +365,7 @@ class QDIIController {
                 
                 // 渲染持仓证券类型徽章
                 let badgeHtml = '';
-                if (h.stock_type) {
+                if (h.stock_type && h.stock_type !== '其他') {
                     let bgColor = 'rgba(115, 115, 115, 0.1)';
                     let textColor = 'var(--text-secondary)';
                     

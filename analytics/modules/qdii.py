@@ -993,7 +993,7 @@ def get_qdii_passive_funds() -> Dict[str, Any]:
     }
 
 
-@cached("qdii:top_holdings_v4", ttl=86400 * 7, stale_ttl=86400 * 30, sync_on_cold=True)
+@cached("qdii:top_holdings_v5", ttl=86400 * 7, stale_ttl=86400 * 30, sync_on_cold=True)
 def get_qdii_top_holdings(code: str) -> Dict[str, Any]:
     """获取 QDII 基金最新披露的重仓持仓股票列表（升级支持最大100只完整持仓）"""
     # 联接基金到目标 ETF 的映射，当联接基金本身无持仓披露时，自动穿透到目标 ETF 获取底层持仓
@@ -1054,12 +1054,27 @@ def get_qdii_top_holdings(code: str) -> Dict[str, Any]:
                 s_name_clean = stock_name.strip()
                 if "现金" in s_name_clean or "银行存款" in s_name_clean or "结算备付金" in s_name_clean:
                     stock_type = "现金"
-                elif re.match(r'^\d{6}$', s_code_clean):
-                    stock_type = "A股"
-                elif re.match(r'^\d{5}$', s_code_clean):
-                    stock_type = "港股"
-                elif re.match(r'^[a-zA-Z\.\-]+$', s_code_clean):
-                    stock_type = "美股"
+                else:
+                    # 优先利用 HTML 节点的跳转链接分析所属市场/交易板块以保证绝对准确
+                    a_tag = tr.find("a")
+                    href = a_tag.get("href", "") if a_tag else ""
+                    match_href = re.search(r'/r/(\d+)\.', href)
+                    if match_href:
+                        market_id = match_href.group(1)
+                        if market_id in ("0", "1", "2"):  # 深交所(0)、上交所(1)、北交所(2)
+                            stock_type = "A股"
+                        elif market_id in ("116", "117"):  # 港股通/港交所
+                            stock_type = "港股"
+                        elif market_id in ("105", "106", "107"):  # 纳斯达克/纽交所/美交所
+                            stock_type = "美股"
+                    else:
+                        # 兜底匹配：在没有超链接跳转的情况下进行基础格式过滤
+                        if re.match(r'^[a-zA-Z\.\-]+$', s_code_clean):
+                            stock_type = "美股"
+                        elif re.match(r'^\d{5}$', s_code_clean):
+                            stock_type = "港股"
+                        # 注意：防范韩国(如三星 005930，海力士 000660)、日本等同样使用6位纯数字代码的证券误判为 A股。
+                        # 无跳转链接且为6位纯数字的代码一律不自动认定为 A股，保持其默认为“其他”。
 
                 holdings.append({
                     "rank": rank_str,
