@@ -995,7 +995,7 @@ def get_qdii_passive_funds() -> Dict[str, Any]:
 
 def _fetch_full_holdings_count(session: requests.Session, fetch_code: str, default_count: int) -> int:
     """尝试从历史半年报及年报中获取全量持仓只数（用于主动管理型基金在季报仅披露前十重仓时的总持仓数兜底）"""
-    if default_count > 10:
+    if default_count >= 30:
         return default_count
     
     current_year = datetime.now().year
@@ -1018,7 +1018,7 @@ def _fetch_full_holdings_count(session: requests.Session, fetch_code: str, defau
     return default_count
 
 
-@cached("qdii:top_holdings_v8", ttl=86400 * 7, stale_ttl=86400 * 30, sync_on_cold=True)
+@cached("qdii:top_holdings_v9", ttl=86400 * 7, stale_ttl=86400 * 30, sync_on_cold=True)
 def get_qdii_top_holdings(code: str) -> Dict[str, Any]:
     """获取 QDII 基金最新披露的重仓持仓股票列表（升级支持最大100只完整持仓）"""
     # 联接基金到目标 ETF 的映射，当联接基金本身无持仓披露时，自动穿透到目标 ETF 获取底层持仓
