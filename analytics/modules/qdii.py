@@ -791,7 +791,7 @@ def _is_quarterly_report_window() -> bool:
 
 def fetch_fund_asset_allocation(session: requests.Session, code: str) -> Optional[Dict[str, Any]]:
     """获取指定 QDII 场外联接/被动基金的最新真实资产/持仓配置（股票/权益 %、现金/货币 %）"""
-    cache_key = f"{settings.CACHE_PREFIX}:qdii:asset_alloc_v3:{code}"
+    cache_key = f"{settings.CACHE_PREFIX}:qdii:asset_alloc_v4:{code}"
     try:
         cached_val = cache.get(cache_key)
         if cached_val is not None:
@@ -847,17 +847,27 @@ def fetch_fund_asset_allocation(session: requests.Session, code: str) -> Optiona
         if not selected_row:
             selected_row = [td.text.strip() for td in rows[1].find_all(["td", "th"])]
 
-        # 东方财富资产配置表列：报告期(0) | 股票占比(1) | 债券占比(2) | 现金占比(3) | 其他(4)
-        # ETF联接基金的"股票"列为0%（不直接持股），权益仓位在"其他"列（持有ETF/基金份额）
-        # 因此 stock_pct = 股票 + 其他，合并为总权益敞口；差额即为真正的未披露资产
-        raw_stock = parse_pct(selected_row[1]) if len(selected_row) > 1 else 0.0
-        bond_val = parse_pct(selected_row[2]) if len(selected_row) > 2 else 0.0
+        # 东方财富资产配置表列：报告期(0) | 股票占净比(1) | 债券占净比(2) | 现金占净比(3) | 净资产亿元(4)
+        # ETF联接基金的股票/债券列为 "---"（不直接持股，持有目标ETF份额）
+        # 当股票列有真实数据时使用真实值（保留未披露差额）；为 "---" 时回退到 100-现金-债券
+        raw_stock_str = selected_row[1] if len(selected_row) > 1 else "---"
+        raw_bond_str = selected_row[2] if len(selected_row) > 2 else "---"
         cash_val = parse_pct(selected_row[3]) if len(selected_row) > 3 else 0.0
-        other_val = parse_pct(selected_row[4]) if len(selected_row) > 4 else 0.0
-        equity_val = round(raw_stock + other_val, 2)
+
+        has_stock_data = "---" not in raw_stock_str and raw_stock_str.strip() != ""
+        has_bond_data = "---" not in raw_bond_str and raw_bond_str.strip() != ""
+
+        bond_val = parse_pct(raw_bond_str) if has_bond_data else 0.0
+
+        if has_stock_data:
+            # 直接持股基金：使用真实股票占比，差额为未披露资产
+            stock_val = parse_pct(raw_stock_str)
+        else:
+            # ETF联接/被动基金：股票列为 "---"，权益敞口 = 100% - 现金 - 债券
+            stock_val = max(0.0, round(100.0 - cash_val - bond_val, 2))
 
         result = {
-            "stock_pct": equity_val,
+            "stock_pct": stock_val,
             "cash_pct": cash_val,
             "bond_pct": bond_val,
             "report_date": selected_row[0]
