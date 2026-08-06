@@ -365,7 +365,7 @@ class QDIIController {
                 
                 // 渲染持仓证券类型徽章
                 let badgeHtml = '';
-                if (h.stock_type && h.stock_type !== '其他') {
+                if (h.stock_type) {
                     let bgColor = 'rgba(115, 115, 115, 0.1)';
                     let textColor = 'var(--text-secondary)';
                     
@@ -378,16 +378,7 @@ class QDIIController {
                     } else if (h.stock_type === '港股') {
                         bgColor = 'rgba(34, 197, 94, 0.1)';
                         textColor = 'var(--accent-green)';
-                    } else if (h.stock_type === '台股') {
-                        bgColor = 'rgba(168, 85, 247, 0.1)';
-                        textColor = '#a855f7';
-                    } else if (h.stock_type === '韩股') {
-                        bgColor = 'rgba(249, 115, 22, 0.1)';
-                        textColor = '#f97316';
-                    } else if (h.stock_type === '日股') {
-                        bgColor = 'rgba(20, 184, 166, 0.1)';
-                        textColor = '#14b8a6';
-                    } else if (h.stock_type === '现金') {
+                    } else if (h.stock_type === '其他' || h.stock_type === '现金') {
                         bgColor = 'rgba(115, 115, 115, 0.1)';
                         textColor = 'var(--text-secondary)';
                     }
@@ -417,10 +408,26 @@ class QDIIController {
                 `;
             }).join('');
 
+            // 构建联接穿透信息提示
+            let penetrationHtml = '';
+            if (data.is_penetrated && data.target_code) {
+                penetrationHtml = `
+                    <div style="background: rgba(59, 130, 246, 0.06); border: 1px solid rgba(59, 130, 246, 0.15); border-radius: 6px; padding: 8px 12px; font-size: 0.76rem; color: var(--accent-blue); margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+                        <i data-lucide="link" style="width: 14px; height: 14px; flex-shrink: 0;"></i>
+                        <span>当前持仓已自动穿透至底层联接的 ETF (<strong>${data.target_code}</strong>) 获取真实持仓</span>
+                    </div>
+                `;
+            }
+
+            const totalCount = data.total_count || holdings.length;
+            const top10Concentration = data.top10_concentration != null ? `${data.top10_concentration}%` : '--%';
+
             bodyEl.innerHTML = `
-                <div class="qdii-holding-meta">
-                    <span>📌 统计截止日期：<strong>${reportDate}</strong></span>
-                    <span>数据来源：基金定期报告</span>
+                ${penetrationHtml}
+                <div class="qdii-holding-meta" style="flex-wrap: wrap; gap: 8px 16px; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px dashed var(--border-light);">
+                    <span>📅 截止日期：<strong>${reportDate}</strong></span>
+                    <span>📦 总持仓：<strong>${totalCount} 只股票</strong></span>
+                    <span>🎯 前十占比：<strong>${top10Concentration}</strong></span>
                 </div>
                 <table class="qdii-holding-table">
                     <thead>
@@ -435,6 +442,7 @@ class QDIIController {
                     </tbody>
                 </table>
             `;
+            if (window.lucide) lucide.createIcons();
         } catch (err) {
             console.error('获取持仓明细失败:', err);
             const bodyEl = overlay.querySelector('.qdii-modal-body');

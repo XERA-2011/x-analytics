@@ -993,7 +993,7 @@ def get_qdii_passive_funds() -> Dict[str, Any]:
     }
 
 
-@cached("qdii:top_holdings_v6", ttl=86400 * 7, stale_ttl=86400 * 30, sync_on_cold=True)
+@cached("qdii:top_holdings_v7", ttl=86400 * 7, stale_ttl=86400 * 30, sync_on_cold=True)
 def get_qdii_top_holdings(code: str) -> Dict[str, Any]:
     """获取 QDII 基金最新披露的重仓持仓股票列表（升级支持最大100只完整持仓）"""
     # 联接基金到目标 ETF 的映射，当联接基金本身无持仓披露时，自动穿透到目标 ETF 获取底层持仓
@@ -1014,14 +1014,34 @@ def get_qdii_top_holdings(code: str) -> Dict[str, Any]:
         if res.status_code == 404:
             # 404 表示该基金无相关持仓披露页面 (如某些联接基金或刚成立无数据)
             # 正常返回空持仓，让其进入缓存以避免持续报错请求
-            return {"status": "ok", "code": code, "report_date": "暂无季报", "count": 0, "holdings": []}
+            return {
+                "status": "ok",
+                "code": code,
+                "report_date": "暂无季报",
+                "count": 0,
+                "total_count": 0,
+                "top10_concentration": 0.0,
+                "is_penetrated": fetch_code != code,
+                "target_code": fetch_code if fetch_code != code else None,
+                "holdings": []
+            }
             
         if res.status_code != 200:
             return {"status": "error", "error": True, "message": f"接口异常 HTTP {res.status_code} (code: {code})", "holdings": []}
 
         match = re.search(r'content:\"(.*?)\"', res.text, re.DOTALL)
         if not match:
-            return {"status": "ok", "code": code, "report_date": "暂无季报", "count": 0, "holdings": []}
+            return {
+                "status": "ok",
+                "code": code,
+                "report_date": "暂无季报",
+                "count": 0,
+                "total_count": 0,
+                "top10_concentration": 0.0,
+                "is_penetrated": fetch_code != code,
+                "target_code": fetch_code if fetch_code != code else None,
+                "holdings": []
+            }
 
         html_content = match.group(1)
         soup = bs4.BeautifulSoup(html_content, "html.parser")
@@ -1030,7 +1050,17 @@ def get_qdii_top_holdings(code: str) -> Dict[str, Any]:
 
         table = soup.find("table", class_="tzxq")
         if not table:
-            return {"status": "ok", "code": code, "report_date": report_date, "count": 0, "holdings": []}
+            return {
+                "status": "ok",
+                "code": code,
+                "report_date": report_date,
+                "count": 0,
+                "total_count": 0,
+                "top10_concentration": 0.0,
+                "is_penetrated": fetch_code != code,
+                "target_code": fetch_code if fetch_code != code else None,
+                "holdings": []
+            }
 
         holdings = []
         for tr in table.find_all("tr")[1:]:
@@ -1068,28 +1098,14 @@ def get_qdii_top_holdings(code: str) -> Dict[str, Any]:
                         elif market_id in ("105", "106", "107"):  # 纳斯达克/纽交所/美交所
                             stock_type = "美股"
                     else:
-                        # 兜底匹配：在没有超链接跳转的情况下根据股票代号格式和名称关键字精细化识别日股、韩股、台股等
+                        # 兜底匹配：在没有超链接跳转的情况下进行基础格式过滤
                         if re.match(r'^[a-zA-Z\.\-]+$', s_code_clean):
                             stock_type = "美股"
                         elif re.match(r'^\d{5}$', s_code_clean):
                             stock_type = "港股"
-                        elif re.match(r'^\d{6}$', s_code_clean):
-                            # 韩国股市代号为6位纯数字，且在东财无跳转链接 (如 三星电子 005930，SK海力士 000660)
-                            stock_type = "韩股"
-                        elif re.match(r'^\d{4}$', s_code_clean):
-                            # 台湾股市(TSEC)与日本股市(TSE)证券代码大多为4位纯数字，根据名称特有词或代码号段细分
-                            tw_keywords = ["台积电", "台达电", "联发科", "鸿海", "中华电", "富邦金", "国泰金", "中信金", "兆丰金", "大立光", "广达", "日月光", "南亚", "长荣"]
-                            jp_keywords = ["制作所", "株式会社", "电机", "索尼", "丰田", "软银", "迅销", "优衣库", "信越", "东京电子", "基恩士", "三菱", "三井", "日立", "松下", "任天堂", "本田", "化学", "光学", "精密"]
-                            
-                            if any(kw in s_name_clean for kw in tw_keywords):
-                                stock_type = "台股"
-                            elif any(kw in s_name_clean for kw in jp_keywords):
-                                stock_type = "日股"
-                            elif s_code_clean.startswith(("23", "24", "30", "53", "28", "58")):
-                                # 台湾常见科技股和金融号段
-                                stock_type = "台股"
-                            else:
-                                stock_type = "日股"
+                        else:
+                            # 韩国、日本、台湾等其他未被东财直接关联行情链接的跨境证券，统一归为“其他”
+                            stock_type = "其他"
 
                 holdings.append({
                     "rank": rank_str,
@@ -1102,11 +1118,18 @@ def get_qdii_top_holdings(code: str) -> Dict[str, Any]:
                     "market_value": market_value
                 })
 
+        # 计算前十集中度
+        top10_concentration = round(sum(h["ratio_val"] for h in holdings[:10]), 2)
+
         return {
             "status": "ok",
             "code": code,
             "report_date": report_date,
             "count": len(holdings),
+            "total_count": len(holdings),
+            "top10_concentration": top10_concentration,
+            "is_penetrated": fetch_code != code,
+            "target_code": fetch_code if fetch_code != code else None,
             "holdings": holdings
         }
     except Exception as e:
