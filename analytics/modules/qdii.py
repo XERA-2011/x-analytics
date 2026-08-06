@@ -791,7 +791,7 @@ def _is_quarterly_report_window() -> bool:
 
 def fetch_fund_asset_allocation(session: requests.Session, code: str) -> Optional[Dict[str, Any]]:
     """获取指定 QDII 场外联接/被动基金的最新真实资产/持仓配置（股票/权益 %、现金/货币 %）"""
-    cache_key = f"{settings.CACHE_PREFIX}:qdii:asset_alloc:{code}"
+    cache_key = f"{settings.CACHE_PREFIX}:qdii:asset_alloc_v2:{code}"
     try:
         cached_val = cache.get(cache_key)
         if cached_val is not None:
@@ -847,14 +847,16 @@ def fetch_fund_asset_allocation(session: requests.Session, code: str) -> Optiona
         if not selected_row:
             selected_row = [td.text.strip() for td in rows[1].find_all(["td", "th"])]
 
-        cash_val = parse_pct(selected_row[3])
-        # 被动 QDII 权益/股票/目标ETF持仓 = 100% - 现金货币比例
-        equity_val = max(0.0, round(100.0 - cash_val, 2))
+        # 东方财富资产配置表列：报告期(0) | 股票占比(1) | 债券占比(2) | 现金占比(3) | 其他(4)
+        # 使用各列真实数据，而非 100%-现金 推算，以保留未披露/其他资产的真实比例
+        stock_val = parse_pct(selected_row[1]) if len(selected_row) > 1 else 0.0
+        bond_val = parse_pct(selected_row[2]) if len(selected_row) > 2 else 0.0
+        cash_val = parse_pct(selected_row[3]) if len(selected_row) > 3 else 0.0
 
         result = {
-            "stock_pct": equity_val,
+            "stock_pct": stock_val,
             "cash_pct": cash_val,
-            "bond_pct": 0.0,
+            "bond_pct": bond_val,
             "report_date": selected_row[0]
         }
         try:
