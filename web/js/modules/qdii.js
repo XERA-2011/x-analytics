@@ -198,8 +198,11 @@ class QDIIController {
                     <td class="col-rank"><span class="rank-badge ${rankBadgeClass}">${rank}</span></td>
                     <td class="col-name qdii-clickable" data-code="${item.code}" data-name="${item.name}" title="点击查看 ${item.name} 前十大重仓股">
                         <div class="qdii-name-wrapper">
-                            <span class="qdii-code-text">${item.code}</span>
-                            <span class="qdii-name-text" style="color: var(--primary); font-weight: 600;">${item.name}</span>${tagHtml}
+                            <div style="display: flex; align-items: center; gap: 4px; flex-wrap: wrap;">
+                                <span class="qdii-code-text">${item.code}</span>
+                                ${tagHtml}
+                            </div>
+                            <span class="qdii-name-text" style="color: var(--primary); font-weight: 600;">${item.name}</span>
                             <div class="qdii-alloc-mobile">
                                 ${allocHtml}
                             </div>
