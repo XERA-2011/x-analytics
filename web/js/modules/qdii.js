@@ -406,11 +406,11 @@ class QDIIController {
                     <tr>
                         <td style="width: 36px; text-align: center; font-weight: bold; color: var(--text-secondary);">${h.rank}</td>
                         <td style="font-weight: 600;">
-                            <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-                                <span>${h.stock_name}</span>
+                            <div>${h.stock_name}</div>
+                            <div style="font-size: 0.72rem; color: var(--text-tertiary); font-family: monospace; margin-top: 2px; display: flex; align-items: center; gap: 6px;">
+                                <span>${h.stock_code}</span>
                                 ${badgeHtml}
                             </div>
-                            <div style="font-size: 0.72rem; color: var(--text-tertiary); font-family: monospace; margin-top: 2px;">${h.stock_code}</div>
                         </td>
                         <td style="width: 45%;">
                             <div class="qdii-holding-ratio-wrapper">
