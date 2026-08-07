@@ -169,8 +169,18 @@ class QDIIController {
                     warningHtml = `<span class="alloc-warning-wrapper" title="提示：二季报官方国家/地区明细未完全披露，各地区占比为基于底层资产或历史持仓的估算参考值" style="cursor: help; display: inline-flex; align-items: center; margin-left: 2px;"><i data-lucide="alert-circle" style="width: 12px; height: 12px; color: var(--accent-red); vertical-align: middle;"></i></span>`;
                 }
 
+                let tooltipParts = [];
+                tooltipParts.push(`股票: ${stockPct}%${hasDetailed ? ' (美股 ' + (usPct || '0.0') + '%, 港股 ' + (hkPct || '0.0') + '%' + (cnPct ? ', A股 ' + cnPct + '%' : '') + (otherPct ? ', 日韩/台股 ' + otherPct + '%' : '') + ')' : ''}`);
+                if (alloc.cash_pct > 0.1) tooltipParts.push(`现金: ${cashPct}%`);
+                if (alloc.bond_pct > 0.5) tooltipParts.push(`债券: ${bondPct}%`);
+                if (totalVal < 99.5) {
+                    const unclassifiedPct = (100.0 - totalVal).toFixed(1);
+                    tooltipParts.push(`其它: ${unclassifiedPct}%`);
+                }
+                const cellTooltipTitle = tooltipParts.join(', ');
+
                 allocHtml = `
-                    <div class="allocation-cell" title="股票: ${stockPct}%${hasDetailed ? ' (美股 ' + (usPct || '0.0') + '%, 港股 ' + (hkPct || '0.0') + '%' + (cnPct ? ', A股 ' + cnPct + '%' : '') + (otherPct ? ', 其他/日韩 ' + otherPct + '%' : '') + ')' : ''}, 现金: ${cashPct}%">
+                    <div class="allocation-cell" title="${cellTooltipTitle}">
                         <div class="allocation-text">
                             ${allocLabel}${warningHtml}
                         </div>
