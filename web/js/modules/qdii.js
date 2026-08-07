@@ -132,7 +132,7 @@ class QDIIController {
                     if (usPct != null && parseFloat(usPct) > 0) subParts.push(`<span class="alloc-text-item alloc-text-us">${usPct}% 美股</span>`);
                     if (hkPct != null && parseFloat(hkPct) > 0) subParts.push(`<span class="alloc-text-item alloc-text-hk">${hkPct}% 港股</span>`);
                     if (cnPct != null && parseFloat(cnPct) > 0) subParts.push(`<span class="alloc-text-item alloc-text-cn">${cnPct}% A股</span>`);
-                    if (otherPct != null && parseFloat(otherPct) > 0) subParts.push(`<span class="alloc-text-item alloc-text-other">${otherPct}% 其他/日韩</span>`);
+                    if (otherPct != null && parseFloat(otherPct) > 0) subParts.push(`<span class="alloc-text-item alloc-text-other">${otherPct}% 日韩/台股</span>`);
                 } else {
                     subParts.push(`<span class="alloc-text-item alloc-text-stock">${stockPct}% 股票</span>`);
                 }
@@ -145,7 +145,7 @@ class QDIIController {
                     if (usPct != null && parseFloat(usPct) > 0) barSegments.push({ cls: 'allocation-bar-us', val: parseFloat(usPct), title: `美股股票: ${usPct}%` });
                     if (hkPct != null && parseFloat(hkPct) > 0) barSegments.push({ cls: 'allocation-bar-hk', val: parseFloat(hkPct), title: `港股股票: ${hkPct}%` });
                     if (cnPct != null && parseFloat(cnPct) > 0) barSegments.push({ cls: 'allocation-bar-cn', val: parseFloat(cnPct), title: `A股股票: ${cnPct}%` });
-                    if (otherPct != null && parseFloat(otherPct) > 0) barSegments.push({ cls: 'allocation-bar-other', val: parseFloat(otherPct), title: `日韩/其他股票: ${otherPct}%` });
+                    if (otherPct != null && parseFloat(otherPct) > 0) barSegments.push({ cls: 'allocation-bar-other', val: parseFloat(otherPct), title: `日韩/台股: ${otherPct}%` });
                 } else {
                     barSegments.push({ cls: 'allocation-bar-stock', val: parseFloat(stockPct), title: `股票: ${stockPct}%` });
                 }
@@ -159,7 +159,7 @@ class QDIIController {
                 if (totalVal < 99.5) {
                     const unclassifiedPct = (100.0 - totalVal).toFixed(1);
                     barHtml += `<div class="allocation-bar-unclassified" style="flex: 0 0 ${unclassifiedPct}%; width: ${unclassifiedPct}%;" title="其它资产: ${unclassifiedPct}%"></div>`;
-                    subParts.push(`<span class="alloc-text-item alloc-text-unclassified" style="color: var(--text-tertiary);">${unclassifiedPct}% 其它</span>`);
+                    subParts.push(`<span class="alloc-text-item alloc-text-unclassified">${unclassifiedPct}% 其它</span>`);
                 }
 
                 let allocLabel = subParts.join('<span class="alloc-sep">·</span>');
@@ -256,7 +256,7 @@ class QDIIController {
         ` : (this.currentFilter === 'active' ? `
             <div style="padding: 10px 14px; margin-bottom: 12px; border-radius: 6px; background: var(--bg-body); border: 1px solid var(--border-light); font-size: clamp(0.72rem, 2.5vw, 0.78rem); color: var(--text-secondary); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
                 <div>
-                    🎯 <strong>【主动型 QDII 精选】由基金经理团队进行全球多市场（美/港/A/日韩/台/印）主动选股与仓位管理</strong>
+                    🎯 <strong>【主动型 QDII】全球市场动态主动配置</strong>
                 </div>
                 <div class="qdii-legend-group">
                     <span class="qdii-legend-tag tag-us">美股</span>
