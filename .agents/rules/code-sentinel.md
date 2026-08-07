@@ -53,13 +53,13 @@ npm install -g prettier
 ## 📚 Lessons Learned Reminder
 
 > After resolving major bugs or discovering new best practices, check if the following files need updates:
-> - `.agent/skills/python-development/SKILL.md`
-> - `.agent/skills/frontend-development/SKILL.md`
-> - `.agent/workflows/*.md`
+> - `.agents/skills/python-development/SKILL.md`
+> - `.agents/skills/frontend-development/SKILL.md`
+> - `.agents/rules/*.md`
 
 ---
 
 ## ⚙️ Language Policy
 
-> **All content in `.agent/` directory MUST be written in English.**
+> **All content in `.agents/` directory MUST be written in English.**
 > This ensures consistency and optimal AI comprehension.

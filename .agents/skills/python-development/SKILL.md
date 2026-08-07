@@ -134,13 +134,13 @@ grep -rn " | None" analytics/ --include="*.py"
 ## 📚 Lessons Learned Reminder
 
 > After resolving major issues or discovering new best practices, check if the following files need updates:
-> - `.agent/skills/python-development/SKILL.md` - Python development guidelines
-> - `.agent/skills/frontend-development/SKILL.md` - Frontend development guidelines
-> - `.agent/workflows/*.md` - Workflow configurations
+> - `.agents/skills/python-development/SKILL.md` - Python development guidelines
+> - `.agents/skills/frontend-development/SKILL.md` - Frontend development guidelines
+> - `.agents/rules/*.md` - Rule/workflow configurations
 
 ---
 
 ## ⚙️ Language Policy
 
-> **All content in `.agent/` directory MUST be written in English.**
+> **All content in `.agents/` directory MUST be written in English.**
 > This ensures consistency and optimal AI comprehension.

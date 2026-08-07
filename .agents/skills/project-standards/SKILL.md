@@ -334,12 +334,12 @@ async function loadData(endpoint) {
 
 | Skill | Path | When to Read |
 |:------|:-----|:-------------|
-| Frontend Standards | `.agent/skills/frontend-development/SKILL.md` | Modifying `.js`, `.html`, `.css` |
-| Python Standards | `.agent/skills/python-development/SKILL.md` | Modifying `.py` files |
+| Frontend Standards | `.agents/skills/frontend-development/SKILL.md` | Modifying `.js`, `.html`, `.css` |
+| Python Standards | `.agents/skills/python-development/SKILL.md` | Modifying `.py` files |
 
 ---
 
 ## ⚙️ Language Policy
 
-> **All content in `.agent/` directory MUST be written in English.**
+> **All content in `.agents/` directory MUST be written in English.**
 > This ensures consistency and optimal AI comprehension.

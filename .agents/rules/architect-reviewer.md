@@ -46,5 +46,5 @@ Refer to [Frontend Development Standards](../skills/frontend-development/SKILL.m
 
 ## ⚙️ Language Policy
 
-> **All content in `.agent/` directory MUST be written in English.**
+> **All content in `.agents/` directory MUST be written in English.**
 > This ensures consistency and optimal AI comprehension.
