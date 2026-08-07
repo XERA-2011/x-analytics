@@ -248,6 +248,20 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "default_asset_allocation": {"stock_pct": 89.10, "cash_pct": 1.28, "bond_pct": 7.93},
     },
     {
+        "code": "161128",
+        "name": "易方达标普信息科技(QDII-LOF)A",
+        "index_code": "SPX",
+        "index_name": "标普500",
+        "fee_rate": "1.00%",
+        "tracking_error": "0.30%",
+        "inception_date": "2016-12-13",
+        "default_return_1y": 25.50,
+        "default_nav": 5.1200,
+        "default_nav_date": "2026-08-07",
+        "default_asset_allocation": {"stock_pct": 91.31, "cash_pct": 1.42, "bond_pct": 7.15},
+        "tag": "信息科技",
+    },
+    {
         "code": "050025",
         "name": "博时标普500ETF联接(QDII)A",
         "index_code": "SPX",
@@ -1002,7 +1016,7 @@ def _generate_active_fund_tag(item: Dict[str, Any], total_count: int, top10_conc
     return "均衡配置"
 
 
-@cached("qdii:passive_funds_v31", ttl=86400)
+@cached("qdii:passive_funds_v32", ttl=86400)
 def get_qdii_passive_funds() -> Dict[str, Any]:
     """获取国内纳斯达克100 & 标普500 场外被动 QDII A类基金数据列表
 
