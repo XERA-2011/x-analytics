@@ -374,10 +374,9 @@ class QDIIController {
                 return;
             }
 
-            const maxRatio = Math.max(...holdings.map(h => h.ratio_val || 0), 1.0);
-
             const rowsHtml = holdings.map(h => {
-                const barWidth = Math.min(100, (h.ratio_val / maxRatio) * 100);
+                const rawRatio = h.ratio_val || 0;
+                const barWidth = rawRatio > 0 ? Math.max(0.5, Math.min(100, rawRatio)) : 0;
                 
                 // 渲染持仓证券类型徽章
                 let badgeHtml = '';
