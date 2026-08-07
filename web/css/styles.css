@@ -2712,7 +2712,7 @@ footer {
     flex: 1;
     height: 6px;
     border-radius: 3px;
-    background: var(--bg-body);
+    background: rgba(156, 163, 175, 0.25);
     overflow: hidden;
     min-width: 60px;
 }
