@@ -158,8 +158,8 @@ class QDIIController {
                 // 若存在未披露/其他杂项资产 (100% - totalVal)，用中性灰色条填充并呈现到文本明细中
                 if (totalVal < 99.5) {
                     const unclassifiedPct = (100.0 - totalVal).toFixed(1);
-                    barHtml += `<div class="allocation-bar-unclassified" style="flex: 0 0 ${unclassifiedPct}%; width: ${unclassifiedPct}%;" title="其他/未披露资产: ${unclassifiedPct}%"></div>`;
-                    subParts.push(`<span class="alloc-text-item alloc-text-unclassified" style="color: var(--text-tertiary);">${unclassifiedPct}% 未披露</span>`);
+                    barHtml += `<div class="allocation-bar-unclassified" style="flex: 0 0 ${unclassifiedPct}%; width: ${unclassifiedPct}%;" title="其它资产: ${unclassifiedPct}%"></div>`;
+                    subParts.push(`<span class="alloc-text-item alloc-text-unclassified" style="color: var(--text-tertiary);">${unclassifiedPct}% 其它</span>`);
                 }
 
                 let allocLabel = subParts.join('<span class="alloc-sep">·</span>');
@@ -240,7 +240,7 @@ class QDIIController {
                     <span class="qdii-legend-tag tag-other">日韩/台股</span>
                     <span class="qdii-legend-tag tag-cash">现金</span>
                     <span class="qdii-legend-tag tag-bond">债券</span>
-                    <span class="qdii-legend-tag tag-unclassified">未披露/其他</span>
+                    <span class="qdii-legend-tag tag-unclassified">其它</span>
                 </div>
             </div>
         ` : (this.currentFilter === 'active' ? `
@@ -255,7 +255,7 @@ class QDIIController {
                     <span class="qdii-legend-tag tag-other">日韩/台股</span>
                     <span class="qdii-legend-tag tag-cash">现金</span>
                     <span class="qdii-legend-tag tag-bond">债券</span>
-                    <span class="qdii-legend-tag tag-unclassified">未披露</span>
+                    <span class="qdii-legend-tag tag-unclassified">其它</span>
                 </div>
             </div>
         ` : '');
