@@ -5,7 +5,7 @@
 数据按 24 小时 (86400秒) 缓存一次。
 """
 
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Tuple
 from concurrent.futures import ThreadPoolExecutor
 import requests
 import re
@@ -1035,7 +1035,7 @@ def get_qdii_passive_funds() -> Dict[str, Any]:
 
     # 2. 尝试 雪球 并发获取每个基金的真实近1年收益率 (复权净值计算，精确剔除分拆与折算误差)
     try:
-        def fetch_xq_return(code):
+        def fetch_xq_return(code: str) -> Tuple[str, Optional[float]]:
             try:
                 df = ak.fund_individual_achievement_xq(symbol=code)
                 if df is not None and not df.empty:

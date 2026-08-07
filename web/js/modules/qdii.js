@@ -341,7 +341,7 @@ class QDIIController {
                     </h3>
                     <button class="qdii-modal-close" aria-label="关闭">&times;</button>
                 </div>
-                <div class="qdii-modal-body">
+                <div class="qdii-modal-body" id="qdii-modal-body-content">
                     <div class="loading"><i data-lucide="loader-2" class="spin"></i> 正在获取最新重仓持仓明细...</div>
                 </div>
             </div>
@@ -460,8 +460,7 @@ class QDIIController {
             if (window.lucide) lucide.createIcons();
         } catch (err) {
             console.error('获取持仓明细失败:', err);
-            const bodyEl = overlay.querySelector('.qdii-modal-body');
-            if (bodyEl) bodyEl.innerHTML = `<div style="text-align: center; color: var(--danger-color); padding: 24px;">获取持仓明细失败，请稍后重试</div>`;
+            utils.renderError('qdii-modal-body-content', '获取持仓明细失败，请稍后重试');
         }
     }
 

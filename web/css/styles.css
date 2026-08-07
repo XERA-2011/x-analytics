@@ -512,13 +512,13 @@ body {
     color: var(--accent-green);
 }
 
-/* All Markets: Unified Red up, Green down */
+/* US Market: Green up, Red down */
 .text-up-us {
-    color: var(--accent-red);
+    color: var(--accent-green);
 }
 
 .text-down-us {
-    color: var(--accent-green);
+    color: var(--accent-red);
 }
 
 .text-mono {
