@@ -737,11 +737,15 @@ class MarketController {
                     badgeClass = 'high';
                 }
 
+                const headerTitle = document.getElementById('val-header-title');
+                const headerBadge = document.getElementById('val-header-badge');
+                if (headerTitle) headerTitle.textContent = `${name} 估值概览`;
+                if (headerBadge) {
+                    headerBadge.textContent = levelName;
+                    headerBadge.className = `status-badge ${badgeClass}`;
+                }
+
                 summaryContainer.innerHTML = `
-                    <div class="val-summary-info">
-                        <span class="val-title">${name} 估值概览</span>
-                        <span class="status-badge ${badgeClass}">${levelName}</span>
-                    </div>
                     <div class="val-summary-stats">
                         <div class="val-stat-item">
                             <span class="val-stat-label">当前 PE (TTM)</span>

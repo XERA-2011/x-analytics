@@ -2838,47 +2838,52 @@ footer {
     border-color: var(--text-primary);
 }
 
-.valuation-summary {
-    padding: 16px 20px;
-    border-bottom: 1px dashed var(--border-light);
-    margin-bottom: 16px;
+.val-card-header {
     display: flex;
-    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
     gap: 12px;
+    flex-wrap: wrap;
 }
 
-.val-summary-info {
+.val-header-info {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
 }
 
-.val-summary-info .val-title {
+.val-header-title {
     font-size: 1.15rem;
     font-weight: 700;
     color: var(--text-primary);
 }
 
-.val-summary-info .status-badge {
+.val-header-info .status-badge {
     padding: 2px 8px;
     border-radius: 4px;
     font-size: 0.8rem;
     font-weight: 600;
 }
 
-.val-summary-info .status-badge.low {
+.val-header-info .status-badge.low {
     background-color: #dcfce7;
     color: #15803d;
 }
 
-.val-summary-info .status-badge.medium {
+.val-header-info .status-badge.medium {
     background-color: #fef3c7;
     color: #b45309;
 }
 
-.val-summary-info .status-badge.high {
+.val-header-info .status-badge.high {
     background-color: #fee2e2;
     color: #b91c1c;
+}
+
+.valuation-summary {
+    padding: 16px 20px;
+    border-bottom: 1px dashed var(--border-light);
+    margin-bottom: 16px;
 }
 
 .val-summary-stats {
@@ -2909,12 +2914,14 @@ footer {
 
 /* Responsive fixes for valuation chart */
 @media (max-width: 640px) {
-    #valuation-title {
-        display: none;
+    .val-card-header {
+        flex-direction: column-reverse;
+        align-items: flex-start;
+        gap: 12px;
     }
     
     .valuation-tabs {
-        flex: 1;
+        width: 100%;
         justify-content: space-between;
         gap: 4px;
     }
@@ -2925,6 +2932,10 @@ footer {
         font-size: 0.75rem;
         text-align: center;
     }
+
+    .val-header-title {
+        font-size: 1.05rem;
+    }
     
     .val-summary-stats {
         gap: 12px 24px;
@@ -2932,10 +2943,6 @@ footer {
     
     .val-stat-item {
         min-width: 70px;
-    }
-    
-    .val-summary-info .val-title {
-        font-size: 1.05rem;
     }
     
     #valuation-chart {
