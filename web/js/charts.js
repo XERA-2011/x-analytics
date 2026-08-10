@@ -825,17 +825,22 @@ class Charts {
                             formatter: function (params) {
                                 return params.name + ': ' + Number(params.value || 0).toFixed(2);
                             },
-                            fontSize: 11,
+                            fontSize: 9,
                             fontWeight: 'bold',
-                            padding: [2, 4]
+                            padding: [2, 4],
+                            borderRadius: 3,
+                            backgroundColor: 'rgba(255, 255, 255, 0.85)',
+                            borderWidth: 1,
+                            borderColor: 'rgba(229, 231, 235, 0.5)',
+                            offset: [8, 0]
                         },
                         data: [
                             {
                                 yAxis: p20,
                                 name: '20%',
                                 label: {
-                                    position: 'end',
-                                    color: '#22c55e'
+                                    position: 'insideStartTop',
+                                    color: '#15803d'
                                 },
                                 lineStyle: {
                                     color: '#22c55e',
@@ -847,8 +852,8 @@ class Charts {
                                 yAxis: p50,
                                 name: '50%',
                                 label: {
-                                    position: 'middle',
-                                    color: '#6b7280'
+                                    position: 'insideStartTop',
+                                    color: '#4b5563'
                                 },
                                 lineStyle: {
                                     color: '#6b7280',
@@ -860,8 +865,8 @@ class Charts {
                                 yAxis: p80,
                                 name: '80%',
                                 label: {
-                                    position: 'start',
-                                    color: '#ef4444'
+                                    position: 'insideStartTop',
+                                    color: '#b91c1c'
                                 },
                                 lineStyle: {
                                     color: '#ef4444',
