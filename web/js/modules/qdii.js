@@ -401,6 +401,18 @@ class QDIIController {
                     badgeHtml = `<span style="font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; font-weight: bold; background: ${bgColor}; color: ${textColor}; display: inline-flex; align-items: center; justify-content: center; line-height: 1; vertical-align: middle;">${h.stock_type}</span>`;
                 }
 
+                // 计算较上季变化渲染内容
+                let changeHtml = '';
+                if (h.change_status === 'new') {
+                    changeHtml = `<span style="font-size: 0.68rem; padding: 2px 6px; border-radius: 4px; font-weight: bold; background: rgba(59, 130, 246, 0.1); color: var(--accent-blue); border: 1px solid rgba(59, 130, 246, 0.25); display: inline-flex; align-items: center; gap: 2px;"><i data-lucide="sparkles" style="width: 10px; height: 10px;"></i>新进</span>`;
+                } else if (h.change_status === 'up') {
+                    changeHtml = `<span style="color: var(--accent-green); font-weight: 700; font-family: monospace; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 2px;">▲ ${h.change_pct}</span>`;
+                } else if (h.change_status === 'down') {
+                    changeHtml = `<span style="color: var(--accent-red); font-weight: 700; font-family: monospace; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 2px;">▼ ${h.change_pct}</span>`;
+                } else {
+                    changeHtml = `<span style="color: var(--text-tertiary); font-family: monospace; font-size: 0.8rem;">0.00%</span>`;
+                }
+
                 return `
                     <tr>
                         <td style="width: 36px; text-align: center; font-weight: bold; color: var(--text-secondary);">${h.rank}</td>
@@ -411,13 +423,16 @@ class QDIIController {
                                 ${badgeHtml}
                             </div>
                         </td>
-                        <td style="width: 45%;">
+                        <td style="width: 35%;">
                             <div class="qdii-holding-ratio-wrapper">
                                 <div class="qdii-holding-bar-bg">
                                     <div class="qdii-holding-bar-fill" style="width: ${barWidth}%;"></div>
                                 </div>
                                 <span style="font-weight: 700; font-family: monospace; min-width: 50px; text-align: right;">${h.ratio_pct}</span>
                             </div>
+                        </td>
+                        <td style="width: 25%; text-align: right; font-weight: 600;">
+                            ${changeHtml}
                         </td>
                     </tr>
                 `;
@@ -430,6 +445,30 @@ class QDIIController {
                     <div style="background: rgba(59, 130, 246, 0.06); border: 1px solid rgba(59, 130, 246, 0.15); border-radius: 6px; padding: 8px 12px; font-size: 0.76rem; color: var(--accent-blue); margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
                         <i data-lucide="link" style="width: 14px; height: 14px; flex-shrink: 0;"></i>
                         <span>当前持仓已自动穿透至底层联接的 ETF (<strong>${data.target_code}</strong>) 获取真实持仓</span>
+                    </div>
+                `;
+            }
+
+            // 构建已退出/清仓标的列表提示
+            let exitedHtml = '';
+            const exited = data.exited_holdings || [];
+            if (exited.length > 0) {
+                const listHtml = exited.map(ex => {
+                    return `<span style="background: var(--bg-secondary); border: 1px solid var(--border-light); padding: 2px 8px; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px; font-weight: 500; font-size: 0.7rem; color: var(--text-secondary); margin-right: 6px; margin-bottom: 6px;">
+                        <span>🚪 ${ex.stock_name}</span>
+                        <span style="font-size: 0.65rem; color: var(--text-tertiary); font-family: monospace;">(${ex.previous_ratio_pct})</span>
+                    </span>`;
+                }).join('');
+                
+                exitedHtml = `
+                    <div class="qdii-exited-holdings-container" style="margin-top: 16px; padding-top: 14px; border-top: 1px dashed var(--border-light);">
+                        <div style="font-size: 0.72rem; font-weight: 600; color: var(--text-tertiary); margin-bottom: 8px; display: flex; align-items: center; gap: 4px;">
+                            <i data-lucide="log-out" style="width: 12px; height: 12px;"></i>
+                            <span>上季重仓已退出/清仓 (前十)</span>
+                        </div>
+                        <div style="display: flex; flex-wrap: wrap;">
+                            ${listHtml}
+                        </div>
                     </div>
                 `;
             }
@@ -449,13 +488,15 @@ class QDIIController {
                         <tr>
                             <th style="width: 36px; text-align: center;">#</th>
                             <th>股票名称 / 代码</th>
-                            <th style="width: 45%;">占净值比例</th>
+                            <th style="width: 35%;">占净值比例</th>
+                            <th style="width: 25%; text-align: right;">较上季变化</th>
                         </tr>
                     </thead>
                     <tbody>
                         ${rowsHtml}
                     </tbody>
                 </table>
+                ${exitedHtml}
             `;
             if (window.lucide) lucide.createIcons();
         } catch (err) {

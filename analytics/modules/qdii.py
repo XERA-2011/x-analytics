@@ -1208,7 +1208,7 @@ def _fetch_full_holdings_count(session: requests.Session, fetch_code: str, defau
     return default_count
 
 
-@cached("qdii:top_holdings_v10", ttl=86400 * 7, stale_ttl=86400 * 30, sync_on_cold=True)
+@cached("qdii:top_holdings_v11", ttl=86400 * 7, stale_ttl=86400 * 30, sync_on_cold=True)
 def get_qdii_top_holdings(code: str) -> Dict[str, Any]:
     """获取 QDII 基金最新披露的重仓持仓股票列表（升级支持最大100只完整持仓）"""
     # 联接基金到目标 ETF 的映射，当联接基金本身无持仓披露时，自动穿透到目标 ETF 获取底层持仓
@@ -1273,8 +1273,8 @@ def get_qdii_top_holdings(code: str) -> Dict[str, Any]:
         date_font = soup.find("font", class_="px12")
         report_date = date_font.text.strip() if date_font else "最新季报"
 
-        table = soup.find("table", class_="tzxq")
-        if not table:
+        tables = soup.find_all("table", class_="tzxq")
+        if not tables:
             return {
                 "status": "ok",
                 "code": code,
@@ -1284,24 +1284,87 @@ def get_qdii_top_holdings(code: str) -> Dict[str, Any]:
                 "top10_concentration": 0.0,
                 "is_penetrated": fetch_code != code,
                 "target_code": fetch_code if fetch_code != code else None,
-                "holdings": []
+                "holdings": [],
+                "exited_holdings": []
             }
 
+        # Helper to dynamically find the index of "占净值比例" based on table headers
+        def get_ratio_col_index(table_el) -> int:
+            thead = table_el.find("thead")
+            if thead:
+                headers = [th.text.strip() for th in thead.find_all("th")]
+                for i, h in enumerate(headers):
+                    if "占净值" in h or "比例" in h:
+                        return i
+            tbody = table_el.find("tbody")
+            first_tr = tbody.find("tr") if tbody else None
+            if not first_tr:
+                first_tr = table_el.find("tr")
+            cols_count = len(first_tr.find_all("td")) if first_tr else 7
+            return 4 if cols_count == 7 else 6
+
+        # 1. 解析上季度持仓数据 (Table 1) 建立对照 Map
+        prev_holdings_map = {}
+        if len(tables) >= 2:
+            prev_table = tables[1]
+            p_ratio_idx = get_ratio_col_index(prev_table)
+            for idx, tr in enumerate(prev_table.find_all("tr")[1:]):
+                cols = [td.text.strip() for td in tr.find_all(["td", "th"])]
+                if len(cols) > p_ratio_idx:
+                    p_rank = cols[0]
+                    p_code = cols[1].strip()
+                    p_name = cols[2].strip()
+                    p_ratio_str = cols[p_ratio_idx]
+                    try:
+                        p_ratio_val = float(p_ratio_str.replace("%", "").strip())
+                    except ValueError:
+                        p_ratio_val = 0.0
+                    
+                    # 确定唯一 key (有代码用代码，无代码用名称)
+                    key = p_code if p_code else p_name
+                    if key:
+                        prev_holdings_map[key] = {
+                            "rank_idx": idx,
+                            "ratio_val": p_ratio_val,
+                            "ratio_pct": p_ratio_str,
+                            "stock_name": p_name,
+                            "stock_code": p_code
+                        }
+
+        # 2. 解析本季度持仓数据 (Table 0)
+        table = tables[0]
+        ratio_idx = get_ratio_col_index(table)
         holdings = []
         for tr in table.find_all("tr")[1:]:
             cols = [td.text.strip() for td in tr.find_all(["td", "th"])]
-            if len(cols) >= 7:
+            if len(cols) > ratio_idx:
                 rank_str = cols[0]
-                stock_code = cols[1]
-                stock_name = cols[2]
-                ratio_pct_str = cols[6]
-                share_amount = cols[7] if len(cols) > 7 else "--"
-                market_value = cols[8] if len(cols) > 8 else "--"
+                stock_code = cols[1].strip()
+                stock_name = cols[2].strip()
+                ratio_pct_str = cols[ratio_idx]
+                share_amount = cols[ratio_idx + 1] if len(cols) > (ratio_idx + 1) else "--"
+                market_value = cols[ratio_idx + 2] if len(cols) > (ratio_idx + 2) else "--"
 
                 try:
                     ratio_val = float(ratio_pct_str.replace("%", "").strip())
                 except ValueError:
                     ratio_val = 0.0
+
+                # 计算较上季变化
+                change_pct = "新进"
+                change_status = "new"
+                change_val = None
+
+                lookup_key = stock_code if stock_code else stock_name
+                if lookup_key in prev_holdings_map:
+                    prev_item = prev_holdings_map[lookup_key]
+                    prev_ratio_val = prev_item["ratio_val"]
+                    diff = ratio_val - prev_ratio_val
+                    change_val = round(diff, 2)
+                    change_pct = f"{change_val:+.2f}%" if change_val != 0 else "0.00%"
+                    change_status = "up" if change_val > 0 else "down" if change_val < 0 else "flat"
+                    # 从 map 中移除以过滤最终清仓/退出前十的标的
+                    prev_holdings_map.pop(lookup_key)
 
                 # 判定持仓股类型
                 stock_type = "其他"
@@ -1340,8 +1403,24 @@ def get_qdii_top_holdings(code: str) -> Dict[str, Any]:
                     "ratio_pct": ratio_pct_str,
                     "ratio_val": ratio_val,
                     "share_amount": share_amount,
-                    "market_value": market_value
+                    "market_value": market_value,
+                    "change_pct": change_pct,
+                    "change_status": change_status,
+                    "change_val": change_val
                 })
+
+        # 3. 提取清仓或退出前十的股票 (仅提取上季度前十大持仓中已退出本季持仓的标的)
+        exited_holdings = []
+        for key, prev_item in prev_holdings_map.items():
+            if prev_item["rank_idx"] < 10:
+                exited_holdings.append({
+                    "stock_name": prev_item["stock_name"],
+                    "stock_code": prev_item["stock_code"],
+                    "previous_ratio_pct": prev_item["ratio_pct"]
+                })
+        
+        # 按照上季持仓排名排序
+        exited_holdings.sort(key=lambda x: prev_holdings_map.get(x["stock_code"] if x["stock_code"] else x["stock_name"], {}).get("rank_idx", 999))
 
         # 计算前十集中度与全量持仓只数
         top10_concentration = round(sum(h["ratio_val"] for h in holdings[:10]), 2)
@@ -1356,8 +1435,9 @@ def get_qdii_top_holdings(code: str) -> Dict[str, Any]:
             "top10_concentration": top10_concentration,
             "is_penetrated": fetch_code != code,
             "target_code": fetch_code if fetch_code != code else None,
-            "holdings": holdings
+            "holdings": holdings,
+            "exited_holdings": exited_holdings
         }
     except Exception as e:
-        return {"status": "error", "message": str(e), "holdings": []}
+        return {"status": "error", "message": str(e), "holdings": [], "exited_holdings": []}
 
