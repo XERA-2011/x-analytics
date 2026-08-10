@@ -456,6 +456,7 @@ class AIMarketController {
                     ${(() => {
                         const roadmap = data.diffusion_roadmap || {};
                         const activeStages = roadmap.active_stages || [1, 2];
+                        const leadingStage = roadmap.leading_stage || null;
                         const stageMap = {};
                         (roadmap.stages || []).forEach(s => { stageMap[s.id] = s; });
 
@@ -470,6 +471,7 @@ class AIMarketController {
                         let htmlStr = '<div class="minimal-pipeline-track">';
                         stagesInfo.forEach(st => {
                             const isActive = activeStages.includes(st.id);
+                            const isLeading = st.id === leadingStage;
                             const sData = stageMap[st.id] || {};
                             const val = sData.avg_change;
                             let changeStr = '--';
@@ -482,11 +484,18 @@ class AIMarketController {
                                 changeClass = isUp ? 'text-up' : 'text-down';
                             }
 
+                            let tagHtml = '';
+                            if (isLeading) {
+                                tagHtml = '<span class="minimal-step-tag">主导</span>';
+                            } else if (isActive) {
+                                tagHtml = '<span class="minimal-step-tag active-tag" style="background: rgba(59, 130, 246, 0.1); color: var(--accent-blue); border: 1px solid rgba(59, 130, 246, 0.3); font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: bold;">活跃</span>';
+                            }
+
                             htmlStr += `
-                                <div class="minimal-step-card ${isActive ? 'active' : ''}">
+                                <div class="minimal-step-card ${isActive ? 'active' : ''} ${isLeading ? 'leading' : ''}">
                                     <div class="minimal-step-head">
                                         <span class="minimal-step-num">0${st.id}</span>
-                                        ${isActive ? '<span class="minimal-step-tag">主导</span>' : ''}
+                                        ${tagHtml}
                                     </div>
                                     <div class="minimal-step-title">${st.name}</div>
                                     <div class="minimal-step-stocks" title="${st.stocks}">${st.stocks}</div>

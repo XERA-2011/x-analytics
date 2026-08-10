@@ -263,14 +263,15 @@ class AIOverview:
                 }
             ]
 
-            # 4. 全球 AI 周期总得分 (AI Global Cycle Score) - 含 15% 能源因子
+            # 4. 全球 AI 周期总得分 (AI Global Cycle Score) - 七因子模型 (含 10% A股概念资产，增强盘中波动响应)
             weighted_pct = (
-                l0_avg * 0.15 + 
-                l1_avg * 0.30 + 
+                l0_avg * 0.10 + 
+                l1_avg * 0.25 + 
                 l2_avg * 0.20 + 
                 l3_avg * 0.15 + 
                 l4_avg * 0.10 + 
-                l5_avg * 0.10
+                l5_avg * 0.10 + 
+                l6_avg * 0.10
             )
             heat_score = min(100.0, max(0.0, 50.0 + weighted_pct * 7.5))
             heat_score = round(heat_score, 1)
@@ -365,12 +366,29 @@ class AIOverview:
                 }
             }
 
-            # 9. AI 历史周期比较
+            # 9. AI 历史周期比较 (基于中美平均泡沫风险动态适配映射模型)
+            avg_bubble_risk = (us_bubble_raw * 3.2 + cn_bubble_raw * 3.1) / 2
+            if avg_bubble_risk >= 70.0:
+                matched_era = "1999年 互联网泡沫晚期 (情绪极度亢奋)"
+                similarity_pct = round(85.0 + (avg_bubble_risk - 70.0) * 0.3, 1)
+                bubble_distance = "距离泡沫破裂阶段约 1 个周期阶段"
+                summary_desc = "当前中美 AI 估值偏离度极高，资金向边缘股疯狂倾斜，已呈现 1999 年末期泡沫特征，需高度警惕阶段性泡沫破裂风险。"
+            elif avg_bubble_risk >= 50.0:
+                matched_era = "1997年 互联网大建设中期 (基础设施红利期)"
+                similarity_pct = 85.0
+                bubble_distance = "距离泡沫破裂阶段约 2 个周期阶段"
+                summary_desc = "当前 AI 处于基础设施大建设与电力算力红利期，类似 1997 年卖服务器/路由器阶段，尚未进入 2000 年全民炒作无业绩垃圾股的末期泡沫。"
+            else:
+                matched_era = "1996年 互联网商用早期 (基建建设起点)"
+                similarity_pct = round(80.0 + (50.0 - avg_bubble_risk) * 0.4, 1)
+                bubble_distance = "距离泡沫破裂阶段约 3 个周期阶段"
+                summary_desc = "当前全球 AI 产业链资本支出温和，硬件与算力处于稳健扩张或降温期，相似于 1996 年互联网起步阶段，安全边际高。"
+
             historical_match = {
-                "matched_era": "1997年 互联网早期 (Dot-Com 爆发前夕)",
-                "similarity_pct": 85,
-                "bubble_distance": "距离泡沫破裂阶段约 2 个周期阶段",
-                "summary": "当前 AI 处于基础设施大建设与电力算力红利期，类似 1997 年卖服务器/路由器/电力建设阶段，尚未进入 2000 年全民炒作无业绩垃圾股的末期泡沫。"
+                "matched_era": matched_era,
+                "similarity_pct": similarity_pct,
+                "bubble_distance": bubble_distance,
+                "summary": summary_desc
             }
 
             # 10. AI 四象限投资时钟
@@ -426,15 +444,16 @@ class AIOverview:
             # 12. 指标与公式透明化说明
             explanations = {
                 "cycle_score": {
-                    "title": "AI Global Cycle Score (全球 AI 产业周期总得分) 六因子模型",
-                    "formula": "得分范围 0~100 分。加权涨跌幅 weighted_pct = L0*15% + L1*30% + L2*20% + L3*15% + L4*10% + L5*10%。基准分 = Min(100, Max(0, 50.0 + weighted_pct * 7.5))。",
+                    "title": "AI Global Cycle Score (全球 AI 产业周期总得分) 七因子模型",
+                    "formula": "得分范围 0~100 分。加权涨跌幅 weighted_pct = L0*10% + L1*25% + L2*20% + L3*15% + L4*10% + L5*10% + L6*10%。基准分 = Min(100, Max(0, 50.0 + weighted_pct * 7.5))。",
                     "weights": [
-                        {"layer": "L0 能源电力", "weight": "15%", "targets": "GEV (电气), CEG (核电), VST, ETN"},
-                        {"layer": "L1 算力芯片", "weight": "30%", "targets": "NVDA, AMD, AVGO, ARM, MRVL, SMH"},
+                        {"layer": "L0 能源电力", "weight": "10%", "targets": "GEV (电气), CEG (核电), VST, ETN"},
+                        {"layer": "L1 算力芯片", "weight": "25%", "targets": "NVDA, AMD, AVGO, ARM, MRVL, SMH"},
                         {"layer": "L2 存储代工", "weight": "20%", "targets": "MU (HBM), TSM (CoWoS), ASML"},
                         {"layer": "L3 数据中心", "weight": "15%", "targets": "SMCI (服务器), VRT (液冷), DELL"},
                         {"layer": "L4 云巨头CapEx", "weight": "10%", "targets": "MSFT, GOOGL, AMZN, META, ORCL"},
-                        {"layer": "L5 Agent与应用", "weight": "10%", "targets": "PLTR, NOW, CRM"}
+                        {"layer": "L5 Agent与应用", "weight": "10%", "targets": "PLTR, NOW, CRM"},
+                        {"layer": "L6 A股概念题材", "weight": "10%", "targets": "A股半导体、通信设备及 AI 龙头"}
                     ],
                     "interpretation": "得分 70+ 分为能源与算力强劲爆发期；50~70 分为稳健消化/应用探索期；低于 40 分为周期降温或回调期。"
                 },
@@ -462,16 +481,28 @@ class AIOverview:
                 }
             }
 
-            # 13. 扩散 Roadmap 动态阶段数据
+            # 13. 扩散 Roadmap 动态阶段数据 (动态提取单一主导阶段与活跃阶段，消除双主导并列歧义)
+            active_stage_list = [1, 2] if rotation_class == "healthy" else ([5] if rotation_class == "bubble" else [3, 4])
+            stages_data = [
+                {"id": 1, "name": "阶段 1: 能源与算力芯片", "symbols": "GEV / NVDA / ARM", "avg_change": round(l0_avg * 0.4 + l1_avg * 0.6, 2), "status": "火热" if l1_avg >= 0 else "走弱"},
+                {"id": 2, "name": "阶段 2: 存储与先进封装", "symbols": "美光 MU / 台积电 TSM", "avg_change": round(l2_avg, 2), "status": "火热" if l2_avg >= 0 else "走弱"},
+                {"id": 3, "name": "阶段 3: 基建与液冷电源", "symbols": "SMCI / VRT / DELL", "avg_change": round(l3_avg, 2), "status": "稳健" if l3_avg >= 0 else "承压"},
+                {"id": 4, "name": "阶段 4: 云巨头 & Agent", "symbols": "MSFT / PLTR / SaaS", "avg_change": round(l4_avg * 0.5 + l5_avg * 0.5, 2), "status": "稳健" if l4_avg >= 0 else "承压"},
+                {"id": 5, "name": "阶段 5: 概念炒作 (泡沫)", "symbols": "边缘概念题材", "avg_change": round(l6_avg, 2), "status": "过热" if l6_avg > 2.0 else "平淡"},
+            ]
+
+            leading_stage = None
+            max_change = -999.0
+            for stage_id in active_stage_list:
+                s_item = next((s for s in stages_data if s["id"] == stage_id), None)
+                if s_item and s_item["avg_change"] > max_change:
+                    max_change = s_item["avg_change"]
+                    leading_stage = stage_id
+
             diffusion_roadmap = {
-                "active_stages": [1, 2] if rotation_class == "healthy" else ([5] if rotation_class == "bubble" else [3, 4]),
-                "stages": [
-                    {"id": 1, "name": "阶段 1: 能源与算力芯片", "symbols": "GEV / NVDA / ARM", "avg_change": round(l0_avg * 0.4 + l1_avg * 0.6, 2), "status": "火热" if l1_avg >= 0 else "走弱"},
-                    {"id": 2, "name": "阶段 2: 存储与先进封装", "symbols": "美光 MU / 台积电 TSM", "avg_change": round(l2_avg, 2), "status": "火热" if l2_avg >= 0 else "走弱"},
-                    {"id": 3, "name": "阶段 3: 基建与液冷电源", "symbols": "SMCI / VRT / DELL", "avg_change": round(l3_avg, 2), "status": "稳健" if l3_avg >= 0 else "承压"},
-                    {"id": 4, "name": "阶段 4: 云巨头 & Agent", "symbols": "MSFT / PLTR / SaaS", "avg_change": round(l4_avg * 0.5 + l5_avg * 0.5, 2), "status": "稳健" if l4_avg >= 0 else "承压"},
-                    {"id": 5, "name": "阶段 5: 概念炒作 (泡沫)", "symbols": "边缘概念题材", "avg_change": round(l6_avg, 2), "status": "过热" if l6_avg > 2.0 else "平淡"},
-                ]
+                "active_stages": active_stage_list,
+                "leading_stage": leading_stage,
+                "stages": stages_data
             }
 
             return {
