@@ -648,25 +648,23 @@ class MarketController {
         // 绑定指数估值问号说明弹窗
         const infoBtn = document.getElementById('info-index-valuation');
         if (infoBtn) {
-            infoBtn.style.display = 'inline-flex';
-            if (window.lucide) window.lucide.createIcons();
-            infoBtn.onclick = () => utils.showInfoModal('指数估值温度计说明', `
-                <div style="line-height: 1.6; font-size: 0.9rem;">
-                    <p style="margin-bottom: 12px;"><strong>指数估值温度计</strong> 是通过量化市盈率 PE (TTM) 与历史走势点位，衡量市场指数估值水位与性价比的工具。</p>
-                    <p style="margin-bottom: 8px;"><strong>指标释义：</strong></p>
-                    <ul style="padding-left: 20px; margin-bottom: 12px; list-style-type: disc;">
-                        <li style="margin-bottom: 6px;"><strong>市盈率 PE (TTM)（左 Y 轴 - 黑色曲线）</strong>：滚动市盈率，反映当前估值倍数。</li>
-                        <li style="margin-bottom: 6px;"><strong>指数点位（右 Y 轴 - 蓝色曲线）</strong>：指数收盘点位。</li>
-                        <li style="margin-bottom: 6px;"><strong>分位数线（绿/灰/红虚线）</strong>：基于指数近 10 年历史 PE 数据，分别计算出 <strong>20% (低估区)</strong>、<strong>50% (中位线)</strong> 和 <strong>80% (高估区)</strong> 水平线。</li>
-                    </ul>
-                    <p style="margin-bottom: 8px;"><strong>评级标准：</strong></p>
-                    <ul style="padding-left: 20px; list-style-type: disc;">
-                        <li style="margin-bottom: 6px;"><strong>低估 (&lt; 20%)</strong>：估值偏低，投资性价比极高。</li>
-                        <li style="margin-bottom: 6px;"><strong>估值适中 (20% ~ 80%)</strong>：处于合理估值区间。</li>
-                        <li style="margin-bottom: 6px;"><strong>高估 (&gt;= 80%)</strong>：估值偏高，需警惕回调风险。</li>
-                    </ul>
-                </div>
-            `);
+            infoBtn.style.display = 'flex';
+            infoBtn.onclick = () => utils.showInfoModal('指数估值温度计说明',
+`通过量化市盈率 PE (TTM) 与历史走势点位，衡量指数估值水位与投资性价比。
+
+1. 市盈率 PE (TTM) (左 Y 轴 - 黑色曲线)
+滚动市盈率，反映指数当前的整体估值倍数。
+
+2. 指数点位 (右 Y 轴 - 蓝色曲线)
+指数实际收盘点位走势。
+
+3. 估值分位数水位线 (绿 / 灰 / 红虚线)
+基于指数近10年历史PE数据，分别计算出 20% (低估区)、50% (中位线) 和 80% (高估区) 警戒线。
+
+4. 估值评级标准
+· 低估 (< 20%)：估值处于历史低位，投资性价比极高。
+· 适中 (20% ~ 80%)：处于历史合理估值区间。
+· 高估 (>= 80%)：估值处于历史高位，需警惕回调风险。`);
         }
     }
 

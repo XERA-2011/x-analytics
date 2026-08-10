@@ -165,14 +165,14 @@
 
             <!-- 指数估值温度计 -->
             <div class="market-section" style="margin-top: 28px;">
-                <h3 class="subsection-title" style="display: flex; align-items: center; gap: 6px;">
-                    指数估值温度计
-                    <button class="info-btn" id="info-index-valuation" title="说明" style="display: inline-flex; align-items: center;"><i data-lucide="help-circle" width="16"></i></button>
-                </h3>
+                <h3 class="subsection-title">指数估值温度计</h3>
                 <div class="grid">
                     <div class="card" style="grid-column: 1 / -1;">
                         <div class="card-header">
-                            <div class="card-title" id="valuation-title">指数估值</div>
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                <div class="card-title" id="valuation-title">指数估值</div>
+                                <button class="info-btn" id="info-index-valuation" title="说明"><i data-lucide="help-circle" width="14"></i></button>
+                            </div>
                             <div class="valuation-tabs" id="valuation-tabs">
                                 <button class="val-tab active" data-code="NDX">纳指100</button>
                                 <button class="val-tab" data-code="SP500">标普500</button>
