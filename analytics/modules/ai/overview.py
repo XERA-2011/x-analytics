@@ -25,7 +25,7 @@ class AIOverview:
 
     @staticmethod
     @cached(
-        "ai:overview_v6", 
+        "ai:overview_v7", 
         ttl=settings.CACHE_TTL["market_heat"], 
         stale_ttl=settings.CACHE_TTL["market_heat"] * settings.STALE_TTL_RATIO
     )
@@ -324,7 +324,10 @@ class AIOverview:
             else:
                 cycle_phase = "稳健消化与应用探索期"
                 cycle_status = "neutral"
-                cycle_desc = "基建向应用传导。机会聚焦：★★★★☆ 液冷基建、HBM 存储与 Agent 商业化落地 | 风险警示：关注软件变现账单兑现。"
+                if l5_avg >= 2.0:
+                    cycle_desc = "基建向应用传导。机会聚焦：★★★★☆ 液冷基建、HBM 存储与 Agent 商业化落地 | 风险警示：警惕应用端估值随情绪过快推高。"
+                else:
+                    cycle_desc = "基建向应用传导。机会聚焦：★★★★☆ 液冷基建与 HBM 存储 | 风险警示：关注软件变现与应用账单实际兑现度。"
                 trend_str = "→ 震荡"
                 risk_level = "中等"
                 risk_class = "medium"
