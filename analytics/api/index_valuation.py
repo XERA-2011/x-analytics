@@ -18,7 +18,7 @@ def get_valuation(index_code: str) -> Dict[str, Any]:
     
     支持的指数代码包括：
     - **SH000300**: 沪深300
-    - **HKHSTECH**: 恒生科技
+    - **HSI**: 恒生指数
     - **NDX**: 纳斯达克100
     - **SP500**: 标普500
     """

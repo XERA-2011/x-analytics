@@ -86,7 +86,7 @@ def test_get_index_valuation_sh000300(mock_cached, mock_akshare_call, mock_get):
 
 @patch("analytics.modules.index_valuation.requests.get")
 @patch("analytics.modules.index_valuation.akshare_call_with_retry")
-def test_get_index_valuation_hkhstech(mock_akshare_call, mock_get):
+def test_get_index_valuation_hsi(mock_akshare_call, mock_get):
     # 1. Mock Danjuan PE history response
     mock_pe_resp = MagicMock()
     mock_pe_resp.json.return_value = {
@@ -101,7 +101,7 @@ def test_get_index_valuation_hkhstech(mock_akshare_call, mock_get):
     mock_pe_resp.status_code = 200
     mock_get.return_value = mock_pe_resp
     
-    # 2. Mock AkShare response for HKHSTECH
+    # 2. Mock AkShare response for HSI
     mock_df = pd.DataFrame({
         "date": [date(2021, 1, 1), date(2021, 1, 2), date(2021, 1, 3)],
         "close": [6000.0, 6100.0, 5900.0]
@@ -109,10 +109,10 @@ def test_get_index_valuation_hkhstech(mock_akshare_call, mock_get):
     mock_akshare_call.return_value = mock_df
     
     func_to_run = get_index_valuation._original if hasattr(get_index_valuation, "_original") else get_index_valuation
-    res = func_to_run("HKHSTECH")
+    res = func_to_run("HSI")
     
-    assert res["name"] == "恒生科技"
-    assert res["index_code"] == "HKHSTECH"
+    assert res["name"] == "恒生指数"
+    assert res["index_code"] == "HSI"
     assert res["current_pe"] == 28.0
     assert res["data_date"] == "2021-01-03"
     

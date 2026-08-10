@@ -21,10 +21,10 @@ INDEX_MAPPING = {
         "dj_code": "SH000300",
         "price_symbol": "sh000300"
     },
-    "HKHSTECH": {
-        "name": "恒生科技",
-        "dj_code": "HKHSTECH",
-        "price_symbol": "HSTECH"
+    "HSI": {
+        "name": "恒生指数",
+        "dj_code": "HKHSI",
+        "price_symbol": "HSI"
     },
     "NDX": {
         "name": "纳斯达克100",
@@ -44,7 +44,7 @@ def get_index_valuation(index_code: str) -> Dict[str, Any]:
     获取指定指数的估值及价格历史数据
     
     Args:
-        index_code: 指数代码 (SH000300, HKHSTECH, NDX, SP500)
+        index_code: 指数代码 (SH000300, HSI, NDX, SP500)
         
     Returns:
         包含当前PE、百分位、评级以及历史PE、价格序列的字典
@@ -112,7 +112,7 @@ def get_index_valuation(index_code: str) -> Dict[str, Any]:
         else:
             # 其他指数使用 akshare
             logger.info(f"Fetching AkShare price data for {name} ({price_symbol})")
-            if code_upper == "HKHSTECH":
+            if code_upper == "HSI":
                 df = akshare_call_with_retry(ak.stock_hk_index_daily_sina, symbol=price_symbol)
             else: # NDX, SP500
                 df = akshare_call_with_retry(ak.index_us_stock_sina, symbol=price_symbol)

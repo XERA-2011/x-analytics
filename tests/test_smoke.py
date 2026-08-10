@@ -72,7 +72,7 @@ def test_index_valuation_routes():
     routes = [
         "/index-valuation/valuation/NDX",
         "/index-valuation/valuation/SP500",
-        "/index-valuation/valuation/HKHSTECH",
+        "/index-valuation/valuation/HSI",
         "/index-valuation/valuation/SH000300"
     ]
     for route in routes:
