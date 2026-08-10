@@ -2809,4 +2809,139 @@ footer {
 .qdii-legend-tag.tag-bond { background: #f59e0b; }
 .qdii-legend-tag.tag-unclassified { background: #9ca3af; }
 
+/* Index Valuation Temperature Chart Styles */
+.valuation-tabs {
+    display: flex;
+    gap: 8px;
+}
+
+.val-tab {
+    padding: 6px 14px;
+    border: 1px solid var(--border-light);
+    border-radius: 6px;
+    background: transparent;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    transition: all 0.15s ease;
+}
+
+.val-tab:hover {
+    color: var(--text-primary);
+    border-color: #d1d5db;
+}
+
+.val-tab.active {
+    background: var(--text-primary);
+    color: var(--bg-body);
+    border-color: var(--text-primary);
+}
+
+.valuation-summary {
+    padding: 16px 20px;
+    border-bottom: 1px dashed var(--border-light);
+    margin-bottom: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.val-summary-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.val-summary-info .val-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.val-summary-info .status-badge {
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.val-summary-info .status-badge.low {
+    background-color: #dcfce7;
+    color: #15803d;
+}
+
+.val-summary-info .status-badge.medium {
+    background-color: #fef3c7;
+    color: #b45309;
+}
+
+.val-summary-info .status-badge.high {
+    background-color: #fee2e2;
+    color: #b91c1c;
+}
+
+.val-summary-stats {
+    display: flex;
+    align-items: center;
+    gap: 32px;
+    flex-wrap: wrap;
+}
+
+.val-stat-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.val-stat-label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.val-stat-value {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    font-family: var(--font-mono, monospace);
+}
+
+/* Responsive fixes for valuation chart */
+@media (max-width: 640px) {
+    #valuation-title {
+        display: none;
+    }
+    
+    .valuation-tabs {
+        width: 100%;
+        justify-content: space-between;
+        gap: 4px;
+    }
+    
+    .val-tab {
+        flex: 1;
+        padding: 4px 8px;
+        font-size: 0.75rem;
+        text-align: center;
+    }
+    
+    .val-summary-stats {
+        gap: 12px 24px;
+    }
+    
+    .val-stat-item {
+        min-width: 70px;
+    }
+    
+    .val-summary-info .val-title {
+        font-size: 1.05rem;
+    }
+    
+    #valuation-chart {
+        height: 320px !important;
+    }
+}
+
+
 

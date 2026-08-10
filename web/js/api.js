@@ -329,6 +329,11 @@ class API {
         return this.request(`/qdii/holdings/${code}`);
     }
 
+    // 指数估值 API
+    async getIndexValuation(indexCode) {
+        return this.request(`/index-valuation/valuation/${indexCode}`);
+    }
+
     async triggerWarmup() {
         return this.request('/api/cache/warmup', { method: 'POST' });
     }

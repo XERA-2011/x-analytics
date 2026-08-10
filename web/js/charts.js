@@ -634,6 +634,270 @@ class Charts {
         }));
         return chart;
     }
+
+    // 创建指数估值双轴折线图
+    createValuationChart(containerId, data) {
+        const container = document.getElementById(containerId);
+        if (!container) return null;
+
+        // 清理旧实例
+        if (this.charts.has(containerId)) {
+            this.charts.get(containerId).dispose();
+        }
+
+        const chart = echarts.init(container);
+
+        const peSeries = data.pe_series || [];
+        const priceSeries = data.price_series || [];
+
+        // 计算近5年时间范围 (默认展示近5年)
+        let latestDate = '';
+        let startDate = '';
+        if (peSeries.length > 0) {
+            latestDate = peSeries[peSeries.length - 1][0];
+            const latestYear = parseInt(latestDate.substring(0, 4));
+            if (!isNaN(latestYear)) {
+                startDate = (latestYear - 5) + latestDate.substring(4);
+            }
+        }
+
+        // 提取分位数线
+        const pLines = data.percentile_lines || { p20: 0, p50: 0, p80: 0 };
+        const p20 = Number(pLines.p20 || 0);
+        const p50 = Number(pLines.p50 || 0);
+        const p80 = Number(pLines.p80 || 0);
+
+        // 获取 PE 和价格的最大最小值，用以美化轴间距
+        const peValues = peSeries.map(item => item[1]);
+        const minPe = Math.floor(Math.min(...peValues, pLines.p20) * 0.9);
+        const maxPe = Math.ceil(Math.max(...peValues, pLines.p80) * 1.1);
+
+        const priceValues = priceSeries.map(item => item[1]);
+        const minPrice = Math.floor(Math.min(...priceValues) * 0.95);
+        const maxPrice = Math.ceil(Math.max(...priceValues) * 1.05);
+
+        const option = {
+            backgroundColor: 'transparent',
+            tooltip: {
+                trigger: 'axis',
+                axisPointer: {
+                    type: 'cross',
+                    lineStyle: {
+                        color: '#9ca3af',
+                        type: 'dashed'
+                    }
+                },
+                formatter: function (params) {
+                    if (!params || params.length === 0) return '';
+                    let dateStr = params[0].axisValueLabel;
+                    let html = `<div style="font-weight: bold; margin-bottom: 4px; color: #1f2937;">${dateStr}</div>`;
+                    params.forEach(p => {
+                        const marker = p.marker;
+                        const seriesName = p.seriesName;
+                        const val = p.value[1];
+                        if (seriesName.includes('市盈率')) {
+                            html += `<div style="color: #4b5563;">${marker} ${seriesName}: <span style="font-weight: bold; font-family: monospace; color: #111827;">${val.toFixed(2)}</span></div>`;
+                        } else {
+                            html += `<div style="color: #4b5563;">${marker} ${seriesName}: <span style="font-weight: bold; font-family: monospace; color: #111827;">${val.toFixed(0)}</span></div>`;
+                        }
+                    });
+                    return html;
+                }
+            },
+            legend: {
+                data: ['市盈率 PE (TTM)', '指数点位'],
+                left: 'center',
+                top: 15,
+                itemGap: 15,
+                textStyle: {
+                    color: '#4b5563',
+                    fontSize: 11
+                }
+            },
+            grid: {
+                left: 15,
+                right: 15,
+                bottom: 50,
+                top: 70,
+                containLabel: true
+            },
+            xAxis: {
+                type: 'time',
+                axisLine: {
+                    lineStyle: { color: '#e5e7eb' }
+                },
+                axisLabel: {
+                    color: '#4b5563',
+                    formatter: function (value) {
+                        const date = new Date(value);
+                        return String(date.getFullYear());
+                    }
+                },
+                splitLine: {
+                    show: true,
+                    lineStyle: { color: '#f3f4f6', type: 'dashed' }
+                }
+            },
+            yAxis: [
+                {
+                    type: 'value',
+                    name: '市盈率PE',
+                    min: minPe,
+                    max: maxPe,
+                    position: 'left',
+                    axisLine: {
+                        show: true,
+                        lineStyle: { color: '#000000', width: 1.5 }
+                    },
+                    axisLabel: {
+                        color: '#000000',
+                        fontWeight: 'bold'
+                    },
+                    splitLine: {
+                        show: true,
+                        lineStyle: { color: '#f3f4f6' }
+                    }
+                },
+                {
+                    type: 'value',
+                    name: '点位 (千)',
+                    min: minPrice,
+                    max: maxPrice,
+                    position: 'right',
+                    axisLine: {
+                        show: true,
+                        lineStyle: { color: '#3b82f6', width: 1.5 }
+                    },
+                    axisLabel: {
+                        color: '#3b82f6',
+                        fontWeight: 'bold',
+                        formatter: function (value) {
+                            return (value / 1000).toFixed(0);
+                        }
+                    },
+                    splitLine: {
+                        show: false
+                    }
+                }
+            ],
+            dataZoom: [
+                {
+                    type: 'inside',
+                    zoomOnMouseWheel: false,  // 禁用鼠标滚轮缩放，解决网页滚动时的误触问题
+                    zoomOnMouseButton: false, // 禁用鼠标按键缩放
+                    moveOnMouseMove: true,    // 允许鼠标拖拽平移
+                    moveOnMouseWheel: false,  // 禁用鼠标滚轮平移
+                    startValue: startDate,
+                    endValue: latestDate
+                },
+                {
+                    type: 'slider',
+                    show: true,
+                    startValue: startDate,
+                    endValue: latestDate,
+                    bottom: '2%',
+                    height: 18,
+                    borderColor: 'transparent',
+                    backgroundColor: '#f3f4f6',
+                    fillerColor: 'rgba(59, 130, 246, 0.15)',
+                    handleSize: '100%',
+                    textStyle: { color: '#9ca3af', fontSize: 10 }
+                }
+            ],
+            series: [
+                {
+                    name: '市盈率 PE (TTM)',
+                    type: 'line',
+                    data: peSeries,
+                    yAxisIndex: 0,
+                    showSymbol: false,
+                    smooth: true,
+                    itemStyle: {
+                        color: '#000000'
+                    },
+                    lineStyle: {
+                        width: 2
+                    },
+                    markLine: {
+                        symbol: 'none',
+                        silent: true,
+                        label: {
+                            formatter: function (params) {
+                                return params.name + ': ' + Number(params.value || 0).toFixed(2);
+                            },
+                            fontSize: 11,
+                            fontWeight: 'bold',
+                            padding: [2, 4]
+                        },
+                        data: [
+                            {
+                                yAxis: p20,
+                                name: '20%',
+                                label: {
+                                    position: 'end',
+                                    color: '#22c55e'
+                                },
+                                lineStyle: {
+                                    color: '#22c55e',
+                                    type: 'dashed',
+                                    width: 1.5
+                                }
+                            },
+                            {
+                                yAxis: p50,
+                                name: '50%',
+                                label: {
+                                    position: 'middle',
+                                    color: '#6b7280'
+                                },
+                                lineStyle: {
+                                    color: '#6b7280',
+                                    type: 'dashed',
+                                    width: 1.5
+                                }
+                            },
+                            {
+                                yAxis: p80,
+                                name: '80%',
+                                label: {
+                                    position: 'start',
+                                    color: '#ef4444'
+                                },
+                                lineStyle: {
+                                    color: '#ef4444',
+                                    type: 'dashed',
+                                    width: 1.5
+                                }
+                            }
+                        ]
+                    }
+                },
+                {
+                    name: '指数点位',
+                    type: 'line',
+                    data: priceSeries,
+                    yAxisIndex: 1,
+                    showSymbol: false,
+                    smooth: true,
+                    itemStyle: {
+                        color: '#3b82f6'
+                    },
+                    lineStyle: {
+                        width: 2
+                    }
+                }
+            ]
+        };
+
+        chart.setOption(option);
+        this.charts.set(containerId, chart);
+
+        window.addEventListener('resize', () => {
+            chart.resize();
+        });
+
+        return chart;
+    }
 }
 
 // 创建全局图表实例

@@ -67,3 +67,15 @@ def test_ai_routes():
     for route in routes:
         response = requests.get(f"{BASE_URL}{route}")
         assert response.status_code in (200, 503)
+
+def test_index_valuation_routes():
+    routes = [
+        "/index-valuation/valuation/NDX",
+        "/index-valuation/valuation/SP500",
+        "/index-valuation/valuation/HKHSTECH",
+        "/index-valuation/valuation/SH000300"
+    ]
+    for route in routes:
+        response = requests.get(f"{BASE_URL}{route}")
+        assert response.status_code in (200, 503, 202) # support 202/503 for warming up states
+

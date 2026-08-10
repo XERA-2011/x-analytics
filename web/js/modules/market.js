@@ -256,7 +256,6 @@ class WesternMarketController {
             this.loadUSFearGreed(),
             this.loadUSOverboughtOversold(),
             this.loadUSLeaders(),
-            this.loadUSMarketHeat(),
             this.loadUSBondYields()
         ];
         await Promise.allSettled(promises);
@@ -615,13 +614,136 @@ class MarketController {
     constructor() {
         this.asiaController = new AsiaMarketController();
         this.westernController = new WesternMarketController();
+        this.currentValuationIndex = 'NDX';
+        this.valuationTabsBound = false;
     }
 
     async loadData() {
-        console.log('📊 加载全球市场数据 (亚洲市场 + 欧美市场)...');
+        console.log('📊 加载全球市场数据 (亚洲市场 + 指数估值 + 欧美市场)...');
+        
+        // 绑定估值 tab 事件
+        if (!this.valuationTabsBound) {
+            this.bindValuationTabs();
+            this.valuationTabsBound = true;
+        }
+
         await Promise.allSettled([
             this.asiaController.loadData(),
-            this.westernController.loadData()
+            this.westernController.loadData(),
+            this.loadValuation(this.currentValuationIndex)
         ]);
+    }
+
+    bindValuationTabs() {
+        const tabs = document.querySelectorAll('.val-tab');
+        tabs.forEach(tab => {
+            tab.onclick = () => {
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                this.currentValuationIndex = tab.dataset.code || 'NDX';
+                this.loadValuation(this.currentValuationIndex);
+            };
+        });
+    }
+
+    async loadValuation(indexCode) {
+        const container = document.getElementById('valuation-chart');
+        const summaryContainer = document.getElementById('valuation-summary');
+        if (!container) return;
+
+        // 1. 先安全销毁 ECharts 实例，再清空 innerHTML (避免 removeChild 报错)
+        if (typeof echarts !== 'undefined') {
+            const oldInstance = echarts.getInstanceByDom(container);
+            if (oldInstance) {
+                try {
+                    oldInstance.dispose();
+                } catch (e) {
+                    console.warn('Safe dispose failed:', e);
+                }
+            }
+        }
+        if (window.charts && window.charts.charts && window.charts.charts.has('valuation-chart')) {
+            try {
+                window.charts.charts.get('valuation-chart').dispose();
+            } catch (e) {
+                console.warn('Safe registry dispose failed:', e);
+            }
+            window.charts.charts.delete('valuation-chart');
+        }
+
+        // 2. 呈现加载状态
+        container.innerHTML = '<div class="loading">Loading...</div>';
+        if (summaryContainer) {
+            summaryContainer.innerHTML = '<span style="color: var(--text-secondary);">正在获取估值数据...</span>';
+        }
+
+        try {
+            const res = await api.getIndexValuation(indexCode);
+            if (res._warming_up) {
+                container.innerHTML = `<div class="loading">${res.message || '数据预热中，请稍后刷新'}</div>`;
+                if (summaryContainer) {
+                    summaryContainer.innerHTML = `<span style="color: var(--text-secondary);">${res.message || '数据预热中...'}</span>`;
+                }
+                return;
+            }
+            if (res._error) {
+                container.innerHTML = `<div class="loading error">${res.message || '数据获取失败'}</div>`;
+                if (summaryContainer) summaryContainer.innerHTML = '';
+                return;
+            }
+            if (!res.pe_series || res.pe_series.length === 0) {
+                container.innerHTML = '<div class="loading error">数据不可用</div>';
+                if (summaryContainer) summaryContainer.innerHTML = '';
+                return;
+            }
+
+            // 更新估值摘要
+            if (summaryContainer) {
+                const name = res.name || indexCode;
+                const date = res.data_date || '';
+                const peVal = res.current_pe != null ? Number(res.current_pe).toFixed(2) : '--';
+                const pct = res.percentile != null ? (Number(res.percentile) * 100).toFixed(0) : '--';
+                const level = res.eval_level || 'medium';
+                
+                let levelName = '估值适中';
+                let badgeClass = 'medium';
+                if (level === 'low') {
+                    levelName = '低估';
+                    badgeClass = 'low';
+                } else if (level === 'high') {
+                    levelName = '高估';
+                    badgeClass = 'high';
+                }
+
+                summaryContainer.innerHTML = `
+                    <div class="val-summary-info">
+                        <span class="val-title">${name} 估值概览</span>
+                        <span class="status-badge ${badgeClass}">${levelName}</span>
+                    </div>
+                    <div class="val-summary-stats">
+                        <div class="val-stat-item">
+                            <span class="val-stat-label">当前 PE (TTM)</span>
+                            <span class="val-stat-value">${peVal}</span>
+                        </div>
+                        <div class="val-stat-item">
+                            <span class="val-stat-label">历史估值百分位</span>
+                            <span class="val-stat-value">${pct}%</span>
+                        </div>
+                        <div class="val-stat-item val-stat-date">
+                            <span class="val-stat-label">数据截止日期</span>
+                            <span class="val-stat-value">${date}</span>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // 渲染折线图
+            charts.createValuationChart('valuation-chart', res);
+
+        } catch (error) {
+            console.error('加载指数估值失败:', error);
+            container.innerHTML = `<div class="loading error">指数估值数据加载失败: ${error.message || error}</div>`;
+            if (summaryContainer) summaryContainer.innerHTML = '';
+        }
     }
 }

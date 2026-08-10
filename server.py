@@ -14,7 +14,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from analytics.core.cache import cache, request_refresh_var
 from analytics.core import scheduler, settings
 from analytics.core.scheduler import setup_default_jobs, initial_warmup
-from analytics.api import market_asia, metals, market_western, market_hk, etf, ai, qdii
+from analytics.api import market_asia, metals, market_western, market_hk, etf, ai, qdii, index_valuation
 from analytics.core.patch import apply_patches
 from analytics.core.security import SecurityMiddleware
 from analytics.core.logger import logger
@@ -128,6 +128,7 @@ app.include_router(market_hk.router, prefix="/market-hk", tags=["HK Market"])
 app.include_router(etf.router, prefix="/etf", tags=["ETF"])
 app.include_router(ai.router, prefix="/ai", tags=["AI 产业链"])
 app.include_router(qdii.router, prefix="/qdii", tags=["QDII基金"])
+app.include_router(index_valuation.router, prefix="/index-valuation", tags=["指数估值"])
 
 
 
