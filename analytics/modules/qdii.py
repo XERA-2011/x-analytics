@@ -1016,7 +1016,50 @@ def _generate_active_fund_tag(item: Dict[str, Any], total_count: int, top10_conc
     return "均衡配置"
 
 
-@cached("qdii:passive_funds_v32", ttl=86400)
+def fetch_fund_scale(session: requests.Session, code: str) -> Optional[str]:
+    """从天天基金基本概况页面抓取基金最新的净资产规模"""
+    cache_key = f"{settings.CACHE_PREFIX}:qdii:fund_scale:v1:{code}"
+    try:
+        cached_val = cache.get(cache_key)
+        if cached_val is not None:
+            return cached_val
+    except Exception:
+        pass
+
+    try:
+        time.sleep(0.1)  # 延时防代理被封
+        url = f"https://fundf10.eastmoney.com/jbgk_{code}.html"
+        res = fetch_url_via_proxy(url, session=session, timeout=6)
+        if not res or res.status_code != 200:
+            return None
+        soup = bs4.BeautifulSoup(res.content.decode("utf-8", errors="ignore"), "html.parser")
+        
+        scale_val = None
+        for th in soup.find_all(["th", "td"]):
+            if "净资产规模" in th.text:
+                sibling = th.find_next_sibling()
+                if sibling:
+                    txt = sibling.text.strip()
+                    if "（" in txt:
+                        scale_val = txt.split("（")[0].strip()
+                    elif "(" in txt:
+                        scale_val = txt.split("(")[0].strip()
+                    else:
+                        scale_val = txt
+                    break
+        
+        if scale_val:
+            try:
+                cache.set(cache_key, scale_val, ex=86400 * 7)  # 缓存7天
+            except Exception:
+                pass
+            return scale_val
+    except Exception as e:
+        print(f"⚠️ 获取基金规模失败 [{code}]: {e}")
+    return None
+
+
+@cached("qdii:passive_funds_v33", ttl=86400)
 def get_qdii_passive_funds() -> Dict[str, Any]:
     """获取国内纳斯达克100 & 标普500 场外被动 QDII A类基金数据列表
 
@@ -1056,14 +1099,16 @@ def get_qdii_passive_funds() -> Dict[str, Any]:
     except Exception as err:
         print(f"⚠️ 雪球并发获取收益率总入口报错: {err}")
 
-    # 3. 并发获取所有 QDII 基金的真实资产配置仓位与动态费率
+    # 3. 并发获取所有 QDII 基金的真实资产配置仓位、动态费率与最新基金规模
     alloc_map: Dict[str, Dict[str, Any]] = {}
     fee_map: Dict[str, str] = {}
+    scale_map: Dict[str, str] = {}
     try:
         session = requests.Session()
-        with ThreadPoolExecutor(max_workers=4) as executor:  # 降到 4 线程并发，保证代理接口稳定性
+        with ThreadPoolExecutor(max_workers=6) as executor:  # 升为 6 线程并发以加速规模获取
             alloc_futures = {executor.submit(fetch_fund_asset_allocation, session, code): code for code in target_codes}
             fee_futures = {executor.submit(fetch_fund_fee_rate, session, code): code for code in target_codes}
+            scale_futures = {executor.submit(fetch_fund_scale, session, code): code for code in target_codes}
             
             for future in alloc_futures:
                 c = alloc_futures[future]
@@ -1082,8 +1127,17 @@ def get_qdii_passive_funds() -> Dict[str, Any]:
                         fee_map[c] = res
                 except Exception:
                     pass
+
+            for future in scale_futures:
+                c = scale_futures[future]
+                try:
+                    res = future.result()
+                    if res:
+                        scale_map[c] = res
+                except Exception:
+                    pass
     except Exception as err:
-        print(f"⚠️ 资产配置与费率并发抓取跳过: {err}")
+        print(f"⚠️ 资产配置、费率与规模并发抓取跳过: {err}")
 
     # 4. 获取所有注册基金的场外日常申购限额状态 (开放申购/限大额/暂停申购)
     status_map: Dict[str, str] = {}
@@ -1166,6 +1220,7 @@ def get_qdii_passive_funds() -> Dict[str, Any]:
             "allocation_estimated": item.get("allocation_estimated", False),
             "tag": fund_tag,
             "buy_status": buy_status,
+            "scale": scale_map.get(code) or "--",
         })
 
     # 按 近1年收益 (return_1y) 降序排序

@@ -224,10 +224,11 @@ class QDIIController {
                         <span class="desktop-return">${r1yStr}</span>
                         <div class="mobile-return-layout">
                             <span class="mobile-return-val">${r1yStr}</span>
-                            <span class="mobile-fee-val">${item.fee_rate}</span>
+                            <span class="mobile-fee-val">${item.scale ? item.scale.replace('亿元', '亿') : '--'} · ${item.fee_rate}</span>
                         </div>
                     </td>
                     <td class="col-fee font-mono">${item.fee_rate}</td>
+                    <td class="col-scale col-optional font-mono" style="color: var(--text-secondary);">${item.scale || '--'}</td>
                     <td class="col-status"><span class="status-badge ${statusClass}">${statusText}</span></td>
                     ${!isActiveTab ? `
                         <td class="col-gap font-mono" style="color: var(--text-tertiary);">${benchmarkGapStr}</td>
@@ -281,9 +282,10 @@ class QDIIController {
                             <th class="col-allocation">资产配置 / 仓位</th>
                             <th class="col-return">
                                 <span class="desktop-header">近1年收益</span>
-                                <span class="mobile-header">收益/费率</span>
+                                <span class="mobile-header">收益/规模/费率</span>
                             </th>
                             <th class="col-fee">综合费率</th>
+                            <th class="col-scale col-optional">资产规模</th>
                             <th class="col-status">状态</th>
                             ${!isActiveTab ? `
                                 <th class="col-gap">对标差距</th>
@@ -423,13 +425,8 @@ class QDIIController {
                                 ${badgeHtml}
                             </div>
                         </td>
-                        <td style="width: 35%;">
-                            <div class="qdii-holding-ratio-wrapper">
-                                <div class="qdii-holding-bar-bg">
-                                    <div class="qdii-holding-bar-fill" style="width: ${barWidth}%;"></div>
-                                </div>
-                                <span style="font-weight: 700; font-family: monospace; min-width: 50px; text-align: right;">${h.ratio_pct}</span>
-                            </div>
+                        <td style="width: 25%; text-align: right; font-weight: 700; font-family: monospace;">
+                            ${h.ratio_pct}
                         </td>
                         <td style="width: 25%; text-align: right; font-weight: 600;">
                             ${changeHtml}
@@ -488,7 +485,7 @@ class QDIIController {
                         <tr>
                             <th style="width: 36px; text-align: center;">#</th>
                             <th>股票名称 / 代码</th>
-                            <th style="width: 35%;">占净值比例</th>
+                            <th style="width: 25%; text-align: right;">占净值比例</th>
                             <th style="width: 25%; text-align: right;">较上季变化</th>
                         </tr>
                     </thead>

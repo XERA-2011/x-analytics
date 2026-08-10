@@ -2334,7 +2334,7 @@ footer {
         color: var(--text-tertiary);
     }
     .col-return {
-        width: 76px;
+        width: 100px;
     }
     .col-gap {
         display: none !important;
