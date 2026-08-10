@@ -2190,6 +2190,12 @@ footer {
     white-space: nowrap;
 }
 
+.col-scale {
+    width: 90px;
+    text-align: right;
+    white-space: nowrap;
+}
+
 .col-return {
     width: 78px;
     text-align: right;
@@ -2303,7 +2309,8 @@ footer {
     .col-rank {
         width: 30px;
     }
-    .col-fee {
+    .col-fee,
+    .col-scale {
         display: none !important;
     }
     .col-status {
