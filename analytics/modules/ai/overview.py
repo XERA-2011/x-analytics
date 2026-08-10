@@ -25,7 +25,7 @@ class AIOverview:
 
     @staticmethod
     @cached(
-        "ai:overview_v5", 
+        "ai:overview_v6", 
         ttl=settings.CACHE_TTL["market_heat"], 
         stale_ttl=settings.CACHE_TTL["market_heat"] * settings.STALE_TTL_RATIO
     )
@@ -195,7 +195,8 @@ class AIOverview:
             l5_stocks = [pltr, now, crm]
             l5_avg = sum(s["change_pct"] for s in l5_stocks) / len(l5_stocks) if l5_stocks else 0.0
 
-            l6_avg = sum(s["change_pct"] for s in cn_ai_sectors) / len(cn_ai_sectors) if cn_ai_sectors else 0.0
+            l6_visible_sectors = cn_ai_sectors[:4]
+            l6_avg = sum(s["change_pct"] for s in l6_visible_sectors) / len(l6_visible_sectors) if l6_visible_sectors else 0.0
 
             layers = [
                 {
@@ -258,7 +259,7 @@ class AIOverview:
                     "star": "★☆☆☆☆",
                     "importance": "泡沫投机指示",
                     "avg_change": round(l6_avg, 2),
-                    "items": cn_ai_sectors[:4],
+                    "items": l6_visible_sectors,
                     "desc": "A股半导体与 AI 游资概念题材，若边缘小票狂热暴涨往往预示短线情绪近尾声。"
                 }
             ]
@@ -295,35 +296,35 @@ class AIOverview:
                 if nvda["change_pct"] > 0:
                     cycle_phase = "结构性过热与概念扩散期"
                     cycle_status = "warning"
-                    cycle_desc = "核心算力高位震荡，资金向边缘概念与投机题材快速扩散，警惕短线情绪过热与估值透支。"
+                    cycle_desc = "核心算力高位震荡。机会聚焦：★★☆☆☆ 概念题材投机 | 风险警示：估值安全性承压，警惕短线情绪退潮。"
                     trend_str = "⚠️ 结构分化"
                     risk_level = "中等"
                     risk_class = "medium"
                 else:
                     cycle_phase = "估值过热 / 泡沫预警期"
                     cycle_status = "warning"
-                    cycle_desc = "算力龙头开始滞涨，资金疯狂涌向无业绩支撑的边缘题材，警惕高位见顶与回调风险。"
+                    cycle_desc = "算力龙头滞涨。机会聚焦：★☆☆☆☆ 观望或轻仓防御 | 风险警示：题材疯狂炒作，警惕高位见顶回调。"
                     trend_str = "⚠️ 泡沫预警"
                     risk_level = "偏高"
                     risk_class = "high"
             elif nvda["change_pct"] < -2.0 and l4_avg < -1.5:
                 cycle_phase = "周期回调降温期"
                 cycle_status = "cooling"
-                cycle_desc = "芯片与云巨头 CapEx 情绪同步回落，市场进入阶段性消化与降温阶段。"
+                cycle_desc = "云巨头 CapEx 情绪回落。机会聚焦：★★★☆☆ 算力与基建回调左侧布局 | 风险警示：大厂开支环比放缓，防守为主。"
                 trend_str = "↓ 回调"
                 risk_level = "偏高"
                 risk_class = "high"
             elif rotation_class == "healthy" and nvda["change_pct"] > 0.3 and l0_avg > 0.2:
                 cycle_phase = "能源与算力共振爆发期"
                 cycle_status = "active"
-                cycle_desc = "AI 电力基础设施、算力芯片与存储代工强劲共振，产业资本扩张加速。"
+                cycle_desc = "AI 电网基建与算力强共振。机会聚焦：★★★★★ 算力芯片、存储封装与电力设备 | 风险警示：警惕核心标的高估值震荡。"
                 trend_str = "↑ 强劲"
                 risk_level = "低"
                 risk_class = "low"
             else:
                 cycle_phase = "稳健消化与应用探索期"
                 cycle_status = "neutral"
-                cycle_desc = "产业链高基数消化，资金逐步寻找商业化落地与企业级 Agent 应用点。"
+                cycle_desc = "基建向应用传导。机会聚焦：★★★★☆ 液冷基建、HBM 存储与 Agent 商业化落地 | 风险警示：关注软件变现账单兑现。"
                 trend_str = "→ 震荡"
                 risk_level = "中等"
                 risk_class = "medium"
