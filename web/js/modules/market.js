@@ -648,6 +648,8 @@ class MarketController {
         // 绑定指数估值问号说明弹窗
         const infoBtn = document.getElementById('info-index-valuation');
         if (infoBtn) {
+            infoBtn.style.display = 'inline-flex';
+            if (window.lucide) window.lucide.createIcons();
             infoBtn.onclick = () => utils.showInfoModal('指数估值温度计说明', `
                 <div style="line-height: 1.6; font-size: 0.9rem;">
                     <p style="margin-bottom: 12px;"><strong>指数估值温度计</strong> 是通过量化市盈率 PE (TTM) 与历史走势点位，衡量市场指数估值水位与性价比的工具。</p>
