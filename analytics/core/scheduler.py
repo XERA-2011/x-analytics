@@ -315,7 +315,7 @@ def setup_default_jobs():
         USTreasury,
         USMarketLeaders
     )
-    from ..modules.metals import GoldSilverAnalysis, MetalSpotPrice, GoldFearGreedIndex
+    from ..modules.gold import GoldSilverAnalysis, MetalSpotPrice, GoldFearGreedIndex
 
 
     # =========================================================================
@@ -443,7 +443,7 @@ def setup_default_jobs():
     )
 
     # 4. 白银恐慌贪婪
-    from ..modules.metals.fear_greed import SilverFearGreedIndex
+    from ..modules.gold.fear_greed import SilverFearGreedIndex
     scheduler.add_market_job(
         job_id="warmup:metals:silver_fear",
         func=SilverFearGreedIndex.calculate,
@@ -568,7 +568,7 @@ def initial_warmup():
         USTreasury,
         USMarketLeaders
     )
-    from ..modules.metals import GoldSilverAnalysis, MetalSpotPrice, GoldFearGreedIndex
+    from ..modules.gold import GoldSilverAnalysis, MetalSpotPrice, GoldFearGreedIndex
 
     
     try:
@@ -591,7 +591,7 @@ def initial_warmup():
         warmup_cache(GoldSilverAnalysis.get_gold_silver_ratio)
         warmup_cache(MetalSpotPrice.get_spot_prices)
         warmup_cache(GoldFearGreedIndex.calculate)
-        from ..modules.metals.fear_greed import SilverFearGreedIndex
+        from ..modules.gold.fear_greed import SilverFearGreedIndex
         warmup_cache(SilverFearGreedIndex.calculate)
 
         # ETF
@@ -694,8 +694,8 @@ def snapshot_daily_metrics() -> None:
         from analytics.modules.market_cn import CNFearGreedIndex
         from analytics.modules.market_us import USFearGreedIndex
         from analytics.modules.market_hk.fear_greed import HKFearGreed
-        from analytics.modules.metals import GoldFearGreedIndex
-        from analytics.modules.metals.fear_greed import SilverFearGreedIndex
+        from analytics.modules.gold import GoldFearGreedIndex
+        from analytics.modules.gold.fear_greed import SilverFearGreedIndex
         from analytics.modules.signals.overbought_oversold import OverboughtOversoldSignal
         from datetime import date
 

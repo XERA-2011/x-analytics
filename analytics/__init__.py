@@ -15,7 +15,7 @@ from .modules.market_asia import (
     CNMarketLeaders,
     CNBonds,
 )
-from .modules.metals import GoldSilverAnalysis
+from .modules.gold import GoldSilverAnalysis
 
 __all__ = [
     # 核心模块

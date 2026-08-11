@@ -271,29 +271,29 @@ class API {
         return this.request('/market-western/bond-yields');
     }
 
-    // Metals
+    // Gold Market
     async getGoldSilverRatio() {
-        return this.request('/metals/gold-silver-ratio');
+        return this.request('/gold/gold-silver-ratio');
     }
 
     async getGoldFearGreed() {
-        return this.request('/metals/fear-greed');
+        return this.request('/gold/fear-greed');
     }
 
     async getSilverFearGreed() {
-        return this.request('/metals/silver-fear-greed');
+        return this.request('/gold/silver-fear-greed');
     }
 
     async getMetalSpotPrices() {
-        return this.request('/metals/spot-prices');
+        return this.request('/gold/spot-prices');
     }
 
     async getChinaGoldReserves() {
-        return this.request('/metals/central-bank-reserves');
+        return this.request('/gold/central-bank-reserves');
     }
 
     async getSPDRGoldETF() {
-        return this.request('/metals/etf-holdings');
+        return this.request('/gold/etf-holdings');
     }
 
     // 超买超卖信号 API
@@ -306,11 +306,11 @@ class API {
     }
 
     async getGoldOverboughtOversold(period = 'daily') {
-        return this.request(`/metals/gold/signals/overbought-oversold?period=${period}`);
+        return this.request(`/gold/gold/signals/overbought-oversold?period=${period}`);
     }
 
     async getSilverOverboughtOversold(period = 'daily') {
-        return this.request(`/metals/silver/signals/overbought-oversold?period=${period}`);
+        return this.request(`/gold/silver/signals/overbought-oversold?period=${period}`);
     }
 
     // 宏观数据 API

@@ -1,6 +1,6 @@
 """
-有色金属模块
-包含：金银比、各类金属现货价格、恐慌贪婪指数
+黄金市场模块
+包含：金银比、各类金属现货价格、黄金/白银技术热度、央行储备及ETF持仓
 """
 
 from .gold_silver import GoldSilverAnalysis

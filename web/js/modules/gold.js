@@ -1,11 +1,11 @@
-class MetalsController {
+class GoldController {
     constructor() {
         this.chinaReservesData = null;
         this.spdrGoldETFData = null;
     }
 
     async loadData() {
-        console.log('📊 加载有色金属数据...');
+        console.log('📊 加载黄金市场数据...');
 
         const promises = [
             api.getGoldSilverRatio().then(data => this.renderGoldSilver(data)),
@@ -137,7 +137,7 @@ class MetalsController {
         // const silver = data.silver; // Unused
 
         // Bind Info Button
-        const infoBtn = document.getElementById('info-metals-ratio');
+        const infoBtn = document.getElementById('info-gold-ratio');
         if (infoBtn && data.explanation) {
             infoBtn.onclick = () => utils.showInfoModal('金银比 (Gold/Silver Ratio)', data.explanation);
             infoBtn.style.display = 'flex';

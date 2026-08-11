@@ -14,7 +14,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from analytics.core.cache import cache, request_refresh_var
 from analytics.core import scheduler, settings
 from analytics.core.scheduler import setup_default_jobs, initial_warmup
-from analytics.api import market_asia, metals, market_western, market_hk, etf, ai, qdii, index_valuation
+from analytics.api import market_asia, gold, market_western, market_hk, etf, ai, qdii, index_valuation
 from analytics.core.patch import apply_patches
 from analytics.core.security import SecurityMiddleware
 from analytics.core.logger import logger
@@ -97,10 +97,10 @@ app.add_middleware(SecurityMiddleware)
 #    如需开放特定域名，在 allow_origins 中添加
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[],  # 空列表 = 仅同源请求
-    allow_credentials=False,
-    allow_methods=["GET", "POST", "DELETE"],
-    allow_headers=["X-Admin-Token"],  # 仅允许必要的自定义头
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 class RefreshMiddleware(BaseHTTPMiddleware):
@@ -123,7 +123,8 @@ app.add_middleware(RefreshMiddleware)
 # -----------------------------------------------------------------------------
 app.include_router(market_asia.router, prefix="/market-asia", tags=["Asia Market"])
 app.include_router(market_western.router, prefix="/market-western", tags=["Western Market"])
-app.include_router(metals.router, prefix="/metals", tags=["Precious Metals"])
+app.include_router(gold.router, prefix="/gold", tags=["Gold Market"])
+app.include_router(gold.router, prefix="/metals", tags=["Precious Metals (Alias)"])
 app.include_router(market_hk.router, prefix="/market-hk", tags=["HK Market"])
 app.include_router(etf.router, prefix="/etf", tags=["ETF"])
 app.include_router(ai.router, prefix="/ai", tags=["AI 产业链"])

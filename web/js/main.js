@@ -16,7 +16,7 @@ class App {
         this.modules = {
             'market': new MarketController(),
             'ai': new AIMarketController(),
-            'metals': new MetalsController(),
+            'gold': new GoldController(),
             'etf': new ETFController(),
             'qdii': new QDIIController()
         };
@@ -28,7 +28,7 @@ class App {
         const titles = {
             'market': '全球市场',
             'ai': 'AI 产业',
-            'metals': '金属',
+            'gold': '黄金',
             'etf': 'ETF',
             'qdii': 'QDII 基金',
         };
@@ -90,7 +90,7 @@ class App {
                         break;
                     case '3':
                         event.preventDefault();
-                        this.switchTab('metals');
+                        this.switchTab('gold');
                         break;
                     case '4':
                         event.preventDefault();
@@ -214,9 +214,10 @@ class App {
             'market-cn': 'market',
             'cn': 'market',
             'market-us': 'market',
-            'us': 'market'
+            'us': 'market',
+            'metals': 'gold'
         };
-        const validTabs = ['market', 'ai', 'metals', 'etf', 'qdii'];
+        const validTabs = ['market', 'ai', 'gold', 'etf', 'qdii'];
         const targetTab = legacyMap[urlTab] || urlTab;
 
         if (targetTab && validTabs.includes(targetTab)) {

@@ -42,11 +42,16 @@ def test_hk_market_routes():
         response = requests.get(f"{BASE_URL}{route}")
         assert response.status_code in (200, 503)
 
-def test_metals_routes():
+def test_gold_routes():
     routes = [
+        "/gold/spot-prices",
+        "/gold/fear-greed",
+        "/gold/silver-fear-greed",
+        "/gold/central-bank-reserves",
+        "/gold/etf-holdings",
+        "/gold/gold-silver-ratio",
         "/metals/spot-prices",
-        "/metals/fear-greed",
-        "/metals/silver-fear-greed"
+        "/metals/fear-greed"
     ]
     for route in routes:
         response = requests.get(f"{BASE_URL}{route}")

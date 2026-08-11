@@ -8,9 +8,9 @@ Desc: 有色金属API路由
 from fastapi import APIRouter
 from typing import Dict, Any
 from ..core.decorators import safe_endpoint
-from ..modules.metals import GoldSilverAnalysis, MetalSpotPrice, GoldFearGreedIndex
+from ..modules.gold import GoldSilverAnalysis, MetalSpotPrice, GoldFearGreedIndex
 
-router = APIRouter(tags=["有色金属"])
+router = APIRouter(tags=["黄金"])
 
 
 @router.get("/fear-greed", summary="获取黄金技术热度指数")
@@ -24,7 +24,7 @@ def get_gold_fear_greed() -> Dict[str, Any]:
 @safe_endpoint
 def get_silver_fear_greed() -> Dict[str, Any]:
     """获取白银技术热度指数 (Custom)"""
-    from ..modules.metals.fear_greed import SilverFearGreedIndex
+    from ..modules.gold.fear_greed import SilverFearGreedIndex
     return SilverFearGreedIndex.calculate()
 
 
@@ -46,7 +46,7 @@ def get_spot_prices() -> Any:
 @safe_endpoint
 def get_china_gold_reserves() -> Dict[str, Any]:
     """获取中国央行黄金和外汇储备月度数据"""
-    from ..modules.metals.reserves import GoldFundFlows
+    from ..modules.gold.reserves import GoldFundFlows
     return GoldFundFlows.get_china_gold_reserves()
 
 
@@ -54,7 +54,7 @@ def get_china_gold_reserves() -> Dict[str, Any]:
 @safe_endpoint
 def get_spdr_etf_holdings() -> Dict[str, Any]:
     """获取全球最大黄金ETF持仓日度数据"""
-    from ..modules.metals.reserves import GoldFundFlows
+    from ..modules.gold.reserves import GoldFundFlows
     return GoldFundFlows.get_spdr_etf_holdings()
 
 
