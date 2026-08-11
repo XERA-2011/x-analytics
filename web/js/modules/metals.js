@@ -6,15 +6,43 @@ class MetalsController {
             api.getGoldSilverRatio().then(data => this.renderGoldSilver(data)),
             api.getMetalSpotPrices().then(data => this.renderMetalSpotPrices(data)),
             api.getGoldFearGreed().then(data => this.renderGoldFearGreed(data)),
-            api.getSilverFearGreed().then(data => this.renderSilverFearGreed(data)),
-            api.getGoldOverboughtOversold().then(data => utils.renderOverboughtOversold('gold-obo-signal', data)),
-            api.getSilverOverboughtOversold().then(data => utils.renderOverboughtOversold('silver-obo-signal', data))
+            api.getGoldOverboughtOversold().then(data => utils.renderOverboughtOversold('gold-obo-signal', data))
         ];
 
         await Promise.allSettled(promises);
+
+        // Bind Info Button
+        const infoBtn = document.getElementById('info-gold-heat');
+        if (infoBtn) {
+            infoBtn.onclick = () => {
+                utils.showInfoModal('黄金技术热度指标说明', `
+<div style="font-family: var(--font-sans); color: var(--text-primary); line-height: 1.6;">
+    <p style="font-size: 14px; margin-bottom: 16px;">黄金技术热度指数（0-100）是一个综合技术面指标，评估黄金当前在技术面上的超买/超卖热度。数值越高代表市场越偏向超买（高热），越低代表越偏向超卖（低热）。</p>
+    
+    <h4 style="font-size: 14px; font-weight: 700; margin-bottom: 8px;">1. 核心计算因子与权重</h4>
+    <ul style="margin: 0 0 16px 20px; padding: 0;">
+        <li style="margin-bottom: 6px;"><b>RSI (30%)</b>：14 日相对强弱指标，反映短期价格超买超卖强弱。</li>
+        <li style="margin-bottom: 6px;"><b>均线偏离度 (30%)</b>：当前价格相对 50 日均线 (MA50) 的偏离百分比，衡量趋势偏离度。</li>
+        <li style="margin-bottom: 6px;"><b>波动率趋势 (20%)</b>：当前 20 日波动率对比历史 60 日波动均值，反映波动率变化。</li>
+        <li style="margin-bottom: 6px;"><b>当日涨跌 (20%)</b>：当日价格的百分比变动幅度。</li>
+    </ul>
+
+    <h4 style="font-size: 14px; font-weight: 700; margin-bottom: 8px;">2. 计算与归一化逻辑</h4>
+    <ul style="margin: 0 0 16px 20px; padding: 0;">
+        <li style="margin-bottom: 6px;">每个因子通过公式映射转换为 0-100 的“因子得分”后，按权重加权求和得出仪表盘的<b>综合热度分（0-100）</b>。</li>
+        <li style="margin-bottom: 6px;"><b>“近一年分位数”</b>是通过回溯过去 250 个交易日的历史综合热度序列，计算当前分数处于历史水位的百分比（例如 89% 表示当前比过去 89% 的时间都更热）。</li>
+    </ul>
+
+    <h4 style="font-size: 14px; font-weight: 700; margin-bottom: 8px;">3. 下方“技术信号”强弱条</h4>
+    <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 16px;">技术信号条（如“强烈超买 76.8”）为另一个独立的<b>多因子强弱模型</b>，融合了 MACD、KDJ、布林带等更广泛的技术因子判定，提供更敏捷的对照验证。</p>
+
+    <p style="font-size: 11px; color: var(--text-secondary); font-style: italic; border-top: 1px solid var(--border-light); padding-top: 12px; margin: 0;">免责声明：本数据仅供参考，不构成任何投资买卖建议。</p>
+</div>
+                `);
+            };
+            infoBtn.style.display = 'flex';
+        }
     }
-
-
 
     renderGoldSilver(data) {
         const container = document.getElementById('gold-silver-ratio');
@@ -88,29 +116,15 @@ class MetalsController {
         this.renderMetalFearGreed(data, 'gold');
     }
 
-    renderSilverFearGreed(data) {
-        this.renderMetalFearGreed(data, 'silver');
-    }
-
     renderMetalFearGreed(data, metal) {
         const container = document.getElementById(`${metal}-fear-greed`);
-        const indicatorsContainer = document.getElementById(`${metal}-indicators`);
 
         if (!container) return;
 
         if (data.error) {
             const msg = data._warming_up ? '数据预热中，请稍后刷新' : data.message || data.error;
             utils.renderError(`${metal}-fear-greed`, msg);
-            if (indicatorsContainer) indicatorsContainer.innerHTML = '';
             return;
-        }
-
-        // Bind Info Button
-        const infoBtn = document.getElementById(`info-${metal}-fear`);
-        if (infoBtn && data.explanation) {
-            const title = metal === 'gold' ? '黄金技术热度说明' : '白银技术热度说明';
-            infoBtn.onclick = () => utils.showInfoModal(title, utils.buildFearGreedModalBody(data));
-            infoBtn.style.display = 'flex';
         }
 
         // Render Gauge + Info (Unified Style)
@@ -118,11 +132,9 @@ class MetalsController {
 
         container.innerHTML = `
             <div class="fg-gauge" id="${metal}-gauge"></div>
-            <div class="fg-info" style="flex: 0 1 auto;">
+            <div class="fg-info" style="flex: 0 1 auto; width: 100%;">
                 <div class="fg-level">${data.level}</div>
                 <div style="font-size: 13px; font-weight: 600; color: var(--text-primary); margin: 6px 0;">近一年分位数: ${data.percentile != null ? data.percentile + '%' : '--'}</div>
-                <div class="fg-desc">${data.description || ''}</div>
-                <div class="fg-desc" style="font-size: 11px; color: var(--text-secondary); margin-top: 8px;">${utils.getFearGreedMetaLine(data)}</div>
             </div>
         `;
 
@@ -135,34 +147,6 @@ class MetalsController {
                 });
             }, 100);
         }
-
-        // Render Indicators (Keep existing logic or minimal update)
-        if (indicatorsContainer && data.indicators) {
-            this.renderMetalIndicators(indicatorsContainer, data.indicators);
-        }
-    }
-
-    renderMetalIndicators(container, indicators) {
-        const items = Object.values(indicators).filter(item => item && typeof item === 'object' && item.score != null);
-
-        const html = items.map(item => {
-            const label = item.label || item.name || '--';
-            const value = item.value;
-            const valueText = typeof value === 'number' ? utils.formatNumber(value) : value;
-
-            return `
-                <div class="heat-cell" style="display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 12px; background: var(--bg-secondary); border-radius: 8px;">
-                    <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px;">${label}</div>
-                    <div style="font-size: 16px; font-weight: 600;">${valueText}</div>
-                    <div style="font-size: 10px; color: var(--text-secondary); opacity: 0.7;">Score: ${item.score}</div>
-                </div>
-            `;
-        }).join('');
-
-        container.innerHTML = html;
-        container.style.display = 'grid';
-        container.style.gridTemplateColumns = '1fr 1fr';
-        container.style.gap = '8px';
     }
 
     renderMetalSpotPrices(data) {
