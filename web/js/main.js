@@ -26,11 +26,11 @@ class App {
 
     getPageTitle(tabId) {
         const titles = {
-            'market': '全球市场',
-            'ai': 'AI 产业',
-            'gold': '黄金',
+            'market': 'Global',
+            'ai': 'AI',
+            'gold': 'Gold',
             'etf': 'ETF',
-            'qdii': 'QDII 基金',
+            'qdii': 'QDII',
         };
         const sectionTitle = titles[tabId] || 'X-Analytics';
         return sectionTitle === 'X-Analytics' ? sectionTitle : `${sectionTitle}｜X-Analytics`;
