@@ -36,12 +36,6 @@ INDEX_MAPPING = {
         "dj_code": "SP500",
         "price_symbol": ".INX"
     },
-    "CSIH30269": {
-        "name": "红利低波",
-        "dj_code": "CSIH30269",
-        "price_symbol": "sh512890",
-        "is_proxy": True
-    },
     "SH000015": {
         "name": "中证红利",
         "dj_code": "SH000015",
@@ -49,13 +43,13 @@ INDEX_MAPPING = {
     }
 }
 
-@cached("index_valuation:v3", ttl=14400)
+@cached("index_valuation:v4", ttl=14400)
 def get_index_valuation(index_code: str) -> Dict[str, Any]:
     """
     获取指定指数的估值及价格历史数据
     
     Args:
-        index_code: 指数代码 (SH000300, HSI, NDX, SP500, CSIH30269, SH000015)
+        index_code: 指数代码 (SH000300, HSI, NDX, SP500, SH000015)
         
     Returns:
         包含当前PE、百分位、评级以及历史PE、价格序列的字典
@@ -120,10 +114,7 @@ def get_index_valuation(index_code: str) -> Dict[str, Any]:
                 if day_val is not None and close_val is not None:
                     # Clean date format
                     date_str = day_val.split()[0]
-                    val = safe_float(close_val)
-                    if cfg.get("is_proxy"):
-                        val = val * 10000.0
-                    price_series.append([date_str, val])
+                    price_series.append([date_str, safe_float(close_val)])
         else:
             # 其他指数使用 akshare
             logger.info(f"Fetching AkShare price data for {name} ({price_symbol})")
