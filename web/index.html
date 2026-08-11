@@ -208,6 +208,12 @@
                         data-lucide="refresh-cw" width="14"></i> 刷新</button>
             </div>
 
+            <!-- Sub-section: 价格与技术面 -->
+            <div style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary); margin: 16px 0 12px 0; display: flex; align-items: center; gap: 8px;">
+                <span style="display: inline-block; width: 4px; height: 16px; background-color: var(--primary); border-radius: 2px;"></span>
+                价格与技术面
+            </div>
+
             <div class="grid">
                 <div class="card">
                     <div class="card-header">
@@ -241,6 +247,56 @@
                     <div id="gold-silver-ratio" class="fg-container">
                         <div class="loading">Loading...</div>
                     </div>
+                </div>
+            </div>
+
+            <!-- Sub-section: 资金与基本面 -->
+            <div style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary); margin: 28px 0 12px 0; display: flex; align-items: center; gap: 8px;">
+                <span style="display: inline-block; width: 4px; height: 16px; background-color: var(--primary); border-radius: 2px;"></span>
+                资金与基本面
+            </div>
+
+            <div class="grid">
+                <!-- 中国央行黄金储备 -->
+                <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+                    <div>
+                        <div class="card-header">
+                            <div class="card-title">中国央行黄金储备</div>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <div class="period-toggle" id="china-reserves-toggle">
+                                    <span class="active" data-period="annual">年</span>
+                                    <span data-period="monthly">月</span>
+                                </div>
+                                <button class="info-btn" id="info-china-reserves" title="说明"><i data-lucide="help-circle"
+                                        width="16"></i></button>
+                            </div>
+                        </div>
+                        <div id="china-reserves-stats" class="fg-container">
+                            <div class="loading">Loading...</div>
+                        </div>
+                    </div>
+                    <div id="china-reserves-chart" style="width: 100%; height: 135px; margin-top: 8px;"></div>
+                </div>
+
+                <!-- SPDR黄金ETF持仓 -->
+                <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+                    <div>
+                        <div class="card-header">
+                            <div class="card-title">全球黄金 ETF 持仓 (SPDR)</div>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <div class="period-toggle" id="spdr-etf-toggle">
+                                    <span class="active" data-period="annual">年</span>
+                                    <span data-period="monthly">月</span>
+                                </div>
+                                <button class="info-btn" id="info-spdr-etf" title="说明"><i data-lucide="help-circle"
+                                        width="16"></i></button>
+                            </div>
+                        </div>
+                        <div id="spdr-etf-stats" class="fg-container">
+                            <div class="loading">Loading...</div>
+                        </div>
+                    </div>
+                    <div id="spdr-etf-chart" style="width: 100%; height: 135px; margin-top: 8px;"></div>
                 </div>
             </div>
         </section>
@@ -309,12 +365,12 @@
     <div id="tooltip" style="display:none;"></div>
 
     <script src="js/echarts.min.js?v=33"></script>
-    <script src="js/api.js?v=33"></script>
-    <script src="js/charts.js?v=33"></script>
+    <script src="js/api.js?v=35"></script>
+    <script src="js/charts.js?v=37"></script>
     <script src="js/utils.js?v=33"></script>
     <script src="js/modules/market.js?v=34"></script>
     <script src="js/modules/ai.js?v=37"></script>
-    <script src="js/modules/metals.js?v=33"></script>
+    <script src="js/modules/metals.js?v=39"></script>
     <script src="js/modules/etf.js?v=33"></script>
     <script src="js/modules/qdii.js?v=60"></script>
     <script src="js/main.js?v=33"></script>

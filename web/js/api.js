@@ -288,6 +288,14 @@ class API {
         return this.request('/metals/spot-prices');
     }
 
+    async getChinaGoldReserves() {
+        return this.request('/metals/central-bank-reserves');
+    }
+
+    async getSPDRGoldETF() {
+        return this.request('/metals/etf-holdings');
+    }
+
     // 超买超卖信号 API
     async getCNOverboughtOversold(period = 'daily') {
         return this.request(`/market-asia/signals/overbought-oversold?period=${period}`);

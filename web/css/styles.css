@@ -2950,5 +2950,35 @@ footer {
     }
 }
 
+/* Period Toggle for Reserves/ETF Cards */
+.period-toggle {
+    display: inline-flex;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-light);
+    border-radius: 4px;
+    padding: 2px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.period-toggle span {
+    padding: 2px 8px;
+    cursor: pointer;
+    border-radius: 3px;
+    color: var(--text-secondary);
+    transition: all 0.2s ease;
+    user-select: none;
+}
+
+.period-toggle span:hover {
+    color: var(--text-primary);
+}
+
+.period-toggle span.active {
+    background: var(--bg-card);
+    color: var(--primary);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
 
 

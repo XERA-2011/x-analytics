@@ -903,6 +903,178 @@ class Charts {
 
         return chart;
     }
+
+    // 创建中国央行黄金储备月度净增持柱状图
+    createChinaReservesChart(containerId, history) {
+        const container = document.getElementById(containerId);
+        if (!container) return null;
+
+        if (this.charts.has(containerId)) {
+            this.charts.get(containerId).dispose();
+        }
+
+        const chart = echarts.init(container);
+        const dates = history.map(item => item.date);
+        const changes = history.map(item => item.net_change_tonnes);
+
+        const option = {
+            ...this.theme,
+            tooltip: {
+                trigger: 'axis',
+                formatter: function (params) {
+                    const point = params[0];
+                    const val = parseFloat(point.value);
+                    const sign = val >= 0 ? '+' : '';
+                    return `${point.name}<br/>净买入: ${sign}${val.toFixed(2)} 吨`;
+                }
+            },
+            grid: {
+                top: 15,
+                bottom: 20,
+                left: 45,
+                right: 10
+            },
+            xAxis: {
+                type: 'category',
+                data: dates,
+                axisLabel: {
+                    color: this.theme.textStyle.color,
+                    formatter: function (value) {
+                        if (value.includes('-')) {
+                            const parts = value.split('-');
+                            return `${parts[0].slice(2)}-${parts[1]}`; // 显示 YY-MM 格式，例如 '24-08'
+                        }
+                        return value; // 显示年份，例如 '2020年'
+                    }
+                }
+            },
+            yAxis: {
+                type: 'value',
+                axisLabel: {
+                    color: this.theme.textStyle.color,
+                    formatter: '{value}'
+                },
+                splitLine: {
+                    show: true,
+                    lineStyle: {
+                        color: '#e6e6e6'
+                    }
+                }
+            },
+            series: [{
+                name: '月度净增持',
+                type: 'bar',
+                data: changes,
+                itemStyle: {
+                    color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                        { offset: 0, color: '#e5a93b' },
+                        { offset: 1, color: '#dfa724' }
+                    ]),
+                    borderRadius: [2, 2, 0, 0]
+                }
+            }]
+        };
+
+        chart.setOption(option);
+        this.charts.set(containerId, chart);
+
+        window.addEventListener('resize', () => {
+            chart.resize();
+        });
+
+        return chart;
+    }
+
+    // 创建SPDR黄金ETF持仓走势图
+    createSPDRHoldingsChart(containerId, history) {
+        const container = document.getElementById(containerId);
+        if (!container) return null;
+
+        if (this.charts.has(containerId)) {
+            this.charts.get(containerId).dispose();
+        }
+
+        const chart = echarts.init(container);
+        const dates = history.map(item => item.date);
+        const tonnes = history.map(item => item.tonnes);
+
+        const option = {
+            ...this.theme,
+            tooltip: {
+                trigger: 'axis',
+                formatter: function (params) {
+                    const point = params[0];
+                    const idx = point.dataIndex;
+                    const item = history[idx];
+                    if (!item) return '';
+                    const sign = item.change >= 0 ? '+' : '';
+                    return `${item.date}<br/>总持仓: ${item.tonnes.toLocaleString()} 吨<br/>单日变动: ${sign}${item.change.toFixed(2)} 吨`;
+                }
+            },
+            grid: {
+                top: 15,
+                bottom: 20,
+                left: 55,
+                right: 15
+            },
+            xAxis: {
+                type: 'category',
+                data: dates,
+                axisLabel: {
+                    color: this.theme.textStyle.color,
+                    formatter: function (value) {
+                        if (value.includes('-')) {
+                            const parts = value.split('-');
+                            if (parts.length >= 3) {
+                                return `${parts[1]}-${parts[2]}`; // 日度显示 MM-DD
+                            }
+                            return `${parts[0].slice(2)}-${parts[1]}`; // 月度显示 YY-MM，例如 '26-08'
+                        }
+                        return value; // '2020年'
+                    }
+                }
+            },
+            yAxis: {
+                type: 'value',
+                scale: true,
+                axisLabel: {
+                    color: this.theme.textStyle.color,
+                    formatter: '{value}'
+                },
+                splitLine: {
+                    show: true,
+                    lineStyle: {
+                        color: '#e6e6e6'
+                    }
+                }
+            },
+            series: [{
+                name: '持仓总量',
+                type: 'line',
+                data: tonnes,
+                showSymbol: false,
+                lineStyle: {
+                    color: '#dfa724',
+                    width: 2
+                },
+                areaStyle: {
+                    color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                        { offset: 0, color: 'rgba(223, 167, 36, 0.3)' },
+                        { offset: 1, color: 'rgba(223, 167, 36, 0.0)' }
+                    ])
+                }
+            }]
+        };
+
+        chart.setOption(option);
+        this.charts.set(containerId, chart);
+
+        window.addEventListener('resize', () => {
+            chart.resize();
+        });
+
+        return chart;
+    }
 }
 
 // 创建全局图表实例

@@ -42,6 +42,22 @@ def get_spot_prices() -> Any:
     return MetalSpotPrice.get_spot_prices()
 
 
+@router.get("/central-bank-reserves", summary="获取中国央行黄金储备")
+@safe_endpoint
+def get_china_gold_reserves() -> Dict[str, Any]:
+    """获取中国央行黄金和外汇储备月度数据"""
+    from ..modules.metals.reserves import GoldFundFlows
+    return GoldFundFlows.get_china_gold_reserves()
+
+
+@router.get("/etf-holdings", summary="获取全球黄金ETF持仓")
+@safe_endpoint
+def get_spdr_etf_holdings() -> Dict[str, Any]:
+    """获取全球最大黄金ETF持仓日度数据"""
+    from ..modules.metals.reserves import GoldFundFlows
+    return GoldFundFlows.get_spdr_etf_holdings()
+
+
 @router.get("/gold/signals/overbought-oversold", summary="获取黄金超买超卖信号")
 @safe_endpoint
 def get_gold_obo_signal(period: str = "daily") -> Dict[str, Any]:
