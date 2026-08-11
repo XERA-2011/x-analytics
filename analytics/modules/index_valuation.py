@@ -35,16 +35,27 @@ INDEX_MAPPING = {
         "name": "标普500",
         "dj_code": "SP500",
         "price_symbol": ".INX"
+    },
+    "CSIH30269": {
+        "name": "红利低波",
+        "dj_code": "CSIH30269",
+        "price_symbol": "sh512890",
+        "is_proxy": True
+    },
+    "SH000015": {
+        "name": "中证红利",
+        "dj_code": "SH000015",
+        "price_symbol": "sh000015"
     }
 }
 
-@cached("index_valuation:v2", ttl=14400)
+@cached("index_valuation:v3", ttl=14400)
 def get_index_valuation(index_code: str) -> Dict[str, Any]:
     """
     获取指定指数的估值及价格历史数据
     
     Args:
-        index_code: 指数代码 (SH000300, HSI, NDX, SP500)
+        index_code: 指数代码 (SH000300, HSI, NDX, SP500, CSIH30269, SH000015)
         
     Returns:
         包含当前PE、百分位、评级以及历史PE、价格序列的字典
@@ -94,8 +105,9 @@ def get_index_valuation(index_code: str) -> Dict[str, Any]:
     price_series: List[List[Any]] = []
     
     try:
-        if code_upper == "SH000300":
-            # 沪深300 从新浪 K 线 API 获取
+        # 沪深A股指数/ETF 从新浪 K 线 API 获取
+        is_china_a = price_symbol.startswith("sh") or price_symbol.startswith("sz")
+        if is_china_a:
             logger.info(f"Fetching Sina KLine price data for {name} ({price_symbol})")
             sina_url = f"https://money.finance.sina.com.cn/quotes_service/api/json_v2.php/CN_MarketData.getKLineData?symbol={price_symbol}&scale=240&ma=no&datalen=3000"
             r_price = requests.get(sina_url, headers=headers, proxies={'http': None, 'https': None}, timeout=15)
@@ -108,7 +120,10 @@ def get_index_valuation(index_code: str) -> Dict[str, Any]:
                 if day_val is not None and close_val is not None:
                     # Clean date format
                     date_str = day_val.split()[0]
-                    price_series.append([date_str, safe_float(close_val)])
+                    val = safe_float(close_val)
+                    if cfg.get("is_proxy"):
+                        val = val * 10000.0
+                    price_series.append([date_str, val])
         else:
             # 其他指数使用 akshare
             logger.info(f"Fetching AkShare price data for {name} ({price_symbol})")

@@ -78,7 +78,9 @@ def test_index_valuation_routes():
         "/index-valuation/valuation/NDX",
         "/index-valuation/valuation/SP500",
         "/index-valuation/valuation/HSI",
-        "/index-valuation/valuation/SH000300"
+        "/index-valuation/valuation/SH000300",
+        "/index-valuation/valuation/CSIH30269",
+        "/index-valuation/valuation/SH000015"
     ]
     for route in routes:
         response = requests.get(f"{BASE_URL}{route}")

@@ -2812,6 +2812,7 @@ footer {
 /* Index Valuation Temperature Chart Styles */
 .valuation-tabs {
     display: flex;
+    flex-wrap: wrap;
     gap: 8px;
 }
 
@@ -2923,6 +2924,7 @@ footer {
     .valuation-tabs {
         width: 100%;
         justify-content: space-between;
+        flex-wrap: wrap;
         gap: 4px;
     }
     

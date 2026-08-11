@@ -125,3 +125,38 @@ def test_get_index_valuation_hsi(mock_akshare_call, mock_get):
     assert len(res["price_series"]) == 3
     assert res["price_series"][0] == ["2021-01-01", 6000.0]
     assert res["price_series"][-1] == ["2021-01-03", 5900.0]
+
+
+@patch("analytics.modules.index_valuation.requests.get")
+@patch("analytics.modules.index_valuation.akshare_call_with_retry")
+@patch("analytics.modules.index_valuation.cached")
+def test_get_index_valuation_csih30269_proxy(mock_cached, mock_akshare_call, mock_get):
+    mock_cached.side_effect = lambda *args, **kwargs: lambda func: func
+    
+    # 1. Mock Danjuan PE history response
+    mock_pe_resp = MagicMock()
+    mock_pe_resp.json.return_value = {
+        "data": {
+            "index_eva_pe_growths": [
+                {"pe": 7.0, "ts": 1609459200000}
+            ]
+        }
+    }
+    mock_pe_resp.status_code = 200
+    
+    # 2. Mock Sina KLine price response (ETF price around 1.1)
+    mock_price_resp = MagicMock()
+    mock_price_resp.json.return_value = [
+        {"day": "2021-01-01 15:00:00", "close": "1.163"}
+    ]
+    mock_price_resp.status_code = 200
+    
+    mock_get.side_effect = [mock_pe_resp, mock_price_resp]
+    
+    func_to_run = get_index_valuation._original if hasattr(get_index_valuation, "_original") else get_index_valuation
+    res = func_to_run("CSIH30269")
+    
+    assert res["name"] == "红利低波"
+    assert res["index_code"] == "CSIH30269"
+    # ETF close of 1.163 should be scaled by 10000 to become 11630.0
+    assert res["price_series"][0] == ["2021-01-01", 11630.0]
