@@ -17,7 +17,7 @@ class GoldFundFlows:
     """黄金资金面与储备分析"""
 
     @staticmethod
-    @cached("metals:reserves:china_v3", ttl=14400, stale_ttl=28800)
+    @cached("metals:reserves:china_v4", ttl=86400, stale_ttl=172800)
     def get_china_gold_reserves() -> Dict[str, Any]:
         """获取中国央行黄金储备数据及分析"""
         try:
@@ -117,7 +117,7 @@ class GoldFundFlows:
             return {"error": str(e), "current_value": 0.0}
 
     @staticmethod
-    @cached("metals:reserves:spdr_v3", ttl=14400, stale_ttl=28800)
+    @cached("metals:reserves:spdr_v4", ttl=86400, stale_ttl=172800)
     def get_spdr_etf_holdings() -> Dict[str, Any]:
         """获取全球最大黄金 ETF (SPDR) 持仓数据及分析"""
         try:
