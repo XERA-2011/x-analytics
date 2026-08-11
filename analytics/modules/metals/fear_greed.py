@@ -31,7 +31,7 @@ from ...core.logger import logger
 
 
 class BaseMetalFearGreedIndex:
-    """金属恐慌贪婪指数基类 (纯技术面)"""
+    """金属技术热度指数基类 (纯技术面)"""
 
     # 技术指标权重
     WEIGHTS = {
@@ -41,18 +41,18 @@ class BaseMetalFearGreedIndex:
         "daily_change": 0.20,
     }
 
-    # 情绪等级
+    # 技术热度等级
     LEVELS = [
-        (75, "极度贪婪", "市场情绪极度乐观"),
-        (55, "贪婪", "市场情绪偏向乐观"),
-        (45, "中性", "多空平衡，方向不明"),
-        (25, "恐慌", "市场情绪偏悲观"),
-        (0, "极度恐慌", "市场情绪极度悲观"),
+        (75, "极度超买", "多项技术指标严重超买，警惕短期回调风险"),
+        (55, "超买", "技术指标偏向超买，市场热度偏高"),
+        (45, "中性", "指标处于历史合理均值中枢附近"),
+        (25, "超卖", "技术指标偏向超卖，存在超跌反弹或企稳可能"),
+        (0, "极度超卖", "多项技术指标严重超卖，多空博弈白热化"),
     ]
 
     @classmethod
     def calculate(cls, symbol: str, name: str) -> Dict[str, Any]:
-        """计算恐慌贪婪指数"""
+        """计算技术热度指数"""
         try:
             update_time = get_beijing_time().strftime("%Y-%m-%d %H:%M:%S")
             meta = build_fear_greed_meta(
@@ -84,12 +84,12 @@ class BaseMetalFearGreedIndex:
             if not indicators:
                 return build_fear_greed_error(
                     error="无法计算技术指标",
-                    message=f"无法计算{name}恐慌贪婪指数",
+                    message=f"无法计算{name}技术热度指数",
                     update_time=update_time,
                     meta=meta,
                 )
             
-            # 计算综合得分
+            # 计算当前综合得分
             score = cls._calculate_composite_score(indicators)
             
             if score is None:
@@ -99,6 +99,25 @@ class BaseMetalFearGreedIndex:
                     update_time=update_time,
                     meta=meta,
                 )
+
+            # 计算近一年（约250个交易日）的历史分数以计算分位数
+            percentile_val = 50.0
+            hist_scores = []
+            total_len = len(df)
+            start_idx = max(55, total_len - 250)
+            
+            for idx in range(start_idx, total_len):
+                sub_df = df.iloc[:idx+1]
+                sub_indicators = cls._calculate_indicators(sub_df)
+                if sub_indicators:
+                    sub_score = cls._calculate_composite_score(sub_indicators)
+                    if sub_score is not None:
+                        hist_scores.append(sub_score)
+            
+            if hist_scores:
+                latest_score = hist_scores[-1]
+                less_equal = sum(1 for s in hist_scores if s <= latest_score)
+                percentile_val = round((less_equal / len(hist_scores)) * 100, 1)
             
             # 等级描述
             level, description = cls._get_level(score)
@@ -112,13 +131,14 @@ class BaseMetalFearGreedIndex:
                 explanation=cls._get_explanation(name),
                 levels=[{"min": t, "label": l, "description": d} for t, l, d in cls.LEVELS],
                 meta=meta,
+                extra={"percentile": percentile_val}
             )
 
         except Exception as e:
-            logger.error(f"❌ 计算{name}恐慌贪婪指数失败: {e}")
+            logger.error(f"❌ 计算{name}技术热度指数失败: {e}")
             return build_fear_greed_error(
                 error=str(e),
-                message=f"无法计算{name}恐慌贪婪指数",
+                message=f"无法计算{name}技术热度指数",
                 update_time=get_beijing_time().strftime("%Y-%m-%d %H:%M:%S"),
                 meta=build_fear_greed_meta(
                     market="METALS",
@@ -247,30 +267,30 @@ class BaseMetalFearGreedIndex:
         for threshold, level, description in BaseMetalFearGreedIndex.LEVELS:
             if score >= threshold:
                 return level, description
-        return "未知", "无法判断情绪等级"
+        return "未知", "无法判断技术热度等级"
 
     @staticmethod
     def _get_explanation(name: str) -> str:
         w = BaseMetalFearGreedIndex.WEIGHTS
         return build_fear_greed_explanation(
-            title=f"{name}情绪指数",
+            title=f"{name}技术热度指数",
             factors=[
-                ("RSI", w["rsi"], "衡量超买超卖状态"),
-                ("均线偏离", w["momentum"], "反映价格相对 MA50 的偏离"),
-                ("波动率", w["volatility"], "反映近期相对历史的波动变化"),
-                ("当日涨跌", w["daily_change"], "反映短线价格变化"),
+                ("RSI", w["rsi"], "反映短期价格超买超卖强弱"),
+                ("均线偏离 (MA50)", w["momentum"], "价格相对50日均线的偏离百分比"),
+                ("波动率趋势", w["volatility"], "当前20日波动率对比过去60日均值"),
+                ("当日涨跌", w["daily_change"], "当日的百分比价格波动"),
             ],
             levels=BaseMetalFearGreedIndex.LEVELS,
-            methodology_note=f"该指数基于{name}技术与行情因子合成，更适合同品种内部纵向观察，不建议与股票市场直接比较。",
+            methodology_note=f"该指数为{name}技术热度综合得分（0-100）。各因子值通过公式转换为“因子得分”后，按权重加权求和得出综合值。该指数更适合同品种内部纵向历史分位数对比，不建议与股票市场直接横向对比。下方“技术信号”为多技术因子独立评估超买超卖强度，可作为对照参考。本数据不构成任何投资建议。",
         )
 
 
 class GoldFearGreedIndex(BaseMetalFearGreedIndex):
-    """黄金恐慌贪婪指数"""
+    """黄金技术热度指数"""
     
     @staticmethod
     @cached(
-        "metals:fear_greed_v4",
+        "metals:fear_greed_v5",
         ttl=settings.CACHE_TTL["fear_greed_realtime"],
         stale_ttl=settings.CACHE_TTL["fear_greed_stale"],
     )
@@ -279,11 +299,11 @@ class GoldFearGreedIndex(BaseMetalFearGreedIndex):
 
 
 class SilverFearGreedIndex(BaseMetalFearGreedIndex):
-    """白银恐慌贪婪指数"""
+    """白银技术热度指数"""
     
     @staticmethod
     @cached(
-        "metals:silver_fear_greed_v4",
+        "metals:silver_fear_greed_v5",
         ttl=settings.CACHE_TTL["fear_greed_realtime"],
         stale_ttl=settings.CACHE_TTL["fear_greed_stale"],
     )

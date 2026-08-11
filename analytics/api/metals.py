@@ -13,17 +13,17 @@ from ..modules.metals import GoldSilverAnalysis, MetalSpotPrice, GoldFearGreedIn
 router = APIRouter(tags=["有色金属"])
 
 
-@router.get("/fear-greed", summary="获取黄金恐慌贪婪指数")
+@router.get("/fear-greed", summary="获取黄金技术热度指数")
 @safe_endpoint
 def get_gold_fear_greed() -> Dict[str, Any]:
-    """获取黄金恐慌贪婪指数 (Custom)"""
+    """获取黄金技术热度指数 (Custom)"""
     return GoldFearGreedIndex.calculate()
 
 
-@router.get("/silver-fear-greed", summary="获取白银恐慌贪婪指数")
+@router.get("/silver-fear-greed", summary="获取白银技术热度指数")
 @safe_endpoint
 def get_silver_fear_greed() -> Dict[str, Any]:
-    """获取白银恐慌贪婪指数 (Custom)"""
+    """获取白银技术热度指数 (Custom)"""
     from ..modules.metals.fear_greed import SilverFearGreedIndex
     return SilverFearGreedIndex.calculate()
 

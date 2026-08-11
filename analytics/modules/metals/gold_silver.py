@@ -195,6 +195,7 @@ class GoldSilverAnalysis:
         """
         return f"""
 金银比(Gold-Silver Ratio)说明：
+• 数据统计区间：近 50 年 (1975 年至今)
 • 定义：1盎司黄金价格 ÷ 1盎司白银价格
 • 核心逻辑：
   - 均值回归：历史长期均值约 {GoldSilverAnalysis.HISTORICAL_AVG}

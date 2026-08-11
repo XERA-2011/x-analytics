@@ -215,6 +215,29 @@ class OverboughtOversoldSignal:
                         ak.futures_zh_daily_sina,
                         symbol=config["symbol"],
                     )
+                    if df is not None and not df.empty:
+                        df.columns = [c.lower() for c in df.columns]
+                        try:
+                            min_df = akshare_call_with_retry(
+                                ak.futures_zh_minute_sina,
+                                symbol=config["symbol"],
+                                period="1",
+                            )
+                            if min_df is not None and not min_df.empty:
+                                latest_price = safe_float(min_df.iloc[-1]["close"])
+                                latest_time = min_df.iloc[-1]["datetime"]
+                                if latest_price is not None:
+                                    last_date_str = str(df.iloc[-1]["date"])[:10]
+                                    current_date_str = str(latest_time)[:10]
+                                    if last_date_str == current_date_str:
+                                        df.iloc[-1, df.columns.get_loc("close")] = latest_price
+                                    else:
+                                        new_row = df.iloc[-1].copy()
+                                        new_row["date"] = current_date_str
+                                        new_row["close"] = latest_price
+                                        df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
+                        except Exception as ex:
+                            logger.warning(f"⚠️ 无法获取{config['name']}实时超买超卖信号价格: {ex}")
             else:
                 return None
 

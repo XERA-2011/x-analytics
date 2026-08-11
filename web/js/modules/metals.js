@@ -108,7 +108,7 @@ class MetalsController {
         // Bind Info Button
         const infoBtn = document.getElementById(`info-${metal}-fear`);
         if (infoBtn && data.explanation) {
-            const title = metal === 'gold' ? '黄金情绪指数' : '白银情绪指数';
+            const title = metal === 'gold' ? '黄金技术热度说明' : '白银技术热度说明';
             infoBtn.onclick = () => utils.showInfoModal(title, utils.buildFearGreedModalBody(data));
             infoBtn.style.display = 'flex';
         }
@@ -120,6 +120,7 @@ class MetalsController {
             <div class="fg-gauge" id="${metal}-gauge"></div>
             <div class="fg-info" style="flex: 0 1 auto;">
                 <div class="fg-level">${data.level}</div>
+                <div style="font-size: 13px; font-weight: 600; color: var(--text-primary); margin: 6px 0;">近一年分位数: ${data.percentile != null ? data.percentile + '%' : '--'}</div>
                 <div class="fg-desc">${data.description || ''}</div>
                 <div class="fg-desc" style="font-size: 11px; color: var(--text-secondary); margin-top: 8px;">${utils.getFearGreedMetaLine(data)}</div>
             </div>
