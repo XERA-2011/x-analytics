@@ -40,16 +40,46 @@ INDEX_MAPPING = {
         "name": "中证红利",
         "dj_code": "SH000015",
         "price_symbol": "sh000015"
+    },
+    "SH000688": {
+        "name": "科创50",
+        "dj_code": "SH000688",
+        "price_symbol": "sh000688"
+    },
+    "SZ399006": {
+        "name": "创业板指",
+        "dj_code": "SZ399006",
+        "price_symbol": "sz399006"
+    },
+    "SH000905": {
+        "name": "中证500",
+        "dj_code": "SH000905",
+        "price_symbol": "sh000905"
+    },
+    "SH000016": {
+        "name": "上证50",
+        "dj_code": "SH000016",
+        "price_symbol": "sh000016"
+    },
+    "SH000932": {
+        "name": "中证消费",
+        "dj_code": "SH000932",
+        "price_symbol": "sh000932"
+    },
+    "SH000933": {
+        "name": "中证医药",
+        "dj_code": "SH000933",
+        "price_symbol": "sh000933"
     }
 }
 
-@cached("index_valuation:v4", ttl=14400)
+@cached("index_valuation:v5", ttl=14400)
 def get_index_valuation(index_code: str) -> Dict[str, Any]:
     """
     获取指定指数的估值及价格历史数据
     
     Args:
-        index_code: 指数代码 (SH000300, HSI, NDX, SP500, SH000015)
+        index_code: 指数代码 (SH000300, HSI, NDX, SP500, SH000015, SH000688, SZ399006, SH000905, SH000016, SH000932, SH000933)
         
     Returns:
         包含当前PE、百分位、评级以及历史PE、价格序列的字典
