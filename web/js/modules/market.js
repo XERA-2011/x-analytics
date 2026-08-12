@@ -746,19 +746,40 @@ class MarketController {
                     headerBadge.className = `status-badge ${badgeClass}`;
                 }
 
+                const indexDescriptions = {
+                    'NDX': '纳斯达克100指数由纳斯达克市场中100家最具创新力的非金融大企业组成，是全球科技股和成长股的黄金标杆。',
+                    'SP500': '标普500指数代表美国最具影响力的500家行业龙头企业，被视为衡量美国股市大盘整体健康状况的最佳基准。',
+                    'HSI': '恒生指数由香港交易所最大、流动性最好的蓝筹股组成，综合反映了香港及海外中概核心资产的整体表现。',
+                    'SH000300': '沪深300指数精选沪深市场中规模大、流动性好的最具代表性的300只龙头股票，是中国A股大盘走势的晴雨表。',
+                    'SH000015': '中证红利指数挑选沪深市场中分红高、股息率稳定、规模居前的100只股票，反映高股息资产在市场震荡下的稳健表现。',
+                    'SH000688': '科创50指数由科创板中市值大、流动性好的50只硬科技证券组成，涵盖半导体、生物医药、高端制造等关键前沿科技。',
+                    'SZ399006': '创业板指代表深交所创业板中市值与流动性排名前100的企业，聚焦新能源、生物医药、TMT等战略性高成长新兴产业。',
+                    'SH000905': '中证500指数扣除大盘蓝筹后，选取沪深市场中日均总市值排名前500的中小市值企业，反映成长型中盘骨干企业的整体面貌。',
+                    'SH000016': '上证50指数挑选沪市最具市场影响力的50只超大型核心蓝筹，集中分布于金融、消费等传统实体行业巨头。',
+                    'SH000932': '中证消费指数精选主要消费行业中实力雄厚的代表性股票（如高端白酒、食品饮料），是长期收益优异的刚需消费赛道。'
+                };
+
+                const desc = indexDescriptions[indexCode.toUpperCase()] || '该指数用于评估特定市场或行业的估值性价比。';
+
                 summaryContainer.innerHTML = `
                     <div class="val-summary-stats">
-                        <div class="val-stat-item">
-                            <span class="val-stat-label">当前 PE (TTM)</span>
-                            <span class="val-stat-value">${peVal}</span>
+                        <div class="val-stats-group">
+                            <div class="val-stat-item">
+                                <span class="val-stat-label">当前 PE (TTM)</span>
+                                <span class="val-stat-value">${peVal}</span>
+                            </div>
+                            <div class="val-stat-item">
+                                <span class="val-stat-label">历史估值百分位</span>
+                                <span class="val-stat-value">${pct}%</span>
+                            </div>
+                            <div class="val-stat-item val-stat-date">
+                                <span class="val-stat-label">数据截止日期</span>
+                                <span class="val-stat-value">${date}</span>
+                            </div>
                         </div>
-                        <div class="val-stat-item">
-                            <span class="val-stat-label">历史估值百分位</span>
-                            <span class="val-stat-value">${pct}%</span>
-                        </div>
-                        <div class="val-stat-item val-stat-date">
-                            <span class="val-stat-label">数据截止日期</span>
-                            <span class="val-stat-value">${date}</span>
+                        <div class="val-desc-group">
+                            <span class="val-stat-label">指数介绍</span>
+                            <span class="val-desc-text">${desc}</span>
                         </div>
                     </div>
                 `;
