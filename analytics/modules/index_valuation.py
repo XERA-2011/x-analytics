@@ -65,21 +65,16 @@ INDEX_MAPPING = {
         "name": "中证消费",
         "dj_code": "SH000932",
         "price_symbol": "sh000932"
-    },
-    "SH000933": {
-        "name": "中证医药",
-        "dj_code": "SH000933",
-        "price_symbol": "sh000933"
     }
 }
 
-@cached("index_valuation:v5", ttl=14400, stale_ttl=28800, sync_on_cold=True)
+@cached("index_valuation:v6", ttl=14400, stale_ttl=28800, sync_on_cold=True)
 def get_index_valuation(index_code: str) -> Dict[str, Any]:
     """
     获取指定指数的估值及价格历史数据
     
     Args:
-        index_code: 指数代码 (SH000300, HSI, NDX, SP500, SH000015, SH000688, SZ399006, SH000905, SH000016, SH000932, SH000933)
+        index_code: 指数代码 (SH000300, HSI, NDX, SP500, SH000015, SH000688, SZ399006, SH000905, SH000016, SH000932)
         
     Returns:
         包含当前PE、百分位、评级以及历史PE、价格序列的字典
