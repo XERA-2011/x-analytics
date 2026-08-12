@@ -395,6 +395,10 @@ class GoldController {
         if (window.charts && history) {
             charts.createChinaReservesChart('china-reserves-chart', history);
         }
+        const subtitle = document.getElementById('china-chart-subtitle');
+        if (subtitle) {
+            subtitle.textContent = period === 'annual' ? '年度净增持量 (吨)' : '月度净增持量 (吨)';
+        }
     }
 
     switchSPDRPeriod(period) {
@@ -402,6 +406,10 @@ class GoldController {
         const history = period === 'annual' ? this.spdrGoldETFData.annual_history : this.spdrGoldETFData.monthly_history;
         if (window.charts && history) {
             charts.createSPDRHoldingsChart('spdr-etf-chart', history);
+        }
+        const subtitle = document.getElementById('spdr-chart-subtitle');
+        if (subtitle) {
+            subtitle.textContent = period === 'annual' ? '年度期末持仓总量 (吨)' : '月度期末持仓总量 (吨)';
         }
     }
 }
