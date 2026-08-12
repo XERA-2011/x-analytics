@@ -387,15 +387,21 @@ def setup_default_jobs():
     )
 
     # 3. 板块热度 & 领涨 (每10分钟)
-    scheduler.add_simple_job(
+    scheduler.add_market_job(
         job_id="warmup:western:heat",
-        func=lambda: warmup_cache(USMarketHeat.get_sector_performance),
-        interval_minutes=10
+        func=USMarketHeat.get_sector_performance,
+        market="market_western",
+        use_warmup_cache=True,
+        trading_interval_minutes=10,
+        non_trading_max_age_seconds=settings.CACHE_TTL.get("market_heat", 7200),
     )
-    scheduler.add_simple_job(
+    scheduler.add_market_job(
         job_id="warmup:western:leaders",
-        func=lambda: warmup_cache(USMarketLeaders.get_leaders),
-        interval_minutes=10
+        func=USMarketLeaders.get_leaders,
+        market="market_western",
+        use_warmup_cache=True,
+        trading_interval_minutes=10,
+        non_trading_max_age_seconds=settings.CACHE_TTL.get("market_heat", 7200),
     )
 
     # 4. 美债 (低频)
@@ -407,10 +413,13 @@ def setup_default_jobs():
 
     # 5. AI 产业链
     from ..modules.ai import AIOverview
-    scheduler.add_simple_job(
+    scheduler.add_market_job(
         job_id="warmup:ai:overview",
-        func=lambda: warmup_cache(AIOverview.get_overview),
-        interval_minutes=10
+        func=AIOverview.get_overview,
+        market="market_western",
+        use_warmup_cache=True,
+        trading_interval_minutes=10,
+        non_trading_max_age_seconds=settings.CACHE_TTL.get("market_heat", 7200),
     )
 
     # =========================================================================
@@ -459,7 +468,7 @@ def setup_default_jobs():
     scheduler.add_market_job(
         job_id="warmup:etf:heatmap",
         func=ETFHeatmap.get_heatmap_data,
-        market="market_cn",
+        market="market_asia",
         use_warmup_cache=True,
         trading_interval_minutes=10,
         non_trading_max_age_seconds=settings.CACHE_TTL["etf_heatmap"],
@@ -474,18 +483,20 @@ def setup_default_jobs():
     scheduler.add_market_job(
         job_id="warmup:signals:cn",
         func=OverboughtOversoldSignal.get_cn_signal,
-        market="market_cn",
+        market="market_asia",
         use_warmup_cache=True,
         period="daily",
     )
     
     # 美股超买超卖 (每10分钟)
-    scheduler.add_simple_job(
+    scheduler.add_market_job(
         job_id="warmup:signals:us",
-        func=lambda: warmup_cache(
-            OverboughtOversoldSignal.get_us_signal, period="daily"
-        ),
-        interval_minutes=10
+        func=OverboughtOversoldSignal.get_us_signal,
+        market="market_western",
+        use_warmup_cache=True,
+        trading_interval_minutes=10,
+        non_trading_max_age_seconds=settings.CACHE_TTL.get("market", 7200),
+        period="daily",
     )
     
     # 港股超买超卖 (每10分钟)
