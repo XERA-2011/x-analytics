@@ -516,6 +516,31 @@ def setup_default_jobs():
     )
 
     # =========================================================================
+    # 指数估值温度计 (Index Valuation Thermometer)
+    # =========================================================================
+    from ..modules.index_valuation import get_index_valuation, INDEX_MAPPING
+
+    def warmup_all_index_valuations():
+        """预热全部指数估值缓存，每个指数间隔 5 秒避免 API 限流"""
+        import time as _time
+        logger.info("📊 开始预热指数估值温度计...")
+        success_count = 0
+        for code in INDEX_MAPPING:
+            try:
+                warmup_cache(get_index_valuation, index_code=code)
+                success_count += 1
+            except Exception as e:
+                logger.warning(f"指数估值预热失败 [{code}]: {e}")
+            _time.sleep(5)  # 错峰 5 秒
+        logger.info(f"📊 指数估值预热完成: {success_count}/{len(INDEX_MAPPING)}")
+
+    scheduler.add_simple_job(
+        job_id="warmup:index_valuation",
+        func=warmup_all_index_valuations,
+        interval_minutes=240  # 每 4 小时刷新一次（与 TTL 14400s 对齐）
+    )
+
+    # =========================================================================
     # 固定时间任务
     # =========================================================================
     
@@ -631,6 +656,20 @@ def initial_warmup():
         warmup_cache(CNBonds.get_bond_market_analysis)
         warmup_cache(LPRAnalysis.get_lpr_rates)
         warmup_cache(USTreasury.get_us_bond_yields)
+
+        # 指数估值温度计预热（11 个指数，每个间隔 5s）
+        logger.info("⏳ 等待 30s 后预热指数估值温度计...")
+        time.sleep(30)
+        from ..modules.index_valuation import get_index_valuation, INDEX_MAPPING
+        valuation_ok = 0
+        for code in INDEX_MAPPING:
+            try:
+                warmup_cache(get_index_valuation, index_code=code)
+                valuation_ok += 1
+            except Exception as e:
+                logger.warning(f"指数估值预热失败 [{code}]: {e}")
+            time.sleep(5)
+        logger.info(f"✅ 指数估值预热完成: {valuation_ok}/{len(INDEX_MAPPING)}")
 
     except Exception as e:
         logger.error(f"❌ 初始预热过程中发生错误: {e}")

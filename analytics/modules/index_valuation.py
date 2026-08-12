@@ -73,7 +73,7 @@ INDEX_MAPPING = {
     }
 }
 
-@cached("index_valuation:v5", ttl=14400)
+@cached("index_valuation:v5", ttl=14400, stale_ttl=28800, sync_on_cold=True)
 def get_index_valuation(index_code: str) -> Dict[str, Any]:
     """
     获取指定指数的估值及价格历史数据
