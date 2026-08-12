@@ -778,7 +778,6 @@ class MarketController {
                             </div>
                         </div>
                         <div class="val-desc-group">
-                            <span class="val-stat-label">指数介绍</span>
                             <span class="val-desc-text">${desc}</span>
                         </div>
                     </div>
