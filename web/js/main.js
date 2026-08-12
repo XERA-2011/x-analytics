@@ -3,7 +3,7 @@
 
 class App {
     constructor() {
-        this.currentTab = 'market';
+        this.currentTab = 'global';
         this.lastUpdateTime = null;
         this.isRefreshing = false;
         this.loadedTabs = new Set();
@@ -14,7 +14,7 @@ class App {
 
         // Controllers
         this.modules = {
-            'market': new MarketController(),
+            'global': new MarketController(),
             'ai': new AIMarketController(),
             'gold': new GoldController(),
             'etf': new ETFController(),
@@ -26,7 +26,7 @@ class App {
 
     getPageTitle(tabId) {
         const titles = {
-            'market': 'Global',
+            'global': 'Global',
             'ai': 'AI',
             'gold': 'Gold',
             'etf': 'ETF',
@@ -82,7 +82,7 @@ class App {
                         break;
                     case '1':
                         event.preventDefault();
-                        this.switchTab('market');
+                        this.switchTab('global');
                         break;
                     case '2':
                         event.preventDefault();
@@ -209,15 +209,16 @@ class App {
     async loadInitialData() {
         const urlTab = utils.getUrlParam('tab');
         const legacyMap = {
-            'market-asia': 'market',
-            'market-western': 'market',
-            'market-cn': 'market',
-            'cn': 'market',
-            'market-us': 'market',
-            'us': 'market',
+            'market-asia': 'global',
+            'market-western': 'global',
+            'market-cn': 'global',
+            'cn': 'global',
+            'market-us': 'global',
+            'us': 'global',
+            'market': 'global',
             'metals': 'gold'
         };
-        const validTabs = ['market', 'ai', 'gold', 'etf', 'qdii'];
+        const validTabs = ['global', 'ai', 'gold', 'etf', 'qdii'];
         const targetTab = legacyMap[urlTab] || urlTab;
 
         if (targetTab && validTabs.includes(targetTab)) {
