@@ -271,10 +271,10 @@ class GoldController {
 
         const html = `
             <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; width: 100%; padding: 4px 0;">
-                <div style="font-size: 32px; font-weight: 700; line-height: 1; margin-bottom: 6px; font-family: var(--font-mono);">${data.current_value.toLocaleString()} <span style="font-size: 14px; font-weight: 600; color: var(--text-secondary);">万盎司</span></div>
+                <div style="font-size: 32px; font-weight: 700; line-height: 1; margin-bottom: 6px; font-family: var(--font-mono);">${data.current_tonnes.toLocaleString()} <span style="font-size: 14px; font-weight: 600; color: var(--text-secondary);">吨</span></div>
                 
                 <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; padding: 4px 12px; background: var(--bg-secondary); border-radius: 12px; font-weight: 600;">
-                    等值约 ${data.current_tonnes} 吨
+                    折合约 ${data.current_value.toLocaleString()} 万盎司
                 </div>
 
                 <div style="text-align: center; margin-bottom: 16px; padding: 0 12px;">
@@ -288,16 +288,16 @@ class GoldController {
                 
                 <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; width: 100%; text-align: center; gap: 8px; border-top: 1px solid var(--border-color); padding-top: 12px; margin-bottom: 8px;">
                     <div>
-                        <div style="font-size: 10px; color: var(--text-secondary); margin-bottom: 2px;">10年最高</div>
-                        <div style="font-weight: 600; font-size: 13px;">${data.historical_high}</div>
+                        <div style="font-size: 10px; color: var(--text-secondary); margin-bottom: 2px;">10年最高(吨)</div>
+                        <div style="font-weight: 600; font-size: 13px;">${data.historical_high.toLocaleString()}</div>
                     </div>
                     <div>
-                        <div style="font-size: 10px; color: var(--text-secondary); margin-bottom: 2px;">10年均值</div>
-                        <div style="font-weight: 600; font-size: 13px;">${data.historical_avg}</div>
+                        <div style="font-size: 10px; color: var(--text-secondary); margin-bottom: 2px;">10年均值(吨)</div>
+                        <div style="font-weight: 600; font-size: 13px;">${data.historical_avg.toLocaleString()}</div>
                     </div>
                     <div>
-                        <div style="font-size: 10px; color: var(--text-secondary); margin-bottom: 2px;">10年最低</div>
-                        <div style="font-weight: 600; font-size: 13px;">${data.historical_low}</div>
+                        <div style="font-size: 10px; color: var(--text-secondary); margin-bottom: 2px;">10年最低(吨)</div>
+                        <div style="font-weight: 600; font-size: 13px;">${data.historical_low.toLocaleString()}</div>
                     </div>
                 </div>
             </div>

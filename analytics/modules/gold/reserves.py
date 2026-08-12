@@ -17,7 +17,7 @@ class GoldFundFlows:
     """黄金资金面与储备分析"""
 
     @staticmethod
-    @cached("metals:reserves:china_v4", ttl=86400, stale_ttl=172800)
+    @cached("metals:reserves:china_v5", ttl=86400, stale_ttl=172800)
     def get_china_gold_reserves() -> Dict[str, Any]:
         """获取中国央行黄金储备数据及分析"""
         try:
@@ -25,7 +25,7 @@ class GoldFundFlows:
             if df.empty:
                 raise ValueError("无法获取中国央行黄金储备数据")
             
-            # 日期清洗与按时间排序 (纠正 string 字母排序的 Bug)
+            # 日期清洗与按时间排序 (纠正 string 字母排序 of the Bug)
             def parse_date(date_str: str):
                 parts = date_str.split('.')
                 return int(parts[0]) * 100 + int(parts[1])
@@ -103,9 +103,9 @@ class GoldFundFlows:
                 "net_change": round(net_change, 1),
                 "net_change_tonnes": net_change_tonnes,
                 "percentile": percentile,
-                "historical_high": round(hist_max, 1),
-                "historical_low": round(hist_min, 1),
-                "historical_avg": round(hist_avg, 1),
+                "historical_high": round(hist_max * 0.311035, 1),
+                "historical_low": round(hist_min * 0.311035, 1),
+                "historical_avg": round(hist_avg * 0.311035, 1),
                 "update_time": get_beijing_time().strftime("%Y-%m-%d %H:%M:%S"),
                 "explanation": explanation,
                 "monthly_history": monthly_history,
