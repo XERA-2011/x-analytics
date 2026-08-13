@@ -77,7 +77,7 @@ class AIMarketController {
             <!-- 1. AI 全球产业周期总评分 Dashboard Header -->
             <div class="card hero ai-hero-card" style="margin-bottom: 16px;">
                 <div class="ai-header-grid">
-                    <!-- 左侧：AI Global Cycle Score -->
+                    <!-- 左侧：AI Market Heat -->
                     <div class="ai-score-box">
                         <div class="ai-badge-label" style="display: flex; align-items: center; justify-content: space-between;">
                             <span>AI Market Heat（短线行情热度）</span>
@@ -93,7 +93,7 @@ class AIMarketController {
 
                     <!-- 中间：当前产业周期阶段 (带 SVG 动态仪表盘) -->
                     <div class="ai-cycle-box">
-                        <div class="ai-badge-label">当前产业周期阶段</div>
+                        <div class="ai-badge-label">当前市场阶段</div>
                         <div class="ai-cycle-content">
                             <div class="ai-gauge-wrapper">
                                 <svg viewBox="0 0 160 95" class="ai-cycle-gauge">
@@ -186,8 +186,10 @@ class AIMarketController {
                 </div>
             </div>
 
-            <!-- 2. 中美 AI 产业五维对比 (SVG 动态雷达图) -->
-            <div class="card" style="margin-bottom: 16px; padding: 16px;">
+            <!-- 2. 中美 AI 产业五维对比 (默认折叠，避免与雷达图重复占用首屏) -->
+            <details class="ai-collapsible" style="margin-bottom: 16px;">
+                <summary>中美 AI 产业五维对比 <span class="ai-collapse-hint expand-label">展开查看</span><span class="ai-collapse-hint collapse-label">收起</span></summary>
+                <div class="card ai-collapsible-body" style="padding: 16px;">
                 <div class="card-header" style="margin-bottom: 12px; padding-bottom: 0; border-bottom: none; display: flex; justify-content: space-between; align-items: center;">
                     <div class="card-title"><i data-lucide="git-compare" width="16" style="vertical-align: middle;"></i> 中美 AI 产业五维对比 (US vs CN Radar Matrix)</div>
                     <button class="info-btn" id="info-ai-matrix" title="模型说明" style="display: inline-flex; align-items: center;"><i data-lucide="help-circle" width="14"></i></button>
@@ -275,7 +277,8 @@ class AIMarketController {
                         </div>
                     `;
                 })()}
-            </div>
+                </div>
+            </details>
 
             <!-- 3. AI 泡沫温度计 & 资金健康轮动 (Bubble Thermometer & Rotation) -->
             <div class="ai-middle-grid" style="margin-bottom: 16px;">
@@ -361,8 +364,10 @@ class AIMarketController {
                 </div>
             </div>
 
-            <!-- 4. SVG 雷达扫掠 AI 四象限投资时钟 & 历史周期比对 -->
-            <div class="ai-middle-grid" style="margin-bottom: 16px;">
+            <!-- 4. SVG 雷达扫掠 AI 四象限投资时钟 & 历史周期比对 (默认折叠) -->
+            <details class="ai-collapsible" style="margin-bottom: 16px;">
+                <summary>历史周期与投资时钟 <span class="ai-collapse-hint expand-label">展开查看</span><span class="ai-collapse-hint collapse-label">收起</span></summary>
+                <div class="ai-middle-grid ai-collapsible-body" style="margin-bottom: 0;">
                 <!-- 左侧：SVG 雷达扫掠投资时钟 -->
                 <div class="card" style="padding: 16px;">
                     <div class="card-header" style="margin-bottom: 12px; padding-bottom: 0; border-bottom: none; display: flex; justify-content: space-between; align-items: center;">
@@ -445,7 +450,8 @@ class AIMarketController {
                         </div>
                     ` : ''}
                 </div>
-            </div>
+                </div>
+            </details>
 
             <!-- 5. 产业链五阶段扩散 Roadmap (极简素雅步进流 Track) -->
             <div class="card" style="margin-bottom: 16px; padding: 16px;">
@@ -516,12 +522,10 @@ class AIMarketController {
             </div>
         </div>
 
-            <!-- 6. 7 Layer AI Industry Grid -->
-            <div class="card-header" style="margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
-                <h3 class="card-title" style="margin-bottom: 0;"><i data-lucide="layers" width="16" style="vertical-align: middle;"></i> AI 产业链 7 层深度拆解 (L0 - L6)</h3>
-                <button class="info-btn" id="info-ai-layers" title="拆解说明" style="display: inline-flex; align-items: center;"><i data-lucide="help-circle" width="14"></i></button>
-            </div>
-
+            <!-- 6. 7 Layer AI Industry Grid (默认折叠，摘要保留在上方五阶段模型) -->
+            <details class="ai-collapsible" style="margin-bottom: 16px;">
+                <summary>AI 产业链 7 层详细个股 <span class="ai-collapse-hint expand-label">展开查看</span><span class="ai-collapse-hint collapse-label">收起</span></summary>
+            <div class="ai-collapsible-body">
             <div class="ai-layers-grid">
         `;
 
@@ -578,7 +582,7 @@ class AIMarketController {
             });
         }
 
-        html += `</div>`;
+        html += `</div></div></details>`;
 
         container.innerHTML = html;
         container.classList.remove('loading');
@@ -643,7 +647,7 @@ class AIMarketController {
                         </div>
                     </div>
                 `;
-                utils.showInfoModal(exp.title || 'AI Global Cycle Score 算法说明', bodyHtml);
+                utils.showInfoModal(exp.title || 'AI Market Heat 算法说明', bodyHtml);
             };
         }
 

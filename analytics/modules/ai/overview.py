@@ -26,13 +26,13 @@ class AIOverview:
     @staticmethod
     @cached(
         "ai:overview_v7", 
-        ttl=settings.CACHE_TTL["market_heat"], 
-        stale_ttl=settings.CACHE_TTL["market_heat"] * settings.STALE_TTL_RATIO
+        ttl=settings.CACHE_TTL["ai_overview"],
+        stale_ttl=settings.CACHE_TTL["ai_overview"] * settings.STALE_TTL_RATIO
     )
     def get_overview() -> Dict[str, Any]:
         """
         获取 AI 产业终端数据：
-        1. AI Global Cycle Score 综合评分 & 周期阶段
+        1. AI Market Heat 综合评分 & 市场阶段
         2. 中美 AI 五维对比模型 (含 A股芯片龙头动态微调)
         3. AI 泡沫温度计 & 资金轮动健康判定
         4. 四象限 AI 投资时钟与历史周期比对
@@ -58,9 +58,24 @@ class AIOverview:
                     "symbol": symbol,
                     "name": default_name,
                     "price": None,
-                    "change_pct": 0.0,
+                    "change_pct": None,
                     "is_sector": False
                 }
+
+            def average_change(items: List[Dict[str, Any]]) -> float:
+                """只对有效行情计算均值，避免缺失数据被误当成 0%。"""
+                values = [safe_float(item.get("change_pct")) for item in items]
+                values = [value for value in values if value is not None]
+                return sum(values) / len(values) if values else 0.0
+
+            def change_value(item: Dict[str, Any]) -> float:
+                """用于规则判断的安全涨跌幅；缺失时不触发方向性结论。"""
+                value = item.get("change_pct")
+                return float(value) if isinstance(value, (int, float)) else 0.0
+
+            def format_change(item: Dict[str, Any]) -> str:
+                value = item.get("change_pct")
+                return f"{float(value):+.2f}%" if isinstance(value, (int, float)) else "--"
 
             # L0 能源与电力基建标的 (2026 产业核心瓶颈)
             gev = get_stock("GEV", "GE Vernova")
@@ -178,25 +193,26 @@ class AIOverview:
 
             # 3. 7 层产业链数据计算
             l0_stocks = [gev, ceg, vst, etn]
-            l0_avg = sum(s["change_pct"] for s in l0_stocks) / len(l0_stocks) if l0_stocks else 0.0
+            l0_avg = average_change(l0_stocks)
 
             l1_stocks = [nvda, amd, avgo, arm, mrvl, smh, soxx]
-            l1_avg = sum(s["change_pct"] for s in l1_stocks) / len(l1_stocks) if l1_stocks else 0.0
+            l1_avg = average_change(l1_stocks)
 
             l2_stocks = [mu, tsm, asml]
-            l2_avg = sum(s["change_pct"] for s in l2_stocks) / len(l2_stocks) if l2_stocks else 0.0
+            l2_avg = average_change(l2_stocks)
 
             l3_stocks = [smci, vrt, dell]
-            l3_avg = sum(s["change_pct"] for s in l3_stocks) / len(l3_stocks) if l3_stocks else 0.0
+            l3_avg = average_change(l3_stocks)
 
             l4_stocks = [msft, googl, amzn, meta, orcl]
-            l4_avg = sum(s["change_pct"] for s in l4_stocks) / len(l4_stocks) if l4_stocks else 0.0
+            l4_avg = average_change(l4_stocks)
 
             l5_stocks = [pltr, now, crm]
-            l5_avg = sum(s["change_pct"] for s in l5_stocks) / len(l5_stocks) if l5_stocks else 0.0
+            l5_avg = average_change(l5_stocks)
 
             l6_visible_sectors = cn_ai_sectors[:4]
-            l6_avg = sum(s["change_pct"] for s in l6_visible_sectors) / len(l6_visible_sectors) if l6_visible_sectors else 0.0
+            l6_avg = average_change(l6_visible_sectors)
+            nvda_change = change_value(nvda)
 
             # 3.5 行业层级均值平滑处理 (使用 Redis 存储滚动均值，过滤盘中高频噪音)
             import json
@@ -274,10 +290,10 @@ class AIOverview:
                     "layer_id": "L4",
                     "title": "第四层：云计算四大巨头与 AI 云",
                     "star": "★★★★☆",
-                    "importance": "CapEx 资本开支",
+                    "importance": "云巨头行情动能",
                     "avg_change": round(l4_avg, 2),
                     "items": l4_stocks,
-                    "desc": "微软、谷歌、亚马逊、Meta 及甲骨文，其 CapEx 开支规模决定产业链繁荣上限。"
+                    "desc": "微软、谷歌、亚马逊、Meta 及甲骨文的股价表现，用作云计算与 AI 平台层的市场动能代理；不等同于实际 CapEx。"
                 },
                 {
                     "layer_id": "L5",
@@ -327,38 +343,39 @@ class AIOverview:
                 rotation_class = "neutral"
                 rotation_desc = "资金由算力芯片与电力基建向数据中心及企业级 Agent 应用平稳传导。"
 
-            # 6. 周期阶段与综合风险判定 (融合资金轮动与泡沫对冲，消除结论冲突)
+            # 6. 市场阶段与综合风险判定
+            # 该阶段基于短线行情动能，不代表产业基本面周期。
             if rotation_class == "bubble":
-                if nvda["change_pct"] > 0:
-                    cycle_phase = "结构性过热与概念扩散期"
+                if nvda_change > 0:
+                    cycle_phase = "结构性过热与概念扩散市场"
                     cycle_status = "warning"
                     cycle_desc = "核心算力高位震荡。机会聚焦：★★☆☆☆ 概念题材投机 | 风险警示：估值安全性承压，警惕短线情绪退潮。"
                     trend_str = "⚠️ 结构分化"
                     risk_level = "中等"
                     risk_class = "medium"
                 else:
-                    cycle_phase = "估值过热 / 泡沫预警期"
+                    cycle_phase = "估值过热 / 泡沫预警市场"
                     cycle_status = "warning"
                     cycle_desc = "算力龙头滞涨。机会聚焦：★☆☆☆☆ 观望或轻仓防御 | 风险警示：题材疯狂炒作，警惕高位见顶回调。"
                     trend_str = "⚠️ 泡沫预警"
                     risk_level = "偏高"
                     risk_class = "high"
-            elif nvda["change_pct"] < -2.0 and l4_avg < -1.5:
-                cycle_phase = "周期回调降温期"
+            elif nvda_change < -2.0 and l4_avg < -1.5:
+                cycle_phase = "行情回调降温市场"
                 cycle_status = "cooling"
-                cycle_desc = "云巨头 CapEx 情绪回落。机会聚焦：★★★☆☆ 算力与基建回调左侧布局 | 风险警示：大厂开支环比放缓，防守为主。"
+                cycle_desc = "云巨头行情动能回落。机会聚焦：★★★☆☆ 算力与基建回调左侧布局 | 风险警示：股价信号不等同于大厂开支变化。"
                 trend_str = "↓ 回调"
                 risk_level = "偏高"
                 risk_class = "high"
-            elif rotation_class == "healthy" and nvda["change_pct"] > 0.3 and l0_avg > 0.2:
-                cycle_phase = "能源与算力共振爆发期"
+            elif rotation_class == "healthy" and nvda_change > 0.3 and l0_avg > 0.2:
+                cycle_phase = "能源与算力共振强势市场"
                 cycle_status = "active"
                 cycle_desc = "AI 电网基建与算力强共振。机会聚焦：★★★★★ 算力芯片、存储封装与电力设备 | 风险警示：警惕核心标的高估值震荡。"
                 trend_str = "↑ 强劲"
                 risk_level = "低"
                 risk_class = "low"
             else:
-                cycle_phase = "稳健消化与应用探索期"
+                cycle_phase = "稳健消化与应用探索市场"
                 cycle_status = "neutral"
                 if l5_avg >= 2.0:
                     cycle_desc = "基建向应用传导。机会聚焦：★★★★☆ 液冷基建、HBM 存储与 Agent 商业化落地 | 风险警示：警惕应用端估值随情绪过快推高。"
@@ -369,7 +386,7 @@ class AIOverview:
                 risk_class = "medium"
 
             # 7. 中美 AI 五维对比模型 (统一为正向指标：面积越大优势越大，解决泡沫反向误导问题)
-            cn_core_avg = sum(s["change_pct"] for s in cn_ai_leaders) / len(cn_ai_leaders) if cn_ai_leaders else l6_avg
+            cn_core_avg = average_change(cn_ai_leaders) if cn_ai_leaders else l6_avg
             
             # 动态微调
             us_compute = round(min(20.0, max(10.0, 18.5 + l1_avg * 0.2)), 1)
@@ -395,34 +412,34 @@ class AIOverview:
                 "us": {
                     "value_score": round(min(100, max(50, 82 + l0_avg + l1_avg)), 1),
                     "bubble_risk": round(us_bubble_raw * 3.2, 1),
-                    "status_text": "健康资本扩张",
-                    "status_class": "healthy"
+                    "status_text": "健康资本扩张" if us_bubble_raw < 21.9 else ("估值中性" if us_bubble_raw < 26 else "泡沫风险偏高"),
+                    "status_class": "healthy" if us_bubble_raw < 21.9 else ("neutral" if us_bubble_raw < 26 else "warning")
                 },
                 "cn": {
                     "value_score": round(min(100, max(40, 64 + cn_core_avg)), 1),
                     "bubble_risk": round(cn_bubble_raw * 3.1, 1),
-                    "status_text": "主题情绪扩散",
-                    "status_class": "warning"
+                    "status_text": "主题情绪扩散" if cn_bubble_raw >= 20 else "相对平稳",
+                    "status_class": "warning" if cn_bubble_raw >= 20 else "healthy"
                 }
             }
 
-            # 9. AI 历史周期比较 (基于中美平均泡沫风险动态适配映射模型)
+            # 9. AI 历史阶段类比（规则映射，不是统计预测）
             avg_bubble_risk = (us_bubble_raw * 3.2 + cn_bubble_raw * 3.1) / 2
             if avg_bubble_risk >= 70.0:
                 matched_era = "1999年 互联网泡沫晚期 (情绪极度亢奋)"
-                similarity_pct = round(85.0 + (avg_bubble_risk - 70.0) * 0.3, 1)
-                bubble_distance = "距离泡沫破裂阶段约 1 个周期阶段"
-                summary_desc = "当前中美 AI 估值偏离度极高，资金向边缘股疯狂倾斜，已呈现 1999 年末期泡沫特征，需高度警惕阶段性泡沫破裂风险。"
+                similarity_pct = round(70.0 + min(20.0, (avg_bubble_risk - 70.0) * 0.3), 1)
+                bubble_distance = "风险特征接近高估值阶段"
+                summary_desc = "当前行情风险特征接近互联网泡沫晚期的高估值阶段；这是基于市场动能的规则类比，不代表泡沫破裂预测。"
             elif avg_bubble_risk >= 50.0:
                 matched_era = "1997年 互联网大建设中期 (基础设施红利期)"
-                similarity_pct = 85.0
-                bubble_distance = "距离泡沫破裂阶段约 2 个周期阶段"
-                summary_desc = "当前 AI 处于基础设施大建设与电力算力红利期，类似 1997 年卖服务器/路由器阶段，尚未进入 2000 年全民炒作无业绩垃圾股的末期泡沫。"
+                similarity_pct = 70.0
+                bubble_distance = "基础设施扩张特征较明显"
+                summary_desc = "当前行情更接近互联网基础设施扩张阶段；该结论仅用于历史类比，不代表未来走势预测。"
             else:
                 matched_era = "1996年 互联网商用早期 (基建建设起点)"
                 similarity_pct = round(80.0 + (50.0 - avg_bubble_risk) * 0.4, 1)
-                bubble_distance = "距离泡沫破裂阶段约 3 个周期阶段"
-                summary_desc = "当前全球 AI 产业链资本支出温和，硬件与算力处于稳健扩张或降温期，相似于 1996 年互联网起步阶段，安全边际高。"
+                bubble_distance = "短线泡沫特征相对有限"
+                summary_desc = "当前短线泡沫特征相对有限，更接近早期基础设施建设阶段；该结论仅用于历史类比。"
 
             historical_match = {
                 "matched_era": matched_era,
@@ -442,20 +459,20 @@ class AIOverview:
             # 信号1: 能源电力
             sig1_status = "充足" if l0_avg >= 0.5 else ("平稳" if l0_avg >= 0 else "紧张")
             sig1_cls = "up" if l0_avg >= 0 else "down"
-            sig1_desc = f"GEV ({gev['change_pct']:+.2f}%) / CEG ({ceg['change_pct']:+.2f}%) / VST ({vst['change_pct']:+.2f}%)"
+            sig1_desc = f"GEV ({format_change(gev)}) / CEG ({format_change(ceg)}) / VST ({format_change(vst)})"
 
             # 信号2: 算力龙头动向 (综合 NVDA + 全组芯片均值)
-            l1_positive_cnt = sum(1 for s in [nvda, amd, avgo, arm, mrvl] if s["change_pct"] >= 0)
-            if l1_avg >= 0.5 and nvda["change_pct"] >= 0:
+            l1_positive_cnt = sum(1 for s in [nvda, amd, avgo, arm, mrvl] if s.get("change_pct") is not None and change_value(s) >= 0)
+            if l1_avg >= 0.5 and nvda_change >= 0:
                 sig2_status = "看多"
                 sig2_cls = "up"
-            elif nvda["change_pct"] >= 0 or l1_positive_cnt >= 3:
+            elif nvda_change >= 0 or l1_positive_cnt >= 3:
                 sig2_status = "分化"
                 sig2_cls = "up"
             else:
                 sig2_status = "走弱"
                 sig2_cls = "down"
-            sig2_desc = f"英伟达 ({nvda['change_pct']:+.2f}%) · 博通 ({avgo['change_pct']:+.2f}%) · ARM ({arm['change_pct']:+.2f}%)"
+            sig2_desc = f"英伟达 ({format_change(nvda)}) · 博通 ({format_change(avgo)}) · ARM ({format_change(arm)})"
 
             # 信号3: 存储/代工/光刻验证 (综合美光 MU + 台积电 TSM + 阿斯麦 ASML)
             if l2_avg >= 0.8:
@@ -467,18 +484,18 @@ class AIOverview:
             else:
                 sig3_status = "承压"
                 sig3_cls = "down"
-            sig3_desc = f"美光 ({mu['change_pct']:+.2f}%) · 台积电 ({tsm['change_pct']:+.2f}%) · 阿斯麦 ({asml['change_pct']:+.2f}%)"
+            sig3_desc = f"美光 ({format_change(mu)}) · 台积电 ({format_change(tsm)}) · 阿斯麦 ({format_change(asml)})"
 
-            # 信号4: 云巨头 CapEx 支撑
+            # 信号4: 云巨头行情动能
             sig4_status = "扩张" if l4_avg >= 0.5 else ("稳定" if l4_avg >= -0.5 else "放缓")
             sig4_cls = "up" if l4_avg >= -0.5 else "down"
-            sig4_desc = f"微软/谷歌/亚马逊/Meta/甲骨文 5大巨头均值 ({l4_avg:+.2f}%)"
+            sig4_desc = f"微软/谷歌/亚马逊/Meta/甲骨文 5大巨头行情均值 ({l4_avg:+.2f}%)"
 
             signals = [
                 {"title": "信号1：能源电力保障", "status": sig1_status, "status_class": sig1_cls, "desc": sig1_desc},
                 {"title": "信号2：算力芯片动向", "status": sig2_status, "status_class": sig2_cls, "desc": sig2_desc},
                 {"title": "信号3：存储代工验证", "status": sig3_status, "status_class": sig3_cls, "desc": sig3_desc},
-                {"title": "信号4：云巨头 CapEx 支撑", "status": sig4_status, "status_class": sig4_cls, "desc": sig4_desc}
+                {"title": "信号4：云巨头行情动能", "status": sig4_status, "status_class": sig4_cls, "desc": sig4_desc}
             ]
 
             # 12. 指标与公式透明化说明
@@ -491,7 +508,7 @@ class AIOverview:
                         {"layer": "L1 算力芯片", "weight": "25%", "targets": "NVDA, AMD, AVGO, ARM, MRVL, SMH"},
                         {"layer": "L2 存储代工", "weight": "20%", "targets": "MU (HBM), TSM (CoWoS), ASML"},
                         {"layer": "L3 数据中心", "weight": "15%", "targets": "SMCI (服务器), VRT (液冷), DELL"},
-                        {"layer": "L4 云巨头CapEx", "weight": "10%", "targets": "MSFT, GOOGL, AMZN, META, ORCL"},
+                        {"layer": "L4 云巨头行情动能", "weight": "10%", "targets": "MSFT, GOOGL, AMZN, META, ORCL"},
                         {"layer": "L5 Agent与应用", "weight": "10%", "targets": "PLTR, NOW, CRM"},
                         {"layer": "L6 A股概念题材", "weight": "10%", "targets": "A股半导体、通信设备及 AI 龙头"}
                     ],
@@ -501,10 +518,10 @@ class AIOverview:
                     "title": "中美 AI 产业五维对比模型 (正向综合竞争力雷达图)",
                     "dimensions": [
                         {"name": "算力基础", "max": 20, "desc": f"考察 GPU 储备、HBM 及封装产能 (美 {us_compute} vs 中 {cn_compute})"},
-                        {"name": "资本投入", "max": 20, "desc": "考察云巨头 CapEx 资本开支规模与研发投资 (美 17.5 vs 中 14.0)"},
-                        {"name": "商业化程度", "max": 20, "desc": "考察 Enterprise SaaS、云 AI 账单与 Agent 变现 (美 16.0 vs 中 13.5)"},
+                        {"name": "资本投入", "max": 20, "desc": "当前为模型设定分值，未接入季度 CapEx 实时数据 (美 17.5 vs 中 14.0)"},
+                        {"name": "商业化程度", "max": 20, "desc": "当前为模型设定分值，未接入企业 AI 账单与收入数据 (美 16.0 vs 中 13.5)"},
                         {"name": "估值安全性", "max": 30, "desc": f"考察估值合理性与安全边际 (反向泡沫指数：分值越高代表泡沫越小、安全边际越高；美 {us_safety} vs 中 {cn_safety})"},
-                        {"name": "产业链完整度", "max": 10, "desc": "考察从芯片、能源配电到工业落地的生态全貌 (美 9.0 vs 中 7.5)"}
+                        {"name": "产业链完整度", "max": 10, "desc": "当前为模型设定分值，反映预设产业链结构判断 (美 9.0 vs 中 7.5)"}
                     ]
                 },
                 "bubble_meter": {
@@ -517,7 +534,7 @@ class AIOverview:
                 },
                 "investment_clock": {
                     "title": "AI 四象限投资时钟与 1997 年历史比对",
-                    "desc": "将 AI 产业分为【硬件爆发期➔需求验证期➔应用爆发期➔泡沫期】。当前映射 1997 年互联网大建设早期（基础设施与电网建设阶段），尚未进入 2000 年全民炒作无业绩垃圾股的末期泡沫。"
+                    "desc": "将当前行情动能与互联网基础设施扩张阶段作规则类比；仅用于帮助理解，不是统计回测或未来走势预测。"
                 }
             }
 
