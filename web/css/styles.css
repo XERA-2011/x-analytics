@@ -1017,6 +1017,13 @@ footer {
     font-weight: 500;
 }
 
+.ai-score-scope {
+    margin-top: 4px;
+    color: var(--text-secondary);
+    font-size: 10px;
+    line-height: 1.4;
+}
+
 .ai-score-tip {
     font-size: 11px;
     color: var(--text-tertiary);
@@ -3004,6 +3011,5 @@ footer {
     color: var(--primary);
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
-
 
 

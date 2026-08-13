@@ -80,10 +80,11 @@ class AIMarketController {
                     <!-- 左侧：AI Global Cycle Score -->
                     <div class="ai-score-box">
                         <div class="ai-badge-label" style="display: flex; align-items: center; justify-content: space-between;">
-                            <span>AI Global Cycle Score</span>
+                            <span>AI Market Heat（短线行情热度）</span>
                             <button class="info-btn" id="info-ai-score" title="算法说明" style="margin-left: 6px; display: inline-flex; align-items: center;"><i data-lucide="help-circle" width="14"></i></button>
                         </div>
                         <div class="ai-score-num ${scoreClass}">${cycleScore} <span class="ai-score-max">/ 100</span></div>
+                        <div class="ai-score-scope">基于代表标的涨跌幅，不等同于基本面周期</div>
                         <div class="ai-meta-row">
                             <span class="ai-trend-tag">${trendTag}</span>
                             <span class="ai-risk-tag" ${riskClassAttr}>风险: ${riskTag}</span>
@@ -805,4 +806,3 @@ class AIMarketController {
         }
     }
 }
-

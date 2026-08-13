@@ -299,7 +299,8 @@ class AIOverview:
                 }
             ]
 
-            # 4. 全球 AI 周期总得分 (AI Global Cycle Score) - 七因子模型 (含 10% A股概念资产，增强盘中波动响应)
+            # 4. AI 市场热度分 (短线行情指标)
+            # 当前七因子主要由各层标的涨跌幅组成，反映市场热度，不等同于产业基本面周期。
             weighted_pct = (
                 l0_avg * 0.10 + 
                 l1_avg * 0.25 + 
@@ -483,7 +484,7 @@ class AIOverview:
             # 12. 指标与公式透明化说明
             explanations = {
                 "cycle_score": {
-                    "title": "AI Global Cycle Score (全球 AI 产业周期总得分) 七因子模型",
+                    "title": "AI 市场热度分（短线行情动能）七因子模型",
                     "formula": "得分范围 0~100 分。加权涨跌幅 weighted_pct = L0*10% + L1*25% + L2*20% + L3*15% + L4*10% + L5*10% + L6*10%。基准分 = Min(100, Max(0, 50.0 + weighted_pct * 7.5))。",
                     "weights": [
                         {"layer": "L0 能源电力", "weight": "10%", "targets": "GEV (电气), CEG (核电), VST, ETN"},
@@ -494,7 +495,7 @@ class AIOverview:
                         {"layer": "L5 Agent与应用", "weight": "10%", "targets": "PLTR, NOW, CRM"},
                         {"layer": "L6 A股概念题材", "weight": "10%", "targets": "A股半导体、通信设备及 AI 龙头"}
                     ],
-                    "interpretation": "得分 70+ 分为能源与算力强劲爆发期；50~70 分为稳健消化/应用探索期；低于 40 分为周期降温或回调期。"
+                    "interpretation": "得分 70+ 分表示当前代表标的行情动能较强；50~70 分表示中性；低于 40 分表示短线动能偏弱。该指标不直接代表产业基本面周期。"
                 },
                 "us_cn_matrix": {
                     "title": "中美 AI 产业五维对比模型 (正向综合竞争力雷达图)",
@@ -547,6 +548,10 @@ class AIOverview:
             return {
                 "cycle_score": heat_score,
                 "heat_score": heat_score,
+                "market_heat_score": heat_score,
+                "industry_cycle_score": None,
+                "score_scope": "market_heat",
+                "score_note": "当前评分基于产业链代表标的行情动能，反映短线市场热度；产业基本面周期评分待接入 CapEx、订单、产能与收入等中长期数据。",
                 "cycle_phase": cycle_phase,
                 "cycle_status": cycle_status,
                 "cycle_desc": cycle_desc,
