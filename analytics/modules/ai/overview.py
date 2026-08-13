@@ -198,6 +198,41 @@ class AIOverview:
             l6_visible_sectors = cn_ai_sectors[:4]
             l6_avg = sum(s["change_pct"] for s in l6_visible_sectors) / len(l6_visible_sectors) if l6_visible_sectors else 0.0
 
+            # 3.5 行业层级均值平滑处理 (使用 Redis 存储滚动均值，过滤盘中高频噪音)
+            import json
+            from ...core.cache import cache
+            if cache.connected and cache.redis:
+                try:
+                    history_key = f"{settings.CACHE_PREFIX}:ai:layers_avg_history"
+                    current_averages = {
+                        "l0": l0_avg, "l1": l1_avg, "l2": l2_avg,
+                        "l3": l3_avg, "l4": l4_avg, "l5": l5_avg, "l6": l6_avg
+                    }
+                    # 放入 Redis 列表
+                    cache.redis.lpush(history_key, json.dumps(current_averages))
+                    cache.redis.ltrim(history_key, 0, 4)  # 保留最近 5 次记录
+
+                    # 获取历史并计算滑动平均
+                    history_items = cache.redis.lrange(history_key, 0, -1)
+                    history_dicts = []
+                    for item in history_items:
+                        if item:
+                            try:
+                                history_dicts.append(json.loads(item))
+                            except Exception:
+                                pass
+                    if history_dicts:
+                        l0_avg = sum(d["l0"] for d in history_dicts) / len(history_dicts)
+                        l1_avg = sum(d["l1"] for d in history_dicts) / len(history_dicts)
+                        l2_avg = sum(d["l2"] for d in history_dicts) / len(history_dicts)
+                        l3_avg = sum(d["l3"] for d in history_dicts) / len(history_dicts)
+                        l4_avg = sum(d["l4"] for d in history_dicts) / len(history_dicts)
+                        l5_avg = sum(d["l5"] for d in history_dicts) / len(history_dicts)
+                        l6_avg = sum(d["l6"] for d in history_dicts) / len(history_dicts)
+                        logger.info(f"✅ [Redis] AI layer averages smoothed over {len(history_dicts)} records.")
+                except Exception as smooth_err:
+                    logger.warning(f"⚠️ Redis平滑均值处理失败，使用当前未平滑数据: {smooth_err}")
+
             layers = [
                 {
                     "layer_id": "L0",

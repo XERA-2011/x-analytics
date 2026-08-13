@@ -448,7 +448,7 @@ class AIMarketController {
 
             <!-- 5. 产业链五阶段扩散 Roadmap (极简素雅步进流 Track) -->
             <div class="card" style="margin-bottom: 16px; padding: 16px;">
-                <div class="card-header" style="margin-bottom: 14px; padding-bottom: 0; border-bottom: none; display: flex; justify-content: space-between; align-align: center;">
+                <div class="card-header" style="margin-bottom: 14px; padding-bottom: 0; border-bottom: none; display: flex; justify-content: space-between; align-items: center;">
                     <div class="card-title"><i data-lucide="git-commit" width="16" style="vertical-align: middle;"></i> AI 产业链五阶段扩散模型</div>
                     <span class="ai-diffusion-badge">2026 演进：具身智能与工业落地验证中</span>
                 </div>
@@ -474,6 +474,11 @@ class AIMarketController {
                             const isLeading = st.id === leadingStage;
                             const sData = stageMap[st.id] || {};
                             const val = sData.avg_change;
+                            
+                            // 优先使用后端传递的名称与标的，缺失则使用前端默认备份数据
+                            const stageName = sData.name || st.name;
+                            const stageStocks = sData.symbols || st.stocks;
+                            
                             let changeStr = '--';
                             let changeClass = 'text-neutral';
 
@@ -497,8 +502,8 @@ class AIMarketController {
                                         <span class="minimal-step-num">0${st.id}</span>
                                         ${tagHtml}
                                     </div>
-                                    <div class="minimal-step-title">${st.name}</div>
-                                    <div class="minimal-step-stocks" title="${st.stocks}">${st.stocks}</div>
+                                    <div class="minimal-step-title">${stageName}</div>
+                                    <div class="minimal-step-stocks" title="${stageStocks}">${stageStocks}</div>
                                     <div class="minimal-step-change ${changeClass}">${changeStr}</div>
                                 </div>
                             `;
@@ -620,12 +625,12 @@ class AIMarketController {
                 const bodyHtml = `
                     <div class="ai-info-modal" style="white-space: normal; font-size: 12px; color: var(--text-primary);">
                         <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-color); border-radius: 6px; padding: 8px 10px; margin-bottom: 10px;">
-                            <div style="font-weight: 600; font-size: 12px; color: var(--color-primary, #3b82f6); margin-bottom: 4px;">🧮 算力加权六因子核心公式</div>
+                            <div style="font-weight: 600; font-size: 12px; color: var(--color-primary, #3b82f6); margin-bottom: 4px;">🧮 算力加权七因子核心公式</div>
                             <div style="font-family: monospace; font-size: 11px; background: rgba(0,0,0,0.25); padding: 4px 8px; border-radius: 4px; color: #e2e8f0; margin-bottom: 4px; line-height: 1.4;">
-                                weighted_pct = L0×15% + L1×30% + L2×20% + L3×15% + L4×10% + L5×10%<br/>
+                                weighted_pct = L0×10% + L1×25% + L2×20% + L3×15% + L4×10% + L5×10% + L6×10%<br/>
                                 heat_score = Min(100, Max(0, 50.0 + weighted_pct × 7.5))
                             </div>
-                            <div style="font-size: 11px; color: var(--text-secondary);">包含 2026 年核心约束因子：L0 能源电力 (15%) 与 L1-L5 全链条动能。</div>
+                            <div style="font-size: 11px; color: var(--text-secondary);">包含 2026 核心约束因子：L0 能源电力 (10%)、L1-L5 硬件与应用全链条 (80%) 及 L6 A股概念题材 (10%)。</div>
                         </div>
 
                         <div style="font-weight: 600; font-size: 12px; margin-bottom: 4px; color: var(--text-secondary);">📊 各层级因子算法权重分配：</div>
