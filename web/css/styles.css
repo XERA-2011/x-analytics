@@ -980,9 +980,16 @@ footer {
 
 .ai-header-grid {
     display: grid;
-    grid-template-columns: 180px 1.1fr 1.1fr;
+    grid-template-columns: 210px 1.15fr 1.15fr;
     gap: 16px;
     align-items: stretch;
+}
+
+@media (max-width: 900px) {
+    .ai-header-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
 }
 
 .ai-badge-label {
@@ -1024,75 +1031,33 @@ footer {
     line-height: 1.4;
 }
 
-.ai-collapsible {
-    border: 1px solid var(--border-light);
-    border-radius: 8px;
-    background: var(--bg-card);
-}
-
-.ai-collapsible > summary {
-    cursor: pointer;
-    list-style: none;
-    padding: 13px 16px;
-    font-size: 14px;
-    font-weight: 700;
-    color: var(--text-primary);
-}
-
-.ai-collapsible > summary::-webkit-details-marker {
-    display: none;
-}
-
-.ai-collapsible > summary::before {
-    content: '＋';
-    display: inline-block;
-    width: 18px;
-    color: var(--text-secondary);
-}
-
-.ai-collapsible[open] > summary::before {
-    content: '−';
-}
-
-.ai-collapse-hint {
-    float: right;
-    color: var(--text-secondary);
-    font-size: 11px;
-    font-weight: 500;
-}
-
-.collapse-label {
-    display: none;
-}
-
-.ai-collapsible[open] .expand-label {
-    display: none;
-}
-
-.ai-collapsible[open] .collapse-label {
-    display: inline;
-}
-
-.ai-collapsible-body {
-    border-top: 1px solid var(--border-light);
-}
-
-.ai-core-grid {
+.ai-grid-row {
     display: grid;
-    grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.65fr);
+    grid-template-columns: 1fr 1fr;
     gap: 16px;
-    align-items: start;
+    margin-bottom: 16px;
+    align-items: stretch;
 }
 
-.ai-core-grid > .ai-collapsible,
-.ai-core-grid > .ai-middle-grid {
-    margin-bottom: 16px !important;
-}
-
-@media (min-width: 901px) {
-    .ai-bubble-card {
-        grid-column: 1 / -1;
+@media (max-width: 900px) {
+    .ai-grid-row {
+        grid-template-columns: 1fr;
+        gap: 12px;
+        margin-bottom: 12px;
     }
+}
+
+.ai-card-module {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.ai-card-module .card-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
 }
 
 .ai-score-tip {
@@ -1806,25 +1771,16 @@ footer {
 
 /* 1. 中美 AI 五维对比 SVG 雷达图 */
 .svg-radar-layout {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 32px;
+    display: flex;
+    justify-content: center;
     align-items: center;
-}
-
-.svg-radar-layout {
-    grid-template-columns: minmax(0, 1fr);
-    justify-items: center;
-}
-
-.svg-radar-chart-box {
-    width: min(100%, 520px);
+    width: 100%;
 }
 
 .svg-radar-chart-box {
     position: relative;
     width: 100%;
-    max-width: 440px;
+    max-width: 420px;
     margin: 0 auto;
 }
 

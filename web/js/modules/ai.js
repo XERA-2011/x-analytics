@@ -186,401 +186,233 @@ class AIMarketController {
                 </div>
             </div>
 
-            <div class="ai-core-grid">
-            <!-- 2. 中美 AI 产业五维对比 (核心模块默认展开) -->
-            <details class="ai-collapsible" open style="margin-bottom: 16px;">
-                <summary>中美 AI 产业五维对比 <span class="ai-collapse-hint expand-label">展开查看</span><span class="ai-collapse-hint collapse-label">收起</span></summary>
-                <div class="card ai-collapsible-body" style="padding: 16px;">
-                <div class="card-header" style="margin-bottom: 12px; padding-bottom: 0; border-bottom: none; display: flex; justify-content: space-between; align-items: center;">
-                    <div class="card-title"><i data-lucide="git-compare" width="16" style="vertical-align: middle;"></i> 中美 AI 产业五维对比 (US vs CN Radar Matrix)</div>
-                    <button class="info-btn" id="info-ai-matrix" title="模型说明" style="display: inline-flex; align-items: center;"><i data-lucide="help-circle" width="14"></i></button>
-                </div>
-                ${(() => {
-                    if (!us_cn_comparison) return '';
-                    const keys = Object.keys(us_cn_comparison);
-                    const cx = 180, cy = 135, r = 98;
-                    const angles = [-Math.PI / 2, -Math.PI / 2 + (2 * Math.PI / 5), -Math.PI / 2 + (4 * Math.PI / 5), -Math.PI / 2 + (6 * Math.PI / 5), -Math.PI / 2 + (8 * Math.PI / 5)];
-
-                    const usPoints = [];
-                    const cnPoints = [];
-                    const axisLines = [];
-                    const gridPolys = [0.25, 0.5, 0.75, 1.0];
-                    const labels = [];
-
-                    keys.forEach((key, idx) => {
-                        const item = us_cn_comparison[key];
-                        const angle = angles[idx];
-                        const usRatio = Math.min(1.0, item.us / item.max);
-                        const cnRatio = Math.min(1.0, item.cn / item.max);
-
-                        const usX = cx + r * usRatio * Math.cos(angle);
-                        const usY = cy + r * usRatio * Math.sin(angle);
-                        usPoints.push(`${usX.toFixed(1)},${usY.toFixed(1)}`);
-
-                        const cnX = cx + r * cnRatio * Math.cos(angle);
-                        const cnY = cy + r * cnRatio * Math.sin(angle);
-                        cnPoints.push(`${cnX.toFixed(1)},${cnY.toFixed(1)}`);
-
-                        const axX = cx + r * Math.cos(angle);
-                        const axY = cy + r * Math.sin(angle);
-                        axisLines.push(`<line x1="${cx}" y1="${cy}" x2="${axX.toFixed(1)}" y2="${axY.toFixed(1)}" stroke="rgba(203,213,225,0.6)" stroke-dasharray="3 3"/>`);
-
-                        const lx = cx + (r + 22) * Math.cos(angle);
-                        const ly = cy + (r + 14) * Math.sin(angle);
-                        labels.push(`<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="middle" font-size="11" font-weight="600" fill="var(--text-secondary)">${item.label}</text>`);
-                    });
-
-                    const webPolysHtml = gridPolys.map(scale => {
-                        const pts = angles.map(a => `${(cx + r * scale * Math.cos(a)).toFixed(1)},${(cy + r * scale * Math.sin(a)).toFixed(1)}`).join(' ');
-                        return `<polygon points="${pts}" fill="none" stroke="rgba(226,232,240,0.8)" stroke-width="1"/>`;
-                    }).join('');
-
-                    return `
-                        <div class="svg-radar-layout">
-                            <div class="svg-radar-chart-box">
-                                <svg viewBox="0 0 360 280" class="svg-radar-chart">
-                                    ${webPolysHtml}
-                                    ${axisLines.join('')}
-                                    <polygon points="${usPoints.join(' ')}" fill="rgba(59,130,246,0.25)" stroke="#3b82f6" stroke-width="2" class="radar-poly-us"/>
-                                    <polygon points="${cnPoints.join(' ')}" fill="rgba(222,41,16,0.25)" stroke="#de2910" stroke-width="2" class="radar-poly-cn"/>
-                                    ${labels.join('')}
-                                </svg>
-                                <div class="svg-radar-legend">
-                                    <span class="legend-item"><span class="legend-dot-us"></span>美国 AI (优势覆盖)</span>
-                                    <span class="legend-item"><span class="legend-dot-cn"></span>中国 AI (追赶扩展)</span>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                })()}
-                </div>
-            </details>
-
-            <!-- 3. AI 泡沫温度计 & 资金健康轮动 (Bubble Thermometer & Rotation) -->
-            <div class="ai-middle-grid" style="margin-bottom: 16px;">
-                <!-- 左侧：SVG 熔炉刻度泡沫温度计 -->
-                <div class="card ai-bubble-card" style="padding: 16px;">
-                    <div class="card-header" style="margin-bottom: 12px; padding-bottom: 0; border-bottom: none; display: flex; justify-content: space-between; align-items: center;">
-                        <div class="card-title"><i data-lucide="thermometer" width="16" style="vertical-align: middle;"></i> AI 泡沫温度计 (Bubble Risk)</div>
-                        <button class="info-btn" id="info-ai-bubble" title="温度计说明" style="display: inline-flex; align-items: center;"><i data-lucide="help-circle" width="14"></i></button>
+            <!-- 2. 中美 AI 对比与泡沫风险 (对称双卡片栅格) -->
+            <div class="ai-grid-row">
+                <!-- 左卡：中美 AI 产业五维对比 -->
+                <div class="card ai-card-module">
+                    <div class="card-header">
+                        <div class="card-title"><i data-lucide="git-compare" width="16" style="vertical-align: middle;"></i> 中美 AI 产业五维对比 (Radar Matrix)</div>
+                        <button class="info-btn" id="info-ai-matrix" title="模型说明"><i data-lucide="help-circle" width="14"></i></button>
                     </div>
-                    ${(() => {
-                        if (!bubble_meter) return '';
-                        const usBM = bubble_meter.us || {};
-                        const cnBM = bubble_meter.cn || {};
-                        const usRisk = typeof usBM.bubble_risk === 'number' ? usBM.bubble_risk.toFixed(1) : (usBM.bubble_risk || 0);
-                        const cnRisk = typeof cnBM.bubble_risk === 'number' ? cnBM.bubble_risk.toFixed(1) : (cnBM.bubble_risk || 0);
+                    <div class="card-body" style="padding-top: 4px;">
+                        ${(() => {
+                            if (!us_cn_comparison) return '';
+                            const keys = Object.keys(us_cn_comparison);
+                            const cx = 180, cy = 135, r = 98;
+                            const angles = [-Math.PI / 2, -Math.PI / 2 + (2 * Math.PI / 5), -Math.PI / 2 + (4 * Math.PI / 5), -Math.PI / 2 + (6 * Math.PI / 5), -Math.PI / 2 + (8 * Math.PI / 5)];
 
-                        const renderThermoRow = (country, bm, riskVal, isCn) => {
-                            const colorGrad = isCn ? 'url(#grad-cn-thermo)' : 'url(#grad-us-thermo)';
-                            const badgeClass = bm.status_class === 'healthy' ? 'healthy' : 'warning';
-                            const isHot = Number(riskVal) > 70;
-                            const liquidW = Math.min(300, Math.max(0, riskVal * 3));
-                            const endX = Math.min(292, Math.max(12, liquidW - 8));
-                            const bubbleBubble = isHot ? `<circle cx="${endX}" cy="12" r="3.5" fill="#ef4444" class="bubble-anim"/>` : '';
+                            const usPoints = [];
+                            const cnPoints = [];
+                            const axisLines = [];
+                            const gridPolys = [0.25, 0.5, 0.75, 1.0];
+                            const labels = [];
+
+                            keys.forEach((key, idx) => {
+                                const item = us_cn_comparison[key];
+                                const angle = angles[idx];
+                                const usRatio = Math.min(1.0, item.us / item.max);
+                                const cnRatio = Math.min(1.0, item.cn / item.max);
+
+                                const usX = cx + r * usRatio * Math.cos(angle);
+                                const usY = cy + r * usRatio * Math.sin(angle);
+                                usPoints.push(`${usX.toFixed(1)},${usY.toFixed(1)}`);
+
+                                const cnX = cx + r * cnRatio * Math.cos(angle);
+                                const cnY = cy + r * cnRatio * Math.sin(angle);
+                                cnPoints.push(`${cnX.toFixed(1)},${cnY.toFixed(1)}`);
+
+                                const axX = cx + r * Math.cos(angle);
+                                const axY = cy + r * Math.sin(angle);
+                                axisLines.push(`<line x1="${cx}" y1="${cy}" x2="${axX.toFixed(1)}" y2="${axY.toFixed(1)}" stroke="rgba(203,213,225,0.6)" stroke-dasharray="3 3"/>`);
+
+                                const lx = cx + (r + 22) * Math.cos(angle);
+                                const ly = cy + (r + 14) * Math.sin(angle);
+                                labels.push(`<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="middle" font-size="11" font-weight="600" fill="var(--text-secondary)">${item.label}</text>`);
+                            });
+
+                            const webPolysHtml = gridPolys.map(scale => {
+                                const pts = angles.map(a => `${(cx + r * scale * Math.cos(a)).toFixed(1)},${(cy + r * scale * Math.sin(a)).toFixed(1)}`).join(' ');
+                                return `<polygon points="${pts}" fill="none" stroke="rgba(226,232,240,0.8)" stroke-width="1"/>`;
+                            }).join('');
 
                             return `
-                                <div class="svg-thermo-row">
-                                    <div class="svg-thermo-head">
-                                        <span class="svg-thermo-title">${country} AI 泡沫偏离风险</span>
-                                        <span class="svg-thermo-badge ${badgeClass}">${bm.status_text}</span>
+                                <div class="svg-radar-layout">
+                                    <div class="svg-radar-chart-box">
+                                        <svg viewBox="0 0 360 280" class="svg-radar-chart">
+                                            ${webPolysHtml}
+                                            ${axisLines.join('')}
+                                            <polygon points="${usPoints.join(' ')}" fill="rgba(59,130,246,0.22)" stroke="#3b82f6" stroke-width="2" class="radar-poly-us"/>
+                                            <polygon points="${cnPoints.join(' ')}" fill="rgba(222,41,16,0.22)" stroke="#de2910" stroke-width="2" class="radar-poly-cn"/>
+                                            ${labels.join('')}
+                                        </svg>
+                                        <div class="svg-radar-legend">
+                                            <span class="legend-item"><span class="legend-dot-us"></span>美国 AI (优势覆盖)</span>
+                                            <span class="legend-item"><span class="legend-dot-cn"></span>中国 AI (追赶扩展)</span>
+                                        </div>
                                     </div>
-                                    <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 6px;">
-                                        产业价值分: <strong>${bm.value_score}</strong> | 泡沫风险指数: <strong class="text-down">${riskVal} / 100</strong>
+                                </div>
+                            `;
+                        })()}
+                    </div>
+                </div>
+
+                <!-- 右卡：AI 泡沫温度计 -->
+                <div class="card ai-card-module">
+                    <div class="card-header">
+                        <div class="card-title"><i data-lucide="thermometer" width="16" style="vertical-align: middle;"></i> AI 泡沫温度计 (Bubble Risk)</div>
+                        <button class="info-btn" id="info-ai-bubble" title="温度计说明"><i data-lucide="help-circle" width="14"></i></button>
+                    </div>
+                    <div class="card-body" style="padding-top: 4px;">
+                        ${(() => {
+                            if (!bubble_meter) return '';
+                            const usBM = bubble_meter.us || {};
+                            const cnBM = bubble_meter.cn || {};
+                            const usRisk = typeof usBM.bubble_risk === 'number' ? usBM.bubble_risk.toFixed(1) : (usBM.bubble_risk || 0);
+                            const cnRisk = typeof cnBM.bubble_risk === 'number' ? cnBM.bubble_risk.toFixed(1) : (cnBM.bubble_risk || 0);
+
+                            const renderThermoRow = (country, bm, riskVal, isCn) => {
+                                const colorGrad = isCn ? 'url(#grad-cn-thermo)' : 'url(#grad-us-thermo)';
+                                const badgeClass = bm.status_class === 'healthy' ? 'healthy' : 'warning';
+                                const isHot = Number(riskVal) > 70;
+                                const liquidW = Math.min(300, Math.max(0, riskVal * 3));
+                                const endX = Math.min(292, Math.max(12, liquidW - 8));
+                                const bubbleBubble = isHot ? `<circle cx="${endX}" cy="12" r="3.5" fill="#ef4444" class="bubble-anim"/>` : '';
+
+                                return `
+                                    <div class="svg-thermo-row">
+                                        <div class="svg-thermo-head">
+                                            <span class="svg-thermo-title">${country} AI 泡沫偏离风险</span>
+                                            <span class="svg-thermo-badge ${badgeClass}">${bm.status_text}</span>
+                                        </div>
+                                        <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 6px;">
+                                            产业价值分: <strong>${bm.value_score}</strong> | 泡沫风险指数: <strong class="text-down">${riskVal} / 100</strong>
+                                        </div>
+                                        <svg class="svg-thermo-bar-svg" viewBox="0 0 300 24">
+                                            <defs>
+                                                <linearGradient id="grad-us-thermo" x1="0%" y1="0%" x2="100%" y2="0%">
+                                                    <stop offset="0%" stop-color="#3b82f6" />
+                                                    <stop offset="100%" stop-color="#10b981" />
+                                                </linearGradient>
+                                                <linearGradient id="grad-cn-thermo" x1="0%" y1="0%" x2="100%" y2="0%">
+                                                    <stop offset="0%" stop-color="#f59e0b" />
+                                                    <stop offset="100%" stop-color="#ef4444" />
+                                                </linearGradient>
+                                            </defs>
+                                            <rect x="0" y="4" width="300" height="16" rx="8" fill="rgba(226,232,240,0.6)"/>
+                                            <rect x="0" y="4" width="${Math.min(300, riskVal * 3)}" height="16" rx="8" fill="${colorGrad}" class="thermo-liquid"/>
+                                            <line x1="75" y1="4" x2="75" y2="20" stroke="rgba(255,255,255,0.4)" stroke-width="1"/>
+                                            <line x1="150" y1="4" x2="150" y2="20" stroke="rgba(255,255,255,0.6)" stroke-width="1.5"/>
+                                            <line x1="225" y1="4" x2="225" y2="20" stroke="rgba(255,255,255,0.4)" stroke-width="1"/>
+                                            ${bubbleBubble}
+                                        </svg>
                                     </div>
-                                    <svg class="svg-thermo-bar-svg" viewBox="0 0 300 24">
+                                `;
+                            };
+
+                            return `
+                                <div class="svg-thermo-container">
+                                    ${renderThermoRow('美国', usBM, usRisk, false)}
+                                    ${renderThermoRow('中国', cnBM, cnRisk, true)}
+                                </div>
+                            `;
+                        })()}
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. AI 投资时钟与历史科技映射 (对称双卡片栅格) -->
+            <div class="ai-grid-row">
+                <!-- 左卡：SVG 雷达扫掠投资时钟 -->
+                <div class="card ai-card-module">
+                    <div class="card-header">
+                        <div class="card-title"><i data-lucide="clock" width="16" style="vertical-align: middle;"></i> AI 四象限投资时钟 (Radar Map)</div>
+                        <button class="info-btn" id="info-ai-clock" title="时钟说明"><i data-lucide="help-circle" width="14"></i></button>
+                    </div>
+                    <div class="card-body" style="padding-top: 4px;">
+                        ${(() => {
+                            const usPctX = investment_clock?.us_position?.x || 68;
+                            const usPctY = investment_clock?.us_position?.y || 82;
+                            const cnPctX = investment_clock?.cn_position?.x || 48;
+                            const cnPctY = investment_clock?.cn_position?.y || 62;
+
+                            // 将 0~100 映射到 SVG (cx=160, cy=100, W=320, H=200)
+                            const usX = (usPctX / 100) * 240 + 40; 
+                            const usY = ((100 - usPctY) / 100) * 140 + 30; 
+                            const cnX = (cnPctX / 100) * 240 + 40;
+                            const cnY = ((100 - cnPctY) / 100) * 140 + 30;
+
+                            return `
+                                <div class="svg-clock-box">
+                                    <svg viewBox="0 0 320 200" class="svg-clock-chart">
                                         <defs>
-                                            <linearGradient id="grad-us-thermo" x1="0%" y1="0%" x2="100%" y2="0%">
-                                                <stop offset="0%" stop-color="#3b82f6" />
-                                                <stop offset="100%" stop-color="#10b981" />
-                                            </linearGradient>
-                                            <linearGradient id="grad-cn-thermo" x1="0%" y1="0%" x2="100%" y2="0%">
-                                                <stop offset="0%" stop-color="#f59e0b" />
-                                                <stop offset="100%" stop-color="#ef4444" />
-                                            </linearGradient>
+                                            <radialGradient id="radar-sweep-grad" cx="50%" cy="50%" r="50%">
+                                                <stop offset="0%" stop-color="rgba(59,130,246,0.35)"/>
+                                                <stop offset="100%" stop-color="rgba(59,130,246,0.0)"/>
+                                            </radialGradient>
                                         </defs>
-                                        <rect x="0" y="4" width="300" height="16" rx="8" fill="rgba(226,232,240,0.6)"/>
-                                        <rect x="0" y="4" width="${Math.min(300, riskVal * 3)}" height="16" rx="8" fill="${colorGrad}" class="thermo-liquid"/>
-                                        <line x1="75" y1="4" x2="75" y2="20" stroke="rgba(255,255,255,0.4)" stroke-width="1"/>
-                                        <line x1="150" y1="4" x2="150" y2="20" stroke="rgba(255,255,255,0.6)" stroke-width="1.5"/>
-                                        <line x1="225" y1="4" x2="225" y2="20" stroke="rgba(255,255,255,0.4)" stroke-width="1"/>
-                                        ${bubbleBubble}
+                                        <!-- 十字坐标轴 -->
+                                        <line x1="160" y1="15" x2="160" y2="185" stroke="rgba(203,213,225,0.6)" stroke-width="1" stroke-dasharray="4 4"/>
+                                        <line x1="20" y1="100" x2="300" y2="100" stroke="rgba(203,213,225,0.6)" stroke-width="1" stroke-dasharray="4 4"/>
+                                        
+                                        <!-- 同心圆轨道 -->
+                                        <circle cx="160" cy="100" r="45" fill="none" stroke="rgba(226,232,240,0.8)" stroke-width="1"/>
+                                        <circle cx="160" cy="100" r="80" fill="none" stroke="rgba(226,232,240,0.5)" stroke-width="1"/>
+                                        
+                                        <!-- 360° 雷达旋转扫掠 -->
+                                        <path d="M 160 100 L 160 20 A 80 80 0 0 1 240 100 Z" fill="url(#radar-sweep-grad)" class="radar-sweep-arc" style="transform-origin: 160px 100px;"/>
+                                        
+                                        <!-- 4 象限边角标签 -->
+                                        <text x="24" y="26" font-size="10" fill="var(--text-tertiary)" font-weight="600">泡沫期</text>
+                                        <text x="210" y="26" font-size="9" fill="#059669" font-weight="700">硬件与能源强势</text>
+                                        <text x="24" y="185" font-size="10" fill="var(--text-tertiary)" font-weight="600">需求验证期</text>
+                                        <text x="220" y="185" font-size="9" fill="#2563eb" font-weight="600">应用验证期</text>
+
+                                        <!-- 中美连线 -->
+                                        <line x1="${usX}" y1="${usY}" x2="${cnX}" y2="${cnY}" stroke="rgba(59,130,246,0.5)" stroke-width="1.5" stroke-dasharray="3 3"/>
+
+                                        <!-- 美国打点 -->
+                                        <g transform="translate(${usX}, ${usY})">
+                                            <circle r="6" fill="#2563eb" class="clock-point-pulse"/>
+                                            <rect x="8" y="-10" width="125" height="18" rx="4" fill="rgba(255,255,255,0.92)" stroke="rgba(37,99,235,0.3)"/>
+                                            <text x="12" y="2" font-size="8" font-weight="700" fill="#1e40af">美：硬件扩张→应用验证</text>
+                                        </g>
+
+                                        <!-- 中国打点 -->
+                                        <g transform="translate(${cnX}, ${cnY})">
+                                            <circle r="6" fill="#de2910" class="clock-point-pulse"/>
+                                            <rect x="8" y="-10" width="115" height="18" rx="4" fill="rgba(255,255,255,0.92)" stroke="rgba(222,41,16,0.3)"/>
+                                            <text x="12" y="2" font-size="8" font-weight="700" fill="#de2910">中：基建建设→应用探索</text>
+                                        </g>
                                     </svg>
                                 </div>
                             `;
-                        };
-
-                        return `
-                            <div class="svg-thermo-container">
-                                ${renderThermoRow('美国', usBM, usRisk, false)}
-                                ${renderThermoRow('中国', cnBM, cnRisk, true)}
-                            </div>
-                        `;
-                    })()}
+                        })()}
+                    </div>
                 </div>
 
-                <!-- 右侧：资金轮动监测（次级信息，默认收起） -->
-                <details class="ai-collapsible ai-evidence-detail ai-remove-module">
-                    <summary>市场证据摘要 <span class="ai-collapse-hint expand-label">展开查看</span><span class="ai-collapse-hint collapse-label">收起</span></summary>
-                    <div class="card ai-collapsible-body" style="padding: 16px;">
-                    <div class="card-header" style="margin-bottom: 12px; padding-bottom: 0; border-bottom: none; display: flex; justify-content: space-between; align-items: center;">
-                        <div class="card-title"><i data-lucide="repeat" width="16" style="vertical-align: middle;"></i> AI 资金轮动监测</div>
-                        <button class="info-btn" id="info-ai-rotation" title="轮动说明" style="display: inline-flex; align-items: center;"><i data-lucide="help-circle" width="14"></i></button>
-                    </div>
-                    <div class="rotation-box">
-                        <div class="rotation-badge rotation-${rotation_class}">${rotation_mode}</div>
-                        <div class="rotation-desc">${rotation_desc}</div>
-                        <div class="rotation-flow">
-                            <span class="flow-step">能源电力</span>➔
-                            <span class="flow-step">AI 芯片</span>➔
-                            <span class="flow-step">HBM 存储</span>➔
-                            <span class="flow-step">基建液冷</span>➔
-                            <span class="flow-step">云计算</span>➔
-                            <span class="flow-step">Agent 应用</span>
-                        </div>
-                    </div>
-                    </div>
-                </details>
-            </div>
-            </div>
-
-            <!-- 4. SVG 雷达扫掠 AI 四象限投资时钟 & 历史周期比对 (默认折叠) -->
-            <details class="ai-collapsible" style="margin-bottom: 16px;">
-                <summary>历史周期与投资时钟 <span class="ai-collapse-hint expand-label">展开查看</span><span class="ai-collapse-hint collapse-label">收起</span></summary>
-                <div class="ai-middle-grid ai-collapsible-body" style="margin-bottom: 0;">
-                <!-- 左侧：SVG 雷达扫掠投资时钟 -->
-                <div class="card" style="padding: 16px;">
-                    <div class="card-header" style="margin-bottom: 12px; padding-bottom: 0; border-bottom: none; display: flex; justify-content: space-between; align-items: center;">
-                        <div class="card-title"><i data-lucide="clock" width="16" style="vertical-align: middle;"></i> AI 四象限投资时钟 (Radar Map)</div>
-                        <button class="info-btn" id="info-ai-clock" title="时钟说明" style="display: inline-flex; align-items: center;"><i data-lucide="help-circle" width="14"></i></button>
-                    </div>
-                    ${(() => {
-                        const usPctX = investment_clock?.us_position?.x || 68;
-                        const usPctY = investment_clock?.us_position?.y || 82;
-                        const cnPctX = investment_clock?.cn_position?.x || 48;
-                        const cnPctY = investment_clock?.cn_position?.y || 62;
-
-                        // 将 0~100 映射到 SVG (cx=160, cy=100, W=320, H=200)
-                        const usX = (usPctX / 100) * 240 + 40; 
-                        const usY = ((100 - usPctY) / 100) * 140 + 30; 
-                        const cnX = (cnPctX / 100) * 240 + 40;
-                        const cnY = ((100 - cnPctY) / 100) * 140 + 30;
-
-                        return `
-                            <div class="svg-clock-box" style="height: 200px;">
-                                <svg viewBox="0 0 320 200" class="svg-clock-chart">
-                                    <defs>
-                                        <radialGradient id="radar-sweep-grad" cx="50%" cy="50%" r="50%">
-                                            <stop offset="0%" stop-color="rgba(59,130,246,0.35)"/>
-                                            <stop offset="100%" stop-color="rgba(59,130,246,0.0)"/>
-                                        </radialGradient>
-                                    </defs>
-                                    <!-- 十字坐标轴 -->
-                                    <line x1="160" y1="15" x2="160" y2="185" stroke="rgba(203,213,225,0.6)" stroke-width="1" stroke-dasharray="4 4"/>
-                                    <line x1="20" y1="100" x2="300" y2="100" stroke="rgba(203,213,225,0.6)" stroke-width="1" stroke-dasharray="4 4"/>
-                                    
-                                    <!-- 同心圆轨道 -->
-                                    <circle cx="160" cy="100" r="45" fill="none" stroke="rgba(226,232,240,0.8)" stroke-width="1"/>
-                                    <circle cx="160" cy="100" r="80" fill="none" stroke="rgba(226,232,240,0.5)" stroke-width="1"/>
-                                    
-                                    <!-- 360° 雷达旋转扫掠 -->
-                                    <path d="M 160 100 L 160 20 A 80 80 0 0 1 240 100 Z" fill="url(#radar-sweep-grad)" class="radar-sweep-arc" style="transform-origin: 160px 100px;"/>
-                                    
-                                    <!-- 4 象限边角标签 (避开坐标打点) -->
-                                    <text x="22" y="24" font-size="10" fill="var(--text-tertiary)" font-weight="600">泡沫期</text>
-                                        <text x="205" y="24" font-size="9" fill="#059669" font-weight="700">硬件与能源强势</text>
-                                    <text x="22" y="185" font-size="10" fill="var(--text-tertiary)" font-weight="600">需求验证期</text>
-                                        <text x="215" y="185" font-size="9" fill="#2563eb" font-weight="600">应用验证期</text>
-
-                                    <!-- 中美连线 -->
-                                    <line x1="${usX}" y1="${usY}" x2="${cnX}" y2="${cnY}" stroke="rgba(59,130,246,0.5)" stroke-width="1.5" stroke-dasharray="3 3"/>
-
-                                    <!-- 美国打点 -->
-                                    <g transform="translate(${usX}, ${usY})">
-                                        <circle r="6" fill="#2563eb" class="clock-point-pulse"/>
-                                        <rect x="8" y="-10" width="125" height="18" rx="4" fill="rgba(255,255,255,0.92)" stroke="rgba(37,99,235,0.3)"/>
-                                        <text x="12" y="2" font-size="8" font-weight="700" fill="#1e40af">美：硬件扩张→应用验证</text>
-                                    </g>
-
-                                    <!-- 中国打点 -->
-                                    <g transform="translate(${cnX}, ${cnY})">
-                                        <circle r="6" fill="#de2910" class="clock-point-pulse"/>
-                                        <rect x="8" y="-10" width="115" height="18" rx="4" fill="rgba(255,255,255,0.92)" stroke="rgba(222,41,16,0.3)"/>
-                                        <text x="12" y="2" font-size="8" font-weight="700" fill="#de2910">中：基建建设→应用探索</text>
-                                    </g>
-                                </svg>
-                            </div>
-                        `;
-                    })()}
-                </div>
-
-                <!-- 右侧：AI 历史周期比对 -->
-                <div class="card" style="padding: 16px;">
-                    <div class="card-header" style="margin-bottom: 12px; padding-bottom: 0; border-bottom: none;">
+                <!-- 右卡：AI 历史科技周期推演映射 -->
+                <div class="card ai-card-module">
+                    <div class="card-header">
                         <div class="card-title"><i data-lucide="history" width="16" style="vertical-align: middle;"></i> 历史科技周期推演映射</div>
                     </div>
-                    ${historical_match ? `
-                        <div class="history-box">
-                            <div class="history-match-era">${historical_match.matched_era}</div>
-                            <div class="history-sim-bar">
-                                <span>周期相似度: <strong>${historical_match.similarity_pct}%</strong></span>
-                                <span>${historical_match.bubble_distance}</span>
-                            </div>
-                            <div class="history-summary">${historical_match.summary}</div>
-                        </div>
-                    ` : ''}
-                </div>
-                </div>
-            </details>
-
-            <!-- 5. 产业链五阶段扩散 Roadmap（次级信息，默认收起） -->
-            <details class="ai-collapsible ai-remove-module" style="margin-bottom: 16px;">
-                <summary>产业链传导路径 <span class="ai-collapse-hint expand-label">展开查看</span><span class="ai-collapse-hint collapse-label">收起</span></summary>
-            <div class="card ai-collapsible-body" style="padding: 16px;">
-                <div class="card-header" style="margin-bottom: 14px; padding-bottom: 0; border-bottom: none; display: flex; justify-content: space-between; align-items: center;">
-                    <div class="card-title"><i data-lucide="git-commit" width="16" style="vertical-align: middle;"></i> AI 产业链五阶段扩散模型</div>
-                    <span class="ai-diffusion-badge">2026 演进：具身智能与工业落地验证中</span>
-                </div>
-                <div class="minimal-pipeline-container">
-                    ${(() => {
-                        const roadmap = data.diffusion_roadmap || {};
-                        const activeStages = roadmap.active_stages || [1, 2];
-                        const leadingStage = roadmap.leading_stage || null;
-                        const stageMap = {};
-                        (roadmap.stages || []).forEach(s => { stageMap[s.id] = s; });
-
-                        const stagesInfo = [
-                            { id: 1, name: "阶段 1: 能源与算力芯片", stocks: "GEV / NVDA / ARM" },
-                            { id: 2, name: "阶段 2: 存储与先进封装", stocks: "美光 MU / 台积电" },
-                            { id: 3, name: "阶段 3: 基建与液冷电源", stocks: "SMCI / VRT / DELL" },
-                            { id: 4, name: "阶段 4: Agent 与具身智能", stocks: "PLTR / 机器人 / SaaS" },
-                            { id: 5, name: "阶段 5: 概念炒作 (泡沫)", stocks: "边缘垃圾小票" },
-                        ];
-
-                        let htmlStr = '<div class="minimal-pipeline-track">';
-                        stagesInfo.forEach(st => {
-                            const isActive = activeStages.includes(st.id);
-                            const isLeading = st.id === leadingStage;
-                            const sData = stageMap[st.id] || {};
-                            const val = sData.avg_change;
-                            
-                            // 优先使用后端传递的名称与标的，缺失则使用前端默认备份数据
-                            const stageName = sData.name || st.name;
-                            const stageStocks = sData.symbols || st.stocks;
-                            
-                            let changeStr = '--';
-                            let changeClass = 'text-neutral';
-
-                            if (val !== undefined && val !== null) {
-                                const isUp = val >= 0;
-                                const prefix = isUp ? '+' : '';
-                                changeStr = `${prefix}${val.toFixed(2)}%`;
-                                changeClass = isUp ? 'text-up' : 'text-down';
-                            }
-
-                            let tagHtml = '';
-                            if (isLeading) {
-                                tagHtml = '<span class="minimal-step-tag">主导</span>';
-                            } else if (isActive) {
-                                tagHtml = '<span class="minimal-step-tag active-tag" style="background: rgba(59, 130, 246, 0.1); color: var(--accent-blue); border: 1px solid rgba(59, 130, 246, 0.3); font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: bold;">活跃</span>';
-                            }
-
-                            htmlStr += `
-                                <div class="minimal-step-card ${isActive ? 'active' : ''} ${isLeading ? 'leading' : ''}">
-                                    <div class="minimal-step-head">
-                                        <span class="minimal-step-num">0${st.id}</span>
-                                        ${tagHtml}
-                                    </div>
-                                    <div class="minimal-step-title">${stageName}</div>
-                                    <div class="minimal-step-stocks" title="${stageStocks}">${stageStocks}</div>
-                                    <div class="minimal-step-change ${changeClass}">${changeStr}</div>
+                    <div class="card-body" style="padding-top: 4px;">
+                        ${historical_match ? `
+                            <div class="history-box">
+                                <div class="history-match-era">${historical_match.matched_era}</div>
+                                <div class="history-sim-bar">
+                                    <span>周期相似度: <strong>${historical_match.similarity_pct}%</strong></span>
+                                    <span>${historical_match.bubble_distance}</span>
                                 </div>
-                            `;
-                        });
-                        htmlStr += '</div>';
-                        return htmlStr;
-                    })()}
+                                <div class="history-summary">${historical_match.summary}</div>
+                            </div>
+                        ` : '<div class="text-secondary" style="font-size: 12px;">暂无历史匹配数据</div>'}
+                    </div>
                 </div>
             </div>
-            </details>
-        </div>
-
-            <!-- 6. AI 产业链明细（核心页面中不展示） -->
-            <details class="ai-collapsible ai-remove-module" style="margin-bottom: 16px;">
-                <summary>AI 产业链个股明细 <span class="ai-collapse-hint expand-label">展开查看</span><span class="ai-collapse-hint collapse-label">收起</span></summary>
-            <div class="ai-collapsible-body">
-            <div class="ai-layers-grid">
         `;
-
-        if (layers && layers.length > 0) {
-            layers.forEach(layer => {
-                const avgClass = layer.avg_change > 0 ? 'text-up' : layer.avg_change < 0 ? 'text-down' : '';
-                const avgSign = layer.avg_change > 0 ? '+' : '';
-                
-                html += `
-                    <div class="card ai-layer-card">
-                        <div class="ai-layer-header">
-                            <div>
-                                <span class="ai-layer-id">${layer.layer_id}</span>
-                                <span class="ai-layer-star">${layer.star}</span>
-                                <div class="ai-layer-title">${layer.title}</div>
-                            </div>
-                            <div class="ai-layer-avg ${avgClass}">${avgSign}${layer.avg_change}%</div>
-                        </div>
-                        
-                        <div class="ai-layer-importance">${layer.importance}</div>
-                        <div class="ai-layer-desc">${layer.desc}</div>
-
-                        <div class="divider" style="margin: 10px 0;"></div>
-
-                        <div class="ai-layer-items">
-                `;
-
-                if (layer.items && layer.items.length > 0) {
-                    layer.items.forEach(item => {
-                        const changeVal = item.change_pct || 0.0;
-                        const changeClass = changeVal > 0 ? 'text-up' : changeVal < 0 ? 'text-down' : '';
-                        const sign = changeVal > 0 ? '+' : '';
-                        const priceHtml = (item.is_sector || !item.price) ? '' : `<span class="ai-item-price">$${item.price.toFixed(2)}</span>`;
-
-                        html += `
-                            <div class="ai-item-row">
-                                <div class="ai-item-info">
-                                    <span class="ai-item-name">${item.name}</span>
-                                    <span class="ai-item-code">${item.symbol || ''}</span>
-                                </div>
-                                <div class="ai-item-price-box">
-                                    ${priceHtml}
-                                    <span class="ai-item-change ${changeClass}">${sign}${changeVal.toFixed(2)}%</span>
-                                </div>
-                            </div>
-                        `;
-                    });
-                }
-
-                html += `
-                        </div>
-                    </div>
-                `;
-            });
-        }
-
-        html += `</div></div></details>`;
 
         container.innerHTML = html;
         container.classList.remove('loading');
-
-        // 核心分析页不展示产业链细节，也不保留折叠交互。
-        container.querySelectorAll('.ai-remove-module').forEach(el => el.remove());
-        container.querySelectorAll('details.ai-collapsible').forEach(el => {
-            const replacement = document.createElement('div');
-            replacement.className = `${el.className} ai-static-module`;
-            [...el.children].forEach(child => {
-                if (child.tagName.toLowerCase() !== 'summary') replacement.appendChild(child);
-            });
-            el.replaceWith(replacement);
-        });
-        container.querySelectorAll('.info-btn, .ai-collapse-hint').forEach(el => el.remove());
 
         // 绑定各 ? 按钮点击弹窗事件
         this.bindInfoButtons(data);
