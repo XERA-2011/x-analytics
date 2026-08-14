@@ -186,8 +186,9 @@ class AIMarketController {
                 </div>
             </div>
 
-            <!-- 2. 中美 AI 产业五维对比 (默认折叠，避免与雷达图重复占用首屏) -->
-            <details class="ai-collapsible" style="margin-bottom: 16px;">
+            <div class="ai-core-grid">
+            <!-- 2. 中美 AI 产业五维对比 (核心模块默认展开) -->
+            <details class="ai-collapsible" open style="margin-bottom: 16px;">
                 <summary>中美 AI 产业五维对比 <span class="ai-collapse-hint expand-label">展开查看</span><span class="ai-collapse-hint collapse-label">收起</span></summary>
                 <div class="card ai-collapsible-body" style="padding: 16px;">
                 <div class="card-header" style="margin-bottom: 12px; padding-bottom: 0; border-bottom: none; display: flex; justify-content: space-between; align-items: center;">
@@ -249,31 +250,6 @@ class AIMarketController {
                                     <span class="legend-item"><span class="legend-dot-cn"></span>中国 AI (追赶扩展)</span>
                                 </div>
                             </div>
-                            <div class="ai-matrix-grid" style="grid-template-columns: 1fr;">
-                                ${keys.map(key => {
-                                    const item = us_cn_comparison[key];
-                                    const usPct = Math.round((item.us / item.max) * 100);
-                                    const cnPct = Math.round((item.cn / item.max) * 100);
-                                    return `
-                                        <div class="ai-matrix-item">
-                                            <div class="ai-matrix-head">
-                                                <span class="ai-matrix-label">${item.label}</span>
-                                                <span class="ai-matrix-vals"><span class="val-us">美 ${item.us}</span> vs <span class="val-cn">中 ${item.cn}</span> (满分${item.max})</span>
-                                            </div>
-                                            <div class="ai-matrix-bars">
-                                                <div class="ai-bar-wrap">
-                                                    <span class="bar-tag">US</span>
-                                                    <div class="bar-outer"><div class="bar-inner us-bg" style="width: ${usPct}%;"></div></div>
-                                                </div>
-                                                <div class="ai-bar-wrap">
-                                                    <span class="bar-tag">CN</span>
-                                                    <div class="bar-outer"><div class="bar-inner cn-bg" style="width: ${cnPct}%;"></div></div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    `;
-                                }).join('')}
-                            </div>
                         </div>
                     `;
                 })()}
@@ -283,7 +259,7 @@ class AIMarketController {
             <!-- 3. AI 泡沫温度计 & 资金健康轮动 (Bubble Thermometer & Rotation) -->
             <div class="ai-middle-grid" style="margin-bottom: 16px;">
                 <!-- 左侧：SVG 熔炉刻度泡沫温度计 -->
-                <div class="card" style="padding: 16px;">
+                <div class="card ai-bubble-card" style="padding: 16px;">
                     <div class="card-header" style="margin-bottom: 12px; padding-bottom: 0; border-bottom: none; display: flex; justify-content: space-between; align-items: center;">
                         <div class="card-title"><i data-lucide="thermometer" width="16" style="vertical-align: middle;"></i> AI 泡沫温度计 (Bubble Risk)</div>
                         <button class="info-btn" id="info-ai-bubble" title="温度计说明" style="display: inline-flex; align-items: center;"><i data-lucide="help-circle" width="14"></i></button>
@@ -343,8 +319,10 @@ class AIMarketController {
                     })()}
                 </div>
 
-                <!-- 右侧：资金轮动监测 -->
-                <div class="card" style="padding: 16px;">
+                <!-- 右侧：资金轮动监测（次级信息，默认收起） -->
+                <details class="ai-collapsible ai-evidence-detail ai-remove-module">
+                    <summary>市场证据摘要 <span class="ai-collapse-hint expand-label">展开查看</span><span class="ai-collapse-hint collapse-label">收起</span></summary>
+                    <div class="card ai-collapsible-body" style="padding: 16px;">
                     <div class="card-header" style="margin-bottom: 12px; padding-bottom: 0; border-bottom: none; display: flex; justify-content: space-between; align-items: center;">
                         <div class="card-title"><i data-lucide="repeat" width="16" style="vertical-align: middle;"></i> AI 资金轮动监测</div>
                         <button class="info-btn" id="info-ai-rotation" title="轮动说明" style="display: inline-flex; align-items: center;"><i data-lucide="help-circle" width="14"></i></button>
@@ -361,7 +339,9 @@ class AIMarketController {
                             <span class="flow-step">Agent 应用</span>
                         </div>
                     </div>
-                </div>
+                    </div>
+                </details>
+            </div>
             </div>
 
             <!-- 4. SVG 雷达扫掠 AI 四象限投资时钟 & 历史周期比对 (默认折叠) -->
@@ -408,9 +388,9 @@ class AIMarketController {
                                     
                                     <!-- 4 象限边角标签 (避开坐标打点) -->
                                     <text x="22" y="24" font-size="10" fill="var(--text-tertiary)" font-weight="600">泡沫期</text>
-                                    <text x="215" y="24" font-size="10" fill="#059669" font-weight="700">硬件与能源爆发期</text>
+                                        <text x="205" y="24" font-size="9" fill="#059669" font-weight="700">硬件与能源强势</text>
                                     <text x="22" y="185" font-size="10" fill="var(--text-tertiary)" font-weight="600">需求验证期</text>
-                                    <text x="215" y="185" font-size="10" fill="#2563eb" font-weight="600">应用爆发期</text>
+                                        <text x="215" y="185" font-size="9" fill="#2563eb" font-weight="600">应用验证期</text>
 
                                     <!-- 中美连线 -->
                                     <line x1="${usX}" y1="${usY}" x2="${cnX}" y2="${cnY}" stroke="rgba(59,130,246,0.5)" stroke-width="1.5" stroke-dasharray="3 3"/>
@@ -419,14 +399,14 @@ class AIMarketController {
                                     <g transform="translate(${usX}, ${usY})">
                                         <circle r="6" fill="#2563eb" class="clock-point-pulse"/>
                                         <rect x="8" y="-10" width="125" height="18" rx="4" fill="rgba(255,255,255,0.92)" stroke="rgba(37,99,235,0.3)"/>
-                                        <text x="12" y="2" font-size="9" font-weight="700" fill="#1e40af">美 (${investment_clock?.us_position?.stage})</text>
+                                        <text x="12" y="2" font-size="8" font-weight="700" fill="#1e40af">美：硬件扩张→应用验证</text>
                                     </g>
 
                                     <!-- 中国打点 -->
                                     <g transform="translate(${cnX}, ${cnY})">
                                         <circle r="6" fill="#de2910" class="clock-point-pulse"/>
                                         <rect x="8" y="-10" width="115" height="18" rx="4" fill="rgba(255,255,255,0.92)" stroke="rgba(222,41,16,0.3)"/>
-                                        <text x="12" y="2" font-size="9" font-weight="700" fill="#de2910">中 (${investment_clock?.cn_position?.stage})</text>
+                                        <text x="12" y="2" font-size="8" font-weight="700" fill="#de2910">中：基建建设→应用探索</text>
                                     </g>
                                 </svg>
                             </div>
@@ -453,8 +433,10 @@ class AIMarketController {
                 </div>
             </details>
 
-            <!-- 5. 产业链五阶段扩散 Roadmap (极简素雅步进流 Track) -->
-            <div class="card" style="margin-bottom: 16px; padding: 16px;">
+            <!-- 5. 产业链五阶段扩散 Roadmap（次级信息，默认收起） -->
+            <details class="ai-collapsible ai-remove-module" style="margin-bottom: 16px;">
+                <summary>产业链传导路径 <span class="ai-collapse-hint expand-label">展开查看</span><span class="ai-collapse-hint collapse-label">收起</span></summary>
+            <div class="card ai-collapsible-body" style="padding: 16px;">
                 <div class="card-header" style="margin-bottom: 14px; padding-bottom: 0; border-bottom: none; display: flex; justify-content: space-between; align-items: center;">
                     <div class="card-title"><i data-lucide="git-commit" width="16" style="vertical-align: middle;"></i> AI 产业链五阶段扩散模型</div>
                     <span class="ai-diffusion-badge">2026 演进：具身智能与工业落地验证中</span>
@@ -520,11 +502,12 @@ class AIMarketController {
                     })()}
                 </div>
             </div>
+            </details>
         </div>
 
-            <!-- 6. 7 Layer AI Industry Grid (默认折叠，摘要保留在上方五阶段模型) -->
-            <details class="ai-collapsible" style="margin-bottom: 16px;">
-                <summary>AI 产业链 7 层详细个股 <span class="ai-collapse-hint expand-label">展开查看</span><span class="ai-collapse-hint collapse-label">收起</span></summary>
+            <!-- 6. AI 产业链明细（核心页面中不展示） -->
+            <details class="ai-collapsible ai-remove-module" style="margin-bottom: 16px;">
+                <summary>AI 产业链个股明细 <span class="ai-collapse-hint expand-label">展开查看</span><span class="ai-collapse-hint collapse-label">收起</span></summary>
             <div class="ai-collapsible-body">
             <div class="ai-layers-grid">
         `;
@@ -586,6 +569,18 @@ class AIMarketController {
 
         container.innerHTML = html;
         container.classList.remove('loading');
+
+        // 核心分析页不展示产业链细节，也不保留折叠交互。
+        container.querySelectorAll('.ai-remove-module').forEach(el => el.remove());
+        container.querySelectorAll('details.ai-collapsible').forEach(el => {
+            const replacement = document.createElement('div');
+            replacement.className = `${el.className} ai-static-module`;
+            [...el.children].forEach(child => {
+                if (child.tagName.toLowerCase() !== 'summary') replacement.appendChild(child);
+            });
+            el.replaceWith(replacement);
+        });
+        container.querySelectorAll('.info-btn, .ai-collapse-hint').forEach(el => el.remove());
 
         // 绑定各 ? 按钮点击弹窗事件
         this.bindInfoButtons(data);
