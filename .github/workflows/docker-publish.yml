@@ -64,6 +64,7 @@ jobs:
           tags: ${{ env.GHCR_REGISTRY }}/${{ env.GHCR_IMAGE }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          provenance: false
 
       # 2. 尝试推送到阿里云 (国内加速，允许失败)
       #    由于使用了缓存，这一步应该非常快（复用上一步的层）
@@ -75,3 +76,4 @@ jobs:
           push: true
           tags: ${{ env.ALIYUN_REGISTRY }}/${{ env.ALIYUN_IMAGE }}:latest
           cache-from: type=gha
+          provenance: false
