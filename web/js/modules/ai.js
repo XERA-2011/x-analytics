@@ -277,15 +277,16 @@ class AIMarketController {
                                 const liquidW = Math.min(300, Math.max(0, riskVal * 3));
                                 const endX = Math.min(292, Math.max(12, liquidW - 8));
                                 const bubbleBubble = isHot ? `<circle cx="${endX}" cy="12" r="3.5" fill="#ef4444" class="bubble-anim"/>` : '';
+                                const peStr = bm.pe_ratio ? `真实PE: <strong>${bm.pe_ratio}x</strong> (基准 ${bm.pe_benchmark || '--'}x)` : `产业价值分: <strong>${bm.value_score}</strong>`;
 
                                 return `
                                     <div class="svg-thermo-row">
                                         <div class="svg-thermo-head">
-                                            <span class="svg-thermo-title">${country} AI 泡沫偏离风险</span>
+                                            <span class="svg-thermo-title">${country} AI 真实估值偏离与泡沫风险</span>
                                             <span class="svg-thermo-badge ${badgeClass}">${bm.status_text}</span>
                                         </div>
                                         <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 6px;">
-                                            产业价值分: <strong>${bm.value_score}</strong> | 泡沫风险指数: <strong class="text-down">${riskVal} / 100</strong>
+                                            ${peStr} | 泡沫风险指数: <strong class="text-down">${riskVal} / 100</strong>
                                         </div>
                                         <svg class="svg-thermo-bar-svg" viewBox="0 0 300 24">
                                             <defs>

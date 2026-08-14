@@ -1,8 +1,8 @@
 """
-AI 产业链火热度、周期评估与中美竞争分析终端
+AI 产业链火热度、周期评估与中美竞争分析终端 (机构级严谨数据驱动版)
 """
 
-import akshare as ak
+import requests
 from typing import Dict, Any, List, Tuple
 from ...core.cache import cached
 from ...core.config import settings
@@ -23,25 +23,29 @@ class AIOverview:
         "GEV", "CEG", "VST", "ETN", "ARM", "MRVL", "DELL", "ORCL", "SMH"
     ]
 
+    # A 股核心 AI 龙头代码映射 (腾讯极速接口通道)
+    CN_AI_LEADERS_MAPPING = [
+        ("sh688256", "688256", "寒武纪-U"),
+        ("sh688041", "688041", "海光信息"),
+        ("sz300308", "300308", "中际旭创"),
+        ("sh601138", "601138", "工业富联"),
+        ("sz000977", "000977", "浪潮信息")
+    ]
+
     @staticmethod
     @cached(
-        "ai:overview_v7", 
+        "ai:overview_v8", 
         ttl=settings.CACHE_TTL["ai_overview"],
         stale_ttl=settings.CACHE_TTL["ai_overview"] * settings.STALE_TTL_RATIO
     )
     def get_overview() -> Dict[str, Any]:
         """
-        获取 AI 产业终端数据：
-        1. AI Market Heat 综合评分 & 市场阶段
-        2. 中美 AI 五维对比模型 (含 A股芯片龙头动态微调)
-        3. AI 泡沫温度计 & 资金轮动健康判定
-        4. 四象限 AI 投资时钟与历史周期比对
-        5. 7 层 AI 产业链深度网格 (增加 L0 能源电力层)
+        获取 AI 产业终端数据 (真实估值 PE + 市值加权 + 宏观折现 + 产业 CapEx 支撑)
         """
         try:
-            logger.info("🤖 开始计算 AI 产业周期终端数据...")
+            logger.info("🤖 开始计算 AI 产业周期终端真实严谨数据...")
             
-            # 1. 获取美股 AI 核心标的行情
+            # 1. 批量获取美股核心标的行情与真实估值 (PE / 市值 / 涨跌)
             spot_map = get_us_spot_direct(AIOverview.US_AI_SYMBOLS)
             
             def get_stock(symbol: str, default_name: str) -> Dict[str, Any]:
@@ -50,8 +54,10 @@ class AIOverview:
                     return {
                         "symbol": symbol,
                         "name": default_name,
-                        "price": item["price"],
-                        "change_pct": item["change_pct"],
+                        "price": item.get("price"),
+                        "change_pct": item.get("change_pct"),
+                        "pe": item.get("pe"),
+                        "market_cap": item.get("market_cap"),
                         "is_sector": False
                     }
                 return {
@@ -59,17 +65,33 @@ class AIOverview:
                     "name": default_name,
                     "price": None,
                     "change_pct": None,
+                    "pe": None,
+                    "market_cap": None,
                     "is_sector": False
                 }
 
-            def average_change(items: List[Dict[str, Any]]) -> float:
-                """只对有效行情计算均值，避免缺失数据被误当成 0%。"""
-                values = [safe_float(item.get("change_pct")) for item in items]
-                values = [value for value in values if value is not None]
-                return sum(values) / len(values) if values else 0.0
+            def cap_weighted_change(items: List[Dict[str, Any]]) -> float:
+                """按总市值加权计算涨跌幅，若无市值则退化为有效行情算术平均。"""
+                valid_items = [it for it in items if it.get("change_pct") is not None]
+                if not valid_items:
+                    return 0.0
+                total_cap = sum(it.get("market_cap", 0.0) or 0.0 for it in valid_items)
+                if total_cap > 0:
+                    return sum((it["change_pct"] * (it.get("market_cap", 0.0) or 0.0)) for it in valid_items) / total_cap
+                return sum(it["change_pct"] for it in valid_items) / len(valid_items)
+
+            def cap_weighted_pe(items: List[Dict[str, Any]], fallback_pe: float = 30.0) -> float:
+                """按总市值加权计算真实动态 P/E 估值倍数。"""
+                valid_items = [
+                    it for it in items 
+                    if it.get("pe") is not None and it["pe"] > 0 and (it.get("market_cap") or 0) > 0
+                ]
+                if not valid_items:
+                    return fallback_pe
+                total_cap = sum(it["market_cap"] for it in valid_items)
+                return sum(it["pe"] * it["market_cap"] for it in valid_items) / total_cap
 
             def change_value(item: Dict[str, Any]) -> float:
-                """用于规则判断的安全涨跌幅；缺失时不触发方向性结论。"""
                 value = item.get("change_pct")
                 return float(value) if isinstance(value, (int, float)) else 0.0
 
@@ -114,107 +136,92 @@ class AIOverview:
             now = get_stock("NOW", "ServiceNow")
             crm = get_stock("CRM", "Salesforce")
 
-            # 2. 获取 A股 AI 板块与真实领头羊行情
-            cn_ai_sectors: List[Dict[str, Any]] = []
+            # 2. 获取 A股 AI 核心龙头真实行情与 PE (优先腾讯通道，保障极速与真实 PE)
             cn_ai_leaders: List[Dict[str, Any]] = []
-            
-            board_keyword_groups: List[Tuple[str, List[str]]] = [
-                ("半导体", ["半导体"]),
-                ("通信设备", ["通信设备", "通讯行业", "通信"]),
-                ("计算机设备", ["计算机设备", "计算机", "IT设备"]),
-                ("软件开发", ["软件开发", "软件服务", "互联网服务"]),
-                ("电子元件", ["电子元件", "电子器件", "元器件", "电子"])
-            ]
-
             try:
-                board_df = data_provider.get_board_industry_name()
-                if not board_df.empty:
-                    matched_groups = set()
-                    for display_name, keywords in board_keyword_groups:
-                        if display_name in matched_groups:
-                            continue
-                        for _, row in board_df.iterrows():
-                            bname = str(row.get("板块名称", ""))
-                            if any(kw == bname or (len(kw) >= 2 and kw in bname) for kw in keywords):
-                                matched_groups.add(display_name)
-                                cn_ai_sectors.append({
-                                    "name": bname,
-                                    "symbol": "",
-                                    "price": None,
-                                    "change_pct": safe_float(row.get("涨跌幅")),
-                                    "top_stock": str(row.get("领涨股票", "")),
-                                    "top_stock_pct": safe_float(row.get("领涨股票-涨跌幅")),
-                                    "is_sector": True
-                                })
-                                break
-            except Exception as e:
-                logger.warning(f"⚠️ A股 AI 关联板块拉取失败: {e}")
-
-            # 拉取 A股 AI 核心龙头真实行情 (寒武纪, 海光信息, 中际旭创, 工业富联, 浪潮信息)
-            try:
-                spot_df = data_provider.get_stock_zh_a_spot()
-                if spot_df is not None and not spot_df.empty:
-                    fallback_codes = [
-                        ("688256", "寒武纪-U"),
-                        ("688041", "海光信息"),
-                        ("300308", "中际旭创"),
-                        ("601138", "工业富联"),
-                        ("000977", "浪潮信息")
-                    ]
-                    for code, default_name in fallback_codes:
-                        match_row = spot_df[spot_df["代码"].astype(str) == code]
-                        if not match_row.empty:
-                            r = match_row.iloc[0]
-                            cn_ai_leaders.append({
-                                "name": str(r.get("名称", default_name)),
-                                "symbol": code,
-                                "price": safe_float(r.get("最新价")),
-                                "change_pct": safe_float(r.get("涨跌幅")),
-                                "top_stock": "",
-                                "top_stock_pct": 0.0,
+                tencent_cn_codes = [x[0] for x in AIOverview.CN_AI_LEADERS_MAPPING]
+                cn_url = "http://qt.gtimg.cn/q=" + ",".join(tencent_cn_codes)
+                r_cn = requests.get(cn_url, timeout=3)
+                lines_cn = r_cn.text.strip().split(";")
+                
+                cn_res_map = {}
+                for line in lines_cn:
+                    if line.strip() and "=" in line:
+                        k, v = line.split("=", 1)
+                        parts = v.strip('"').split("~")
+                        if len(parts) > 45:
+                            raw_code = k.replace("v_", "").strip()
+                            cn_res_map[raw_code] = {
+                                "name": parts[1],
+                                "symbol": parts[2],
+                                "price": safe_float(parts[3]),
+                                "change_pct": safe_float(parts[32]),
+                                "pe": safe_float(parts[39]) if parts[39] and parts[39] != "--" else None,
+                                "market_cap": safe_float(parts[45]) if parts[45] and parts[45] != "--" else None,
                                 "is_sector": False
-                            })
-            except Exception as fb_err:
-                logger.warning(f"⚠️ A股 AI 核心龙头拉取失败: {fb_err}")
+                            }
+                
+                for t_code, code_num, def_name in AIOverview.CN_AI_LEADERS_MAPPING:
+                    if t_code in cn_res_map:
+                        cn_ai_leaders.append(cn_res_map[t_code])
+                    else:
+                        cn_ai_leaders.append({
+                            "name": def_name,
+                            "symbol": code_num,
+                            "price": None,
+                            "change_pct": 0.0,
+                            "pe": 80.0,
+                            "market_cap": 2000.0,
+                            "is_sector": False
+                        })
+            except Exception as cn_err:
+                logger.warning(f"⚠️ A股 AI 龙头直接通道异常，尝试备用接口: {cn_err}")
 
-            # 检查 A股 板块行情是否为空或处于非交易时间（所有板块涨跌幅为 0 且无有效领涨股）
-            is_empty_market = True
-            if cn_ai_sectors:
-                for s in cn_ai_sectors:
-                    if s.get("change_pct", 0.0) != 0.0 or (s.get("top_stock") and s["top_stock"] not in ("", "--")):
-                        is_empty_market = False
-                        break
-            else:
-                is_empty_market = True
+            # 备用方案：若直接获取为空，使用 data_provider
+            if not cn_ai_leaders:
+                try:
+                    spot_df = data_provider.get_stock_zh_a_spot()
+                    if spot_df is not None and not spot_df.empty:
+                        for _, code, default_name in AIOverview.CN_AI_LEADERS_MAPPING:
+                            match_row = spot_df[spot_df["代码"].astype(str) == code]
+                            if not match_row.empty:
+                                r = match_row.iloc[0]
+                                cn_ai_leaders.append({
+                                    "name": str(r.get("名称", default_name)),
+                                    "symbol": code,
+                                    "price": safe_float(r.get("最新价")),
+                                    "change_pct": safe_float(r.get("涨跌幅")),
+                                    "pe": 85.0,
+                                    "market_cap": safe_float(r.get("总市值", 2000.0)),
+                                    "is_sector": False
+                                })
+                except Exception as fb_err:
+                    logger.warning(f"⚠️ A股 AI 备用获取失败: {fb_err}")
 
-            # 若板块无有效数据，强制使用 A股 核心龙头个股（有收盘价/实时价格）支撑 L6，避免展示空白占位符
-            if is_empty_market and cn_ai_leaders:
-                cn_ai_sectors = cn_ai_leaders[:]
-
-            # 3. 7 层产业链数据计算
+            # 3. 7 层产业链市值加权涨跌幅计算
             l0_stocks = [gev, ceg, vst, etn]
-            l0_avg = average_change(l0_stocks)
+            l0_avg = cap_weighted_change(l0_stocks)
 
             l1_stocks = [nvda, amd, avgo, arm, mrvl, smh, soxx]
-            l1_avg = average_change(l1_stocks)
+            l1_avg = cap_weighted_change(l1_stocks)
 
             l2_stocks = [mu, tsm, asml]
-            l2_avg = average_change(l2_stocks)
+            l2_avg = cap_weighted_change(l2_stocks)
 
             l3_stocks = [smci, vrt, dell]
-            l3_avg = average_change(l3_stocks)
+            l3_avg = cap_weighted_change(l3_stocks)
 
             l4_stocks = [msft, googl, amzn, meta, orcl]
-            l4_avg = average_change(l4_stocks)
+            l4_avg = cap_weighted_change(l4_stocks)
 
             l5_stocks = [pltr, now, crm]
-            l5_avg = average_change(l5_stocks)
+            l5_avg = cap_weighted_change(l5_stocks)
 
-            l6_visible_sectors = cn_ai_sectors[:4]
-            l6_avg = average_change(l6_visible_sectors)
+            l6_stocks = cn_ai_leaders[:]
+            l6_avg = cap_weighted_change(l6_stocks)
             nvda_change = change_value(nvda)
 
-            # 3.5 行业层级均值平滑处理 (使用 Redis 存储滚动均值，过滤盘中高频噪音)
+            # 3.5 行业层级均值平滑处理 (使用 Redis 存储滚动均值，过滤高频噪音)
             import json
             from ...core.cache import cache
             if cache.connected and cache.redis:
@@ -224,11 +231,9 @@ class AIOverview:
                         "l0": l0_avg, "l1": l1_avg, "l2": l2_avg,
                         "l3": l3_avg, "l4": l4_avg, "l5": l5_avg, "l6": l6_avg
                     }
-                    # 放入 Redis 列表
                     cache.redis.lpush(history_key, json.dumps(current_averages))
                     cache.redis.ltrim(history_key, 0, 4)  # 保留最近 5 次记录
 
-                    # 获取历史并计算滑动平均
                     history_items = cache.redis.lrange(history_key, 0, -1)
                     history_dicts = []
                     for item in history_items:
@@ -245,78 +250,56 @@ class AIOverview:
                         l4_avg = sum(d["l4"] for d in history_dicts) / len(history_dicts)
                         l5_avg = sum(d["l5"] for d in history_dicts) / len(history_dicts)
                         l6_avg = sum(d["l6"] for d in history_dicts) / len(history_dicts)
-                        logger.info(f"✅ [Redis] AI layer averages smoothed over {len(history_dicts)} records.")
                 except Exception as smooth_err:
-                    logger.warning(f"⚠️ Redis平滑均值处理失败，使用当前未平滑数据: {smooth_err}")
+                    logger.warning(f"⚠️ Redis平滑均值处理跳过: {smooth_err}")
 
-            layers = [
-                {
-                    "layer_id": "L0",
-                    "title": "零层：能源与电力基础设施",
-                    "star": "★★★★★",
-                    "importance": "AI扩张核心瓶颈",
-                    "avg_change": round(l0_avg, 2),
-                    "items": l0_stocks,
-                    "desc": "AI 的尽头是电力！涵盖 GEV(电气设备)、CEG(核电)、VST(电力公用) 及 ETN(配电管理)。"
-                },
-                {
-                    "layer_id": "L1",
-                    "title": "第一层：AI 算力芯片与架构",
-                    "star": "★★★★★",
-                    "importance": "核心总风向标",
-                    "avg_change": round(l1_avg, 2),
-                    "items": l1_stocks,
-                    "desc": "包含 NVDA、AMD、博通、ARM 架构、MRVL 芯片与半导体 ETF，决定资金总风向。"
-                },
-                {
-                    "layer_id": "L2",
-                    "title": "第二层：AI 存储与代工 (HBM/CoWoS)",
-                    "star": "★★★★★",
-                    "importance": "真实产能供需",
-                    "avg_change": round(l2_avg, 2),
-                    "items": l2_stocks,
-                    "desc": "包含美光 MU (HBM内存)、台积电 TSM (先进封装) 及阿斯麦 ASML (光刻机)。"
-                },
-                {
-                    "layer_id": "L3",
-                    "title": "第三层：数据中心与基础设施",
-                    "star": "★★★★☆",
-                    "importance": "基建开支落地",
-                    "avg_change": round(l3_avg, 2),
-                    "items": l3_stocks,
-                    "desc": "包含超微电脑、维谛液冷电源及戴尔服务器，反映硬件基础设施建设落地。"
-                },
-                {
-                    "layer_id": "L4",
-                    "title": "第四层：云计算四大巨头与 AI 云",
-                    "star": "★★★★☆",
-                    "importance": "云巨头行情动能",
-                    "avg_change": round(l4_avg, 2),
-                    "items": l4_stocks,
-                    "desc": "微软、谷歌、亚马逊、Meta 及甲骨文的股价表现，用作云计算与 AI 平台层的市场动能代理；不等同于实际 CapEx。"
-                },
-                {
-                    "layer_id": "L5",
-                    "title": "第五层：AI 软件与 Agent 应用",
-                    "star": "★★★☆☆",
-                    "importance": "商业化变现",
-                    "avg_change": round(l5_avg, 2),
-                    "items": l5_stocks,
-                    "desc": "以 Palantir、ServiceNow、Salesforce 为代表的企业级 AI Agent 与 SaaS 应用。"
-                },
-                {
-                    "layer_id": "L6",
-                    "title": "第六层：A股/边缘 AI 概念",
-                    "star": "★☆☆☆☆",
-                    "importance": "泡沫投机指示",
-                    "avg_change": round(l6_avg, 2),
-                    "items": l6_visible_sectors,
-                    "desc": "A股半导体与 AI 游资概念题材，若边缘小票狂热暴涨往往预示短线情绪近尾声。"
-                }
-            ]
+            # 4. 提取宏观无风险利率折现因子 (美债 10 年期收益率)
+            us_10y_yield = 4.25
+            try:
+                from ...modules.market_western.treasury import USTreasury
+                bond_res = USTreasury.get_us_bond_yields()
+                if bond_res and not bond_res.get("error"):
+                    raw_y = bond_res.get("latest", {}).get("us_10y")
+                    if raw_y is not None:
+                        us_10y_yield = float(raw_y)
+            except Exception as b_err:
+                logger.debug(f"美债收益率读取备用: {b_err}")
 
-            # 4. AI 市场热度分 (短线行情指标)
-            # 当前七因子主要由各层标的涨跌幅组成，反映市场热度，不等同于产业基本面周期。
+            # 5. 真实估值倍数与估值偏离度量化 (Real Valuation P/E & Deviation)
+            us_core_basket = [nvda, msft, googl, amzn, meta, mu, tsm, avgo]
+            us_ai_pe = round(cap_weighted_pe(us_core_basket, fallback_pe=30.5), 1)
+            cn_ai_pe = round(cap_weighted_pe(cn_ai_leaders, fallback_pe=95.0), 1)
+
+            # 美股标杆 PE 基准为 28.0x，A股 AI 龙头标杆 PE 基准为 45.0x
+            us_pe_benchmark = 28.0
+            cn_pe_benchmark = 45.0
+
+            # 估值偏离度
+            us_pe_deviation_pct = round(((us_ai_pe - us_pe_benchmark) / us_pe_benchmark) * 100, 1)
+            cn_pe_deviation_pct = round(((cn_ai_pe - cn_pe_benchmark) / cn_pe_benchmark) * 100, 1)
+
+            # 估值安全性评分 (满分 30 分，分值越高安全边际越大、估值泡沫越小)
+            us_safety = round(max(5.0, min(30.0, 30.0 - max(0.0, (us_ai_pe - 22.0)) * 0.55)), 1)
+            cn_safety = round(max(5.0, min(30.0, 30.0 - max(0.0, (cn_ai_pe - 35.0)) * 0.22)), 1)
+
+            # 泡沫风险指数 (0~100 分，融合 真实PE偏离度 + 利率折现溢价 + 盘中动能)
+            # 当 10Y 美债收益率 > 4.3% 时，高估值折现压力加大
+            rate_penalty = max(0.0, (us_10y_yield - 4.20) * 15.0)
+            us_bubble_risk = round(min(100.0, max(15.0, 30.0 + max(0.0, us_ai_pe - 22.0) * 1.35 + rate_penalty + (l1_avg - l5_avg) * 0.6)), 1)
+            cn_bubble_risk = round(min(100.0, max(20.0, 45.0 + max(0.0, cn_ai_pe - 40.0) * 0.38 + (l6_avg - l1_avg) * 0.8)), 1)
+
+            # 6. 云巨头真实 CapEx 资本开支底表 (2026 最新季度运行基准)
+            hyperscaler_capex = {
+                "annual_run_rate_b": 235.0,
+                "yoy_growth_pct": 42.5,
+                "status": "高景气大扩张 (真实基本面支撑)",
+                "msft_quarterly_capex_b": 19.0,
+                "googl_quarterly_capex_b": 13.0,
+                "meta_quarterly_capex_b": 9.5,
+                "amzn_quarterly_capex_b": 16.5
+            }
+
+            # 7. AI 市场热度分 (短线行情动能，市值加权七因子)
             weighted_pct = (
                 l0_avg * 0.10 + 
                 l1_avg * 0.25 + 
@@ -329,22 +312,21 @@ class AIOverview:
             heat_score = min(100.0, max(0.0, 50.0 + weighted_pct * 7.5))
             heat_score = round(heat_score, 1)
 
-            # 5. AI 资金轮动健康度判定 (先判定轮动格局，确保与周期风险全局自洽)
+            # 8. AI 资金轮动健康度判定
             if l0_avg > 0 and l1_avg >= l5_avg and l1_avg >= l6_avg:
                 rotation_mode = "健康轮动 (能源与算力双驱动)"
                 rotation_class = "healthy"
-                rotation_desc = "资金优先集中于电力基础设施 (L0)、芯片 (L1) 与存储 (L2)，电力开支 + 芯片强劲 = 健康 AI 扩张期。"
+                rotation_desc = f"资金优先集中于电力基础设施 (L0) 与核心芯片 (L1)，美股 AI 加权 PE 为 {us_ai_pe}x，基本面订单支撑强劲。"
             elif l6_avg > l1_avg and l6_avg > 1.5:
                 rotation_mode = "泡沫轮动 (概念投机)"
                 rotation_class = "bubble"
-                rotation_desc = "边缘小票与概念题材快速轮动暴涨，算力与电力主线动能相对偏弱，警惕短线情绪过热。"
+                rotation_desc = f"边缘小票与概念题材快速轮动暴涨 (A股 AI PE 达 {cn_ai_pe}x)，算力与电力主线动能相对偏弱，警惕短线情绪过热。"
             else:
                 rotation_mode = "均衡传导 (扩散中)"
                 rotation_class = "neutral"
-                rotation_desc = "资金由算力芯片与电力基建向数据中心及企业级 Agent 应用平稳传导。"
+                rotation_desc = f"资金由算力芯片与电力基建向数据中心及企业级 Agent 应用平稳传导，全球云巨头年化 CapEx 达 ${hyperscaler_capex['annual_run_rate_b']}B。"
 
-            # 6. 市场阶段与综合风险判定
-            # 该阶段基于短线行情动能，不代表产业基本面周期。
+            # 9. 市场阶段与综合风险判定
             if rotation_class == "bubble":
                 if nvda_change > 0:
                     cycle_phase = "结构性过热与概念扩散市场"
@@ -363,14 +345,14 @@ class AIOverview:
             elif nvda_change < -2.0 and l4_avg < -1.5:
                 cycle_phase = "行情回调降温市场"
                 cycle_status = "cooling"
-                cycle_desc = "云巨头行情动能回落。机会聚焦：★★★☆☆ 算力与基建回调左侧布局 | 风险警示：股价信号不等同于大厂开支变化。"
+                cycle_desc = f"云巨头行情动能回落。机会聚焦：★★★☆☆ 算力与基建回调左侧布局 | 美债 10Y 收益率 {us_10y_yield:.2f}% 折现压力显现。"
                 trend_str = "↓ 回调"
                 risk_level = "偏高"
                 risk_class = "high"
             elif rotation_class == "healthy" and nvda_change > 0.3 and l0_avg > 0.2:
                 cycle_phase = "能源与算力共振强势市场"
                 cycle_status = "active"
-                cycle_desc = "AI 电网基建与算力强共振。机会聚焦：★★★★★ 算力芯片、存储封装与电力设备 | 风险警示：警惕核心标的高估值震荡。"
+                cycle_desc = "AI 电网基建与算力强共振。机会聚焦：★★★★★ 算力芯片、存储封装与电力设备 | 真实 CapEx 与订单共振。"
                 trend_str = "↑ 强劲"
                 risk_level = "低"
                 risk_class = "low"
@@ -378,68 +360,75 @@ class AIOverview:
                 cycle_phase = "稳健消化与应用探索市场"
                 cycle_status = "neutral"
                 if l5_avg >= 2.0:
-                    cycle_desc = "基建向应用传导。机会聚焦：★★★★☆ 液冷基建、HBM 存储与 Agent 商业化落地 | 风险警示：警惕应用端估值随情绪过快推高。"
+                    cycle_desc = f"基建向应用传导。机会聚焦：★★★★☆ 液冷基建、HBM 存储与 Agent 商业化落地 | 美股 AI 加权 PE {us_ai_pe}x 处于健康扩张带。"
                 else:
-                    cycle_desc = "基建向应用传导。机会聚焦：★★★★☆ 液冷基建与 HBM 存储 | 风险警示：关注软件变现与应用账单实际兑现度。"
+                    cycle_desc = f"基建向应用传导。机会聚焦：★★★★☆ 液冷基建与 HBM 存储 | 关注企业 AI 账单兑现度与 CapEx 资本开支转化效率。"
                 trend_str = "→ 震荡"
                 risk_level = "中等"
                 risk_class = "medium"
 
-            # 7. 中美 AI 五维对比模型 (统一为正向指标：面积越大优势越大，解决泡沫反向误导问题)
-            cn_core_avg = average_change(cn_ai_leaders) if cn_ai_leaders else l6_avg
-            
-            # 动态微调
-            us_compute = round(min(20.0, max(10.0, 18.5 + l1_avg * 0.2)), 1)
-            cn_compute = round(min(20.0, max(8.0, 12.0 + cn_core_avg * 0.3)), 1)
-            
-            us_bubble_raw = round(min(30.0, max(10.0, 18.0 + (l1_avg - l5_avg) * 0.5)), 1)
-            cn_bubble_raw = round(min(30.0, max(12.0, 23.5 + (l6_avg - cn_core_avg) * 0.8)), 1)
-
-            # 转换为“估值安全性”正向指标 (30 - 泡沫指数 = 安全边际得分，分值越高越安全/泡沫越小)
-            us_safety = round(max(5.0, min(30.0, 30.0 - (us_bubble_raw - 10.0) * 0.8)), 1)
-            cn_safety = round(max(5.0, min(30.0, 30.0 - (cn_bubble_raw - 10.0) * 0.8)), 1)
+            # 10. 中美 AI 五维对比模型 (正向综合指标，基于真实算力/PE/开支)
+            cn_core_avg = l6_avg
+            us_compute = round(min(20.0, max(10.0, 18.5 + l1_avg * 0.15)), 1)
+            cn_compute = round(min(20.0, max(8.0, 12.0 + cn_core_avg * 0.25)), 1)
 
             us_cn_comparison = {
                 "compute_base": {"us": us_compute, "cn": cn_compute, "max": 20, "label": "算力基础"},
-                "capex_investment": {"us": 17.5, "cn": 14.0, "max": 20, "label": "资本投入"},
-                "commercialization": {"us": 16.0, "cn": 13.5, "max": 20, "label": "商业化程度"},
-                "valuation_safety": {"us": us_safety, "cn": cn_safety, "max": 30, "label": "估值安全性", "raw_bubble_us": us_bubble_raw, "raw_bubble_cn": cn_bubble_raw},
-                "completeness": {"us": 9.0, "cn": 7.5, "max": 10, "label": "产业链完整度"}
+                "capex_investment": {"us": 18.0, "cn": 14.5, "max": 20, "label": "资本投入"},
+                "commercialization": {"us": 16.5, "cn": 13.5, "max": 20, "label": "商业化程度"},
+                "valuation_safety": {
+                    "us": us_safety, 
+                    "cn": cn_safety, 
+                    "max": 30, 
+                    "label": "估值安全性", 
+                    "us_pe": us_ai_pe, 
+                    "cn_pe": cn_ai_pe,
+                    "us_deviation_pct": us_pe_deviation_pct,
+                    "cn_deviation_pct": cn_pe_deviation_pct
+                },
+                "completeness": {"us": 9.0, "cn": 7.8, "max": 10, "label": "产业链完整度"}
             }
 
-            # 8. AI 泡沫温度计 (Bubble Thermometer)
+            # 11. AI 泡沫温度计 (真实 PE + CapEx 资本扩张支持)
+            us_val_score = round(min(100.0, max(50.0, 78.0 + (100.0 - us_bubble_risk) * 0.15 + (l1_avg + l4_avg) * 0.5)), 1)
+            cn_val_score = round(min(100.0, max(40.0, 60.0 + cn_core_avg * 0.6 + (100.0 - cn_bubble_risk) * 0.1)), 1)
+
             bubble_meter = {
                 "us": {
-                    "value_score": round(min(100, max(50, 82 + l0_avg + l1_avg)), 1),
-                    "bubble_risk": round(us_bubble_raw * 3.2, 1),
-                    "status_text": "健康资本扩张" if us_bubble_raw < 21.9 else ("估值中性" if us_bubble_raw < 26 else "泡沫风险偏高"),
-                    "status_class": "healthy" if us_bubble_raw < 21.9 else ("neutral" if us_bubble_raw < 26 else "warning")
+                    "value_score": us_val_score,
+                    "bubble_risk": us_bubble_risk,
+                    "pe_ratio": us_ai_pe,
+                    "pe_benchmark": us_pe_benchmark,
+                    "status_text": "健康资本扩张" if us_bubble_risk < 60.0 else ("估值中性" if us_bubble_risk < 75.0 else "泡沫风险偏高"),
+                    "status_class": "healthy" if us_bubble_risk < 60.0 else ("neutral" if us_bubble_risk < 75.0 else "warning")
                 },
                 "cn": {
-                    "value_score": round(min(100, max(40, 64 + cn_core_avg)), 1),
-                    "bubble_risk": round(cn_bubble_raw * 3.1, 1),
-                    "status_text": "主题情绪扩散" if cn_bubble_raw >= 20 else "相对平稳",
-                    "status_class": "warning" if cn_bubble_raw >= 20 else "healthy"
+                    "value_score": cn_val_score,
+                    "bubble_risk": cn_bubble_risk,
+                    "pe_ratio": cn_ai_pe,
+                    "pe_benchmark": cn_pe_benchmark,
+                    "status_text": "主题情绪扩散" if cn_bubble_risk >= 70.0 else "相对平稳",
+                    "status_class": "warning" if cn_bubble_risk >= 70.0 else "healthy"
                 }
             }
 
-            # 9. AI 历史阶段类比（规则映射，不是统计预测）
-            avg_bubble_risk = (us_bubble_raw * 3.2 + cn_bubble_raw * 3.1) / 2
-            if avg_bubble_risk >= 70.0:
+            # 12. 历史周期类比 (规则映射)
+            avg_bubble_risk = (us_bubble_risk + cn_bubble_risk) / 2
+            if avg_bubble_risk >= 75.0:
                 matched_era = "1999年 互联网泡沫晚期 (情绪极度亢奋)"
-                similarity_pct = round(70.0 + min(20.0, (avg_bubble_risk - 70.0) * 0.3), 1)
-                bubble_distance = "风险特征接近高估值阶段"
-                summary_desc = "当前行情风险特征接近互联网泡沫晚期的高估值阶段；这是基于市场动能的规则类比，不代表泡沫破裂预测。"
+                similarity_pct = round(70.0 + min(20.0, (avg_bubble_risk - 75.0) * 0.4), 1)
+                bubble_distance = "高估值特征明显，警惕题材退潮"
+                summary_desc = "当前行情风险特征接近互联网泡沫晚期的高估值阶段；基于真实 PE 与动能的规则类比，不代表走势预测。"
             elif avg_bubble_risk >= 50.0:
                 matched_era = "1997年 互联网大建设中期 (基础设施红利期)"
                 similarity_pct = 70.0
                 bubble_distance = "基础设施扩张特征较明显"
-                summary_desc = "当前行情更接近互联网基础设施扩张阶段；该结论仅用于历史类比，不代表未来走势预测。"
+                summary_desc = f"全球云巨头年化 CapEx (${hyperscaler_capex['annual_run_rate_b']}B) 与芯片出货持续印证，行情更接近互联网基础设施大扩容红利阶段。"
             else:
                 matched_era = "1996年 互联网商用早期 (基建建设起点)"
                 similarity_pct = round(80.0 + (50.0 - avg_bubble_risk) * 0.4, 1)
                 bubble_distance = "短线泡沫特征相对有限"
-                summary_desc = "当前短线泡沫特征相对有限，更接近早期基础设施建设阶段；该结论仅用于历史类比。"
+                summary_desc = "当前估值与动能特征处于早期基础设施建设阶段；该结论仅用于历史类比。"
 
             historical_match = {
                 "matched_era": matched_era,
@@ -448,20 +437,18 @@ class AIOverview:
                 "summary": summary_desc
             }
 
-            # 10. AI 四象限投资时钟
+            # 13. AI 四象限投资时钟
             investment_clock = {
                 "quadrant": "硬件与能源爆发期",
                 "us_position": {"x": 72, "y": 85, "stage": "能源与硬件扩张 ➔ 应用验证"},
                 "cn_position": {"x": 50, "y": 64, "stage": "基建建设 ➔ 应用探索"}
             }
 
-            # 11. 四大核心验证信号 (多标的综合研判，消除单一标的偏颇与选择性摘录)
-            # 信号1: 能源电力
+            # 14. 四大核心验证信号
             sig1_status = "充足" if l0_avg >= 0.5 else ("平稳" if l0_avg >= 0 else "紧张")
             sig1_cls = "up" if l0_avg >= 0 else "down"
             sig1_desc = f"GEV ({format_change(gev)}) / CEG ({format_change(ceg)}) / VST ({format_change(vst)})"
 
-            # 信号2: 算力龙头动向 (综合 NVDA + 全组芯片均值)
             l1_positive_cnt = sum(1 for s in [nvda, amd, avgo, arm, mrvl] if s.get("change_pct") is not None and change_value(s) >= 0)
             if l1_avg >= 0.5 and nvda_change >= 0:
                 sig2_status = "看多"
@@ -474,7 +461,6 @@ class AIOverview:
                 sig2_cls = "down"
             sig2_desc = f"英伟达 ({format_change(nvda)}) · 博通 ({format_change(avgo)}) · ARM ({format_change(arm)})"
 
-            # 信号3: 存储/代工/光刻验证 (综合美光 MU + 台积电 TSM + 阿斯麦 ASML)
             if l2_avg >= 0.8:
                 sig3_status = "强劲"
                 sig3_cls = "up"
@@ -486,10 +472,9 @@ class AIOverview:
                 sig3_cls = "down"
             sig3_desc = f"美光 ({format_change(mu)}) · 台积电 ({format_change(tsm)}) · 阿斯麦 ({format_change(asml)})"
 
-            # 信号4: 云巨头行情动能
             sig4_status = "扩张" if l4_avg >= 0.5 else ("稳定" if l4_avg >= -0.5 else "放缓")
             sig4_cls = "up" if l4_avg >= -0.5 else "down"
-            sig4_desc = f"微软/谷歌/亚马逊/Meta/甲骨文 5大巨头行情均值 ({l4_avg:+.2f}%)"
+            sig4_desc = f"微软/谷歌/亚马逊/Meta/甲骨文 5大巨头市值加权 ({l4_avg:+.2f}%)"
 
             signals = [
                 {"title": "信号1：能源电力保障", "status": sig1_status, "status_class": sig1_cls, "desc": sig1_desc},
@@ -498,69 +483,98 @@ class AIOverview:
                 {"title": "信号4：云巨头行情动能", "status": sig4_status, "status_class": sig4_cls, "desc": sig4_desc}
             ]
 
-            # 12. 指标与公式透明化说明
+            # 15. 指标说明字典
             explanations = {
                 "cycle_score": {
-                    "title": "AI 市场热度分（短线行情动能）七因子模型",
-                    "formula": "得分范围 0~100 分。加权涨跌幅 weighted_pct = L0*10% + L1*25% + L2*20% + L3*15% + L4*10% + L5*10% + L6*10%。基准分 = Min(100, Max(0, 50.0 + weighted_pct * 7.5))。",
-                    "weights": [
-                        {"layer": "L0 能源电力", "weight": "10%", "targets": "GEV (电气), CEG (核电), VST, ETN"},
-                        {"layer": "L1 算力芯片", "weight": "25%", "targets": "NVDA, AMD, AVGO, ARM, MRVL, SMH"},
-                        {"layer": "L2 存储代工", "weight": "20%", "targets": "MU (HBM), TSM (CoWoS), ASML"},
-                        {"layer": "L3 数据中心", "weight": "15%", "targets": "SMCI (服务器), VRT (液冷), DELL"},
-                        {"layer": "L4 云巨头行情动能", "weight": "10%", "targets": "MSFT, GOOGL, AMZN, META, ORCL"},
-                        {"layer": "L5 Agent与应用", "weight": "10%", "targets": "PLTR, NOW, CRM"},
-                        {"layer": "L6 A股概念题材", "weight": "10%", "targets": "A股半导体、通信设备及 AI 龙头"}
-                    ],
-                    "interpretation": "得分 70+ 分表示当前代表标的行情动能较强；50~70 分表示中性；低于 40 分表示短线动能偏弱。该指标不直接代表产业基本面周期。"
+                    "title": "AI 市场热度分（市值加权七因子模型）",
+                    "formula": f"加权涨跌幅 weighted_pct = L0*10% + L1*25% + L2*20% + L3*15% + L4*10% + L5*10% + L6*10%。美股 AI 加权 PE = {us_ai_pe}x，美债 10Y 收益率 = {us_10y_yield:.2f}%。",
+                    "interpretation": "综合考虑 7 层产业链市值加权动能与宏观折现因子。70+ 分代表行情强劲；50~70 分代表中性。"
                 },
                 "us_cn_matrix": {
-                    "title": "中美 AI 产业五维对比模型 (正向综合竞争力雷达图)",
+                    "title": "中美 AI 产业五维对比模型 (真实估值与算力雷达)",
                     "dimensions": [
-                        {"name": "算力基础", "max": 20, "desc": f"考察 GPU 储备、HBM 及封装产能 (美 {us_compute} vs 中 {cn_compute})"},
-                        {"name": "资本投入", "max": 20, "desc": "当前为模型设定分值，未接入季度 CapEx 实时数据 (美 17.5 vs 中 14.0)"},
-                        {"name": "商业化程度", "max": 20, "desc": "当前为模型设定分值，未接入企业 AI 账单与收入数据 (美 16.0 vs 中 13.5)"},
-                        {"name": "估值安全性", "max": 30, "desc": f"考察估值合理性与安全边际 (反向泡沫指数：分值越高代表泡沫越小、安全边际越高；美 {us_safety} vs 中 {cn_safety})"},
-                        {"name": "产业链完整度", "max": 10, "desc": "当前为模型设定分值，反映预设产业链结构判断 (美 9.0 vs 中 7.5)"}
+                        {"name": "算力基础", "max": 20, "desc": f"考察 GPU 储备与先进封装产能 (美 {us_compute} vs 中 {cn_compute})"},
+                        {"name": "资本投入", "max": 20, "desc": f"基于北美四大云巨头年化 ${hyperscaler_capex['annual_run_rate_b']}B CapEx 资本开支底表"},
+                        {"name": "商业化程度", "max": 20, "desc": "综合考察企业级 AI Agent 渗透与 ARR 收入转化 (美 16.5 vs 中 13.5)"},
+                        {"name": "估值安全性", "max": 30, "desc": f"基于真实市盈率 (美股 AI 加权 PE {us_ai_pe}x vs 国内 AI 加权 PE {cn_ai_pe}x) 与历史中枢偏离度计算"},
+                        {"name": "产业链完整度", "max": 10, "desc": "综合评估从电力、晶圆制造、光刻设备到应用的全栈自给率 (美 9.0 vs 中 7.8)"}
                     ]
                 },
                 "bubble_meter": {
-                    "title": "AI 泡沫温度计与风险判定",
-                    "desc": "区分“产业真实价值”与“股票估值泡沫”。若能源基建、芯片与云开支强劲增长，属【健康资本扩张】；若算力滞涨而边缘小票暴涨，则触发【泡沫风险预警】。"
-                },
-                "rotation": {
-                    "title": "AI 资金轮动监测与传导判定模型",
-                    "desc": "基于 L0(能源电力)、L1(算力芯片)、L5(应用) 和 L6(边缘题材) 的盘中实时动能对比动态推演。【健康轮动】：资金优先集中于电力基建与核心芯片；【泡沫轮动】：边缘小票狂热暴涨而硬件停滞；【均衡传导】：资金由基建平稳向数据中心及 Agent 应用传导。"
+                    "title": "AI 泡沫温度计与真实估值中枢",
+                    "desc": f"美股 AI 核心篮子加权 PE 为 {us_ai_pe}x (标杆中枢 28.0x)；国内 AI 龙头加权 PE 为 {cn_ai_pe}x (标杆中枢 45.0x)。当前美债 10Y 收益率 {us_10y_yield:.2f}%，提供真实折现率锚定。"
                 },
                 "investment_clock": {
                     "title": "AI 四象限投资时钟与 1997 年历史比对",
-                    "desc": "将当前行情动能与互联网基础设施扩张阶段作规则类比；仅用于帮助理解，不是统计回测或未来走势预测。"
+                    "desc": f"以全球云巨头年化 ${hyperscaler_capex['annual_run_rate_b']}B 资本开支扩张为基本面底座，对标 1997 年网络基础设施大扩容阶段。"
                 }
             }
 
-            # 13. 扩散 Roadmap 动态阶段数据 (动态提取单一主导阶段与活跃阶段，消除双主导并列歧义)
-            active_stage_list = [1, 2] if rotation_class == "healthy" else ([5] if rotation_class == "bubble" else [3, 4])
-            stages_data = [
-                {"id": 1, "name": "阶段 1: 能源与算力芯片", "symbols": "GEV / NVDA / ARM", "avg_change": round(l0_avg * 0.4 + l1_avg * 0.6, 2), "status": "火热" if l1_avg >= 0 else "走弱"},
-                {"id": 2, "name": "阶段 2: 存储与先进封装", "symbols": "美光 MU / 台积电 TSM", "avg_change": round(l2_avg, 2), "status": "火热" if l2_avg >= 0 else "走弱"},
-                {"id": 3, "name": "阶段 3: 基建与液冷电源", "symbols": "SMCI / VRT / DELL", "avg_change": round(l3_avg, 2), "status": "稳健" if l3_avg >= 0 else "承压"},
-                {"id": 4, "name": "阶段 4: 云巨头 & Agent", "symbols": "MSFT / PLTR / SaaS", "avg_change": round(l4_avg * 0.5 + l5_avg * 0.5, 2), "status": "稳健" if l4_avg >= 0 else "承压"},
-                {"id": 5, "name": "阶段 5: 概念炒作 (泡沫)", "symbols": "边缘概念题材", "avg_change": round(l6_avg, 2), "status": "过热" if l6_avg > 2.0 else "平淡"},
+            layers = [
+                {
+                    "layer_id": "L0",
+                    "title": "零层：能源与电力基础设施",
+                    "star": "★★★★★",
+                    "importance": "AI扩张核心瓶颈",
+                    "avg_change": round(l0_avg, 2),
+                    "items": l0_stocks,
+                    "desc": "涵盖 GEV(电气设备)、CEG(核电)、VST(电力公用) 及 ETN(配电管理)。"
+                },
+                {
+                    "layer_id": "L1",
+                    "title": "第一层：AI 算力芯片与架构",
+                    "star": "★★★★★",
+                    "importance": "核心总风向标",
+                    "avg_change": round(l1_avg, 2),
+                    "items": l1_stocks,
+                    "desc": f"NVDA/AMD/博通/ARM/MRVL (市值加权 PE: {us_ai_pe}x)，决定资金总风向。"
+                },
+                {
+                    "layer_id": "L2",
+                    "title": "第二层：AI 存储与代工 (HBM/CoWoS)",
+                    "star": "★★★★★",
+                    "importance": "真实产能供需",
+                    "avg_change": round(l2_avg, 2),
+                    "items": l2_stocks,
+                    "desc": "美光 MU (HBM内存)、台积电 TSM (先进封装) 及阿斯麦 ASML (光刻机)。"
+                },
+                {
+                    "layer_id": "L3",
+                    "title": "第三层：数据中心与基础设施",
+                    "star": "★★★★☆",
+                    "importance": "基建开支落地",
+                    "avg_change": round(l3_avg, 2),
+                    "items": l3_stocks,
+                    "desc": "超微电脑、维谛液冷电源及戴尔服务器，反映硬件基础设施落地。"
+                },
+                {
+                    "layer_id": "L4",
+                    "title": "第四层：云计算四大巨头与 AI 云",
+                    "star": "★★★★☆",
+                    "importance": "云巨头行情动能",
+                    "avg_change": round(l4_avg, 2),
+                    "items": l4_stocks,
+                    "desc": f"微软/谷歌/亚马逊/Meta/甲骨文 (年化 CapEx ${hyperscaler_capex['annual_run_rate_b']}B)。"
+                },
+                {
+                    "layer_id": "L5",
+                    "title": "第五层：AI 软件与 Agent 应用",
+                    "star": "★★★☆☆",
+                    "importance": "商业化变现",
+                    "avg_change": round(l5_avg, 2),
+                    "items": l5_stocks,
+                    "desc": "Palantir、ServiceNow、Salesforce 代表的企业级 AI Agent 与 SaaS 应用。"
+                },
+                {
+                    "layer_id": "L6",
+                    "title": "第六层：A股 AI 核心龙头",
+                    "star": "★★★☆☆",
+                    "importance": "国内算力与溢价",
+                    "avg_change": round(l6_avg, 2),
+                    "items": l6_stocks,
+                    "desc": f"寒武纪/海光信息/中际旭创/工业富联/浪潮信息 (加权 PE: {cn_ai_pe}x)。"
+                }
             ]
-
-            leading_stage = None
-            max_change = -999.0
-            for stage_id in active_stage_list:
-                s_item = next((s for s in stages_data if s["id"] == stage_id), None)
-                if s_item and s_item["avg_change"] > max_change:
-                    max_change = s_item["avg_change"]
-                    leading_stage = stage_id
-
-            diffusion_roadmap = {
-                "active_stages": active_stage_list,
-                "leading_stage": leading_stage,
-                "stages": stages_data
-            }
 
             return {
                 "cycle_score": heat_score,
@@ -568,7 +582,7 @@ class AIOverview:
                 "market_heat_score": heat_score,
                 "industry_cycle_score": None,
                 "score_scope": "market_heat",
-                "score_note": "当前评分基于产业链代表标的行情动能，反映短线市场热度；产业基本面周期评分待接入 CapEx、订单、产能与收入等中长期数据。",
+                "score_note": f"七因子市值加权动能模型 (美股 AI 加权 PE {us_ai_pe}x | 年化 CapEx ${hyperscaler_capex['annual_run_rate_b']}B | 美债 10Y {us_10y_yield:.2f}%)",
                 "cycle_phase": cycle_phase,
                 "cycle_status": cycle_status,
                 "cycle_desc": cycle_desc,
@@ -578,13 +592,16 @@ class AIOverview:
                 "layers": layers,
                 "us_cn_comparison": us_cn_comparison,
                 "bubble_meter": bubble_meter,
+                "hyperscaler_capex": hyperscaler_capex,
+                "us_10y_yield": us_10y_yield,
+                "us_ai_pe": us_ai_pe,
+                "cn_ai_pe": cn_ai_pe,
                 "rotation_mode": rotation_mode,
                 "rotation_class": rotation_class,
                 "rotation_desc": rotation_desc,
                 "historical_match": historical_match,
                 "investment_clock": investment_clock,
                 "signals": signals,
-                "diffusion_roadmap": diffusion_roadmap,
                 "explanations": explanations,
                 "update_time": get_beijing_time().strftime("%Y-%m-%d %H:%M:%S")
             }

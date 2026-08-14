@@ -41,13 +41,17 @@ def get_us_spot_direct(symbols: List[str]) -> Dict[str, Dict[str, float]]:
             if len(parts) >= 33 and parts[0] == "200":
                 price = safe_float(parts[3])
                 change_pct = safe_float(parts[32])
+                pe = safe_float(parts[39]) if len(parts) > 39 else None
+                market_cap = safe_float(parts[45]) if len(parts) > 45 else None
                 
                 if price is not None and change_pct is not None:
                     # 腾讯返回的键名可能大小写不同
                     sym = reverse_map.get(tsym, tsym)
                     result[sym] = {
                         "price": price,
-                        "change_pct": change_pct
+                        "change_pct": change_pct,
+                        "pe": pe,
+                        "market_cap": market_cap
                     }
     except Exception as e:
         logger.error(f"Tencent spot fetch error: {e}")
