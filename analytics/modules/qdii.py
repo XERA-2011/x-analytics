@@ -505,7 +505,7 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "default_return_1y": 43.83,
         "default_nav": 2.7838,
         "default_nav_date": "2026-07-23",
-        "default_asset_allocation": {"stock_pct": 76.44, "stock_us_pct": 16.66, "stock_hk_pct": 23.17, "stock_cn_pct": 36.61, "cash_pct": 14.61, "bond_pct": 0.0},
+        "default_asset_allocation": {"stock_pct": 76.43, "stock_us_pct": 66.5, "stock_hk_pct": 6.5, "stock_other_pct": 3.43, "cash_pct": 14.61, "bond_pct": 0.0},
     },
     {
         "code": "006373",
@@ -564,7 +564,7 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "default_return_1y": 55.42,
         "default_nav": 2.6025,
         "default_nav_date": "2026-07-23",
-        "default_asset_allocation": {"stock_pct": 88.27, "stock_us_pct": 74.62, "stock_cn_pct": 8.47, "stock_other_pct": 5.17, "cash_pct": 12.27, "bond_pct": 0.0},
+        "default_asset_allocation": {"stock_pct": 88.27, "stock_us_pct": 82.0, "stock_other_pct": 6.27, "cash_pct": 12.27, "bond_pct": 0.0},
     },
     {
         "code": "017730",
@@ -664,7 +664,7 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "default_return_1y": 52.33,
         "default_nav": 1.7685,
         "default_nav_date": "2026-07-23",
-        "default_asset_allocation": {"stock_pct": 87.2, "stock_us_pct": 62.4, "stock_hk_pct": 24.8, "cash_pct": 12.8, "bond_pct": 0.0},
+        "default_asset_allocation": {"stock_pct": 81.3, "stock_us_pct": 74.2, "stock_other_pct": 7.1, "cash_pct": 26.8, "bond_pct": 0.0},
         "allocation_estimated": True,
     },
     {
@@ -679,7 +679,7 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "default_return_1y": -9.56,
         "default_nav": 1.4902,
         "default_nav_date": "2026-07-23",
-        "default_asset_allocation": {"stock_pct": 85.2, "stock_us_pct": 45.1, "stock_hk_pct": 40.1, "cash_pct": 14.8, "bond_pct": 0.0},
+        "default_asset_allocation": {"stock_pct": 94.18, "stock_us_pct": 87.0, "stock_hk_pct": 7.18, "cash_pct": 9.5, "bond_pct": 0.0},
         "allocation_estimated": True,
     },
     {
@@ -694,7 +694,7 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "default_return_1y": 64.18,
         "default_nav": 2.1056,
         "default_nav_date": "2026-07-23",
-        "default_asset_allocation": {"stock_pct": 74.55, "stock_us_pct": 43.6, "stock_hk_pct": 22.45, "stock_cn_pct": 8.5, "cash_pct": 25.45, "bond_pct": 0.0},
+        "default_asset_allocation": {"stock_pct": 76.21, "stock_us_pct": 46.21, "stock_other_pct": 24.0, "stock_cn_pct": 6.0, "cash_pct": 25.45, "bond_pct": 0.0},
         "allocation_estimated": True,
     },
     {
@@ -709,7 +709,7 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "default_return_1y": 10.13,
         "default_nav": 2.8848,
         "default_nav_date": "2026-07-23",
-        "default_asset_allocation": {"stock_pct": 82.92, "stock_us_pct": 65.90, "stock_hk_pct": 20.37, "cash_pct": 15.66, "bond_pct": 0.0},
+        "default_asset_allocation": {"stock_pct": 85.68, "stock_us_pct": 83.0, "stock_other_pct": 2.68, "cash_pct": 15.66, "bond_pct": 0.0},
     },
 ]
 
@@ -1059,7 +1059,7 @@ def fetch_fund_scale(session: requests.Session, code: str) -> Optional[str]:
     return None
 
 
-@cached("qdii:passive_funds_v35", ttl=86400)
+@cached("qdii:passive_funds_v36", ttl=86400)
 def get_qdii_passive_funds() -> Dict[str, Any]:
     """获取国内纳斯达克100 & 标普500 场外被动 QDII A类基金数据列表
 
