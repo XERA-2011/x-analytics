@@ -1059,11 +1059,11 @@ def fetch_fund_scale(session: requests.Session, code: str) -> Optional[str]:
     return None
 
 
-@cached("qdii:passive_funds_v33", ttl=86400)
+@cached("qdii:passive_funds_v34", ttl=86400)
 def get_qdii_passive_funds() -> Dict[str, Any]:
     """获取国内纳斯达克100 & 标普500 场外被动 QDII A类基金数据列表
 
-    数据一天刷新一次 (86400s)。包含标的指数原生收益率对标、实时排行、净值、综合费率与真实资产配置仓位。
+    数据一天刷新一次 (86400s)。包含标的指数原生收益率对标、实时排行、净值、综合费率、最大回撤、年化波动率与真实资产配置仓位。
     """
     rank_map: Dict[str, Dict[str, Any]] = {}
     target_codes = [item["code"] for item in QDII_FUND_METADATA]
@@ -1076,28 +1076,65 @@ def get_qdii_passive_funds() -> Dict[str, Any]:
             "nav_date": info.get("nav_date"),
         }
 
-    # 2. 尝试 雪球 并发获取每个基金的真实近1年收益率 (复权净值计算，精确剔除分拆与折算误差)
+    # 2. 尝试 雪球 并发获取每个基金的真实近1年收益率、最大回撤、年化波动率与夏普比率
     try:
-        def fetch_xq_return(code: str) -> Tuple[str, Optional[float]]:
+        def fetch_xq_fund_metrics(code: str) -> Tuple[str, Dict[str, Optional[float]]]:
+            metrics: Dict[str, Optional[float]] = {
+                "return_1y": None,
+                "max_drawdown": None,
+                "volatility": None,
+                "sharpe": None,
+            }
+            # 1. 尝试从雪球阶段业绩获取近1年收益率与最大回撤
             try:
-                df = ak.fund_individual_achievement_xq(symbol=code)
-                if df is not None and not df.empty:
-                    row = df[(df["业绩类型"] == "阶段业绩") & (df["周期"] == "近1年")]
+                df1 = ak.fund_individual_achievement_xq(symbol=code)
+                if df1 is not None and not df1.empty:
+                    row = df1[(df1["业绩类型"] == "阶段业绩") & (df1["周期"] == "近1年")]
                     if not row.empty:
-                        return code, float(row.iloc[0]["本产品区间收益"])
+                        r_val = row.iloc[0].get("本产品区间收益")
+                        mdd_val = row.iloc[0].get("本产品最大回撒")
+                        if r_val is not None and not pd.isna(r_val):
+                            metrics["return_1y"] = safe_float(r_val)
+                        if mdd_val is not None and not pd.isna(mdd_val):
+                            metrics["max_drawdown"] = safe_float(mdd_val)
             except Exception as e:
-                print(f"⚠️ 雪球获取收益率失败 [{code}]: {e}")
-            return code, None
+                logger.debug(f"雪球获取阶段业绩失败 [{code}]: {e}")
+
+            # 2. 尝试从雪球风险分析获取年化波动率与夏普比率
+            try:
+                df2 = ak.fund_individual_analysis_xq(symbol=code)
+                if df2 is not None and not df2.empty:
+                    row2 = df2[df2["周期"] == "近1年"]
+                    if not row2.empty:
+                        vol_val = row2.iloc[0].get("年化波动率")
+                        shp_val = row2.iloc[0].get("年化夏普比率")
+                        mdd_val2 = row2.iloc[0].get("最大回撤")
+                        if vol_val is not None and not pd.isna(vol_val):
+                            metrics["volatility"] = safe_float(vol_val)
+                        if shp_val is not None and not pd.isna(shp_val):
+                            metrics["sharpe"] = safe_float(shp_val)
+                        if metrics["max_drawdown"] is None and mdd_val2 is not None and not pd.isna(mdd_val2):
+                            metrics["max_drawdown"] = safe_float(mdd_val2)
+            except Exception as e:
+                logger.debug(f"雪球获取风险指标失败 [{code}]: {e}")
+
+            return code, metrics
 
         with ThreadPoolExecutor(max_workers=10) as executor:
-            results = executor.map(fetch_xq_return, target_codes)
-            for c, r_val in results:
-                if r_val is not None:
-                    if c not in rank_map:
-                        rank_map[c] = {}
-                    rank_map[c]["return_1y"] = r_val
+            results = executor.map(fetch_xq_fund_metrics, target_codes)
+            for c, m_dict in results:
+                if c not in rank_map:
+                    rank_map[c] = {}
+                if m_dict.get("return_1y") is not None:
+                    rank_map[c]["return_1y"] = m_dict["return_1y"]
+                if m_dict.get("max_drawdown") is not None:
+                    rank_map[c]["max_drawdown"] = m_dict["max_drawdown"]
+                if m_dict.get("volatility") is not None:
+                    rank_map[c]["volatility"] = m_dict["volatility"]
+                if m_dict.get("sharpe") is not None:
+                    rank_map[c]["sharpe"] = m_dict["sharpe"]
     except Exception as err:
-        print(f"⚠️ 雪球并发获取收益率总入口报错: {err}")
+        print(f"⚠️ 雪球并发获取基金量化指标总入口报错: {err}")
 
     # 3. 并发获取所有 QDII 基金的真实资产配置仓位、动态费率与最新基金规模
     alloc_map: Dict[str, Dict[str, Any]] = {}
@@ -1165,6 +1202,9 @@ def get_qdii_passive_funds() -> Dict[str, Any]:
         r_1y = live_data.get("return_1y")
         nav_val = live_data.get("nav")
         nav_date = live_data.get("nav_date")
+        mdd_val = live_data.get("max_drawdown")
+        vol_val = live_data.get("volatility")
+        shp_val = live_data.get("sharpe")
 
         final_r1y = r_1y if r_1y is not None else item["default_return_1y"]
         final_nav = nav_val if nav_val is not None else item["default_nav"]
@@ -1216,6 +1256,9 @@ def get_qdii_passive_funds() -> Dict[str, Any]:
             "nav": final_nav,
             "nav_date": final_date,
             "return_1y": final_r1y,
+            "max_drawdown": mdd_val,
+            "volatility": vol_val,
+            "sharpe": shp_val,
             "asset_allocation": asset_alloc,
             "allocation_estimated": item.get("allocation_estimated", False),
             "tag": fund_tag,

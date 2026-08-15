@@ -106,6 +106,12 @@ class QDIIController {
             const r1yClass = r1y > 0 ? 'text-up-us' : r1y < 0 ? 'text-down-us' : '';
             const r1yStr = r1y != null ? `${r1y > 0 ? '+' : ''}${utils.formatPercentage(r1y)}` : '--';
 
+            const mdd = item.max_drawdown;
+            const mddStr = mdd != null ? `${utils.formatPercentage(mdd)}` : '--';
+
+            const vol = item.volatility;
+            const volStr = vol != null ? `${utils.formatPercentage(vol)}` : '--';
+
             // 对比原生指数差额
             let benchmarkGapStr = '--';
             if (r1y != null && activeBenchmark != null) {
@@ -224,9 +230,12 @@ class QDIIController {
                         <span class="desktop-return">${r1yStr}</span>
                         <div class="mobile-return-layout">
                             <span class="mobile-return-val">${r1yStr}</span>
+                            <span class="mobile-fee-val">回撤 ${mddStr} · 波动 ${volStr}</span>
                             <span class="mobile-fee-val">${item.scale ? item.scale.replace('亿元', '亿') : '--'} · ${item.fee_rate}</span>
                         </div>
                     </td>
+                    <td class="col-drawdown col-optional font-mono" style="color: var(--text-secondary);">${mddStr}</td>
+                    <td class="col-volatility col-optional font-mono" style="color: var(--text-secondary);">${volStr}</td>
                     <td class="col-fee font-mono">${item.fee_rate}</td>
                     <td class="col-scale col-optional font-mono" style="color: var(--text-secondary);">${item.scale || '--'}</td>
                     <td class="col-status"><span class="status-badge ${statusClass}">${statusText}</span></td>
@@ -282,8 +291,10 @@ class QDIIController {
                             <th class="col-allocation">资产配置 / 仓位</th>
                             <th class="col-return">
                                 <span class="desktop-header">近1年收益</span>
-                                <span class="mobile-header">收益/规模/费率</span>
+                                <span class="mobile-header">收益/风控/规模</span>
                             </th>
+                            <th class="col-drawdown col-optional">近1年回撤</th>
+                            <th class="col-volatility col-optional">年化波动率</th>
                             <th class="col-fee">综合费率</th>
                             <th class="col-scale col-optional">资产规模</th>
                             <th class="col-status">状态</th>
@@ -473,12 +484,22 @@ class QDIIController {
             const totalCount = data.total_count || holdings.length;
             const top10Concentration = data.top10_concentration != null ? `${data.top10_concentration}%` : '--%';
 
+            const fundItem = (this.rawFunds || []).find(f => f.code === code) || {};
+            const mdd = fundItem.max_drawdown != null ? `${utils.formatPercentage(fundItem.max_drawdown)}` : '--';
+            const vol = fundItem.volatility != null ? `${utils.formatPercentage(fundItem.volatility)}` : '--';
+            const sharpe = fundItem.sharpe != null ? `${fundItem.sharpe.toFixed(2)}` : '--';
+            const r1y = fundItem.return_1y != null ? `${fundItem.return_1y > 0 ? '+' : ''}${utils.formatPercentage(fundItem.return_1y)}` : '--';
+
             bodyEl.innerHTML = `
                 ${penetrationHtml}
-                <div class="qdii-holding-meta" style="flex-wrap: wrap; gap: 8px 16px; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px dashed var(--border-light);">
+                <div class="qdii-holding-meta" style="flex-wrap: wrap; gap: 8px 14px; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px dashed var(--border-light); font-size: 0.76rem;">
                     <span>📅 截止日期：<strong>${reportDate}</strong></span>
-                    <span>📦 总持仓：<strong>${totalCount} 只股票</strong></span>
+                    <span>📦 总持仓：<strong>${totalCount} 只</strong></span>
                     <span>🎯 前十占比：<strong>${top10Concentration}</strong></span>
+                    <span>📈 近1年收益：<strong class="${fundItem.return_1y > 0 ? 'text-up-us' : ''}">${r1y}</strong></span>
+                    <span>📉 近1年回撤：<strong>${mdd}</strong></span>
+                    <span>⚡ 年化波动率：<strong>${vol}</strong></span>
+                    <span>📐 夏普比率：<strong>${sharpe}</strong></span>
                 </div>
                 <table class="qdii-holding-table">
                     <thead>

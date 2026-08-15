@@ -2239,6 +2239,18 @@ footer {
     white-space: nowrap;
 }
 
+.col-drawdown {
+    width: 82px;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.col-volatility {
+    width: 82px;
+    text-align: right;
+    white-space: nowrap;
+}
+
 .col-return {
     width: 78px;
     text-align: right;
@@ -2353,7 +2365,9 @@ footer {
         width: 30px;
     }
     .col-fee,
-    .col-scale {
+    .col-scale,
+    .col-drawdown,
+    .col-volatility {
         display: none !important;
     }
     .col-status {
