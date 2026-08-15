@@ -1136,7 +1136,7 @@ def fetch_fund_scale(session: requests.Session, code: str) -> Optional[str]:
     return None
 
 
-@cached("qdii:passive_funds_v37", ttl=86400)
+@cached("qdii:passive_funds_v38", ttl=86400)
 def get_qdii_passive_funds() -> Dict[str, Any]:
     """获取国内纳斯达克100 & 标普500 场外被动 QDII A类基金数据列表
 
@@ -1305,6 +1305,10 @@ def get_qdii_passive_funds() -> Dict[str, Any]:
                             asset_alloc[k] = default_alloc[k]
         else:
             asset_alloc = default_alloc
+
+        # 对于被动指数基金 (NDX / SPX)，其全部股票资产 100% 投资于美股上市成份股
+        if item.get("index_code") in ["NDX", "SPX"] and "stock_us_pct" not in asset_alloc and "stock_pct" in asset_alloc:
+            asset_alloc["stock_us_pct"] = asset_alloc["stock_pct"]
 
         fee_rate = fee_map.get(code) or item["fee_rate"]
         buy_status = status_map.get(code) or "开放申购"
