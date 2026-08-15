@@ -237,13 +237,16 @@ def akshare_call_with_retry(
 def fetch_url_via_proxy(
     url: str,
     session: Optional[Any] = None,
-    timeout: int = 10,
-    headers: Optional[Dict[str, str]] = None
+    timeout: int = 12,
+    headers: Optional[Dict[str, str]] = None,
+    max_retries: int = 2,
+    retry_delay: float = 0.5,
 ) -> Optional[Any]:
     """必须通过 Cloudflare Worker 中继代理抓取目标 URL
     
     严格规则：代理链接为必选项。若未配置 CF_WORKER_PROXY_URL，或代理中继失败/非200，则绝不发起直连请求，直接放弃返回 None。
     """
+    import time
     import requests
 
     proxy_url = getattr(settings, "CF_WORKER_PROXY_URL", None)
@@ -266,14 +269,19 @@ def fetch_url_via_proxy(
     if secret:
         p_headers["X-Proxy-Secret"] = secret
 
+    fetcher = session.get if session else requests.get
+
     # 2. 仅向代理中继发起请求；失败或状态码非 200 时严格放弃，绝不发起直连
-    try:
-        fetcher = session.get if session else requests.get
-        res = fetcher(proxy_url, headers=p_headers, timeout=timeout)
-        if res.status_code == 200:
-            return res
-        logger.error(f"⛔ Worker 代理返回异常状态码 {res.status_code}，放弃请求 [{url}]")
-        return None
-    except Exception as e:
-        logger.error(f"⛔ Worker 代理连接失败 [{url}]: {e}，放弃请求")
-        return None
+    for attempt in range(1, max_retries + 1):
+        try:
+            res = fetcher(proxy_url, headers=p_headers, timeout=timeout)
+            if res.status_code == 200:
+                return res
+            logger.warning(f"⚠️ Worker 代理返回状态码 {res.status_code} (尝试 {attempt}/{max_retries}) [{url}]")
+        except Exception as e:
+            if attempt < max_retries:
+                logger.debug(f"Worker 代理请求瞬态超时/重试 ({attempt}/{max_retries}) [{url}]: {e}")
+                time.sleep(retry_delay)
+            else:
+                logger.error(f"⛔ Worker 代理连接失败 (已尝试 {max_retries} 次) [{url}]: {e}，放弃请求")
+    return None

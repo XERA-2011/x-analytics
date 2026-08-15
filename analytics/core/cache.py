@@ -107,13 +107,14 @@ class RedisCache:
             logger.error(f"缓存读取失败 [{key}]: {e}")
         return None
 
-    def set(self, key: str, value: Any, ttl: int = 60) -> bool:
+    def set(self, key: str, value: Any, ttl: int = 60, ex: Optional[int] = None) -> bool:
         """设置缓存值"""
         if not self.connected:
             return False
+        effective_ttl = ex if ex is not None else ttl
         try:
             self.redis.setex(
-                key, ttl, json.dumps(value, ensure_ascii=False, default=str)
+                key, effective_ttl, json.dumps(value, ensure_ascii=False, default=str)
             )
             return True
         except (redis.RedisError, TypeError) as e:

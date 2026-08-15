@@ -87,6 +87,9 @@ class USFearGreedIndex:
         spot_data = get_us_spot_direct(list(symbols))
         
         for symbol in symbols:
+            # .VIX 为波动率指数，Sina 日线静态接口无对应数据，避免触发无效 AkShare 异常重试
+            if symbol == ".VIX":
+                continue
             try:
                 df = akshare_call_with_retry(ak.stock_us_daily, symbol=symbol)
                 if df is not None and not df.empty:
@@ -163,7 +166,7 @@ class USFearGreedIndex:
             }
 
         except Exception as e:
-            logger.error(f" 获取恐慌贪婪指数失败: {e}")
+            logger.error(f"❌ 获取恐慌贪婪指数失败: {e}")
             return USFearGreedIndex._get_fallback_data(str(e))
 
     @staticmethod
@@ -175,6 +178,7 @@ class USFearGreedIndex:
             "update_time": get_beijing_time().strftime("%Y-%m-%d %H:%M:%S"),
             "meta": USFearGreedIndex.META,
         }
+
     @staticmethod
     @cached(
         "market_us:custom_fear_greed_v3",
@@ -250,7 +254,7 @@ class USFearGreedIndex:
     ) -> Dict[str, Any]:
         """
         获取 VIX 数据
-        策略: 优先使用实时快照 (.VIX), 其次尝试日线 API, 失败则计算标普500历史波动率作为替代
+        策略: 优先使用实时快照 (.VIX), 其次使用传入的 vix_df (如有), 兜底则计算标普500历史波动率作为替代
         """
         try:
             # 0. 优先使用极速盘中快照
@@ -259,18 +263,12 @@ class USFearGreedIndex:
                 if latest_vix is not None:
                     return USFearGreedIndex._format_vix_score(latest_vix, is_estimated=False)
 
-            # 1. 其次尝试直接获取 VIX 日线数据
-            try:
-                df = vix_df.copy() if vix_df is not None else akshare_call_with_retry(ak.stock_us_daily, symbol=".VIX")
-                if not df.empty:
-                    df = USFearGreedIndex._sort_by_date(df)
-                    latest_vix = safe_float(df.iloc[-1]["close"])
-                    if latest_vix is not None:
-                        return USFearGreedIndex._format_vix_score(latest_vix)
-            except (IndexError, KeyError, ValueError) as e:
-                logger.info(f"VIX API 暫不可用 (.VIX), 将切换至计算模式: {e}")
-            except Exception as e:
-                logger.warning(f"⚠️ VIX API 获取失败 (将使用计算回退): {e}")
+            # 1. 其次使用已有 VIX 日线数据 (若外部注入)
+            if vix_df is not None and not vix_df.empty:
+                df = USFearGreedIndex._sort_by_date(vix_df)
+                latest_vix = safe_float(df.iloc[-1]["close"])
+                if latest_vix is not None:
+                    return USFearGreedIndex._format_vix_score(latest_vix, is_estimated=False)
 
             # 2. 回退模式: 计算标普500的历史波动率 (Realized Volatility)
             logger.info("🔄 使用标普500波动率计算 VIX 替代值...")

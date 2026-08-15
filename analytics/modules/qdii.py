@@ -831,7 +831,7 @@ def fetch_fund_asset_allocation(session: requests.Session, code: str) -> Optiona
     try:
         time.sleep(0.2)  # 延时分散并发请求，防代理超时
         url = f"https://fundf10.eastmoney.com/zcpz_{code}.html"
-        res = fetch_url_via_proxy(url, session=session, timeout=6)
+        res = fetch_url_via_proxy(url, session=session, timeout=10)
         if not res or res.status_code != 200:
             return None
         soup = bs4.BeautifulSoup(res.content.decode("utf-8", errors="ignore"), "html.parser")
@@ -940,7 +940,7 @@ def fetch_fund_fee_rate(session: requests.Session, code: str) -> Optional[str]:
     try:
         time.sleep(0.2)  # 延时分散并发请求，防代理超时
         url = f"https://fundf10.eastmoney.com/jjfl_{code}.html"
-        res = fetch_url_via_proxy(url, session=session, timeout=6)
+        res = fetch_url_via_proxy(url, session=session, timeout=10)
         if not res or res.status_code != 200:
             return None
         soup = bs4.BeautifulSoup(res.content.decode("utf-8", errors="ignore"), "html.parser")
@@ -1029,7 +1029,7 @@ def fetch_fund_scale(session: requests.Session, code: str) -> Optional[str]:
     try:
         time.sleep(0.1)  # 延时防代理被封
         url = f"https://fundf10.eastmoney.com/jbgk_{code}.html"
-        res = fetch_url_via_proxy(url, session=session, timeout=6)
+        res = fetch_url_via_proxy(url, session=session, timeout=10)
         if not res or res.status_code != 200:
             return None
         soup = bs4.BeautifulSoup(res.content.decode("utf-8", errors="ignore"), "html.parser")
@@ -1050,7 +1050,7 @@ def fetch_fund_scale(session: requests.Session, code: str) -> Optional[str]:
         
         if scale_val:
             try:
-                cache.set(cache_key, scale_val, ex=86400 * 7)  # 缓存7天
+                cache.set(cache_key, scale_val, ttl=86400 * 7)  # 缓存7天
             except Exception:
                 pass
             return scale_val
@@ -1243,14 +1243,23 @@ def _fetch_full_holdings_count(session: requests.Session, fetch_code: str, defau
     if default_count >= 30:
         return default_count
     
+    cache_key = f"{settings.CACHE_PREFIX}:qdii:holdings_count:v1:{fetch_code}"
+    try:
+        cached_cnt = cache.get(cache_key)
+        if cached_cnt is not None:
+            return int(cached_cnt)
+    except Exception:
+        pass
+    
     current_year = datetime.now().year
     years_to_check = [current_year - 1, current_year - 2]
     months_to_check = [12, 6]
     
+    final_count = default_count
     for y in years_to_check:
         for m in months_to_check:
             url_full = f"http://fundf10.eastmoney.com/FundArchivesDatas.aspx?type=jjcc&code={fetch_code}&topline=1000&year={y}&month={m}"
-            res = fetch_url_via_proxy(url_full, session=session, timeout=4)
+            res = fetch_url_via_proxy(url_full, session=session, timeout=10)
             if res and res.status_code == 200:
                 match = re.search(r'content:\"(.*?)\"', res.text, re.DOTALL)
                 if match:
@@ -1259,8 +1268,16 @@ def _fetch_full_holdings_count(session: requests.Session, fetch_code: str, defau
                     if table:
                         cnt = len(table.find_all("tr")) - 1
                         if cnt > default_count:
-                            return cnt
-    return default_count
+                            final_count = cnt
+                            break
+        if final_count > default_count:
+            break
+
+    try:
+        cache.set(cache_key, final_count, ttl=86400 * 30)  # 缓存 30 天
+    except Exception:
+        pass
+    return final_count
 
 
 @cached("qdii:top_holdings_v11", ttl=86400 * 7, stale_ttl=86400 * 30, sync_on_cold=True)
@@ -1286,7 +1303,7 @@ def get_qdii_top_holdings(code: str) -> Dict[str, Any]:
         url = f"http://fundf10.eastmoney.com/FundArchivesDatas.aspx?type=jjcc&code={fetch_code}&topline=100"
         
         # 使用代理获取 (根据项目安全规范，严格禁止直连回退)
-        res = fetch_url_via_proxy(url, session=session, timeout=6)
+        res = fetch_url_via_proxy(url, session=session, timeout=10)
                 
         if res is None:
             return {"status": "error", "error": True, "message": f"网络请求超时 (code: {code})", "holdings": []}
