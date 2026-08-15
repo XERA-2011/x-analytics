@@ -2403,6 +2403,22 @@ footer {
 
 .qdii-mcard-status-col {
     flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.qdii-mcard-arrow {
+    width: 14px;
+    height: 14px;
+    color: var(--text-tertiary);
+    stroke-width: 2;
+    transition: transform 0.15s ease, color 0.15s ease;
+}
+
+.qdii-mobile-card:active .qdii-mcard-arrow {
+    transform: translateX(2px);
+    color: var(--text-primary);
 }
 
 /* 卡片中栏：4 列核心数据网格 */
@@ -2410,9 +2426,9 @@ footer {
     display: grid;
     grid-template-columns: 1.15fr 0.95fr 0.95fr 1.05fr;
     gap: 4px;
-    padding: 6px 0 7px 0;
-    border-top: 1px dashed var(--border-light);
-    border-bottom: 1px dashed var(--border-light);
+    padding: 7px 0 8px 0;
+    border-top: 1px solid rgba(115, 115, 115, 0.08);
+    border-bottom: 1px solid rgba(115, 115, 115, 0.08);
 }
 
 .qdii-mcard-metric-cell {
@@ -2431,17 +2447,17 @@ footer {
 }
 
 .qdii-mcard-val {
-    font-size: 0.85rem;
+    font-size: 0.86rem;
     color: var(--text-primary);
     line-height: 1.2;
 }
 
 .metric-cell-return .qdii-mcard-val {
-    font-size: 1.02rem;
+    font-size: 1.05rem;
 }
 
 .qdii-mcard-lbl {
-    font-size: 0.65rem;
+    font-size: 0.66rem;
     color: var(--text-tertiary);
     margin-top: 2px;
     white-space: nowrap;
@@ -2451,7 +2467,7 @@ footer {
 .qdii-mcard-alloc-box {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 5px;
 }
 
 .qdii-mcard-alloc-header {
@@ -2459,22 +2475,15 @@ footer {
     align-items: center;
     justify-content: space-between;
     gap: 6px;
-    font-size: 0.68rem;
+    font-size: 0.72rem;
 }
 
 .qdii-mcard-alloc-text {
+    font-size: 0.72rem;
     color: var(--text-secondary);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    line-height: 1.4;
     flex: 1;
     min-width: 0;
-}
-
-.qdii-mcard-date {
-    color: var(--text-tertiary);
-    font-size: 0.65rem;
-    flex-shrink: 0;
 }
 
 .qdii-mcard-bar-track {

@@ -313,7 +313,6 @@ class QDIIController {
                     <div class="qdii-mcard-alloc-box">
                         <div class="qdii-mcard-alloc-header">
                             <div class="qdii-mcard-alloc-text">${allocLabel}${warningHtml}</div>
-                            ${item.inception_date ? `<div class="qdii-mcard-date font-mono">成立 ${item.inception_date}</div>` : ''}
                         </div>
                         <div class="allocation-bar-track qdii-mcard-bar-track">
                             ${barHtml}
@@ -339,6 +338,7 @@ class QDIIController {
                         </div>
                         <div class="qdii-mcard-status-col">
                             <span class="status-badge ${statusClass}">${statusText}</span>
+                            <i data-lucide="chevron-right" class="qdii-mcard-arrow"></i>
                         </div>
                     </div>
                     <div class="qdii-mcard-grid">
