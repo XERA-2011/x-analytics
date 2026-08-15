@@ -548,7 +548,7 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "default_return_1y": 96.26,
         "default_nav": 2.312,
         "default_nav_date": "2026-07-23",
-        "default_asset_allocation": {"stock_pct": 80.24, "stock_us_pct": 52.4, "stock_hk_pct": 20.0, "stock_other_pct": 7.84, "cash_pct": 19.76, "bond_pct": 0.0},
+        "default_asset_allocation": {"stock_pct": 81.6, "stock_us_pct": 51.2, "stock_other_pct": 30.4, "cash_pct": 19.76, "bond_pct": 0.0},
         "allocation_estimated": True,
     },
 
@@ -805,7 +805,7 @@ def _is_quarterly_report_window() -> bool:
 
 def fetch_fund_asset_allocation(session: requests.Session, code: str) -> Optional[Dict[str, Any]]:
     """获取指定 QDII 场外联接/被动基金的最新真实资产/持仓配置（股票/权益 %、现金/货币 %）"""
-    cache_key = f"{settings.CACHE_PREFIX}:qdii:asset_alloc_v6:{code}"
+    cache_key = f"{settings.CACHE_PREFIX}:qdii:asset_alloc_v7:{code}"
     try:
         cached_val = cache.get(cache_key)
         if cached_val is not None:
@@ -1059,7 +1059,7 @@ def fetch_fund_scale(session: requests.Session, code: str) -> Optional[str]:
     return None
 
 
-@cached("qdii:passive_funds_v34", ttl=86400)
+@cached("qdii:passive_funds_v35", ttl=86400)
 def get_qdii_passive_funds() -> Dict[str, Any]:
     """获取国内纳斯达克100 & 标普500 场外被动 QDII A类基金数据列表
 
