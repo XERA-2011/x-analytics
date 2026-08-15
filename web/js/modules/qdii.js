@@ -543,18 +543,18 @@ class QDIIController {
 
                 return `
                     <tr>
-                        <td style="width: 36px; text-align: center; font-weight: bold; color: var(--text-secondary);">${h.rank}</td>
+                        <td style="width: 24px; text-align: center; font-weight: bold; color: var(--text-secondary); font-size: 0.78rem;">${h.rank}</td>
                         <td style="font-weight: 600;">
-                            <div>${h.stock_name}</div>
-                            <div style="font-size: 0.72rem; color: var(--text-tertiary); font-family: monospace; margin-top: 2px; display: flex; align-items: center; gap: 6px;">
+                            <div style="font-size: 0.84rem; line-height: 1.25;">${h.stock_name}</div>
+                            <div style="font-size: 0.72rem; color: var(--text-tertiary); font-family: monospace; margin-top: 2px; display: flex; align-items: center; gap: 4px;">
                                 <span>${h.stock_code}</span>
                                 ${badgeHtml}
                             </div>
                         </td>
-                        <td style="width: 25%; text-align: right; font-weight: 700; font-family: monospace;">
+                        <td style="width: 70px; text-align: right; font-weight: 700; font-family: monospace; white-space: nowrap; font-size: 0.86rem;">
                             ${h.ratio_pct}
                         </td>
-                        <td style="width: 25%; text-align: right; font-weight: 600;">
+                        <td style="width: 75px; text-align: right; font-weight: 600; white-space: nowrap;">
                             ${changeHtml}
                         </td>
                     </tr>
@@ -619,10 +619,10 @@ class QDIIController {
                 <table class="qdii-holding-table">
                     <thead>
                         <tr>
-                            <th style="width: 36px; text-align: center;">#</th>
+                            <th style="width: 24px; text-align: center;">#</th>
                             <th>股票名称 / 代码</th>
-                            <th style="width: 25%; text-align: right;">占净值比例</th>
-                            <th style="width: 25%; text-align: right;">较上季变化</th>
+                            <th style="width: 70px; text-align: right; white-space: nowrap;">持仓占比</th>
+                            <th style="width: 75px; text-align: right; white-space: nowrap;">较上季</th>
                         </tr>
                     </thead>
                     <tbody>
