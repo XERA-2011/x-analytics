@@ -2309,22 +2309,16 @@ footer {
     border: 1px solid rgba(107, 114, 128, 0.2);
 }
 
-/* 桌面端 vs 移动端模式切换 */
+/* 桌面端 vs 移动端模式切换 (默认桌面端) */
 .qdii-desktop-only {
     display: block;
 }
-.qdii-mobile-only {
+.qdii-mobile-only,
+.qdii-mobile-cards-wrapper {
     display: none;
 }
 
 /* 移动端金融行情卡片流 (方案 A: 4列数据网格 + 全宽资产配置) */
-.qdii-mobile-cards-wrapper {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    width: 100%;
-}
-
 .qdii-mobile-card {
     background: var(--bg-card);
     border: 1px solid var(--border-light);
@@ -2466,8 +2460,12 @@ footer {
     .qdii-desktop-only {
         display: none !important;
     }
-    .qdii-mobile-only {
+    .qdii-mobile-only,
+    .qdii-mobile-cards-wrapper {
         display: flex !important;
+        flex-direction: column;
+        gap: 8px;
+        width: 100%;
     }
 }
 
