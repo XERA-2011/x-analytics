@@ -98,7 +98,8 @@ class QDIIController {
 
         const isActiveTab = this.currentFilter === 'active';
 
-        let rowsHtml = filtered.map((item, index) => {
+        // 1. 桌面端宽屏大表格行渲染
+        let desktopRowsHtml = filtered.map((item, index) => {
             const rank = index + 1;
             const rankBadgeClass = rank === 1 ? 'rank-top1' : rank === 2 ? 'rank-top2' : rank === 3 ? 'rank-top3' : 'rank-other';
 
@@ -112,14 +113,12 @@ class QDIIController {
             const vol = item.volatility;
             const volStr = vol != null ? `${utils.formatPercentage(vol)}` : '--';
 
-            // 对比原生指数差额
             let benchmarkGapStr = '--';
             if (r1y != null && activeBenchmark != null) {
                 const gap = r1y - activeBenchmark;
                 benchmarkGapStr = `${gap > 0 ? '+' : ''}${utils.formatPercentage(gap)}`;
             }
 
-            // 资产配置比例
             const alloc = item.asset_allocation;
             let allocHtml = '<span style="color: var(--text-tertiary);">--</span>';
 
@@ -145,7 +144,6 @@ class QDIIController {
                 if (alloc.cash_pct > 0.1) subParts.push(`<span class="alloc-text-item alloc-text-cash">${cashPct}% 现金</span>`);
                 if (alloc.bond_pct > 0.5) subParts.push(`<span class="alloc-text-item alloc-text-bond">${bondPct}% 债券</span>`);
 
-                // 严格遵循金融数据真实性：使用真实比例渲染色块，未披露/其他资产保留中性灰色背景轨道，容器左右边界 100% 对齐
                 let barSegments = [];
                 if (hasDetailed) {
                     if (usPct != null && parseFloat(usPct) > 0) barSegments.push({ cls: 'allocation-bar-us', val: parseFloat(usPct), title: `美股股票: ${usPct}%` });
@@ -161,7 +159,6 @@ class QDIIController {
                 const totalVal = barSegments.reduce((sum, s) => sum + s.val, 0);
                 let barHtml = barSegments.map(s => `<div class="${s.cls}" style="flex: 0 0 ${s.val}%; width: ${s.val}%;" title="${s.title}"></div>`).join('');
                 
-                // 若存在未披露/其他杂项资产 (100% - totalVal)，用中性灰色条填充并呈现到文本明细中
                 if (totalVal < 99.5) {
                     const unclassifiedPct = (100.0 - totalVal).toFixed(1);
                     barHtml += `<div class="allocation-bar-unclassified" style="flex: 0 0 ${unclassifiedPct}%; width: ${unclassifiedPct}%;" title="其它资产: ${unclassifiedPct}%"></div>`;
@@ -169,11 +166,7 @@ class QDIIController {
                 }
 
                 let allocLabel = subParts.join('<span class="alloc-sep">·</span>');
-
-                let warningHtml = '';
-                if (item.allocation_estimated) {
-                    warningHtml = `<span class="alloc-warning-wrapper" title="提示：二季报官方国家/地区明细未完全披露，各地区占比为基于底层资产或历史持仓的估算参考值" style="cursor: help; display: inline-flex; align-items: center; margin-left: 2px;"><i data-lucide="alert-circle" style="width: 12px; height: 12px; color: var(--accent-red); vertical-align: middle;"></i></span>`;
-                }
+                let warningHtml = item.allocation_estimated ? `<span class="alloc-warning-wrapper" title="提示：二季报官方国家/地区明细未完全披露，各地区占比为基于底层资产或历史持仓的估算参考值" style="cursor: help; display: inline-flex; align-items: center; margin-left: 2px;"><i data-lucide="alert-circle" style="width: 12px; height: 12px; color: var(--accent-red); vertical-align: middle;"></i></span>` : '';
 
                 let tooltipParts = [];
                 tooltipParts.push(`股票: ${stockPct}%${hasDetailed ? ' (美股 ' + (usPct || '0.0') + '%, 港股 ' + (hkPct || '0.0') + '%' + (cnPct ? ', A股 ' + cnPct + '%' : '') + (otherPct ? ', 日韩/台股 ' + otherPct + '%' : '') + ')' : ''}`);
@@ -220,52 +213,154 @@ class QDIIController {
                                 ${tagHtml}
                             </div>
                             <span class="qdii-name-text" style="color: var(--primary); font-weight: 600;">${item.name}</span>
-                            <div class="qdii-alloc-mobile">
-                                ${allocHtml}
-                            </div>
                         </div>
                     </td>
                     <td class="col-allocation qdii-clickable" data-code="${item.code}" data-name="${item.name}" title="点击查看 ${item.name} 前十大重仓股">${allocHtml}</td>
-                    <td class="col-return">
-                        <span class="desktop-return font-mono ${r1yClass}" style="font-weight: 700;">${r1yStr}</span>
-                        <div class="mobile-return-layout">
-                            <div class="mobile-stat-row">
-                                <span class="mobile-stat-label">收益</span>
-                                <span class="mobile-stat-value font-mono ${r1yClass}" style="font-weight: 700;">${r1yStr}</span>
-                            </div>
-                            <div class="mobile-stat-row">
-                                <span class="mobile-stat-label">回撤</span>
-                                <span class="mobile-stat-value font-mono">${mddStr}</span>
-                            </div>
-                            <div class="mobile-stat-row">
-                                <span class="mobile-stat-label">波动率</span>
-                                <span class="mobile-stat-value font-mono">${volStr}</span>
-                            </div>
-                            <div class="mobile-stat-row">
-                                <span class="mobile-stat-label">综合费率</span>
-                                <span class="mobile-stat-value font-mono">${item.fee_rate || '--'}</span>
-                            </div>
-                            <div class="mobile-stat-row">
-                                <span class="mobile-stat-label">资产规模</span>
-                                <span class="mobile-stat-value font-mono">${item.scale || '--'}</span>
-                            </div>
-                            <div class="mobile-stat-row">
-                                <span class="mobile-stat-label">成立时间</span>
-                                <span class="mobile-stat-value font-mono">${item.inception_date || '--'}</span>
-                            </div>
-                        </div>
-                    </td>
-                    <td class="col-drawdown col-optional font-mono" style="color: var(--text-secondary);">${mddStr}</td>
-                    <td class="col-volatility col-optional font-mono" style="color: var(--text-secondary);">${volStr}</td>
+                    <td class="col-return font-mono ${r1yClass}" style="font-weight: 700;">${r1yStr}</td>
+                    <td class="col-drawdown font-mono" style="color: var(--text-secondary);">${mddStr}</td>
+                    <td class="col-volatility font-mono" style="color: var(--text-secondary);">${volStr}</td>
                     <td class="col-fee font-mono">${item.fee_rate}</td>
-                    <td class="col-scale col-optional font-mono" style="color: var(--text-secondary);">${item.scale || '--'}</td>
+                    <td class="col-scale font-mono" style="color: var(--text-secondary);">${item.scale || '--'}</td>
                     <td class="col-status"><span class="status-badge ${statusClass}">${statusText}</span></td>
                     ${!isActiveTab ? `
                         <td class="col-gap font-mono" style="color: var(--text-tertiary);">${benchmarkGapStr}</td>
-                        <td class="col-tracking col-optional font-mono">${item.tracking_error || '--'}</td>
+                        <td class="col-tracking font-mono">${item.tracking_error || '--'}</td>
                     ` : ''}
-                    <td class="col-date col-optional" style="color: var(--text-secondary);">${item.inception_date || '--'}</td>
+                    <td class="col-date" style="color: var(--text-secondary);">${item.inception_date || '--'}</td>
                 </tr>
+            `;
+        }).join('');
+
+        // 2. 移动端现代金融卡片流渲染 (方案 A: 4列数据网格 + 全宽资产配置条)
+        let mobileCardsHtml = filtered.map((item, index) => {
+            const rank = index + 1;
+            const rankBadgeClass = rank === 1 ? 'rank-top1' : rank === 2 ? 'rank-top2' : rank === 3 ? 'rank-top3' : 'rank-other';
+
+            const r1y = item.return_1y;
+            const r1yClass = r1y > 0 ? 'text-up-us' : r1y < 0 ? 'text-down-us' : '';
+            const r1yStr = r1y != null ? `${r1y > 0 ? '+' : ''}${utils.formatPercentage(r1y)}` : '--';
+
+            const mdd = item.max_drawdown;
+            const mddStr = mdd != null ? `${utils.formatPercentage(mdd)}` : '--';
+
+            const vol = item.volatility;
+            const volStr = vol != null ? `${utils.formatPercentage(vol)}` : '--';
+
+            const scaleShort = item.scale ? item.scale.replace('亿元', '亿') : '--';
+
+            const buyStatus = item.buy_status || '开放申购';
+            let statusText = '开放';
+            let statusClass = 'status-open';
+            if (buyStatus === '限大额') {
+                statusText = '限额';
+                statusClass = 'status-limit';
+            } else if (buyStatus.includes('暂停')) {
+                statusText = '暂停';
+                statusClass = 'status-paused';
+            }
+
+            const tagHtml = item.tag ? `<span class="qdii-mcard-tag">${item.tag}</span>` : '';
+
+            // 资产配置
+            const alloc = item.asset_allocation;
+            let allocMobileHtml = '';
+            if (alloc && alloc.stock_pct != null) {
+                const usPct = alloc.stock_us_pct != null ? alloc.stock_us_pct.toFixed(1) : null;
+                const hkPct = alloc.stock_hk_pct != null ? alloc.stock_hk_pct.toFixed(1) : null;
+                const cnPct = alloc.stock_cn_pct != null ? alloc.stock_cn_pct.toFixed(1) : null;
+                const otherPct = alloc.stock_other_pct != null ? alloc.stock_other_pct.toFixed(1) : null;
+                const stockPct = alloc.stock_pct.toFixed(1);
+                const cashPct = alloc.cash_pct != null ? alloc.cash_pct.toFixed(1) : '0.0';
+                const bondPct = alloc.bond_pct != null ? alloc.bond_pct.toFixed(1) : '0.0';
+
+                let subParts = [];
+                const hasDetailed = (usPct != null && parseFloat(usPct) > 0) || (hkPct != null && parseFloat(hkPct) > 0) || (cnPct != null && parseFloat(cnPct) > 0) || (otherPct != null && parseFloat(otherPct) > 0);
+                if (hasDetailed) {
+                    if (usPct != null && parseFloat(usPct) > 0) subParts.push(`<span class="alloc-text-item alloc-text-us">${usPct}% 美股</span>`);
+                    if (hkPct != null && parseFloat(hkPct) > 0) subParts.push(`<span class="alloc-text-item alloc-text-hk">${hkPct}% 港股</span>`);
+                    if (cnPct != null && parseFloat(cnPct) > 0) subParts.push(`<span class="alloc-text-item alloc-text-cn">${cnPct}% A股</span>`);
+                    if (otherPct != null && parseFloat(otherPct) > 0) subParts.push(`<span class="alloc-text-item alloc-text-other">${otherPct}% 日韩/台股</span>`);
+                } else {
+                    subParts.push(`<span class="alloc-text-item alloc-text-stock">${stockPct}% 股票</span>`);
+                }
+                if (alloc.cash_pct > 0.1) subParts.push(`<span class="alloc-text-item alloc-text-cash">${cashPct}% 现金</span>`);
+                if (alloc.bond_pct > 0.5) subParts.push(`<span class="alloc-text-item alloc-text-bond">${bondPct}% 债券</span>`);
+
+                let barSegments = [];
+                if (hasDetailed) {
+                    if (usPct != null && parseFloat(usPct) > 0) barSegments.push({ cls: 'allocation-bar-us', val: parseFloat(usPct) });
+                    if (hkPct != null && parseFloat(hkPct) > 0) barSegments.push({ cls: 'allocation-bar-hk', val: parseFloat(hkPct) });
+                    if (cnPct != null && parseFloat(cnPct) > 0) barSegments.push({ cls: 'allocation-bar-cn', val: parseFloat(cnPct) });
+                    if (otherPct != null && parseFloat(otherPct) > 0) barSegments.push({ cls: 'allocation-bar-other', val: parseFloat(otherPct) });
+                } else {
+                    barSegments.push({ cls: 'allocation-bar-stock', val: parseFloat(stockPct) });
+                }
+                if (alloc.cash_pct > 0.1) barSegments.push({ cls: 'allocation-bar-cash', val: parseFloat(cashPct) });
+                if (alloc.bond_pct > 0.5) barSegments.push({ cls: 'allocation-bar-bond', val: parseFloat(bondPct) });
+
+                const totalVal = barSegments.reduce((sum, s) => sum + s.val, 0);
+                let barHtml = barSegments.map(s => `<div class="${s.cls}" style="flex: 0 0 ${s.val}%; width: ${s.val}%;"></div>`).join('');
+                if (totalVal < 99.5) {
+                    const unclassifiedPct = (100.0 - totalVal).toFixed(1);
+                    barHtml += `<div class="allocation-bar-unclassified" style="flex: 0 0 ${unclassifiedPct}%; width: ${unclassifiedPct}%;"></div>`;
+                    subParts.push(`<span class="alloc-text-item alloc-text-unclassified">${unclassifiedPct}% 其它</span>`);
+                }
+
+                let allocLabel = subParts.join('<span class="alloc-sep">·</span>');
+                let warningHtml = item.allocation_estimated ? `<span class="alloc-warning-wrapper" title="估算参考值" style="margin-left: 2px;"><i data-lucide="alert-circle" style="width: 10px; height: 10px; color: var(--accent-red); vertical-align: middle;"></i></span>` : '';
+
+                allocMobileHtml = `
+                    <div class="qdii-mcard-alloc-box">
+                        <div class="qdii-mcard-alloc-header">
+                            <div class="qdii-mcard-alloc-text">${allocLabel}${warningHtml}</div>
+                            ${item.inception_date ? `<div class="qdii-mcard-date font-mono">成立 ${item.inception_date}</div>` : ''}
+                        </div>
+                        <div class="allocation-bar-track qdii-mcard-bar-track">
+                            ${barHtml}
+                        </div>
+                    </div>
+                `;
+            }
+
+            return `
+                <div class="qdii-mobile-card qdii-clickable" data-code="${item.code}" data-name="${item.name}" title="点击查看 ${item.name} 前十大重仓股">
+                    <div class="qdii-mcard-top">
+                        <div class="qdii-mcard-rank-col">
+                            <span class="rank-badge ${rankBadgeClass}">${rank}</span>
+                        </div>
+                        <div class="qdii-mcard-info-col">
+                            <div class="qdii-mcard-title-line">
+                                <span class="qdii-mcard-name">${item.name}</span>
+                            </div>
+                            <div class="qdii-mcard-meta-line">
+                                <span class="qdii-mcard-code font-mono">${item.code}</span>
+                                ${tagHtml}
+                            </div>
+                        </div>
+                        <div class="qdii-mcard-status-col">
+                            <span class="status-badge ${statusClass}">${statusText}</span>
+                        </div>
+                    </div>
+                    <div class="qdii-mcard-grid">
+                        <div class="qdii-mcard-metric-cell metric-cell-return">
+                            <div class="qdii-mcard-val font-mono ${r1yClass}" style="font-weight: 700;">${r1yStr}</div>
+                            <div class="qdii-mcard-lbl">近1年收益</div>
+                        </div>
+                        <div class="qdii-mcard-metric-cell">
+                            <div class="qdii-mcard-val font-mono">${mddStr}</div>
+                            <div class="qdii-mcard-lbl">近1年回撤</div>
+                        </div>
+                        <div class="qdii-mcard-metric-cell">
+                            <div class="qdii-mcard-val font-mono">${volStr}</div>
+                            <div class="qdii-mcard-lbl">年化波动率</div>
+                        </div>
+                        <div class="qdii-mcard-metric-cell metric-cell-scale">
+                            <div class="qdii-mcard-val font-mono">${scaleShort}</div>
+                            <div class="qdii-mcard-lbl">费率 ${item.fee_rate || '--'}</div>
+                        </div>
+                    </div>
+                    ${allocMobileHtml}
+                </div>
             `;
         }).join('');
 
@@ -303,33 +398,36 @@ class QDIIController {
 
         container.innerHTML = `
             ${benchmarkNotice}
-            <div class="table-wrapper">
+            <!-- 桌面端宽屏大表格 -->
+            <div class="table-wrapper qdii-desktop-only">
                 <table class="qdii-table">
                     <thead>
                         <tr>
                             <th class="col-rank">排名</th>
                             <th class="col-name">基金名称</th>
                             <th class="col-allocation">资产配置 / 仓位</th>
-                            <th class="col-return">
-                                <span class="desktop-header">近1年收益</span>
-                                <span class="mobile-header">近一年</span>
-                            </th>
-                            <th class="col-drawdown col-optional">近1年回撤</th>
-                            <th class="col-volatility col-optional">年化波动率</th>
+                            <th class="col-return">近1年收益</th>
+                            <th class="col-drawdown">近1年回撤</th>
+                            <th class="col-volatility">年化波动率</th>
                             <th class="col-fee">综合费率</th>
-                            <th class="col-scale col-optional">资产规模</th>
+                            <th class="col-scale">资产规模</th>
                             <th class="col-status">状态</th>
                             ${!isActiveTab ? `
                                 <th class="col-gap">对标差距</th>
-                                <th class="col-tracking col-optional">跟踪偏离度</th>
+                                <th class="col-tracking">跟踪偏离度</th>
                             ` : ''}
-                            <th class="col-date col-optional">成立时间</th>
+                            <th class="col-date">成立时间</th>
                         </tr>
                     </thead>
                     <tbody>
-                        ${rowsHtml}
+                        ${desktopRowsHtml}
                     </tbody>
                 </table>
+            </div>
+
+            <!-- 移动端现代金融卡片流 (方案 A) -->
+            <div class="qdii-mobile-cards-wrapper qdii-mobile-only">
+                ${mobileCardsHtml}
             </div>
         `;
 

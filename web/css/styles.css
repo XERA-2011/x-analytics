@@ -2309,151 +2309,189 @@ footer {
     border: 1px solid rgba(107, 114, 128, 0.2);
 }
 
-.desktop-header {
-    display: inline;
+/* 桌面端 vs 移动端模式切换 */
+.qdii-desktop-only {
+    display: block;
 }
-
-.mobile-header {
+.qdii-mobile-only {
     display: none;
 }
 
-.desktop-return {
-    display: inline;
-}
-
-.mobile-return-layout {
-    display: none;
-}
-
-.mobile-stat-row {
+/* 移动端金融行情卡片流 (方案 A: 4列数据网格 + 全宽资产配置) */
+.qdii-mobile-cards-wrapper {
     display: flex;
-    justify-content: space-between;
-    align-items: baseline;
+    flex-direction: column;
     gap: 8px;
     width: 100%;
 }
 
-.mobile-stat-label {
-    font-size: 10px;
+.qdii-mobile-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+    transition: transform 0.12s ease, background-color 0.12s ease;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.qdii-mobile-card:active {
+    transform: scale(0.99);
+    background: var(--bg-hover, rgba(0, 0, 0, 0.02));
+}
+
+/* 卡片顶栏：排名 + 名称/代码/标签 + 状态 */
+.qdii-mcard-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.qdii-mcard-rank-col {
+    flex-shrink: 0;
+}
+
+.qdii-mcard-info-col {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.qdii-mcard-title-line {
+    display: flex;
+    align-items: center;
+}
+
+.qdii-mcard-name {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--primary);
+    line-height: 1.25;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.qdii-mcard-meta-line {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.qdii-mcard-code {
+    font-size: 0.72rem;
     color: var(--text-tertiary);
 }
 
-.mobile-stat-value {
-    font-size: 11px;
+.qdii-mcard-tag {
+    background: rgba(115, 115, 115, 0.08);
     color: var(--text-secondary);
-    text-align: right;
+    font-size: 10px;
+    padding: 0 4px;
+    border-radius: 3px;
+    font-weight: 600;
+    border: 1px solid rgba(115, 115, 115, 0.2);
+    line-height: 1.4;
 }
 
-.qdii-alloc-mobile {
-    display: none;
+.qdii-mcard-status-col {
+    flex-shrink: 0;
+}
+
+/* 卡片中栏：4 列核心数据网格 */
+.qdii-mcard-grid {
+    display: grid;
+    grid-template-columns: 1.15fr 0.95fr 0.95fr 1.05fr;
+    gap: 4px;
+    padding: 6px 0 7px 0;
+    border-top: 1px dashed var(--border-light);
+    border-bottom: 1px dashed var(--border-light);
+}
+
+.qdii-mcard-metric-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.qdii-mcard-metric-cell.metric-cell-return {
+    align-items: flex-start;
+}
+
+.qdii-mcard-metric-cell.metric-cell-scale {
+    align-items: flex-end;
+}
+
+.qdii-mcard-val {
+    font-size: 0.85rem;
+    color: var(--text-primary);
+    line-height: 1.2;
+}
+
+.metric-cell-return .qdii-mcard-val {
+    font-size: 1.02rem;
+}
+
+.qdii-mcard-lbl {
+    font-size: 0.65rem;
+    color: var(--text-tertiary);
+    margin-top: 2px;
+    white-space: nowrap;
+}
+
+/* 卡片底栏：全宽资产配置分布 */
+.qdii-mcard-alloc-box {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.qdii-mcard-alloc-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    font-size: 0.68rem;
+}
+
+.qdii-mcard-alloc-text {
+    color: var(--text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+    min-width: 0;
+}
+
+.qdii-mcard-date {
+    color: var(--text-tertiary);
+    font-size: 0.65rem;
+    flex-shrink: 0;
+}
+
+.qdii-mcard-bar-track {
+    height: 5px;
+    width: 100%;
+    border-radius: 3px;
+    background: rgba(115, 115, 115, 0.1);
+    overflow: hidden;
+    display: flex;
 }
 
 @media (max-width: 1024px) {
-    .qdii-name-wrapper {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 2px;
-    }
-    .qdii-code-text {
-        font-size: 0.68rem;
-    }
-    .qdii-alloc-mobile {
-        display: block;
-        margin-top: 4px;
-        width: 100%;
-    }
-    .qdii-alloc-mobile .allocation-cell {
-        gap: 2px;
-        padding: 0;
-    }
-    .qdii-alloc-mobile .allocation-text {
-        display: none;
-    }
-    .qdii-alloc-mobile .allocation-bar-track {
-        height: 4px;
-        max-width: 150px;
-    }
-    .qdii-table {
-        min-width: 100%;
-    }
-    .qdii-table th,
-    .qdii-table td {
-        padding: 8px 3px;
-    }
-    .col-rank {
-        width: 30px;
-    }
-    .col-fee,
-    .col-scale,
-    .col-drawdown,
-    .col-volatility {
+    .qdii-desktop-only {
         display: none !important;
     }
-    .col-status {
-        width: 52px;
-        text-align: center;
-    }
-    .desktop-header {
-        display: none !important;
-    }
-    .mobile-header {
-        display: inline !important;
-    }
-    .desktop-return {
-        display: none !important;
-    }
-    .mobile-return-layout {
+    .qdii-mobile-only {
         display: flex !important;
-        flex-direction: column;
-        align-items: stretch;
-        gap: 1.5px;
-        width: 100%;
-        min-width: 125px;
-        max-width: 145px;
-        margin-left: auto;
-    }
-    .mobile-stat-row {
-        display: flex !important;
-        justify-content: space-between;
-        align-items: baseline;
-        gap: 6px;
-        width: 100%;
-        line-height: 1.35;
-        white-space: nowrap;
-    }
-    .mobile-stat-label {
-        font-size: 10px;
-        font-weight: 500;
-        color: var(--text-tertiary);
-        letter-spacing: -0.2px;
-    }
-    .mobile-stat-value {
-        font-size: 11px;
-        color: var(--text-primary);
-        font-weight: 500;
-        text-align: right;
-    }
-    .col-return {
-        width: 135px !important;
-        min-width: 128px !important;
-        padding-right: 4px !important;
-    }
-    .col-gap {
-        display: none !important;
-    }
-    .col-allocation {
-        display: none !important;
-    }
-    .rank-badge {
-        width: clamp(18px, 4.5vw, 22px);
-        height: clamp(18px, 4.5vw, 22px);
-        font-size: clamp(10px, 2.5vw, 12px);
-    }
-}
-
-@media (max-width: 560px) {
-    .col-optional {
-        display: none;
     }
 }
 
