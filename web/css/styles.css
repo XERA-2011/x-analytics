@@ -2403,22 +2403,6 @@ footer {
 
 .qdii-mcard-status-col {
     flex-shrink: 0;
-    display: inline-flex;
-    align-items: center;
-    gap: 3px;
-}
-
-.qdii-mcard-arrow {
-    width: 14px;
-    height: 14px;
-    color: var(--text-tertiary);
-    stroke-width: 2;
-    transition: transform 0.15s ease, color 0.15s ease;
-}
-
-.qdii-mobile-card:active .qdii-mcard-arrow {
-    transform: translateX(2px);
-    color: var(--text-primary);
 }
 
 /* 卡片中栏：4 列核心数据网格 */
@@ -2463,27 +2447,10 @@ footer {
     white-space: nowrap;
 }
 
-/* 卡片底栏：全宽资产配置分布 */
+/* 卡片底栏：全宽资产配置条形图 */
 .qdii-mcard-alloc-box {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-}
-
-.qdii-mcard-alloc-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 6px;
-    font-size: 0.72rem;
-}
-
-.qdii-mcard-alloc-text {
-    font-size: 0.72rem;
-    color: var(--text-secondary);
-    line-height: 1.4;
-    flex: 1;
-    min-width: 0;
+    margin-top: 2px;
+    width: 100%;
 }
 
 .qdii-mcard-bar-track {
