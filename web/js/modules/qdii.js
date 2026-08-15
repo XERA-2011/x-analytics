@@ -226,12 +226,33 @@ class QDIIController {
                         </div>
                     </td>
                     <td class="col-allocation qdii-clickable" data-code="${item.code}" data-name="${item.name}" title="点击查看 ${item.name} 前十大重仓股">${allocHtml}</td>
-                    <td class="col-return font-mono ${r1yClass}" style="font-weight: 700;">
-                        <span class="desktop-return">${r1yStr}</span>
+                    <td class="col-return">
+                        <span class="desktop-return font-mono ${r1yClass}" style="font-weight: 700;">${r1yStr}</span>
                         <div class="mobile-return-layout">
-                            <span class="mobile-return-val">${r1yStr}</span>
-                            <span class="mobile-fee-val">回撤 ${mddStr} · 波动 ${volStr}</span>
-                            <span class="mobile-fee-val">${item.scale ? item.scale.replace('亿元', '亿') : '--'} · ${item.fee_rate}</span>
+                            <div class="mobile-stat-row">
+                                <span class="mobile-stat-label">收益</span>
+                                <span class="mobile-stat-value font-mono ${r1yClass}" style="font-weight: 700;">${r1yStr}</span>
+                            </div>
+                            <div class="mobile-stat-row">
+                                <span class="mobile-stat-label">回撤</span>
+                                <span class="mobile-stat-value font-mono">${mddStr}</span>
+                            </div>
+                            <div class="mobile-stat-row">
+                                <span class="mobile-stat-label">波动率</span>
+                                <span class="mobile-stat-value font-mono">${volStr}</span>
+                            </div>
+                            <div class="mobile-stat-row">
+                                <span class="mobile-stat-label">综合费率</span>
+                                <span class="mobile-stat-value font-mono">${item.fee_rate || '--'}</span>
+                            </div>
+                            <div class="mobile-stat-row">
+                                <span class="mobile-stat-label">资产规模</span>
+                                <span class="mobile-stat-value font-mono">${item.scale || '--'}</span>
+                            </div>
+                            <div class="mobile-stat-row">
+                                <span class="mobile-stat-label">成立时间</span>
+                                <span class="mobile-stat-value font-mono">${item.inception_date || '--'}</span>
+                            </div>
                         </div>
                     </td>
                     <td class="col-drawdown col-optional font-mono" style="color: var(--text-secondary);">${mddStr}</td>
@@ -291,7 +312,7 @@ class QDIIController {
                             <th class="col-allocation">资产配置 / 仓位</th>
                             <th class="col-return">
                                 <span class="desktop-header">近1年收益</span>
-                                <span class="mobile-header">收益/风控/规模</span>
+                                <span class="mobile-header">近一年</span>
                             </th>
                             <th class="col-drawdown col-optional">近1年回撤</th>
                             <th class="col-volatility col-optional">年化波动率</th>
