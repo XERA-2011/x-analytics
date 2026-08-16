@@ -254,11 +254,46 @@ async def test_callback(request: Request):
 
 
 # -----------------------------------------------------------------------------
-# 静态文件 (Web 仪表盘)
+# 静态文件 (Web 仪表盘) 与防缓存控制 (针对微信/移动端 WebView 强缓存优化)
 # -----------------------------------------------------------------------------
+import time
+import re
+from fastapi.responses import HTMLResponse
+
+BUILD_TIMESTAMP = int(time.time())
 web_dir = os.path.join(os.path.dirname(__file__), "web")
+
+class CustomStaticFiles(StaticFiles):
+    async def get_response(self, path: str, scope):
+        response = await super().get_response(path, scope)
+        if path.endswith((".js", ".css")):
+            response.headers["Cache-Control"] = "public, max-age=86400, must-revalidate"
+        elif path.endswith(".html"):
+            response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+            response.headers["Pragma"] = "no-cache"
+            response.headers["Expires"] = "0"
+        return response
+
+@app.get("/", response_class=HTMLResponse, include_in_schema=False)
+@app.get("/index.html", response_class=HTMLResponse, include_in_schema=False)
+async def serve_index_html():
+    index_path = os.path.join(web_dir, "index.html")
+    if not os.path.exists(index_path):
+        return HTMLResponse("<h1>Web files not found</h1>", status_code=404)
+    with open(index_path, "r", encoding="utf-8") as f:
+        html = f.read()
+    
+    # 动态将所有静态资源版本号替换为当前服务启动的时间戳 (彻底避免微信客户端复用旧 JS/CSS)
+    dynamic_html = re.sub(r'(\.(?:js|css))\?v=[a-zA-Z0-9_\-\.]+', rf'\1?v={BUILD_TIMESTAMP}', html)
+    
+    response = HTMLResponse(dynamic_html)
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
+
 if os.path.exists(web_dir):
-    app.mount("/", StaticFiles(directory=web_dir, html=True), name="web")
+    app.mount("/", CustomStaticFiles(directory=web_dir, html=False), name="web")
 
 
 if __name__ == "__main__":

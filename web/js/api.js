@@ -86,6 +86,8 @@ class API {
         if (forceRefresh) {
             url.searchParams.set('_refresh', this.forceRefreshToken);
         }
+        // 自动附加防缓存时间戳 _t，彻底避免微信/移动端 WebView 缓存动态接口数据
+        url.searchParams.set('_t', Date.now().toString());
         return url.pathname + url.search;
     }
 
