@@ -276,6 +276,8 @@ class CustomStaticFiles(StaticFiles):
 
 @app.get("/", response_class=HTMLResponse, include_in_schema=False)
 @app.get("/index.html", response_class=HTMLResponse, include_in_schema=False)
+@app.head("/", include_in_schema=False)
+@app.head("/index.html", include_in_schema=False)
 async def serve_index_html():
     index_path = os.path.join(web_dir, "index.html")
     if not os.path.exists(index_path):

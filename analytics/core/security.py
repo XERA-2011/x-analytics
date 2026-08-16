@@ -158,13 +158,19 @@ class SecurityMiddleware(BaseHTTPMiddleware):
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["X-XSS-Protection"] = "1; mode=block"
-        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         if _is_api_path(path):
             # API 响应禁用缓存，避免客户端使用过期数据
-            response.headers["Cache-Control"] = "no-store, max-age=0"
+            response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+            response.headers["Pragma"] = "no-cache"
+            response.headers["Expires"] = "0"
+        elif path in ["/", "/index.html", "/analytics", "/analytics/"] or path.endswith(".html"):
+            # HTML 入口文件严格禁止任何缓存（解决微信等移动端 WebView 强缓存旧页面问题）
+            response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+            response.headers["Pragma"] = "no-cache"
+            response.headers["Expires"] = "0"
         else:
-            # 静态资源允许浏览器缓存，降低重复下载成本
-            response.headers["Cache-Control"] = "public, max-age=86400"
+            # 静态资源 (JS/CSS/字体/图标) 允许协商缓存
+            response.headers["Cache-Control"] = "public, max-age=86400, must-revalidate"
         
         # 添加限流信息头（仅 API 请求）
         if _is_api_path(path):
