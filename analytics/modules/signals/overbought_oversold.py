@@ -55,8 +55,8 @@ class OverboughtOversoldSignal:
     @staticmethod
     @cached(
         "signals:obo:cn:daily",
-        ttl=settings.CACHE_TTL.get("market", 1800),
-        stale_ttl=settings.CACHE_TTL.get("market", 1800) * settings.STALE_TTL_RATIO,
+        ttl=settings.CACHE_TTL.get("signals_daily", 14400),
+        stale_ttl=settings.CACHE_TTL.get("signals_daily", 14400) * settings.STALE_TTL_RATIO,
     )
     def get_cn_signal(period: str = "daily") -> Dict[str, Any]:
         """获取A股超买超卖信号"""
@@ -65,8 +65,8 @@ class OverboughtOversoldSignal:
     @staticmethod
     @cached(
         "signals:obo:hk:daily",
-        ttl=settings.CACHE_TTL.get("market", 1800),
-        stale_ttl=settings.CACHE_TTL.get("market", 1800) * settings.STALE_TTL_RATIO,
+        ttl=settings.CACHE_TTL.get("signals_daily", 14400),
+        stale_ttl=settings.CACHE_TTL.get("signals_daily", 14400) * settings.STALE_TTL_RATIO,
     )
     def get_hk_signal(period: str = "daily") -> Dict[str, Any]:
         """获取港股超买超卖信号"""
@@ -75,8 +75,8 @@ class OverboughtOversoldSignal:
     @staticmethod
     @cached(
         "signals:obo:us:daily",
-        ttl=settings.CACHE_TTL.get("market", 1800),
-        stale_ttl=settings.CACHE_TTL.get("market", 1800) * settings.STALE_TTL_RATIO,
+        ttl=settings.CACHE_TTL.get("signals_daily", 14400),
+        stale_ttl=settings.CACHE_TTL.get("signals_daily", 14400) * settings.STALE_TTL_RATIO,
     )
     def get_us_signal(period: str = "daily") -> Dict[str, Any]:
         """获取美股超买超卖信号"""
@@ -85,8 +85,8 @@ class OverboughtOversoldSignal:
     @staticmethod
     @cached(
         "signals:obo:gold:daily",
-        ttl=settings.CACHE_TTL.get("metals", 3600),
-        stale_ttl=settings.CACHE_TTL.get("metals", 3600) * settings.STALE_TTL_RATIO,
+        ttl=settings.CACHE_TTL.get("signals_daily", 14400),
+        stale_ttl=settings.CACHE_TTL.get("signals_daily", 14400) * settings.STALE_TTL_RATIO,
     )
     def get_gold_signal(period: str = "daily") -> Dict[str, Any]:
         """获取黄金超买超卖信号"""
@@ -95,8 +95,8 @@ class OverboughtOversoldSignal:
     @staticmethod
     @cached(
         "signals:obo:silver:daily",
-        ttl=settings.CACHE_TTL.get("metals", 3600),
-        stale_ttl=settings.CACHE_TTL.get("metals", 3600) * settings.STALE_TTL_RATIO,
+        ttl=settings.CACHE_TTL.get("signals_daily", 14400),
+        stale_ttl=settings.CACHE_TTL.get("signals_daily", 14400) * settings.STALE_TTL_RATIO,
     )
     def get_silver_signal(period: str = "daily") -> Dict[str, Any]:
         """获取白银超买超卖信号"""

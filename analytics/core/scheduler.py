@@ -236,10 +236,11 @@ class SmartScheduler:
         """获取调度器状态"""
         jobs_info = []
         for job in self.scheduler.get_jobs():
+            next_run = getattr(job, "next_run_time", None)
             jobs_info.append(
                 {
                     "id": job.id,
-                    "next_run": str(job.next_run_time) if job.next_run_time else None,
+                    "next_run": str(next_run) if next_run else None,
                     "trigger": str(job.trigger),
                 }
             )
@@ -419,7 +420,7 @@ def setup_default_jobs():
         market="market_western",
         use_warmup_cache=True,
         trading_interval_minutes=10,
-        non_trading_max_age_seconds=settings.CACHE_TTL.get("market_heat", 7200),
+        non_trading_max_age_seconds=settings.CACHE_TTL.get("ai_overview", 7200),
     )
 
     # =========================================================================
@@ -476,53 +477,62 @@ def setup_default_jobs():
 
     # =========================================================================
     # 超买超卖信号 (Overbought/Oversold Signals)
+    # 日线级别指标：降低盘中轮询频率为 60 分钟，依赖开盘前预热与收盘快照
     # =========================================================================
     from ..modules.signals.overbought_oversold import OverboughtOversoldSignal
     
-    # A股超买超卖 (每10分钟)
+    # A股超买超卖 (日线级，60分钟低频保鲜)
     scheduler.add_market_job(
         job_id="warmup:signals:cn",
         func=OverboughtOversoldSignal.get_cn_signal,
         market="market_asia",
         use_warmup_cache=True,
+        trading_interval_minutes=60,
+        non_trading_max_age_seconds=settings.CACHE_TTL.get("signals_daily", 14400),
         period="daily",
     )
     
-    # 美股超买超卖 (每10分钟)
+    # 美股超买超卖 (日线级，60分钟低频保鲜)
     scheduler.add_market_job(
         job_id="warmup:signals:us",
         func=OverboughtOversoldSignal.get_us_signal,
         market="market_western",
         use_warmup_cache=True,
-        trading_interval_minutes=10,
-        non_trading_max_age_seconds=settings.CACHE_TTL.get("market", 7200),
+        trading_interval_minutes=60,
+        non_trading_max_age_seconds=settings.CACHE_TTL.get("signals_daily", 14400),
         period="daily",
     )
     
-    # 港股超买超卖 (每10分钟)
+    # 港股超买超卖 (日线级，60分钟低频保鲜)
     scheduler.add_market_job(
         job_id="warmup:signals:hk",
         func=OverboughtOversoldSignal.get_hk_signal,
         market="market_hk",
         use_warmup_cache=True,
+        trading_interval_minutes=60,
+        non_trading_max_age_seconds=settings.CACHE_TTL.get("signals_daily", 14400),
         period="daily",
     )
     
-    # 黄金超买超卖 (每10分钟)
+    # 黄金超买超卖 (日线级，60分钟低频保鲜)
     scheduler.add_market_job(
         job_id="warmup:signals:gold",
         func=OverboughtOversoldSignal.get_gold_signal,
         market="metals",
         use_warmup_cache=True,
+        trading_interval_minutes=60,
+        non_trading_max_age_seconds=settings.CACHE_TTL.get("signals_daily", 14400),
         period="daily",
     )
     
-    # 白银超买超卖 (每10分钟)
+    # 白银超买超卖 (日线级，60分钟低频保鲜)
     scheduler.add_market_job(
         job_id="warmup:signals:silver",
         func=OverboughtOversoldSignal.get_silver_signal,
         market="metals",
         use_warmup_cache=True,
+        trading_interval_minutes=60,
+        non_trading_max_age_seconds=settings.CACHE_TTL.get("signals_daily", 14400),
         period="daily",
     )
 

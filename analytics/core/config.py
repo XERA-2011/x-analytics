@@ -113,17 +113,16 @@ class Settings:
         "market_heat": 7200,         # 2小时 (原1小时)
         "north_funds": 7200,         # 2小时 (原1小时)
         
-        # === 股票数据 ===
+        # === 股票与产业链数据 ===
         "stock_spot": 7200,          # 2小时 (原1小时)
-        "ai_overview": 86400,        # 24小时：AI 产业页面按日更新
+        "ai_overview": 7200,         # 2小时：AI 产业终端含美股实时行情与估值
+        "signals_daily": 14400,      # 4小时：日线级别超买超卖综合技术信号
         
         # === 宏观数据 ===
         "lpr": 86400,                # 24小时 (每月更新)
         "etf_flow": 7200,            # 2小时
         "etf_heatmap": 7200,         # 2小时
         "calendar": 3600,            # 1小时
-        
-
     }
 
     # Stale TTL 倍率：物理 TTL = 逻辑 TTL × (1 + STALE_TTL_RATIO)
