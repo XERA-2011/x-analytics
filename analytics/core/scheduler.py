@@ -726,52 +726,57 @@ def snapshot_daily_metrics() -> None:
 
     try:
         logger.info("📸 开始执行数据库快照...")
-        from analytics.modules.market_cn import CNFearGreedIndex
-        from analytics.modules.market_us import USFearGreedIndex
+        from analytics.modules.market_asia import CNFearGreedIndex
+        from analytics.modules.market_western import USFearGreedIndex
         from analytics.modules.market_hk.fear_greed import HKFearGreed
         from analytics.modules.gold import GoldFearGreedIndex
         from analytics.modules.gold.fear_greed import SilverFearGreedIndex
         from analytics.modules.signals.overbought_oversold import OverboughtOversoldSignal
         from datetime import date
 
+        def _extract(res):
+            if isinstance(res, dict) and "data" in res and isinstance(res["data"], dict):
+                return res["data"]
+            return res if isinstance(res, dict) else {}
+
         today = date.today()
         snapshots = []
 
         # 1. ASIA
-        cn_res = CNFearGreedIndex.calculate(symbol="sh000001", days=14)
+        cn_res = _extract(CNFearGreedIndex.calculate(symbol="sh000001", days=14))
         if cn_res and "score" in cn_res:
-            snapshots.append({"market": "ASIA", "indicator": "fear_greed", "score": cn_res["score"], "level": cn_res["level"]})
+            snapshots.append({"market": "ASIA", "indicator": "fear_greed", "score": cn_res["score"], "level": cn_res.get("level", "中性")})
 
         # 2. WESTERN
-        us_res = USFearGreedIndex.calculate_custom_index()
+        us_res = _extract(USFearGreedIndex.calculate_custom_index())
         if us_res and "score" in us_res:
-            snapshots.append({"market": "WESTERN", "indicator": "fear_greed", "score": us_res["score"], "level": us_res["level"]})
+            snapshots.append({"market": "WESTERN", "indicator": "fear_greed", "score": us_res["score"], "level": us_res.get("level", "中性")})
 
         # 3. HK
-        hk_res = HKFearGreed.get_data()
+        hk_res = _extract(HKFearGreed.get_data())
         if hk_res and "score" in hk_res:
-            snapshots.append({"market": "HK", "indicator": "fear_greed", "score": hk_res["score"], "level": hk_res["level"]})
+            snapshots.append({"market": "HK", "indicator": "fear_greed", "score": hk_res["score"], "level": hk_res.get("level", "中性")})
 
         # 4. Gold
-        gold_res = GoldFearGreedIndex.calculate()
+        gold_res = _extract(GoldFearGreedIndex.calculate())
         if gold_res and "score" in gold_res:
-            snapshots.append({"market": "Gold", "indicator": "fear_greed", "score": gold_res["score"], "level": gold_res["level"]})
+            snapshots.append({"market": "Gold", "indicator": "fear_greed", "score": gold_res["score"], "level": gold_res.get("level", "中性")})
 
         # 5. Silver
-        silver_res = SilverFearGreedIndex.calculate()
+        silver_res = _extract(SilverFearGreedIndex.calculate())
         if silver_res and "score" in silver_res:
-            snapshots.append({"market": "Silver", "indicator": "fear_greed", "score": silver_res["score"], "level": silver_res["level"]})
+            snapshots.append({"market": "Silver", "indicator": "fear_greed", "score": silver_res["score"], "level": silver_res.get("level", "中性")})
             
         # OBO Signals
-        cn_obo = OverboughtOversoldSignal.get_cn_signal("daily")
+        cn_obo = _extract(OverboughtOversoldSignal.get_cn_signal("daily"))
         if cn_obo and "score" in cn_obo:
             snapshots.append({"market": "ASIA", "indicator": "overbought_oversold", "score": cn_obo["score"], "level": cn_obo.get("signal", "neutral")})
             
-        us_obo = OverboughtOversoldSignal.get_us_signal("daily")
+        us_obo = _extract(OverboughtOversoldSignal.get_us_signal("daily"))
         if us_obo and "score" in us_obo:
             snapshots.append({"market": "WESTERN", "indicator": "overbought_oversold", "score": us_obo["score"], "level": us_obo.get("signal", "neutral")})
             
-        hk_obo = OverboughtOversoldSignal.get_hk_signal("daily")
+        hk_obo = _extract(OverboughtOversoldSignal.get_hk_signal("daily"))
         if hk_obo and "score" in hk_obo:
             snapshots.append({"market": "HK", "indicator": "overbought_oversold", "score": hk_obo["score"], "level": hk_obo.get("signal", "neutral")})
 
