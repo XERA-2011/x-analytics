@@ -3273,8 +3273,43 @@ footer {
         gap: 4px;
     }
 
+    .modal-overlay {
+        padding: 12px;
+        align-items: center;
+    }
+
     .modal-content {
-        max-height: calc(100vh - 24px);
+        padding: 16px 14px;
+        max-width: calc(100vw - 24px);
+        max-height: 86vh;
+        border-radius: 12px;
+        box-sizing: border-box;
         overflow-y: auto;
     }
+
+    .modal-header {
+        margin-bottom: 10px;
+        padding-bottom: 8px;
+        gap: 8px;
+        align-items: flex-start;
+    }
+
+    .modal-title {
+        font-size: 15px;
+        font-weight: 700;
+        line-height: 1.35;
+        word-break: break-word;
+        flex: 1;
+    }
+
+    .modal-close {
+        padding: 2px 4px;
+        flex-shrink: 0;
+    }
+
+    .modal-body {
+        font-size: 12px;
+        line-height: 1.5;
+    }
 }
+

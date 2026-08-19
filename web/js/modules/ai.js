@@ -432,50 +432,63 @@ class AIMarketController {
             scoreBtn.onclick = (e) => {
                 e.stopPropagation();
                 const exp = explanations.cycle_score || {};
-                let weightsHtml = '';
-                if (exp.weights) {
-                    weightsHtml = `
-                        <table style="width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 11px;">
+                const defaultWeights = [
+                    { layer: 'L0 能源电力', weight: '10%', targets: 'GEV, CEG, VST, ETN' },
+                    { layer: 'L1 算力芯片', weight: '25%', targets: 'NVDA, AMD, AVGO, ARM' },
+                    { layer: 'L2 存储代工', weight: '20%', targets: 'MU, TSM, ASML' },
+                    { layer: 'L3 云与巨头', weight: '15%', targets: 'MSFT, GOOGL, AMZN, META' },
+                    { layer: 'L4 服务器设备', weight: '10%', targets: 'SMCI, DELL, VRT' },
+                    { layer: 'L5 软件应用', weight: '10%', targets: 'PLTR, NOW, CRM' },
+                    { layer: 'L6 A股概念题材', weight: '10%', targets: '寒武纪, 海光, 旭创等' }
+                ];
+                const weightsList = (exp.weights && exp.weights.length > 0) ? exp.weights : defaultWeights;
+
+                const weightsHtml = `
+                    <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); border-radius: 6px; padding: 6px 8px; margin: 8px 0;">
+                        <div style="font-weight: 600; font-size: 11.5px; margin-bottom: 6px; color: var(--text-primary); display: flex; align-items: center; gap: 4px;">
+                            <span>📊</span> 各层级因子算法权重分配
+                        </div>
+                        <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
                             <thead>
                                 <tr style="border-bottom: 1px solid var(--border-color); text-align: left; color: var(--text-secondary);">
-                                    <th style="padding: 4px 6px;">层级</th>
-                                    <th style="padding: 4px 6px; text-align: center;">权重</th>
-                                    <th style="padding: 4px 6px;">代表标的</th>
+                                    <th style="padding: 4px 6px; font-weight: 600;">层级</th>
+                                    <th style="padding: 4px 6px; text-align: center; font-weight: 600;">权重</th>
+                                    <th style="padding: 4px 6px; font-weight: 600;">代表标的</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                ${exp.weights.map(w => `
-                                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);">
-                                        <td style="padding: 4px 6px; font-weight: 500;">${w.layer}</td>
-                                        <td style="padding: 4px 6px; text-align: center; color: var(--color-primary, #3b82f6); font-weight: 600;">${w.weight}</td>
-                                        <td style="padding: 4px 6px; color: var(--text-secondary);">${w.targets}</td>
+                                ${weightsList.map(w => `
+                                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);">
+                                        <td style="padding: 4px 6px; font-weight: 500; white-space: nowrap;">${w.layer}</td>
+                                        <td style="padding: 4px 6px; text-align: center; color: var(--color-primary, #3b82f6); font-weight: 700;">${w.weight}</td>
+                                        <td style="padding: 4px 6px; color: var(--text-secondary); word-break: break-word;">${w.targets}</td>
                                     </tr>
                                 `).join('')}
                             </tbody>
                         </table>
-                    `;
-                }
+                    </div>
+                `;
+
                 const bodyHtml = `
                     <div class="ai-info-modal" style="white-space: normal; font-size: 12px; color: var(--text-primary);">
-                        <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-color); border-radius: 6px; padding: 8px 10px; margin-bottom: 10px;">
+                        <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-color); border-radius: 6px; padding: 8px 10px; margin-bottom: 8px;">
                             <div style="font-weight: 600; font-size: 12px; color: var(--color-primary, #3b82f6); margin-bottom: 4px;">🧮 算力加权七因子核心公式</div>
-                            <div style="font-family: monospace; font-size: 11px; background: rgba(0,0,0,0.25); padding: 4px 8px; border-radius: 4px; color: #e2e8f0; margin-bottom: 4px; line-height: 1.4;">
-                                weighted_pct = L0×10% + L1×25% + L2×20% + L3×15% + L4×10% + L5×10% + L6×10%<br/>
-                                heat_score = Min(100, Max(0, 50.0 + weighted_pct × 7.5))
+                            <div style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 10.5px; background: rgba(0,0,0,0.3); padding: 6px 8px; border-radius: 4px; color: #e2e8f0; margin-bottom: 6px; line-height: 1.45; word-break: break-word;">
+                                <div><span style="color:#93c5fd;">weighted_pct</span> = L0×10% + L1×25% + L2×20% + L3×15% + L4×10% + L5×10% + L6×10%</div>
+                                <div style="margin-top: 3px;"><span style="color:#86efac;">heat_score</span> = Min(100, Max(0, 50.0 + weighted_pct × 7.5))</div>
                             </div>
-                            <div style="font-size: 11px; color: var(--text-secondary);">包含 2026 核心约束因子：L0 能源电力 (10%)、L1-L5 硬件与应用全链条 (80%) 及 L6 A股概念题材 (10%)。</div>
+                            <div style="font-size: 11px; color: var(--text-secondary); line-height: 1.4;">包含 2026 核心约束因子：L0 能源电力 (10%)、L1-L5 硬件与应用全链条 (80%) 及 L6 A股概念题材 (10%)。</div>
                         </div>
 
-                        <div style="font-weight: 600; font-size: 12px; margin-bottom: 4px; color: var(--text-secondary);">📊 各层级因子算法权重分配：</div>
                         ${weightsHtml}
 
-                        <div style="background: rgba(255, 255, 255, 0.02); border-left: 3px solid var(--color-primary, #3b82f6); padding: 6px 8px; font-size: 11px; color: var(--text-secondary); margin-top: 8px;">
-                            <div><strong>💡 得分区间：</strong>70+ 分能源与算力爆发 | 50~70 分稳健消化 | &lt;40 分周期回调</div>
-                            <div style="margin-top: 2px; color: var(--text-muted, #94a3b8);">⚡ 数据抓取：直连美股与A股盘中数据，后台每 10 分钟自动预热更新。</div>
+                        <div style="background: rgba(255, 255, 255, 0.02); border-left: 3px solid var(--color-primary, #3b82f6); border-radius: 0 4px 4px 0; padding: 6px 10px; font-size: 11px; color: var(--text-secondary); margin-top: 8px; line-height: 1.45;">
+                            <div><strong>💡 得分区间：</strong><span style="color: #4ade80;">70+</span> 爆发 | <span style="color: #38bdf8;">50~70</span> 稳健 | <span style="color: #f87171;">&lt;40</span> 回调</div>
+                            <div style="margin-top: 3px; color: var(--text-muted, #94a3b8); font-size: 10.5px;">⚡ 数据抓取：直连美股与A股盘中数据，后台每 10 分钟自动预热更新。</div>
                         </div>
                     </div>
                 `;
-                utils.showInfoModal(exp.title || 'AI Market Heat 算法说明', bodyHtml);
+                utils.showInfoModal(exp.title || 'AI 市场热度分（市值加权七因子模型）', bodyHtml);
             };
         }
 

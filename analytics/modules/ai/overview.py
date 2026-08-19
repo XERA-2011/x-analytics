@@ -488,7 +488,16 @@ class AIOverview:
                 "cycle_score": {
                     "title": "AI 市场热度分（市值加权七因子模型）",
                     "formula": f"加权涨跌幅 weighted_pct = L0*10% + L1*25% + L2*20% + L3*15% + L4*10% + L5*10% + L6*10%。美股 AI 加权 PE = {us_ai_pe}x，美债 10Y 收益率 = {us_10y_yield:.2f}%。",
-                    "interpretation": "综合考虑 7 层产业链市值加权动能与宏观折现因子。70+ 分代表行情强劲；50~70 分代表中性。"
+                    "interpretation": "综合考虑 7 层产业链市值加权动能与宏观折现因子。70+ 分代表行情强劲；50~70 分代表中性。",
+                    "weights": [
+                        {"layer": "L0 能源电力", "weight": "10%", "targets": "GEV, CEG, VST, ETN"},
+                        {"layer": "L1 算力芯片", "weight": "25%", "targets": "NVDA, AMD, AVGO, ARM, MRVL"},
+                        {"layer": "L2 存储代工", "weight": "20%", "targets": "MU, TSM, ASML"},
+                        {"layer": "L3 云与巨头", "weight": "15%", "targets": "MSFT, GOOGL, AMZN, META, ORCL"},
+                        {"layer": "L4 服务器设备", "weight": "10%", "targets": "SMCI, DELL, VRT"},
+                        {"layer": "L5 软件应用", "weight": "10%", "targets": "PLTR, NOW, CRM"},
+                        {"layer": "L6 A股概念题材", "weight": "10%", "targets": "寒武纪, 海光信息, 中际旭创等"}
+                    ]
                 },
                 "us_cn_matrix": {
                     "title": "中美 AI 产业五维对比模型 (真实估值与算力雷达)",
