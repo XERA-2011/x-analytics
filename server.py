@@ -215,12 +215,26 @@ def get_scheduler_status():
 
 
 # -----------------------------------------------------------------------------
-# 测试 API
+# 测试 API (回调接收与查询 - 1小时自动过期)
 # -----------------------------------------------------------------------------
-@app.api_route("/api/test/callback", methods=["GET", "POST", "PUT", "DELETE", "PATCH"], tags=["测试"], summary="回调测试接口")
+from collections import deque
+import json
+import time
+
+# 内存保留最新 500 条回调记录，1 小时（3600 秒）后自动过期
+CALLBACK_HISTORY = deque(maxlen=500)
+CALLBACK_EXPIRY_SECONDS = 3600  # 1 小时有效期
+
+def _clean_expired_callbacks():
+    """从队尾自动剔除超过 1 小时（3600秒）的历史回调记录"""
+    now = time.time()
+    while CALLBACK_HISTORY and (now - CALLBACK_HISTORY[-1].get("timestamp", 0)) > CALLBACK_EXPIRY_SECONDS:
+        CALLBACK_HISTORY.pop()
+
+@app.api_route("/api/test/callback", methods=["GET", "POST", "PUT", "DELETE", "PATCH"], tags=["测试"], summary="回调测试接收接口")
 async def test_callback(request: Request):
     """
-    用于接收并打印外部系统的回调信息，支持各种 HTTP 请求方法
+    用于接收并打印外部系统的回调信息，存入历史队列（1小时后自动过期）
     """
     body = await request.body()
     try:
@@ -228,9 +242,12 @@ async def test_callback(request: Request):
     except Exception:
         body_json = None
 
+    now_ts = time.time()
     received_at = datetime.now(timezone(timedelta(hours=8))).strftime("%Y-%m-%d %H:%M:%S")
 
     info = {
+        "id": int(now_ts * 1000),
+        "timestamp": now_ts,
         "received_at": received_at,
         "method": request.method,
         "url": str(request.url),
@@ -239,6 +256,10 @@ async def test_callback(request: Request):
         "body_raw": body.decode('utf-8', errors='ignore') if body else "",
         "body_json": body_json,
     }
+    
+    # 存入历史队列头部 (最新优先)，并清理已过期的旧记录
+    CALLBACK_HISTORY.appendleft(info)
+    _clean_expired_callbacks()
     
     logger.info(f"========== 收到回调请求 [{received_at}] ==========")
     logger.info(f"Method: {info['method']} | URL: {info['url']}")
@@ -251,6 +272,57 @@ async def test_callback(request: Request):
     logger.info(f"===================================")
     
     return {"status": "success", "message": "Callback received", "received_data": info}
+
+
+@app.get("/api/test/callback/list", tags=["测试"], summary="获取历史回调记录列表(1小时内)")
+async def get_callback_list(limit: int = 50, keyword: str = None):
+    """
+    查询 1 小时内接收到的外部回调记录列表（支持按关键词过滤）
+    """
+    _clean_expired_callbacks()
+    items = list(CALLBACK_HISTORY)
+    if keyword:
+        keyword_lower = keyword.lower()
+        items = [
+            item for item in items
+            if keyword_lower in item.get("body_raw", "").lower()
+            or keyword_lower in json.dumps(item.get("query_params", {})).lower()
+        ]
+    return {
+        "status": "success",
+        "total": len(items),
+        "expires_in_seconds": CALLBACK_EXPIRY_SECONDS,
+        "data": items[:limit]
+    }
+
+
+@app.get("/api/test/callback/latest", tags=["测试"], summary="获取最新的一条回调记录(1小时内)")
+async def get_callback_latest(keyword: str = None):
+    """
+    获取 1 小时内最新接收到的一条回调记录
+    """
+    _clean_expired_callbacks()
+    items = list(CALLBACK_HISTORY)
+    if keyword:
+        keyword_lower = keyword.lower()
+        items = [
+            item for item in items
+            if keyword_lower in item.get("body_raw", "").lower()
+            or keyword_lower in json.dumps(item.get("query_params", {})).lower()
+        ]
+    return {
+        "status": "success",
+        "data": items[0] if items else None
+    }
+
+
+@app.delete("/api/test/callback/clear", tags=["测试"], summary="清空回调记录历史")
+async def clear_callback_history():
+    """
+    手动清空已存储的回调记录列表
+    """
+    CALLBACK_HISTORY.clear()
+    return {"status": "success", "message": "Callback history cleared"}
 
 
 # -----------------------------------------------------------------------------
