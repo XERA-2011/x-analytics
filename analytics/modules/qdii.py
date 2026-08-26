@@ -193,29 +193,29 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
     {
         "code": "001092",
         "name": "广发纳斯达克生物科技指数(QDII)A",
-        "index_code": "NDX",
-        "index_name": "纳斯达克100",
+        "index_code": "NBI",
+        "index_name": "纳斯达克生物科技",
         "fee_rate": "0.80%",
         "tracking_error": "0.33%",
         "inception_date": "2015-03-30",
         "default_return_1y": 8.50,
         "default_nav": 1.5720,
         "default_nav_date": "2026-07-23",
-        "default_asset_allocation": {"stock_pct": 85.00, "cash_pct": 15.00, "bond_pct": 0.0},
+        "default_asset_allocation": {"stock_pct": 85.24, "stock_us_pct": 85.24, "cash_pct": 6.84, "bond_pct": 0.0},
         "tag": "生物科技",
     },
     {
         "code": "017894",
         "name": "汇添富纳斯达克生物科技ETF发起式联接(QDII)A",
-        "index_code": "NDX",
-        "index_name": "纳斯达克100",
+        "index_code": "NBI",
+        "index_name": "纳斯达克生物科技",
         "fee_rate": "0.50%",
         "tracking_error": "0.30%",
         "inception_date": "2023-03-14",
         "default_return_1y": 11.50,
         "default_nav": 1.4740,
         "default_nav_date": "2026-08-03",
-        "default_asset_allocation": {"stock_pct": 90.00, "cash_pct": 10.00, "bond_pct": 0.0},
+        "default_asset_allocation": {"stock_pct": 93.41, "stock_us_pct": 93.41, "cash_pct": 6.59, "bond_pct": 0.0},
         "tag": "生物科技",
     },
     {
@@ -250,15 +250,15 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
     {
         "code": "161128",
         "name": "易方达标普信息科技(QDII-LOF)A",
-        "index_code": "SPX",
-        "index_name": "标普500",
+        "index_code": "SPX_TECH",
+        "index_name": "标普信息科技",
         "fee_rate": "1.00%",
         "tracking_error": "0.30%",
         "inception_date": "2016-12-13",
         "default_return_1y": 25.50,
         "default_nav": 5.1200,
         "default_nav_date": "2026-08-07",
-        "default_asset_allocation": {"stock_pct": 91.31, "cash_pct": 1.42, "bond_pct": 7.15},
+        "default_asset_allocation": {"stock_pct": 91.31, "stock_us_pct": 91.31, "cash_pct": 1.42, "bond_pct": 7.15},
         "tag": "信息科技",
     },
     {
@@ -409,15 +409,15 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
     {
         "code": "159529",
         "name": "景顺长城标普消费精选ETF(QDII)",
-        "index_code": "SPX",
-        "index_name": "标普500",
+        "index_code": "SPX_CONS",
+        "index_name": "标普消费精选",
         "fee_rate": "0.50%",
         "tracking_error": "0.20%",
         "inception_date": "2024-01-24",
         "default_return_1y": 14.20,
         "default_nav": 1.2869,
         "default_nav_date": "2026-08-04",
-        "default_asset_allocation": {"stock_pct": 95.00, "cash_pct": 5.00, "bond_pct": 0.0},
+        "default_asset_allocation": {"stock_pct": 99.17, "stock_us_pct": 99.17, "cash_pct": 0.76, "bond_pct": 0.0},
         "tag": "消费精选",
     },
 
@@ -425,16 +425,17 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
     {
         "code": "019454",
         "name": "华泰柏瑞中韩半导体发起联接(QDII)A",
-        "index_code": "ACTIVE",
-        "index_name": "主动管理型",
-        "type": "active",
+        "index_code": "KR_CN",
+        "index_name": "中韩半导体",
+        "type": "passive",
         "fee_rate": "0.60%",
         "tracking_error": "--",
         "inception_date": "2023-09-05",
         "default_return_1y": 38.50,
         "default_nav": 1.0314,
         "default_nav_date": "2026-07-27",
-        "default_asset_allocation": {"stock_pct": 90.0, "stock_cn_pct": 51.3, "stock_other_pct": 41.0, "cash_pct": 7.7, "bond_pct": 0.0},
+        "default_asset_allocation": {"stock_pct": 94.49, "stock_cn_pct": 52.5, "stock_other_pct": 42.0, "cash_pct": 5.46, "bond_pct": 0.05},
+        "tag": "中韩半导体",
     },
     {
         "code": "270023",
@@ -606,7 +607,7 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "default_return_1y": 16.7,
         "default_nav": 2.1592,
         "default_nav_date": "2026-07-23",
-        "default_asset_allocation": {"stock_pct": 92.00, "stock_us_pct": 92.00, "cash_pct": 7.9, "bond_pct": 0.0},
+        "default_asset_allocation": {"stock_pct": 85.06, "stock_us_pct": 85.06, "cash_pct": 14.94, "bond_pct": 0.0},
         "allocation_estimated": True,
     },
     {
@@ -636,7 +637,7 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "default_return_1y": 89.9,
         "default_nav": 2.456,
         "default_nav_date": "2026-07-23",
-        "default_asset_allocation": {"stock_pct": 78.90, "stock_other_pct": 45.56, "stock_hk_pct": 18.44, "stock_us_pct": 14.90, "stock_cn_pct": 5.51, "cash_pct": 12.82, "bond_pct": 0.0},
+        "default_asset_allocation": {"stock_pct": 84.40, "stock_other_pct": 48.74, "stock_hk_pct": 19.72, "stock_us_pct": 15.94, "cash_pct": 12.82, "bond_pct": 5.16},
     },
     {
         "code": "016664",
@@ -882,7 +883,7 @@ def _is_quarterly_report_window() -> bool:
 
 def fetch_fund_asset_allocation(session: requests.Session, code: str) -> Optional[Dict[str, Any]]:
     """获取指定 QDII 场外联接/被动基金的最新真实资产/持仓配置（股票/权益 %、现金/货币 %）"""
-    cache_key = f"{settings.CACHE_PREFIX}:qdii:asset_alloc_v7:{code}"
+    cache_key = f"{settings.CACHE_PREFIX}:qdii:asset_alloc_v8:{code}"
     try:
         cached_val = cache.get(cache_key)
         if cached_val is not None:
@@ -978,15 +979,9 @@ def fetch_fund_asset_allocation(session: requests.Session, code: str) -> Optiona
         else:
             stock_val = 0.0
 
-        # 判断是否为主动型基金
-        is_active = False
-        for item in QDII_FUND_METADATA:
-            if item.get("code") == code and item.get("type") == "active":
-                is_active = True
-                break
-
-        # 如果是联接/被动型基金，且算出来的股票占比极小（如 0.00%），说明实质为主投目标ETF，需回退至 100% - 现金 - 债券
-        if not is_active and stock_val < 1.0:
+        # 如果算出来的股票占比极小（如 0.00% 或 ---），无论属于联接型还是主动QDII（如主投海外ETF/基金的华宝海外科技501312），
+        # 只要有有效定期季报，说明实质为主投目标ETF或海外权益资产，需基于现金/债券回退计算：100% - 现金 - 债券
+        if stock_val < 1.0:
             stock_val = max(0.0, round(100.0 - cash_val - bond_val, 2))
 
         result = {
@@ -1136,7 +1131,7 @@ def fetch_fund_scale(session: requests.Session, code: str) -> Optional[str]:
     return None
 
 
-@cached("qdii:passive_funds_v38", ttl=86400, stale_ttl=86400 * 7, sync_on_cold=True)
+@cached("qdii:passive_funds_v39", ttl=86400, stale_ttl=86400 * 7, sync_on_cold=True)
 def get_qdii_passive_funds() -> Dict[str, Any]:
     """获取国内纳斯达克100 & 标普500 场外被动 QDII A类基金数据列表
 
@@ -1306,8 +1301,14 @@ def get_qdii_passive_funds() -> Dict[str, Any]:
         else:
             asset_alloc = default_alloc
 
-        # 对于被动指数基金 (NDX / SPX)，其全部股票资产 100% 投资于美股上市成份股
-        if item.get("index_code") in ["NDX", "SPX"] and "stock_us_pct" not in asset_alloc and "stock_pct" in asset_alloc:
+        # 对于所有主投美股市场的指数/行业基金，其全部股票资产 100% 投资于美股上市成份股
+        US_MARKET_INDICES = ["NDX", "SPX", "NBI", "TECH", "SPX_TECH", "CONS", "SPX_CONS", "SEMI"]
+        if (
+            (item.get("index_code") in US_MARKET_INDICES or item.get("tag") in ["纳指100", "标普500", "生物科技", "信息科技", "消费精选", "半导体"])
+            and "stock_us_pct" not in asset_alloc
+            and "stock_pct" in asset_alloc
+            and not any(k in asset_alloc for k in ["stock_hk_pct", "stock_cn_pct", "stock_other_pct"])
+        ):
             asset_alloc["stock_us_pct"] = asset_alloc["stock_pct"]
 
         fee_rate = fee_map.get(code) or item["fee_rate"]

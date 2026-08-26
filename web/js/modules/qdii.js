@@ -157,12 +157,18 @@ class QDIIController {
                 if (alloc.bond_pct > 0.5) barSegments.push({ cls: 'allocation-bar-bond', val: parseFloat(bondPct), title: `债券: ${bondPct}%` });
 
                 const totalVal = barSegments.reduce((sum, s) => sum + s.val, 0);
-                let barHtml = barSegments.map(s => `<div class="${s.cls}" style="flex: 0 0 ${s.val}%; width: ${s.val}%;" title="${s.title}"></div>`).join('');
-                
-                if (totalVal < 99.5) {
+                const barScale = totalVal > 100 ? (100 / totalVal) : 1;
+                let barHtml = barSegments.map(s => {
+                    const w = (s.val * barScale).toFixed(1);
+                    return `<div class="${s.cls}" style="flex: 0 0 ${w}%; width: ${w}%;" title="${s.title}"></div>`;
+                }).join('');
+
+                if (totalVal < 98.5) {
                     const unclassifiedPct = (100.0 - totalVal).toFixed(1);
                     barHtml += `<div class="allocation-bar-unclassified" style="flex: 0 0 ${unclassifiedPct}%; width: ${unclassifiedPct}%;" title="其它资产: ${unclassifiedPct}%"></div>`;
-                    subParts.push(`<span class="alloc-text-item alloc-text-unclassified">${unclassifiedPct}% 其它</span>`);
+                    if (parseFloat(unclassifiedPct) >= 1.0) {
+                        subParts.push(`<span class="alloc-text-item alloc-text-unclassified">${unclassifiedPct}% 其它</span>`);
+                    }
                 }
 
                 let allocLabel = subParts.join('<span class="alloc-sep">·</span>');
@@ -299,11 +305,17 @@ class QDIIController {
                 if (alloc.bond_pct > 0.5) barSegments.push({ cls: 'allocation-bar-bond', val: parseFloat(bondPct) });
 
                 const totalVal = barSegments.reduce((sum, s) => sum + s.val, 0);
-                let barHtml = barSegments.map(s => `<div class="${s.cls}" style="flex: 0 0 ${s.val}%; width: ${s.val}%;"></div>`).join('');
-                if (totalVal < 99.5) {
+                const barScale = totalVal > 100 ? (100 / totalVal) : 1;
+                let barHtml = barSegments.map(s => {
+                    const w = (s.val * barScale).toFixed(1);
+                    return `<div class="${s.cls}" style="flex: 0 0 ${w}%; width: ${w}%;"></div>`;
+                }).join('');
+                if (totalVal < 98.5) {
                     const unclassifiedPct = (100.0 - totalVal).toFixed(1);
                     barHtml += `<div class="allocation-bar-unclassified" style="flex: 0 0 ${unclassifiedPct}%; width: ${unclassifiedPct}%;"></div>`;
-                    subParts.push(`<span class="alloc-text-item alloc-text-unclassified">${unclassifiedPct}% 其它</span>`);
+                    if (parseFloat(unclassifiedPct) >= 1.0) {
+                        subParts.push(`<span class="alloc-text-item alloc-text-unclassified">${unclassifiedPct}% 其它</span>`);
+                    }
                 }
 
                 let allocLabel = subParts.join('<span class="alloc-sep">·</span>');
