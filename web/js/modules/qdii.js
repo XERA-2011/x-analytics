@@ -113,12 +113,6 @@ class QDIIController {
             const vol = item.volatility;
             const volStr = vol != null ? `${utils.formatPercentage(vol)}` : '--';
 
-            let benchmarkGapStr = '--';
-            if (r1y != null && activeBenchmark != null) {
-                const gap = r1y - activeBenchmark;
-                benchmarkGapStr = `${gap > 0 ? '+' : ''}${utils.formatPercentage(gap)}`;
-            }
-
             const alloc = item.asset_allocation;
             let allocHtml = '<span style="color: var(--text-tertiary);">--</span>';
 
@@ -229,7 +223,6 @@ class QDIIController {
                     <td class="col-scale font-mono" style="color: var(--text-secondary);">${item.scale || '--'}</td>
                     <td class="col-status"><span class="status-badge ${statusClass}">${statusText}</span></td>
                     ${!isActiveTab ? `
-                        <td class="col-gap font-mono" style="color: var(--text-tertiary);">${benchmarkGapStr}</td>
                         <td class="col-tracking font-mono">${item.tracking_error || '--'}</td>
                     ` : ''}
                     <td class="col-date" style="color: var(--text-secondary);">${item.inception_date || '--'}</td>
@@ -421,7 +414,6 @@ class QDIIController {
                             <th class="col-scale">资产规模</th>
                             <th class="col-status">状态</th>
                             ${!isActiveTab ? `
-                                <th class="col-gap">对标差距</th>
                                 <th class="col-tracking">跟踪偏离度</th>
                             ` : ''}
                             <th class="col-date">成立时间</th>
