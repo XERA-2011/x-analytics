@@ -1363,11 +1363,18 @@ def _fetch_full_holdings_count(session: requests.Session, fetch_code: str, defau
     return final_count
 
 
-@cached("qdii:top_holdings_v11", ttl=86400 * 7, stale_ttl=86400 * 30, sync_on_cold=True)
+@cached("qdii:top_holdings_v12", ttl=86400 * 7, stale_ttl=86400 * 30, sync_on_cold=True)
 def get_qdii_top_holdings(code: str) -> Dict[str, Any]:
     """获取 QDII 基金最新披露的重仓持仓股票列表（升级支持最大100只完整持仓）"""
     # 联接基金到目标 ETF 的映射，当联接基金本身无持仓披露时，自动穿透到目标 ETF 获取底层持仓
     FEEDER_TO_TARGET_ETF = {
+        "016055": "513390",  # 博时纳斯达克100ETF发起式联接A -> 博时纳斯达克100ETF
+        "017091": "159509",  # 景顺长城纳斯达克科技ETF联接A -> 景顺长城纳斯达克科技ETF
+        "018064": "159655",  # 华夏标普500ETF发起式联接A -> 华夏标普500ETF
+        "016532": "159501",  # 嘉实纳斯达克100ETF发起联接A -> 嘉实纳斯达克100ETF
+        "040046": "159518",  # 华安纳斯达克100ETF联接A -> 华安纳斯达克100ETF
+        "270042": "159941",  # 广发纳斯达克100ETF联接A -> 广发纳斯达克100ETF
+        "000834": "159513",  # 大成纳斯达克100ETF联接A -> 大成纳斯达克100ETF
         "019454": "513310",  # 华泰柏瑞中韩半导体联接A -> 华泰柏瑞中韩半导体ETF
         "019547": "513100",  # 招商纳斯达克100联接A -> 国泰纳斯达克100ETF
         "019441": "513100",  # 万家纳斯达克100联接A -> 国泰纳斯达克100ETF
@@ -1489,12 +1496,19 @@ def get_qdii_top_holdings(code: str) -> Dict[str, Any]:
         table = tables[0]
         ratio_idx = get_ratio_col_index(table)
         holdings = []
+        seen_keys = set()
         for tr in table.find_all("tr")[1:]:
             cols = [td.text.strip() for td in tr.find_all(["td", "th"])]
             if len(cols) > ratio_idx:
-                rank_str = cols[0]
                 stock_code = cols[1].strip()
                 stock_name = cols[2].strip()
+                lookup_key = stock_code if stock_code else stock_name
+                # 防御性去重：上游页面若有重复拼接行则自动跳过
+                if not lookup_key or lookup_key in seen_keys:
+                    continue
+                seen_keys.add(lookup_key)
+
+                rank_str = cols[0]
                 ratio_pct_str = cols[ratio_idx]
                 share_amount = cols[ratio_idx + 1] if len(cols) > (ratio_idx + 1) else "--"
                 market_value = cols[ratio_idx + 2] if len(cols) > (ratio_idx + 2) else "--"
@@ -1509,7 +1523,6 @@ def get_qdii_top_holdings(code: str) -> Dict[str, Any]:
                 change_status = "new"
                 change_val = None
 
-                lookup_key = stock_code if stock_code else stock_name
                 if lookup_key in prev_holdings_map:
                     prev_item = prev_holdings_map[lookup_key]
                     prev_ratio_val = prev_item["ratio_val"]
@@ -1562,6 +1575,10 @@ def get_qdii_top_holdings(code: str) -> Dict[str, Any]:
                     "change_status": change_status,
                     "change_val": change_val
                 })
+
+        # 重新规整 rank 序号，确保从 1 开始严格单调递增
+        for idx, h in enumerate(holdings, 1):
+            h["rank"] = str(idx)
 
         # 3. 提取清仓或退出前十的股票 (仅提取上季度前十大持仓中已退出本季持仓的标的)
         exited_holdings = []

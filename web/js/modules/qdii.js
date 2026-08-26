@@ -487,7 +487,17 @@ class QDIIController {
                 return;
             }
 
-            const holdings = data.holdings || [];
+            // 客户端防御性去重，避免偶发上游脏数据造成同一标的重复渲染
+            const seenKeys = new Set();
+            const uniqueHoldings = [];
+            (data.holdings || []).forEach(h => {
+                const key = h.stock_code ? h.stock_code.trim() : (h.stock_name ? h.stock_name.trim() : '');
+                if (key && !seenKeys.has(key)) {
+                    seenKeys.add(key);
+                    uniqueHoldings.push(h);
+                }
+            });
+            const holdings = uniqueHoldings;
             const reportDate = data.report_date || '最新季报';
 
             const bodyEl = overlay.querySelector('.qdii-modal-body');
