@@ -96,8 +96,6 @@ class QDIIController {
             return;
         }
 
-        const isActiveTab = this.currentFilter === 'active';
-
         // 1. 桌面端宽屏大表格行渲染
         let desktopRowsHtml = filtered.map((item, index) => {
             const rank = index + 1;
@@ -222,9 +220,6 @@ class QDIIController {
                     <td class="col-fee font-mono">${item.fee_rate}</td>
                     <td class="col-scale font-mono" style="color: var(--text-secondary);">${item.scale || '--'}</td>
                     <td class="col-status"><span class="status-badge ${statusClass}">${statusText}</span></td>
-                    ${!isActiveTab ? `
-                        <td class="col-tracking font-mono">${item.tracking_error || '--'}</td>
-                    ` : ''}
                     <td class="col-date" style="color: var(--text-secondary);">${item.inception_date || '--'}</td>
                 </tr>
             `;
@@ -413,9 +408,6 @@ class QDIIController {
                             <th class="col-fee">综合费率</th>
                             <th class="col-scale">资产规模</th>
                             <th class="col-status">状态</th>
-                            ${!isActiveTab ? `
-                                <th class="col-tracking">跟踪偏离度</th>
-                            ` : ''}
                             <th class="col-date">成立时间</th>
                         </tr>
                     </thead>
