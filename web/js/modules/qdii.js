@@ -78,15 +78,15 @@ class QDIIController {
         let indexName = '纳斯达克100';
 
         if (this.currentFilter === 'nasdaq100') {
-            filtered = this.rawFunds.filter(f => f.index_code === 'NDX');
-            activeBenchmark = this.benchmarks.NDX?.return_1y || 21.14;
-            indexName = '纳斯达克100';
+            filtered = this.rawFunds.filter(f => f.index_code === 'NDX' || f.index_code === 'NBI' || f.name.includes('纳斯达克'));
+            activeBenchmark = this.benchmarks.NDX?.return_1y || 24.69;
+            indexName = '纳斯达克';
         } else if (this.currentFilter === 'sp500') {
-            filtered = this.rawFunds.filter(f => f.index_code === 'SPX');
-            activeBenchmark = this.benchmarks.SPX?.return_1y || 16.48;
+            filtered = this.rawFunds.filter(f => (f.index_code && f.index_code.startsWith('SPX')) || f.name.includes('标普'));
+            activeBenchmark = this.benchmarks.SPX?.return_1y || 19.23;
             indexName = '标普500';
         } else if (this.currentFilter === 'active') {
-            filtered = this.rawFunds.filter(f => f.index_code === 'ACTIVE' || f.type === 'active');
+            filtered = this.rawFunds.filter(f => f.index_code === 'ACTIVE' || f.type === 'active' || f.index_code === 'KR_CN');
             activeBenchmark = null;
             indexName = '主动管理型';
         }
