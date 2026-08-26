@@ -218,20 +218,6 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "default_asset_allocation": {"stock_pct": 93.41, "stock_us_pct": 93.41, "cash_pct": 6.59, "bond_pct": 0.0},
         "tag": "生物科技",
     },
-    {
-        "code": "017436",
-        "name": "华宝纳斯达克精选股票发起式(QDII)A",
-        "index_code": "NDX",
-        "index_name": "纳斯达克100",
-        "fee_rate": "1.20%",
-        "tracking_error": "0.40%",
-        "inception_date": "2023-03-02",
-        "default_return_1y": 35.20,
-        "default_nav": 2.3255,
-        "default_nav_date": "2026-08-04",
-        "default_asset_allocation": {"stock_pct": 88.42, "cash_pct": 11.58, "bond_pct": 0.0},
-        "tag": "风味纳指",
-    },
 
     # --- 标普 500 场外 QDII (A类) ---
     {
@@ -467,7 +453,7 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
     },
     {
         "code": "017436",
-        "name": "华宝纳斯达克精选股票发起(QDII)A",
+        "name": "华宝纳斯达克精选股票发起式(QDII)A",
         "index_code": "ACTIVE",
         "index_name": "主动管理型",
         "type": "active",
@@ -1131,7 +1117,7 @@ def fetch_fund_scale(session: requests.Session, code: str) -> Optional[str]:
     return None
 
 
-@cached("qdii:passive_funds_v39", ttl=86400, stale_ttl=86400 * 7, sync_on_cold=True)
+@cached("qdii:passive_funds_v40", ttl=86400, stale_ttl=86400 * 7, sync_on_cold=True)
 def get_qdii_passive_funds() -> Dict[str, Any]:
     """获取国内纳斯达克100 & 标普500 场外被动 QDII A类基金数据列表
 

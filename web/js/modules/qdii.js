@@ -78,11 +78,11 @@ class QDIIController {
         let indexName = '纳斯达克100';
 
         if (this.currentFilter === 'nasdaq100') {
-            filtered = this.rawFunds.filter(f => f.index_code === 'NDX' || f.index_code === 'NBI' || f.name.includes('纳斯达克'));
+            filtered = this.rawFunds.filter(f => f.type !== 'active' && (f.index_code === 'NDX' || f.index_code === 'NBI'));
             activeBenchmark = this.benchmarks.NDX?.return_1y || 24.69;
             indexName = '纳斯达克';
         } else if (this.currentFilter === 'sp500') {
-            filtered = this.rawFunds.filter(f => (f.index_code && f.index_code.startsWith('SPX')) || f.name.includes('标普'));
+            filtered = this.rawFunds.filter(f => f.type !== 'active' && (f.index_code && f.index_code.startsWith('SPX')));
             activeBenchmark = this.benchmarks.SPX?.return_1y || 19.23;
             indexName = '标普500';
         } else if (this.currentFilter === 'active') {
