@@ -190,34 +190,6 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "default_nav_date": "2026-07-23",
         "default_asset_allocation": {"stock_pct": 89.44, "cash_pct": 9.92, "bond_pct": 0.64},
     },
-    {
-        "code": "001092",
-        "name": "广发纳斯达克生物科技指数(QDII)A",
-        "index_code": "NBI",
-        "index_name": "纳斯达克生物科技",
-        "fee_rate": "0.80%",
-        "tracking_error": "0.33%",
-        "inception_date": "2015-03-30",
-        "default_return_1y": 8.50,
-        "default_nav": 1.5720,
-        "default_nav_date": "2026-07-23",
-        "default_asset_allocation": {"stock_pct": 85.24, "stock_us_pct": 85.24, "cash_pct": 6.84, "bond_pct": 0.0},
-        "tag": "生物科技",
-    },
-    {
-        "code": "017894",
-        "name": "汇添富纳斯达克生物科技ETF发起式联接(QDII)A",
-        "index_code": "NBI",
-        "index_name": "纳斯达克生物科技",
-        "fee_rate": "0.50%",
-        "tracking_error": "0.30%",
-        "inception_date": "2023-03-14",
-        "default_return_1y": 11.50,
-        "default_nav": 1.4740,
-        "default_nav_date": "2026-08-03",
-        "default_asset_allocation": {"stock_pct": 93.41, "stock_us_pct": 93.41, "cash_pct": 6.59, "bond_pct": 0.0},
-        "tag": "生物科技",
-    },
 
     # --- 标普 500 场外 QDII (A类) ---
     {
@@ -1117,7 +1089,7 @@ def fetch_fund_scale(session: requests.Session, code: str) -> Optional[str]:
     return None
 
 
-@cached("qdii:passive_funds_v40", ttl=86400, stale_ttl=86400 * 7, sync_on_cold=True)
+@cached("qdii:passive_funds_v41", ttl=86400, stale_ttl=86400 * 7, sync_on_cold=True)
 def get_qdii_passive_funds() -> Dict[str, Any]:
     """获取国内纳斯达克100 & 标普500 场外被动 QDII A类基金数据列表
 
@@ -1397,7 +1369,6 @@ def get_qdii_top_holdings(code: str) -> Dict[str, Any]:
     # 联接基金到目标 ETF 的映射，当联接基金本身无持仓披露时，自动穿透到目标 ETF 获取底层持仓
     FEEDER_TO_TARGET_ETF = {
         "019454": "513310",  # 华泰柏瑞中韩半导体联接A -> 华泰柏瑞中韩半导体ETF
-        "017894": "513290",  # 汇添富纳斯达克生物科技联接A -> 纳斯达克生物科技ETF
         "019547": "513100",  # 招商纳斯达克100联接A -> 国泰纳斯达克100ETF
         "019441": "513100",  # 万家纳斯达克100联接A -> 国泰纳斯达克100ETF
         "016452": "513100",  # 南方纳斯达克100联接A -> 国泰纳斯达克100ETF

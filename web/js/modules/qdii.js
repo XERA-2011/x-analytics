@@ -78,7 +78,7 @@ class QDIIController {
         let indexName = '纳斯达克100';
 
         if (this.currentFilter === 'nasdaq100') {
-            filtered = this.rawFunds.filter(f => f.type !== 'active' && (f.index_code === 'NDX' || f.index_code === 'NBI'));
+            filtered = this.rawFunds.filter(f => f.type !== 'active' && f.index_code === 'NDX');
             activeBenchmark = this.benchmarks.NDX?.return_1y || 24.69;
             indexName = '纳斯达克';
         } else if (this.currentFilter === 'sp500') {
