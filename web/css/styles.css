@@ -1598,6 +1598,186 @@ footer {
     border-bottom-color: rgba(255, 255, 255, 0.04);
 }
 
+/* AI 产业链 7 层极简流线型看板 (Streamlined Layer View) */
+.ai-layers-stream {
+    display: flex;
+    flex-direction: column;
+}
+
+.ai-stream-row {
+    display: flex;
+    align-items: center;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border-light);
+    gap: 16px;
+    transition: background 0.15s ease;
+}
+
+.ai-stream-row:last-child {
+    border-bottom: none;
+}
+
+.ai-stream-row:hover {
+    background: var(--bg-subtle, rgba(0, 0, 0, 0.02));
+}
+
+[data-theme="dark"] .ai-stream-row {
+    border-bottom-color: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="dark"] .ai-stream-row:hover {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.ai-stream-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 175px;
+    flex-shrink: 0;
+}
+
+.ai-stream-badge {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: var(--bg-secondary, #e2e8f0);
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+}
+
+[data-theme="dark"] .ai-stream-badge {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.ai-stream-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-primary);
+    white-space: nowrap;
+}
+
+.ai-stream-tag {
+    font-size: 10.5px;
+    color: var(--text-tertiary);
+    background: rgba(0, 0, 0, 0.04);
+    padding: 1px 5px;
+    border-radius: 3px;
+    white-space: nowrap;
+}
+
+[data-theme="dark"] .ai-stream-tag {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.ai-stream-stocks {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px 8px;
+    flex: 1;
+}
+
+.ai-stock-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 11.5px;
+    font-weight: 500;
+    cursor: default;
+    transition: all 0.15s ease;
+    border: 1px solid transparent;
+}
+
+.ai-stock-chip:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
+}
+
+.ai-stock-chip.chip-up {
+    background: rgba(16, 185, 129, 0.08);
+    color: #059669;
+    border-color: rgba(16, 185, 129, 0.2);
+}
+
+.ai-stock-chip.chip-down {
+    background: rgba(239, 68, 68, 0.08);
+    color: #dc2626;
+    border-color: rgba(239, 68, 68, 0.2);
+}
+
+.ai-stock-chip.chip-neutral {
+    background: var(--bg-subtle, #f1f5f9);
+    color: var(--text-secondary);
+    border-color: var(--border-light);
+}
+
+[data-theme="dark"] .ai-stock-chip.chip-up {
+    background: rgba(16, 185, 129, 0.15);
+    color: #34d399;
+    border-color: rgba(16, 185, 129, 0.3);
+}
+
+[data-theme="dark"] .ai-stock-chip.chip-down {
+    background: rgba(239, 68, 68, 0.15);
+    color: #f87171;
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+[data-theme="dark"] .ai-stock-chip.chip-neutral {
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text-secondary);
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+.ai-stock-chip-name {
+    font-weight: 600;
+}
+
+.ai-stock-chip-chg {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 11px;
+}
+
+.ai-stream-avg {
+    min-width: 75px;
+    text-align: right;
+    flex-shrink: 0;
+}
+
+.ai-stream-avg-val {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 800;
+    padding: 2px 7px;
+    border-radius: 4px;
+    display: inline-block;
+}
+
+.ai-stream-avg-val.avg-up {
+    color: #059669;
+    background: rgba(16, 185, 129, 0.12);
+}
+
+.ai-stream-avg-val.avg-down {
+    color: #dc2626;
+    background: rgba(239, 68, 68, 0.12);
+}
+
+[data-theme="dark"] .ai-stream-avg-val.avg-up {
+    color: #34d399;
+    background: rgba(16, 185, 129, 0.2);
+}
+
+[data-theme="dark"] .ai-stream-avg-val.avg-down {
+    color: #f87171;
+    background: rgba(239, 68, 68, 0.2);
+}
+
 /* 中美 AI 产业五维对比 */
 .ai-matrix-grid {
     display: grid;
@@ -1866,6 +2046,19 @@ footer {
     }
     .ai-capex-grid {
         grid-template-columns: 1fr;
+    }
+    .ai-stream-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+        padding: 10px 8px;
+    }
+    .ai-stream-meta {
+        width: 100%;
+        justify-content: space-between;
+    }
+    .ai-stream-avg {
+        align-self: flex-end;
     }
 }
 

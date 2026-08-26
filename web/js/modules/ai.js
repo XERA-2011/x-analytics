@@ -492,71 +492,79 @@ class AIMarketController {
                 `;
             })()}
 
-            <!-- 6. AI 产业链 7 层深度拆解 (L0 - L6 代表成分股) -->
-            <div class="card-header" style="margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
-                <h3 class="card-title" style="margin-bottom: 0;">
-                    <i data-lucide="layers" width="16" style="vertical-align: middle;"></i> AI 产业链 7 层深度拆解 (L0 - L6 代表成分股)
-                </h3>
-                <button class="info-btn" id="info-ai-layers" title="拆解说明"><i data-lucide="help-circle" width="14"></i></button>
-            </div>
+            <!-- 6. AI 产业链 7 层全景精简拆解 (L0 - L6 代表成分股) -->
+            <div class="card ai-card-module" style="margin-bottom: 16px;">
+                <div class="card-header" style="margin-bottom: 4px;">
+                    <div class="card-title">
+                        <i data-lucide="layers" width="16" style="vertical-align: middle;"></i> AI 产业链 7 层全景拆解 (L0 - L6 代表成分股)
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 11px; color: var(--text-tertiary);">共 7 大层级 · 30 只核心标的</span>
+                        <button class="info-btn" id="info-ai-layers" title="拆解说明"><i data-lucide="help-circle" width="14"></i></button>
+                    </div>
+                </div>
+                <div class="card-body" style="padding: 0 4px 4px 4px;">
+                    <div class="ai-layers-stream">
+                        ${(() => {
+                            if (!layers || layers.length === 0) return '<div class="text-secondary" style="padding: 12px;">暂无产业链数据</div>';
+                            return layers.map(layer => {
+                                const avgVal = layer.avg_change || 0.0;
+                                const isAvgUp = avgVal > 0;
+                                const avgClass = isAvgUp ? 'avg-up' : avgVal < 0 ? 'avg-down' : '';
+                                const avgSign = isAvgUp ? '+' : '';
 
-            <div class="ai-layers-grid" style="margin-bottom: 16px;">
-                ${(() => {
-                    if (!layers || layers.length === 0) return '<div class="text-secondary">暂无产业链数据</div>';
-                    return layers.map(layer => {
-                        const avgVal = layer.avg_change || 0.0;
-                        const avgClass = avgVal > 0 ? 'text-up-us' : avgVal < 0 ? 'text-down-us' : '';
-                        const avgSign = avgVal > 0 ? '+' : '';
+                                let stocksHtml = '';
+                                if (layer.items && layer.items.length > 0) {
+                                    stocksHtml = layer.items.map(item => {
+                                        const changeVal = item.change_pct;
+                                        const isCnStock = layer.layer_id === 'L6';
+                                        const isUp = changeVal > 0;
+                                        const chipClass = changeVal != null ? (isUp ? 'chip-up' : changeVal < 0 ? 'chip-down' : 'chip-neutral') : 'chip-neutral';
+                                        const sign = isUp ? '+' : '';
+                                        const changeStr = changeVal != null ? `${sign}${changeVal.toFixed(2)}%` : '--';
+                                        const currency = isCnStock ? '¥' : '$';
+                                        const priceStr = item.price != null ? `${currency}${item.price.toFixed(2)}` : '--';
+                                        const peStr = item.pe != null && item.pe > 0 ? `PE: ${item.pe.toFixed(1)}x` : '';
+                                        const mcapStr = item.market_cap != null && item.market_cap > 0 ? (isCnStock ? `市值: ${item.market_cap.toFixed(0)}亿` : `市值: $${(item.market_cap / 1000).toFixed(1)}B`) : '';
 
-                        let itemsHtml = '';
-                        if (layer.items && layer.items.length > 0) {
-                            itemsHtml = layer.items.map(item => {
-                                const changeVal = item.change_pct;
-                                const isCnStock = layer.layer_id === 'L6';
-                                const changeClass = changeVal > 0 ? (isCnStock ? 'text-up-cn' : 'text-up-us') : changeVal < 0 ? (isCnStock ? 'text-down-cn' : 'text-down-us') : '';
-                                const sign = changeVal > 0 ? '+' : '';
-                                const changeStr = changeVal != null ? `${sign}${changeVal.toFixed(2)}%` : '--';
-                                const currency = isCnStock ? '¥' : '$';
-                                const priceStr = item.price != null ? `${currency}${item.price.toFixed(2)}` : '--';
-                                const peStr = item.pe != null && item.pe > 0 ? `PE ${item.pe.toFixed(1)}x` : '';
+                                        // 提取精简且辨识度高的标的名称
+                                        const cleanName = item.name
+                                            .replace(/科技|架构|ASIC|半导体|AI服务器|液冷电源|核电|电力|电气|电脑|云/g, '')
+                                            .trim() || item.name;
+
+                                        // 悬浮 Tooltip 呈现机构级完整信息
+                                        const tooltip = `${item.name} (${item.symbol})\n最新价: ${priceStr}  涨跌幅: ${changeStr}${peStr ? '\n' + peStr : ''}${mcapStr ? '\n' + mcapStr : ''}`;
+
+                                        return `
+                                            <span class="ai-stock-chip ${chipClass}" title="${tooltip}">
+                                                <span class="ai-stock-chip-name">${cleanName}</span>
+                                                <span class="ai-stock-chip-chg font-mono">${changeStr}</span>
+                                            </span>
+                                        `;
+                                    }).join('');
+                                }
+
+                                const cleanTitle = layer.title.replace(/^.{2}：/, '');
 
                                 return `
-                                    <div class="ai-item-row">
-                                        <div class="ai-item-info">
-                                            <span class="ai-item-name">${item.name}</span>
-                                            <span class="ai-item-code font-mono">${item.symbol || ''}</span>
+                                    <div class="ai-stream-row">
+                                        <div class="ai-stream-meta">
+                                            <span class="ai-stream-badge font-mono">${layer.layer_id}</span>
+                                            <span class="ai-stream-title">${cleanTitle}</span>
+                                            <span class="ai-stream-tag">${layer.importance}</span>
                                         </div>
-                                        <div class="ai-item-price-box">
-                                            <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px;">
-                                                <span class="ai-item-price font-mono">${priceStr}</span>
-                                                <span class="ai-item-change font-mono ${changeClass}">${changeStr}</span>
-                                            </div>
-                                            ${peStr ? `<div style="font-size: 10px; color: var(--text-tertiary); font-family: var(--font-mono); text-align: right; margin-top: 1px;">${peStr}</div>` : ''}
+                                        <div class="ai-stream-stocks">
+                                            ${stocksHtml}
+                                        </div>
+                                        <div class="ai-stream-avg">
+                                            <span class="ai-stream-avg-val ${avgClass}">${avgSign}${avgVal.toFixed(2)}%</span>
                                         </div>
                                     </div>
                                 `;
                             }).join('');
-                        }
-
-                        return `
-                            <div class="card ai-layer-card">
-                                <div class="ai-layer-header">
-                                    <div>
-                                        <span class="ai-layer-id">${layer.layer_id}</span>
-                                        <span class="ai-layer-star">${layer.star}</span>
-                                        <div class="ai-layer-title">${layer.title}</div>
-                                    </div>
-                                    <div class="ai-layer-avg ${avgClass}">${avgSign}${avgVal.toFixed(2)}%</div>
-                                </div>
-                                <div class="ai-layer-importance">${layer.importance}</div>
-                                <div class="ai-layer-desc">${layer.desc}</div>
-                                <div class="ai-layer-items">
-                                    ${itemsHtml}
-                                </div>
-                            </div>
-                        `;
-                    }).join('');
-                })()}
+                        })()}
+                    </div>
+                </div>
             </div>
         `;
 
