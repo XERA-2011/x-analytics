@@ -70,6 +70,33 @@ class GoldController {
             chinaBtn.style.display = 'flex';
         }
 
+        // Bind Metal Prices Info Button
+        const metalBtn = document.getElementById('info-metal-prices');
+        if (metalBtn) {
+            metalBtn.onclick = () => {
+                utils.showInfoModal('现货黄金 vs COMEX 黄金期货定价说明', `
+<div style="font-family: var(--font-sans); color: var(--text-primary); line-height: 1.5; white-space: normal;">
+    <p style="font-size: 14px; margin-bottom: 10px;">国际贵金属市场同时存在<b>现货（Spot）</b>与<b>期货（Futures）</b>两大核心定价基准体系，价格因交割机制不同而存在正常价差：</p>
+    
+    <h4 style="font-size: 14px; font-weight: 700; margin-bottom: 4px; color: #d97706;">1. 现货黄金（伦敦金 XAU / XAUUSD）</h4>
+    <ul style="margin: 0 0 10px 20px; padding: 0; font-size: 13px;">
+        <li style="margin-bottom: 4px;"><b>交易机制</b>：即期实物交割，无交割月份或到期日限制。</li>
+        <li style="margin-bottom: 4px;"><b>应用场景</b>：全球金店首饰、银行实物金条、外汇即期交易的最通用参考基准（如目前大约 $4656 左右）。</li>
+    </ul>
+
+    <h4 style="font-size: 14px; font-weight: 700; margin-bottom: 4px; color: #4f46e5;">2. COMEX 黄金期货（GC 主力连续）</h4>
+    <ul style="margin: 0 0 10px 20px; padding: 0; font-size: 13px;">
+        <li style="margin-bottom: 4px;"><b>交易机制</b>：纽约商品交易所（COMEX）集中撮合，具有未来固定月份交割（当前主力为 12 月交割的 GC26Z 合约）。</li>
+        <li style="margin-bottom: 4px;"><b>远月升水（Contango）</b>：期货价格包含了未来数月的<b>资金利息成本（Cost of Carry）、实物仓储保管费与保险费</b>。因此在当前利率环境下，远期期货合约通常比即期现货高出数十美元（当前约溢价 $60~$70）。</li>
+    </ul>
+
+    <p style="font-size: 11px; color: var(--text-secondary); font-style: italic; border-top: 1px solid var(--border-light); padding-top: 8px; margin: 0;">提示：系统同时呈现两大标的，方便现货投资者与期货衍生品交易者对照参考。</p>
+</div>
+                `);
+            };
+            metalBtn.style.display = 'flex';
+        }
+
         // Bind SPDR ETF Info Button
         const spdrBtn = document.getElementById('info-spdr-etf');
         if (spdrBtn) {
@@ -113,6 +140,10 @@ class GoldController {
                     this.switchSPDRPeriod(period);
                 };
             });
+        }
+
+        if (window.lucide) {
+            lucide.createIcons();
         }
     }
 
@@ -239,11 +270,19 @@ class GoldController {
 
         const html = data.map(item => {
             const change = utils.formatChange(item.change_pct);
+            const badgeHtml = item.badge ? `<span class="metal-type-badge metal-badge-${item.category || 'futures'}">${item.badge}</span>` : '';
+            const descHtml = item.desc ? `<span class="metal-desc">${item.desc}</span>` : '';
             return `
                 <div class="list-item">
                     <div class="item-main">
-                        <span class="item-title">${item.name}</span>
-                        <span class="item-sub">${item.unit}</span>
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <span class="item-title">${item.name}</span>
+                            ${badgeHtml}
+                        </div>
+                        <div class="item-sub" style="display: flex; gap: 6px; align-items: center; margin-top: 3px;">
+                            <span>${item.unit}</span>
+                            ${descHtml ? `<span style="color: var(--text-tertiary);">·</span>${descHtml}` : ''}
+                        </div>
                     </div>
                     <div style="text-align: right;">
                         <div class="item-value">$${utils.formatNumber(item.price)}</div>
