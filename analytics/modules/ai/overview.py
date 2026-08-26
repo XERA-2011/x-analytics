@@ -25,7 +25,7 @@ class AIOverview:
 
     # A 股核心 AI 龙头代码映射 (腾讯极速接口通道)
     CN_AI_LEADERS_MAPPING = [
-        ("sh688256", "688256", "寒武纪-U"),
+        ("sh688256", "688256", "寒武纪"),
         ("sh688041", "688041", "海光信息"),
         ("sz300308", "300308", "中际旭创"),
         ("sh601138", "601138", "工业富联"),
@@ -34,7 +34,7 @@ class AIOverview:
 
     @staticmethod
     @cached(
-        "ai:overview_v8", 
+        "ai:overview_v9", 
         ttl=settings.CACHE_TTL["ai_overview"],
         stale_ttl=settings.CACHE_TTL["ai_overview"] * settings.STALE_TTL_RATIO
     )
@@ -288,15 +288,15 @@ class AIOverview:
             us_bubble_risk = round(min(100.0, max(15.0, 30.0 + max(0.0, us_ai_pe - 22.0) * 1.35 + rate_penalty + (l1_avg - l5_avg) * 0.6)), 1)
             cn_bubble_risk = round(min(100.0, max(20.0, 45.0 + max(0.0, cn_ai_pe - 40.0) * 0.38 + (l6_avg - l1_avg) * 0.8)), 1)
 
-            # 6. 云巨头真实 CapEx 资本开支底表 (2026 最新季度运行基准)
+            # 6. 云巨头真实 CapEx 资本开支底表 (2025/2026 最新季度运行基准)
             hyperscaler_capex = {
-                "annual_run_rate_b": 235.0,
-                "yoy_growth_pct": 42.5,
+                "annual_run_rate_b": 245.0,
+                "yoy_growth_pct": 45.0,
                 "status": "高景气大扩张 (真实基本面支撑)",
-                "msft_quarterly_capex_b": 19.0,
-                "googl_quarterly_capex_b": 13.0,
-                "meta_quarterly_capex_b": 9.5,
-                "amzn_quarterly_capex_b": 16.5
+                "msft_quarterly_capex_b": 20.5,
+                "amzn_quarterly_capex_b": 18.0,
+                "googl_quarterly_capex_b": 13.5,
+                "meta_quarterly_capex_b": 10.5
             }
 
             # 7. AI 市场热度分 (短线行情动能，市值加权七因子)
@@ -369,8 +369,9 @@ class AIOverview:
 
             # 10. 中美 AI 五维对比模型 (正向综合指标，基于真实算力/PE/开支)
             cn_core_avg = l6_avg
-            us_compute = round(min(20.0, max(10.0, 18.5 + l1_avg * 0.15)), 1)
-            cn_compute = round(min(20.0, max(8.0, 12.0 + cn_core_avg * 0.25)), 1)
+            # 算力基础为结构性基座评分 (美 18.5 分：全球前沿先进制程与封装集群垄断；中 12.0 分：国产算力芯片加速迭代与集群扩容)
+            us_compute = 18.5
+            cn_compute = 12.0
 
             us_cn_comparison = {
                 "compute_base": {"us": us_compute, "cn": cn_compute, "max": 20, "label": "算力基础"},
@@ -493,8 +494,8 @@ class AIOverview:
                         {"layer": "L0 能源电力", "weight": "10%", "targets": "GEV, CEG, VST, ETN"},
                         {"layer": "L1 算力芯片", "weight": "25%", "targets": "NVDA, AMD, AVGO, ARM, MRVL"},
                         {"layer": "L2 存储代工", "weight": "20%", "targets": "MU, TSM, ASML"},
-                        {"layer": "L3 云与巨头", "weight": "15%", "targets": "MSFT, GOOGL, AMZN, META, ORCL"},
-                        {"layer": "L4 服务器设备", "weight": "10%", "targets": "SMCI, DELL, VRT"},
+                        {"layer": "L3 服务器与液冷基建", "weight": "15%", "targets": "SMCI, DELL, VRT"},
+                        {"layer": "L4 云计算四大巨头", "weight": "10%", "targets": "MSFT, GOOGL, AMZN, META, ORCL"},
                         {"layer": "L5 软件应用", "weight": "10%", "targets": "PLTR, NOW, CRM"},
                         {"layer": "L6 A股概念题材", "weight": "10%", "targets": "寒武纪, 海光信息, 中际旭创等"}
                     ]

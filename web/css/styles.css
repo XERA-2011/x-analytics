@@ -1542,6 +1542,62 @@ footer {
     border-radius: 4px;
 }
 
+/* 全球四大云巨头 CapEx 资本开支看板 */
+.ai-capex-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+}
+
+.ai-capex-item {
+    background: var(--bg-secondary, #f8fafc);
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    transition: all 0.2s ease;
+}
+
+.ai-capex-item:hover {
+    border-color: var(--color-primary, #3b82f6);
+    transform: translateY(-1px);
+}
+
+[data-theme="dark"] .ai-capex-item {
+    background: rgba(255, 255, 255, 0.02);
+    border-color: var(--border-color);
+}
+
+.ai-capex-company {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.ai-capex-val {
+    font-size: 18px;
+    font-weight: 800;
+    font-family: var(--font-mono);
+    color: var(--color-primary, #3b82f6);
+}
+
+.ai-capex-sub {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    line-height: 1.35;
+}
+
+[data-theme="dark"] .ai-layer-items {
+    background: rgba(255, 255, 255, 0.02);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .ai-item-row {
+    border-bottom-color: rgba(255, 255, 255, 0.04);
+}
+
 /* 中美 AI 产业五维对比 */
 .ai-matrix-grid {
     display: grid;
@@ -1796,6 +1852,9 @@ footer {
     .ai-layers-grid {
         grid-template-columns: repeat(2, 1fr);
     }
+    .ai-capex-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
 }
 
 @media (max-width: 640px) {
@@ -1803,6 +1862,9 @@ footer {
         grid-template-columns: 1fr;
     }
     .ai-layers-grid {
+        grid-template-columns: 1fr;
+    }
+    .ai-capex-grid {
         grid-template-columns: 1fr;
     }
 }

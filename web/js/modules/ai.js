@@ -186,7 +186,41 @@ class AIMarketController {
                 </div>
             </div>
 
-            <!-- 2. 中美 AI 对比与泡沫风险 (对称双卡片栅格) -->
+            <!-- 2. AI 资金轮动健康度与扩散路径 (Capital Rotation) -->
+            <div class="card ai-card-module" style="margin-bottom: 16px;">
+                <div class="card-header" style="margin-bottom: 8px;">
+                    <div class="card-title">
+                        <i data-lucide="refresh-cw" width="16" style="vertical-align: middle;"></i> AI 资金轮动健康度监测 (Capital Rotation)
+                    </div>
+                    <button class="info-btn" id="info-ai-rotation" title="轮动说明"><i data-lucide="help-circle" width="14"></i></button>
+                </div>
+                <div class="card-body">
+                    <div class="rotation-box">
+                        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                            <span class="rotation-badge rotation-${rotation_class}">${rotation_mode || '均衡传导 (扩散中)'}</span>
+                            <span style="font-size: 11px; color: var(--text-tertiary);">实时监测 L0~L6 各层动能分化与资金流向</span>
+                        </div>
+                        <div class="rotation-desc" style="margin-top: 6px;">${rotation_desc || '--'}</div>
+                        <div class="rotation-flow" style="margin-top: 10px;">
+                            <span class="flow-step" style="background: rgba(16, 185, 129, 0.12); color: #059669; font-weight: 700;">L0 能源电力</span>
+                            <span style="color: var(--text-tertiary);">➔</span>
+                            <span class="flow-step" style="background: rgba(59, 130, 246, 0.12); color: #2563eb; font-weight: 700;">L1 算力芯片</span>
+                            <span style="color: var(--text-tertiary);">➔</span>
+                            <span class="flow-step" style="background: rgba(59, 130, 246, 0.08); color: var(--text-primary);">L2 存储代工</span>
+                            <span style="color: var(--text-tertiary);">➔</span>
+                            <span class="flow-step" style="background: rgba(59, 130, 246, 0.08); color: var(--text-primary);">L3 服务器液冷</span>
+                            <span style="color: var(--text-tertiary);">➔</span>
+                            <span class="flow-step" style="background: rgba(59, 130, 246, 0.08); color: var(--text-primary);">L4 云计算巨头</span>
+                            <span style="color: var(--text-tertiary);">➔</span>
+                            <span class="flow-step" style="background: rgba(168, 85, 247, 0.1); color: #9333ea;">L5 软件Agent</span>
+                            <span style="color: var(--text-tertiary);">➔</span>
+                            <span class="flow-step" style="background: rgba(239, 68, 68, 0.1); color: #dc2626;">L6 边缘概念</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. 中美 AI 对比与泡沫风险 (对称双卡片栅格) -->
             <div class="ai-grid-row">
                 <!-- 左卡：中美 AI 产业五维对比 -->
                 <div class="card ai-card-module">
@@ -410,6 +444,120 @@ class AIMarketController {
                     </div>
                 </div>
             </div>
+
+            <!-- 5. 全球四大云巨头 CapEx 资本开支晴雨表 (基本面底座) -->
+            ${(() => {
+                const capex = data.hyperscaler_capex;
+                if (!capex) return '';
+                return `
+                    <div class="card ai-card-module" style="margin-bottom: 16px;">
+                        <div class="card-header" style="margin-bottom: 8px;">
+                            <div class="card-title">
+                                <i data-lucide="bar-chart-3" width="16" style="vertical-align: middle;"></i> 北美四大云巨头 CapEx 资本开支晴雨表 (Fundamental Anchor)
+                            </div>
+                            <span style="font-size: 11px; color: #059669; font-weight: 700; background: rgba(16, 185, 129, 0.12); padding: 2px 8px; border-radius: 4px;">
+                                ${capex.status}
+                            </span>
+                        </div>
+                        <div class="card-body">
+                            <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
+                                <span>全球年化运行率：<strong style="color: var(--color-primary, #3b82f6); font-size: 14px;">$${capex.annual_run_rate_b}B</strong></span>
+                                <span>季度同比增速：<strong style="color: #059669; font-size: 14px;">+${capex.yoy_growth_pct}% YoY</strong></span>
+                                <span style="color: var(--text-tertiary);">底座对标：1997年网络基础设施大扩容红利期</span>
+                            </div>
+                            <div class="ai-capex-grid">
+                                <div class="ai-capex-item">
+                                    <div class="ai-capex-company">微软 (Microsoft / Azure)</div>
+                                    <div class="ai-capex-val font-mono">$${capex.msft_quarterly_capex_b}B <span style="font-size: 10px; font-weight: 500; color: var(--text-tertiary);">/季</span></div>
+                                    <div class="ai-capex-sub">聚焦数据中心与 OpenAI 算力底座扩展</div>
+                                </div>
+                                <div class="ai-capex-item">
+                                    <div class="ai-capex-company">亚马逊 (Amazon / AWS)</div>
+                                    <div class="ai-capex-val font-mono">$${capex.amzn_quarterly_capex_b}B <span style="font-size: 10px; font-weight: 500; color: var(--text-tertiary);">/季</span></div>
+                                    <div class="ai-capex-sub">AWS 全球基建扩容与 Trainium 自研芯片</div>
+                                </div>
+                                <div class="ai-capex-item">
+                                    <div class="ai-capex-company">谷歌 (Alphabet / GCP)</div>
+                                    <div class="ai-capex-val font-mono">$${capex.googl_quarterly_capex_b}B <span style="font-size: 10px; font-weight: 500; color: var(--text-tertiary);">/季</span></div>
+                                    <div class="ai-capex-sub">TPU v5/v6 集群建设与搜索 AI 化改造</div>
+                                </div>
+                                <div class="ai-capex-item">
+                                    <div class="ai-capex-company">Meta (算力集群自建)</div>
+                                    <div class="ai-capex-val font-mono">$${capex.meta_quarterly_capex_b}B <span style="font-size: 10px; font-weight: 500; color: var(--text-tertiary);">/季</span></div>
+                                    <div class="ai-capex-sub">Llama 训练算力基座与核心推荐引擎</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            })()}
+
+            <!-- 6. AI 产业链 7 层深度拆解 (L0 - L6 代表成分股) -->
+            <div class="card-header" style="margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+                <h3 class="card-title" style="margin-bottom: 0;">
+                    <i data-lucide="layers" width="16" style="vertical-align: middle;"></i> AI 产业链 7 层深度拆解 (L0 - L6 代表成分股)
+                </h3>
+                <button class="info-btn" id="info-ai-layers" title="拆解说明"><i data-lucide="help-circle" width="14"></i></button>
+            </div>
+
+            <div class="ai-layers-grid" style="margin-bottom: 16px;">
+                ${(() => {
+                    if (!layers || layers.length === 0) return '<div class="text-secondary">暂无产业链数据</div>';
+                    return layers.map(layer => {
+                        const avgVal = layer.avg_change || 0.0;
+                        const avgClass = avgVal > 0 ? 'text-up-us' : avgVal < 0 ? 'text-down-us' : '';
+                        const avgSign = avgVal > 0 ? '+' : '';
+
+                        let itemsHtml = '';
+                        if (layer.items && layer.items.length > 0) {
+                            itemsHtml = layer.items.map(item => {
+                                const changeVal = item.change_pct;
+                                const isCnStock = layer.layer_id === 'L6';
+                                const changeClass = changeVal > 0 ? (isCnStock ? 'text-up-cn' : 'text-up-us') : changeVal < 0 ? (isCnStock ? 'text-down-cn' : 'text-down-us') : '';
+                                const sign = changeVal > 0 ? '+' : '';
+                                const changeStr = changeVal != null ? `${sign}${changeVal.toFixed(2)}%` : '--';
+                                const currency = isCnStock ? '¥' : '$';
+                                const priceStr = item.price != null ? `${currency}${item.price.toFixed(2)}` : '--';
+                                const peStr = item.pe != null && item.pe > 0 ? `PE ${item.pe.toFixed(1)}x` : '';
+
+                                return `
+                                    <div class="ai-item-row">
+                                        <div class="ai-item-info">
+                                            <span class="ai-item-name">${item.name}</span>
+                                            <span class="ai-item-code font-mono">${item.symbol || ''}</span>
+                                        </div>
+                                        <div class="ai-item-price-box">
+                                            <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px;">
+                                                <span class="ai-item-price font-mono">${priceStr}</span>
+                                                <span class="ai-item-change font-mono ${changeClass}">${changeStr}</span>
+                                            </div>
+                                            ${peStr ? `<div style="font-size: 10px; color: var(--text-tertiary); font-family: var(--font-mono); text-align: right; margin-top: 1px;">${peStr}</div>` : ''}
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('');
+                        }
+
+                        return `
+                            <div class="card ai-layer-card">
+                                <div class="ai-layer-header">
+                                    <div>
+                                        <span class="ai-layer-id">${layer.layer_id}</span>
+                                        <span class="ai-layer-star">${layer.star}</span>
+                                        <div class="ai-layer-title">${layer.title}</div>
+                                    </div>
+                                    <div class="ai-layer-avg ${avgClass}">${avgSign}${avgVal.toFixed(2)}%</div>
+                                </div>
+                                <div class="ai-layer-importance">${layer.importance}</div>
+                                <div class="ai-layer-desc">${layer.desc}</div>
+                                <div class="ai-layer-items">
+                                    ${itemsHtml}
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                })()}
+            </div>
         `;
 
         container.innerHTML = html;
@@ -434,12 +582,12 @@ class AIMarketController {
                 const exp = explanations.cycle_score || {};
                 const defaultWeights = [
                     { layer: 'L0 能源电力', weight: '10%', targets: 'GEV, CEG, VST, ETN' },
-                    { layer: 'L1 算力芯片', weight: '25%', targets: 'NVDA, AMD, AVGO, ARM' },
+                    { layer: 'L1 算力芯片', weight: '25%', targets: 'NVDA, AMD, AVGO, ARM, MRVL' },
                     { layer: 'L2 存储代工', weight: '20%', targets: 'MU, TSM, ASML' },
-                    { layer: 'L3 云与巨头', weight: '15%', targets: 'MSFT, GOOGL, AMZN, META' },
-                    { layer: 'L4 服务器设备', weight: '10%', targets: 'SMCI, DELL, VRT' },
+                    { layer: 'L3 服务器与液冷基建', weight: '15%', targets: 'SMCI, DELL, VRT' },
+                    { layer: 'L4 云计算四大巨头', weight: '10%', targets: 'MSFT, GOOGL, AMZN, META, ORCL' },
                     { layer: 'L5 软件应用', weight: '10%', targets: 'PLTR, NOW, CRM' },
-                    { layer: 'L6 A股概念题材', weight: '10%', targets: '寒武纪, 海光, 旭创等' }
+                    { layer: 'L6 A股AI龙头', weight: '10%', targets: '寒武纪, 海光, 旭创, 工业富联, 浪潮信息' }
                 ];
                 const weightsList = (exp.weights && exp.weights.length > 0) ? exp.weights : defaultWeights;
 
