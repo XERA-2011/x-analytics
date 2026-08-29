@@ -2183,7 +2183,7 @@ footer {
 }
 
 .radar-sweep-arc {
-    transform-origin: 100px 90px;
+    transform-origin: 160px 100px;
     animation: radar-sweep 8s linear infinite;
 }
 

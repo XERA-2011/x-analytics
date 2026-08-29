@@ -80,14 +80,17 @@ class AIMarketController {
                     <!-- 左侧：AI Market Heat -->
                     <div class="ai-score-box">
                         <div class="ai-badge-label" style="display: flex; align-items: center; justify-content: space-between;">
-                            <span>AI Market Heat（短线行情热度）</span>
+                            <span>AI Market Heat（综合热度分）</span>
                             <button class="info-btn" id="info-ai-score" title="算法说明" style="margin-left: 6px; display: inline-flex; align-items: center;"><i data-lucide="help-circle" width="14"></i></button>
                         </div>
                         <div class="ai-score-num ${scoreClass}">${cycleScore} <span class="ai-score-max">/ 100</span></div>
-                        <div class="ai-score-scope">基于代表标的涨跌幅，不等同于基本面周期</div>
-                        <div class="ai-meta-row">
+                        <div class="ai-score-scope" style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">
+                            平滑七因子模型 (40%即时 + 60%历史滚动均值)
+                        </div>
+                        <div class="ai-meta-row" style="margin-top: 6px; gap: 6px; display: flex; flex-wrap: wrap;">
                             <span class="ai-trend-tag">${trendTag}</span>
                             <span class="ai-risk-tag" ${riskClassAttr}>风险: ${riskTag}</span>
+                            ${data.momentum_1d != null ? `<span class="ai-momentum-tag" style="font-size: 11px; padding: 2px 7px; border-radius: 4px; background: rgba(0,0,0,0.05); color: var(--text-secondary); font-weight: 500;">1D即时: ${data.momentum_1d}分</span>` : ''}
                         </div>
                     </div>
 
@@ -259,9 +262,9 @@ class AIMarketController {
                                 const axY = cy + r * Math.sin(angle);
                                 axisLines.push(`<line x1="${cx}" y1="${cy}" x2="${axX.toFixed(1)}" y2="${axY.toFixed(1)}" stroke="rgba(203,213,225,0.6)" stroke-dasharray="3 3"/>`);
 
-                                const lx = cx + (r + 22) * Math.cos(angle);
+                                const lx = cx + (r + 24) * Math.cos(angle);
                                 const ly = cy + (r + 14) * Math.sin(angle);
-                                labels.push(`<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="middle" font-size="11" font-weight="600" fill="var(--text-secondary)">${item.label}</text>`);
+                                labels.push(`<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="middle" font-size="11.5" font-weight="600" fill="var(--text-secondary)">${item.label}</text>`);
                             });
 
                             const webPolysHtml = gridPolys.map(scale => {
@@ -280,8 +283,8 @@ class AIMarketController {
                                             ${labels.join('')}
                                         </svg>
                                         <div class="svg-radar-legend">
-                                            <span class="legend-item"><span class="legend-dot-us"></span>美国 AI (优势覆盖)</span>
-                                            <span class="legend-item"><span class="legend-dot-cn"></span>中国 AI (追赶扩展)</span>
+                                            <span class="legend-item"><span class="legend-dot-us"></span>美国 AI (全栈优势)</span>
+                                            <span class="legend-item"><span class="legend-dot-cn"></span>中国 AI (追赶突破)</span>
                                         </div>
                                     </div>
                                 </div>
@@ -311,7 +314,7 @@ class AIMarketController {
                                 const liquidW = Math.min(300, Math.max(0, riskVal * 3));
                                 const endX = Math.min(292, Math.max(12, liquidW - 8));
                                 const bubbleBubble = isHot ? `<circle cx="${endX}" cy="12" r="3.5" fill="#ef4444" class="bubble-anim"/>` : '';
-                                const peStr = bm.pe_ratio ? `真实PE: <strong>${bm.pe_ratio}x</strong> (基准 ${bm.pe_benchmark || '--'}x)` : `产业价值分: <strong>${bm.value_score}</strong>`;
+                                const peStr = bm.pe_ratio ? `真实加权PE: <strong>${bm.pe_ratio}x</strong> (标杆 ${bm.pe_benchmark || '--'}x)` : `产业价值分: <strong>${bm.value_score}</strong>`;
 
                                 return `
                                     <div class="svg-thermo-row">
@@ -357,7 +360,7 @@ class AIMarketController {
 
             <!-- 3. AI 投资时钟与历史科技映射 (对称双卡片栅格) -->
             <div class="ai-grid-row">
-                <!-- 左卡：SVG 雷达扫掠投资时钟 -->
+                <!-- 左卡：SVG 量化动态投资时钟 -->
                 <div class="card ai-card-module">
                     <div class="card-header">
                         <div class="card-title"><i data-lucide="clock" width="16" style="vertical-align: middle;"></i> AI 四象限投资时钟 (Radar Map)</div>
@@ -396,11 +399,11 @@ class AIMarketController {
                                         <!-- 360° 雷达旋转扫掠 -->
                                         <path d="M 160 100 L 160 20 A 80 80 0 0 1 240 100 Z" fill="url(#radar-sweep-grad)" class="radar-sweep-arc" style="transform-origin: 160px 100px;"/>
                                         
-                                        <!-- 4 象限边角标签 -->
-                                        <text x="24" y="26" font-size="10" fill="var(--text-tertiary)" font-weight="600">泡沫期</text>
-                                        <text x="210" y="26" font-size="9" fill="#059669" font-weight="700">硬件与能源强势</text>
-                                        <text x="24" y="185" font-size="10" fill="var(--text-tertiary)" font-weight="600">需求验证期</text>
-                                        <text x="220" y="185" font-size="9" fill="#2563eb" font-weight="600">应用验证期</text>
+                                        <!-- 4 象限边角标签 (提升字号与对比度) -->
+                                        <text x="24" y="24" font-size="11" fill="var(--text-tertiary)" font-weight="700">泡沫期</text>
+                                        <text x="200" y="24" font-size="11" fill="#059669" font-weight="700">硬件与能源爆发期</text>
+                                        <text x="24" y="188" font-size="11" fill="var(--text-tertiary)" font-weight="700">需求验证期</text>
+                                        <text x="220" y="188" font-size="11" fill="#2563eb" font-weight="700">应用落地期</text>
 
                                         <!-- 中美连线 -->
                                         <line x1="${usX}" y1="${usY}" x2="${cnX}" y2="${cnY}" stroke="rgba(59,130,246,0.5)" stroke-width="1.5" stroke-dasharray="3 3"/>
@@ -408,17 +411,20 @@ class AIMarketController {
                                         <!-- 美国打点 -->
                                         <g transform="translate(${usX}, ${usY})">
                                             <circle r="6" fill="#2563eb" class="clock-point-pulse"/>
-                                            <rect x="8" y="-10" width="125" height="18" rx="4" fill="rgba(255,255,255,0.92)" stroke="rgba(37,99,235,0.3)"/>
-                                            <text x="12" y="2" font-size="8" font-weight="700" fill="#1e40af">美：硬件扩张→应用验证</text>
+                                            <rect x="8" y="-12" width="138" height="22" rx="4" fill="rgba(255,255,255,0.94)" stroke="rgba(37,99,235,0.4)"/>
+                                            <text x="12" y="3" font-size="10.5" font-weight="700" fill="#1e40af">美：${investment_clock?.us_position?.stage || '能源硬件扩张'}</text>
                                         </g>
 
                                         <!-- 中国打点 -->
                                         <g transform="translate(${cnX}, ${cnY})">
                                             <circle r="6" fill="#de2910" class="clock-point-pulse"/>
-                                            <rect x="8" y="-10" width="115" height="18" rx="4" fill="rgba(255,255,255,0.92)" stroke="rgba(222,41,16,0.3)"/>
-                                            <text x="12" y="2" font-size="8" font-weight="700" fill="#de2910">中：基建建设→应用探索</text>
+                                            <rect x="8" y="-12" width="138" height="22" rx="4" fill="rgba(255,255,255,0.94)" stroke="rgba(222,41,16,0.4)"/>
+                                            <text x="12" y="3" font-size="10.5" font-weight="700" fill="#de2910">中：${investment_clock?.cn_position?.stage || '基建算力建设'}</text>
                                         </g>
                                     </svg>
+                                    <div style="font-size: 11px; color: var(--text-secondary); text-align: center; margin-top: 4px;">
+                                        动态映射：X 泡沫风险 (美 ${usPctX} / 中 ${cnPctX}) · Y 扩张动能 (美 ${usPctY} / 中 ${cnPctY})
+                                    </div>
                                 </div>
                             `;
                         })()}
@@ -451,13 +457,18 @@ class AIMarketController {
                 if (!capex) return '';
                 return `
                     <div class="card ai-card-module" style="margin-bottom: 16px;">
-                        <div class="card-header" style="margin-bottom: 8px;">
+                        <div class="card-header" style="margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
                             <div class="card-title">
                                 <i data-lucide="bar-chart-3" width="16" style="vertical-align: middle;"></i> 北美四大云巨头 CapEx 资本开支晴雨表 (Fundamental Anchor)
                             </div>
-                            <span style="font-size: 11px; color: #059669; font-weight: 700; background: rgba(16, 185, 129, 0.12); padding: 2px 8px; border-radius: 4px;">
-                                ${capex.status}
-                            </span>
+                            <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                                <span style="font-size: 11px; color: var(--text-secondary); background: rgba(59, 130, 246, 0.08); padding: 2px 8px; border-radius: 4px; font-weight: 600;">
+                                    📊 ${capex.basis || '2025/2026 最新季度财报基准'}
+                                </span>
+                                <span style="font-size: 11px; color: #059669; font-weight: 700; background: rgba(16, 185, 129, 0.12); padding: 2px 8px; border-radius: 4px;">
+                                    ${capex.status}
+                                </span>
+                            </div>
                         </div>
                         <div class="card-body">
                             <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
@@ -628,23 +639,24 @@ class AIMarketController {
                 const bodyHtml = `
                     <div class="ai-info-modal" style="white-space: normal; font-size: 12px; color: var(--text-primary);">
                         <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-color); border-radius: 6px; padding: 8px 10px; margin-bottom: 8px;">
-                            <div style="font-weight: 600; font-size: 12px; color: var(--color-primary, #3b82f6); margin-bottom: 4px;">🧮 算力加权七因子核心公式</div>
+                            <div style="font-weight: 600; font-size: 12px; color: var(--color-primary, #3b82f6); margin-bottom: 4px;">🧮 平滑七因子双轨算法公式</div>
                             <div style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 10.5px; background: rgba(0,0,0,0.3); padding: 6px 8px; border-radius: 4px; color: #e2e8f0; margin-bottom: 6px; line-height: 1.45; word-break: break-word;">
-                                <div><span style="color:#93c5fd;">weighted_pct</span> = L0×10% + L1×25% + L2×20% + L3×15% + L4×10% + L5×10% + L6×10%</div>
-                                <div style="margin-top: 3px;"><span style="color:#86efac;">heat_score</span> = Min(100, Max(0, 50.0 + weighted_pct × 7.5))</div>
+                                <div><span style="color:#93c5fd;">weighted_pct_raw</span> = L0×10% + L1×25% + L2×20% + L3×15% + L4×10% + L5×10% + L6×10%</div>
+                                <div style="margin-top: 2px;"><span style="color:#fcd34d;">momentum_1d</span> = Min(100, Max(0, 50.0 + weighted_pct_raw × 7.5))</div>
+                                <div style="margin-top: 2px;"><span style="color:#86efac;">cycle_score (平滑热度)</span> = 40% × 当期即时动能 + 60% × 历史滚动均值</div>
                             </div>
-                            <div style="font-size: 11px; color: var(--text-secondary); line-height: 1.4;">包含 2026 核心约束因子：L0 能源电力 (10%)、L1-L5 硬件与应用全链条 (80%) 及 L6 A股概念题材 (10%)。</div>
+                            <div style="font-size: 11px; color: var(--text-secondary); line-height: 1.4;">双轨模型：同时提供敏感反映今日盘中的【1D 即时动能】与过滤短线噪音的【平滑综合热度分】。</div>
                         </div>
 
                         ${weightsHtml}
 
                         <div style="background: rgba(255, 255, 255, 0.02); border-left: 3px solid var(--color-primary, #3b82f6); border-radius: 0 4px 4px 0; padding: 6px 10px; font-size: 11px; color: var(--text-secondary); margin-top: 8px; line-height: 1.45;">
                             <div><strong>💡 得分区间：</strong><span style="color: #4ade80;">70+</span> 爆发 | <span style="color: #38bdf8;">50~70</span> 稳健 | <span style="color: #f87171;">&lt;40</span> 回调</div>
-                            <div style="margin-top: 3px; color: var(--text-muted, #94a3b8); font-size: 10.5px;">⚡ 数据抓取：直连美股与A股盘中数据，后台每 10 分钟自动预热更新。</div>
+                            <div style="margin-top: 3px; color: var(--text-muted, #94a3b8); font-size: 10.5px;">⚡ 数据抓取：直连美股与A股盘中实时行情，后台每 10 分钟自动更新。</div>
                         </div>
                     </div>
                 `;
-                utils.showInfoModal(exp.title || 'AI 市场热度分（市值加权七因子模型）', bodyHtml);
+                utils.showInfoModal(exp.title || 'AI 市场热度分（平滑七因子模型）', bodyHtml);
             };
         }
 
@@ -669,7 +681,7 @@ class AIMarketController {
                 const bodyHtml = `
                     <div class="ai-info-modal" style="white-space: normal; font-size: 12px; color: var(--text-primary);">
                         <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 8px;">
-                            从 5 大核心维度综合量化评估中美 AI 产业竞争力与阶段偏离：
+                            从 5 大核心维度综合量化评估中美 AI 产业竞争力（融合实时动能、动态估值与财报基准）：
                         </div>
                         <div style="display: flex; flex-direction: column; gap: 6px;">
                             ${dimsHtml}
@@ -696,10 +708,10 @@ class AIMarketController {
                         </div>
                         <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px;">
                             <div style="padding: 6px 8px; background: rgba(34, 197, 94, 0.1); border-radius: 4px; color: #4ade80;">
-                                ✅ <strong>健康资本扩张期：</strong> 芯片需求爆满 + 云巨头 CapEx 资本开支激增，股价有强劲业绩支撑。
+                                ✅ <strong>健康资本扩张期：</strong> 芯片需求饱满 + 云巨头 CapEx 资本开支激增，股价有强劲业绩支撑。
                             </div>
                             <div style="padding: 6px 8px; background: rgba(239, 68, 68, 0.1); border-radius: 4px; color: #f87171;">
-                                ⚠️ <strong>泡沫风险预警期：</strong> 算力龙头滞涨，资金转向无业绩的边缘垃圾题材暴涨，估值情绪过热。
+                                ⚠️ <strong>泡沫风险预警期：</strong> 算力龙头滞涨，资金转向无业绩的边缘题材炒作，估值情绪过热。
                             </div>
                         </div>
                     </div>
@@ -751,17 +763,17 @@ class AIMarketController {
                 const bodyHtml = `
                     <div class="ai-info-modal" style="white-space: normal; font-size: 12px; color: var(--text-primary); line-height: 1.4;">
                         <div style="background: rgba(255,255,255,0.03); border-radius: 4px; padding: 8px 10px; margin-bottom: 8px;">
-                            <div style="font-weight: 600; color: var(--color-primary, #3b82f6); margin-bottom: 2px;">🕒 四象限轮动与历史基准比对</div>
+                            <div style="font-weight: 600; color: var(--color-primary, #3b82f6); margin-bottom: 2px;">🕒 量化动态打点与四象限轮动</div>
                             <div style="color: var(--text-secondary); font-size: 11px;">
-                                借鉴美林时钟原理，将 AI 周期划分为【硬件爆发期 ➔ 需求验证期 ➔ 应用爆发期 ➔ 泡沫破裂期】。
+                                结合美林时钟原理，横轴量化二级市场估值与泡沫偏离风险，纵轴量化产业链硬件/电力实际扩张强度。
                             </div>
                         </div>
                         <div style="font-size: 11px; color: var(--text-secondary); line-height: 1.4; background: rgba(255,255,255,0.02); padding: 8px 10px; border-radius: 4px;">
-                            📌 <strong>历史参考映射：</strong> 当前 AI 处于类似 1997 年 Dot-Com 互联网大建设初期（卖路由器/服务器的基础设施盈利阶段），尚未演变为 2000 年全民炒作带.com垃圾小票的末期泡沫破裂阶段。
+                            📌 <strong>打点动态性：</strong> 点位坐标随盘中加权估值与七层动能实时位移，非静态固定图表。
                         </div>
                     </div>
                 `;
-                utils.showInfoModal(exp.title || 'AI 四象限投资时钟说明', bodyHtml);
+                utils.showInfoModal(exp.title || 'AI 四象限投资时钟（量化动态映射）说明', bodyHtml);
             };
         }
 

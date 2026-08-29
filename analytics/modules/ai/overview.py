@@ -198,38 +198,53 @@ class AIOverview:
                 except Exception as fb_err:
                     logger.warning(f"⚠️ A股 AI 备用获取失败: {fb_err}")
 
-            # 3. 7 层产业链市值加权涨跌幅计算
+            # 3. 7 层产业链市值加权涨跌幅计算 (单日即时动能)
             l0_stocks = [gev, ceg, vst, etn]
-            l0_avg = cap_weighted_change(l0_stocks)
+            l0_raw = cap_weighted_change(l0_stocks)
 
             l1_stocks = [nvda, amd, avgo, arm, mrvl, smh, soxx]
-            l1_avg = cap_weighted_change(l1_stocks)
+            l1_raw = cap_weighted_change(l1_stocks)
 
             l2_stocks = [mu, tsm, asml]
-            l2_avg = cap_weighted_change(l2_stocks)
+            l2_raw = cap_weighted_change(l2_stocks)
 
             l3_stocks = [smci, vrt, dell]
-            l3_avg = cap_weighted_change(l3_stocks)
+            l3_raw = cap_weighted_change(l3_stocks)
 
             l4_stocks = [msft, googl, amzn, meta, orcl]
-            l4_avg = cap_weighted_change(l4_stocks)
+            l4_raw = cap_weighted_change(l4_stocks)
 
             l5_stocks = [pltr, now, crm]
-            l5_avg = cap_weighted_change(l5_stocks)
+            l5_raw = cap_weighted_change(l5_stocks)
 
             l6_stocks = cn_ai_leaders[:]
-            l6_avg = cap_weighted_change(l6_stocks)
+            l6_raw = cap_weighted_change(l6_stocks)
             nvda_change = change_value(nvda)
 
+            # 单日未经平滑的即时加权动能
+            weighted_pct_raw = (
+                l0_raw * 0.10 + 
+                l1_raw * 0.25 + 
+                l2_raw * 0.20 + 
+                l3_raw * 0.15 + 
+                l4_raw * 0.10 + 
+                l5_raw * 0.10 + 
+                l6_raw * 0.10
+            )
+            momentum_1d = round(min(100.0, max(0.0, 50.0 + weighted_pct_raw * 7.5)), 1)
+
             # 3.5 行业层级均值平滑处理 (使用 Redis 存储滚动均值，过滤高频噪音)
+            l0_avg, l1_avg, l2_avg = l0_raw, l1_raw, l2_raw
+            l3_avg, l4_avg, l5_avg, l6_avg = l3_raw, l4_raw, l5_raw, l6_raw
+            
             import json
             from ...core.cache import cache
             if cache.connected and cache.redis:
                 try:
                     history_key = f"{settings.CACHE_PREFIX}:ai:layers_avg_history"
                     current_averages = {
-                        "l0": l0_avg, "l1": l1_avg, "l2": l2_avg,
-                        "l3": l3_avg, "l4": l4_avg, "l5": l5_avg, "l6": l6_avg
+                        "l0": l0_raw, "l1": l1_raw, "l2": l2_raw,
+                        "l3": l3_raw, "l4": l4_raw, "l5": l5_raw, "l6": l6_raw
                     }
                     cache.redis.lpush(history_key, json.dumps(current_averages))
                     cache.redis.ltrim(history_key, 0, 4)  # 保留最近 5 次记录
@@ -243,13 +258,22 @@ class AIOverview:
                             except Exception:
                                 pass
                     if history_dicts:
-                        l0_avg = sum(d["l0"] for d in history_dicts) / len(history_dicts)
-                        l1_avg = sum(d["l1"] for d in history_dicts) / len(history_dicts)
-                        l2_avg = sum(d["l2"] for d in history_dicts) / len(history_dicts)
-                        l3_avg = sum(d["l3"] for d in history_dicts) / len(history_dicts)
-                        l4_avg = sum(d["l4"] for d in history_dicts) / len(history_dicts)
-                        l5_avg = sum(d["l5"] for d in history_dicts) / len(history_dicts)
-                        l6_avg = sum(d["l6"] for d in history_dicts) / len(history_dicts)
+                        # 40% 当期即时动能 + 60% 历史均值，既保证响应灵敏度又平滑剧烈跳动
+                        hist_l0 = sum(d["l0"] for d in history_dicts) / len(history_dicts)
+                        hist_l1 = sum(d["l1"] for d in history_dicts) / len(history_dicts)
+                        hist_l2 = sum(d["l2"] for d in history_dicts) / len(history_dicts)
+                        hist_l3 = sum(d["l3"] for d in history_dicts) / len(history_dicts)
+                        hist_l4 = sum(d["l4"] for d in history_dicts) / len(history_dicts)
+                        hist_l5 = sum(d["l5"] for d in history_dicts) / len(history_dicts)
+                        hist_l6 = sum(d["l6"] for d in history_dicts) / len(history_dicts)
+
+                        l0_avg = l0_raw * 0.4 + hist_l0 * 0.6
+                        l1_avg = l1_raw * 0.4 + hist_l1 * 0.6
+                        l2_avg = l2_raw * 0.4 + hist_l2 * 0.6
+                        l3_avg = l3_raw * 0.4 + hist_l3 * 0.6
+                        l4_avg = l4_raw * 0.4 + hist_l4 * 0.6
+                        l5_avg = l5_raw * 0.4 + hist_l5 * 0.6
+                        l6_avg = l6_raw * 0.4 + hist_l6 * 0.6
                 except Exception as smooth_err:
                     logger.warning(f"⚠️ Redis平滑均值处理跳过: {smooth_err}")
 
@@ -288,18 +312,19 @@ class AIOverview:
             us_bubble_risk = round(min(100.0, max(15.0, 30.0 + max(0.0, us_ai_pe - 22.0) * 1.35 + rate_penalty + (l1_avg - l5_avg) * 0.6)), 1)
             cn_bubble_risk = round(min(100.0, max(20.0, 45.0 + max(0.0, cn_ai_pe - 40.0) * 0.38 + (l6_avg - l1_avg) * 0.8)), 1)
 
-            # 6. 云巨头真实 CapEx 资本开支底表 (2025/2026 最新季度运行基准)
+            # 6. 云巨头真实 CapEx 资本开支底表 (2025/2026 最新季度财报基准)
             hyperscaler_capex = {
                 "annual_run_rate_b": 245.0,
                 "yoy_growth_pct": 45.0,
                 "status": "高景气大扩张 (真实基本面支撑)",
+                "basis": "2025/2026 最新季度财报基准",
                 "msft_quarterly_capex_b": 20.5,
                 "amzn_quarterly_capex_b": 18.0,
                 "googl_quarterly_capex_b": 13.5,
                 "meta_quarterly_capex_b": 10.5
             }
 
-            # 7. AI 市场热度分 (短线行情动能，市值加权七因子)
+            # 7. AI 市场平滑热度分 (平滑七因子模型，兼顾短线动能与多日趋势)
             weighted_pct = (
                 l0_avg * 0.10 + 
                 l1_avg * 0.25 + 
@@ -367,32 +392,36 @@ class AIOverview:
                 risk_level = "中等"
                 risk_class = "medium"
 
-            # 10. 中美 AI 五维对比模型 (正向综合指标，基于真实算力/PE/开支)
-            cn_core_avg = l6_avg
-            # 算力基础为结构性基座评分 (美 18.5 分：全球前沿先进制程与封装集群垄断；中 12.0 分：国产算力芯片加速迭代与集群扩容)
-            us_compute = 18.5
-            cn_compute = 12.0
+            # 10. 中美 AI 五维对比模型 (真动态算力动能 + 真实PE估值 + 财报基准)
+            # 算力基础：结构基准 (美18.0 / 中11.5) + L1/L6盘中加权动能增量联动
+            us_compute = round(min(20.0, max(12.0, 18.0 + l1_avg * 0.35)), 1)
+            cn_compute = round(min(20.0, max(8.0, 11.5 + l6_avg * 0.40)), 1)
+
+            # 商业化程度：结构基准 (美16.0 / 中13.0) + L5应用层动能联动
+            us_commercial = round(min(20.0, max(10.0, 16.0 + l5_avg * 0.30)), 1)
+            cn_commercial = round(min(20.0, max(8.0, 13.0 + l6_avg * 0.25)), 1)
 
             us_cn_comparison = {
-                "compute_base": {"us": us_compute, "cn": cn_compute, "max": 20, "label": "算力基础"},
-                "capex_investment": {"us": 18.0, "cn": 14.5, "max": 20, "label": "资本投入"},
-                "commercialization": {"us": 16.5, "cn": 13.5, "max": 20, "label": "商业化程度"},
+                "compute_base": {"us": us_compute, "cn": cn_compute, "max": 20, "label": "算力基础", "is_dynamic": True},
+                "capex_investment": {"us": 18.0, "cn": 14.5, "max": 20, "label": "资本投入", "is_dynamic": False},
+                "commercialization": {"us": us_commercial, "cn": cn_commercial, "max": 20, "label": "商业化程度", "is_dynamic": True},
                 "valuation_safety": {
                     "us": us_safety, 
                     "cn": cn_safety, 
                     "max": 30, 
                     "label": "估值安全性", 
+                    "is_dynamic": True,
                     "us_pe": us_ai_pe, 
                     "cn_pe": cn_ai_pe,
                     "us_deviation_pct": us_pe_deviation_pct,
                     "cn_deviation_pct": cn_pe_deviation_pct
                 },
-                "completeness": {"us": 9.0, "cn": 7.8, "max": 10, "label": "产业链完整度"}
+                "completeness": {"us": 9.0, "cn": 7.8, "max": 10, "label": "产业链完整度", "is_dynamic": False}
             }
 
             # 11. AI 泡沫温度计 (真实 PE + CapEx 资本扩张支持)
             us_val_score = round(min(100.0, max(50.0, 78.0 + (100.0 - us_bubble_risk) * 0.15 + (l1_avg + l4_avg) * 0.5)), 1)
-            cn_val_score = round(min(100.0, max(40.0, 60.0 + cn_core_avg * 0.6 + (100.0 - cn_bubble_risk) * 0.1)), 1)
+            cn_val_score = round(min(100.0, max(40.0, 60.0 + l6_avg * 0.6 + (100.0 - cn_bubble_risk) * 0.1)), 1)
 
             bubble_meter = {
                 "us": {
@@ -413,16 +442,16 @@ class AIOverview:
                 }
             }
 
-            # 12. 历史周期类比 (规则映射)
+            # 12. 历史周期类比 (规则映射与历史比对)
             avg_bubble_risk = (us_bubble_risk + cn_bubble_risk) / 2
             if avg_bubble_risk >= 75.0:
                 matched_era = "1999年 互联网泡沫晚期 (情绪极度亢奋)"
                 similarity_pct = round(70.0 + min(20.0, (avg_bubble_risk - 75.0) * 0.4), 1)
                 bubble_distance = "高估值特征明显，警惕题材退潮"
-                summary_desc = "当前行情风险特征接近互联网泡沫晚期的高估值阶段；基于真实 PE 与动能的规则类比，不代表走势预测。"
+                summary_desc = "当前行情风险特征接近互联网泡沫晚期的高估值阶段；基于真实加权 PE 与动能的规则类比。"
             elif avg_bubble_risk >= 50.0:
                 matched_era = "1997年 互联网大建设中期 (基础设施红利期)"
-                similarity_pct = 70.0
+                similarity_pct = round(min(90.0, 70.0 + (65.0 - abs(avg_bubble_risk - 55.0)) * 0.3), 1)
                 bubble_distance = "基础设施扩张特征较明显"
                 summary_desc = f"全球云巨头年化 CapEx (${hyperscaler_capex['annual_run_rate_b']}B) 与芯片出货持续印证，行情更接近互联网基础设施大扩容红利阶段。"
             else:
@@ -438,11 +467,19 @@ class AIOverview:
                 "summary": summary_desc
             }
 
-            # 13. AI 四象限投资时钟
+            # 13. AI 四象限投资时钟 (量化动态打点模型)
+            # X 轴：估值与泡沫风险度量 (0~100)
+            # Y 轴：产业景气与资本扩张强度 (0~100)
+            us_clock_x = round(min(92.0, max(15.0, us_bubble_risk)), 1)
+            us_clock_y = round(min(95.0, max(20.0, 50.0 + (l0_avg * 0.35 + l1_avg * 0.45 + l4_avg * 0.20) * 4.5 + 28.0)), 1)
+
+            cn_clock_x = round(min(92.0, max(15.0, cn_bubble_risk)), 1)
+            cn_clock_y = round(min(95.0, max(20.0, 50.0 + l6_avg * 4.0 + 12.0)), 1)
+
             investment_clock = {
-                "quadrant": "硬件与能源爆发期",
-                "us_position": {"x": 72, "y": 85, "stage": "能源与硬件扩张 ➔ 应用验证"},
-                "cn_position": {"x": 50, "y": 64, "stage": "基建建设 ➔ 应用探索"}
+                "quadrant": "硬件与能源爆发期" if us_clock_y >= 60 else "应用落地验证期",
+                "us_position": {"x": us_clock_x, "y": us_clock_y, "stage": "能源硬件扩张 ➔ 应用验证"},
+                "cn_position": {"x": cn_clock_x, "y": cn_clock_y, "stage": "基建算力建设 ➔ 应用探索"}
             }
 
             # 14. 四大核心验证信号
@@ -487,9 +524,9 @@ class AIOverview:
             # 15. 指标说明字典
             explanations = {
                 "cycle_score": {
-                    "title": "AI 市场热度分（市值加权七因子模型）",
-                    "formula": f"加权涨跌幅 weighted_pct = L0*10% + L1*25% + L2*20% + L3*15% + L4*10% + L5*10% + L6*10%。美股 AI 加权 PE = {us_ai_pe}x，美债 10Y 收益率 = {us_10y_yield:.2f}%。",
-                    "interpretation": "综合考虑 7 层产业链市值加权动能与宏观折现因子。70+ 分代表行情强劲；50~70 分代表中性。",
+                    "title": "AI 市场热度分（平滑七因子模型）",
+                    "formula": f"综合平滑分（40% 当期加权动能 + 60% 滚动历史均值），单日即时动能分 = {momentum_1d} 分。美股 AI 加权 PE = {us_ai_pe}x，美债 10Y 收益率 = {us_10y_yield:.2f}%。",
+                    "interpretation": "综合考虑 7 层产业链市值加权动能与滚动平滑因子，既保持对行情的敏锐响应，又有效过滤单日极端杂音。70+ 分代表行情强劲；50~70 分代表稳健中性；<40 分代表周期降温。",
                     "weights": [
                         {"layer": "L0 能源电力", "weight": "10%", "targets": "GEV, CEG, VST, ETN"},
                         {"layer": "L1 算力芯片", "weight": "25%", "targets": "NVDA, AMD, AVGO, ARM, MRVL"},
@@ -501,13 +538,13 @@ class AIOverview:
                     ]
                 },
                 "us_cn_matrix": {
-                    "title": "中美 AI 产业五维对比模型 (真实估值与算力雷达)",
+                    "title": "中美 AI 产业五维对比模型评定标准",
                     "dimensions": [
-                        {"name": "算力基础", "max": 20, "desc": f"考察 GPU 储备与先进封装产能 (美 {us_compute} vs 中 {cn_compute})"},
-                        {"name": "资本投入", "max": 20, "desc": f"基于北美四大云巨头年化 ${hyperscaler_capex['annual_run_rate_b']}B CapEx 资本开支底表"},
-                        {"name": "商业化程度", "max": 20, "desc": "综合考察企业级 AI Agent 渗透与 ARR 收入转化 (美 16.5 vs 中 13.5)"},
-                        {"name": "估值安全性", "max": 30, "desc": f"基于真实市盈率 (美股 AI 加权 PE {us_ai_pe}x vs 国内 AI 加权 PE {cn_ai_pe}x) 与历史中枢偏离度计算"},
-                        {"name": "产业链完整度", "max": 10, "desc": "综合评估从电力、晶圆制造、光刻设备到应用的全栈自给率 (美 9.0 vs 中 7.8)"}
+                        {"name": "算力基础", "max": 20, "desc": f"考察 GPU 储备、制程与先进封装产能，动态联动 L1/L6 芯片板块盘中动能 (美 {us_compute} vs 中 {cn_compute})"},
+                        {"name": "资本投入", "max": 20, "desc": f"基于北美四大云巨头年化 ${hyperscaler_capex['annual_run_rate_b']}B CapEx 财报底表 (宏观财报基准)"},
+                        {"name": "商业化程度", "max": 20, "desc": f"综合考察企业级 AI Agent 渗透与 ARR 转化，动态联动 L5 SaaS 动能 (美 {us_commercial} vs 中 {cn_commercial})"},
+                        {"name": "估值安全性", "max": 30, "desc": f"基于真实市盈率 (美股 AI 加权 PE {us_ai_pe}x vs 国内 AI 加权 PE {cn_ai_pe}x) 与历史中枢偏离度实时计算"},
+                        {"name": "产业链完整度", "max": 10, "desc": "综合评估从电力、晶圆制造、光刻设备到应用的全栈自给率 (结构性宏观基准)"}
                     ]
                 },
                 "bubble_meter": {
@@ -515,8 +552,8 @@ class AIOverview:
                     "desc": f"美股 AI 核心篮子加权 PE 为 {us_ai_pe}x (标杆中枢 28.0x)；国内 AI 龙头加权 PE 为 {cn_ai_pe}x (标杆中枢 45.0x)。当前美债 10Y 收益率 {us_10y_yield:.2f}%，提供真实折现率锚定。"
                 },
                 "investment_clock": {
-                    "title": "AI 四象限投资时钟与 1997 年历史比对",
-                    "desc": f"以全球云巨头年化 ${hyperscaler_capex['annual_run_rate_b']}B 资本开支扩张为基本面底座，对标 1997 年网络基础设施大扩容阶段。"
+                    "title": "AI 四象限投资时钟（量化动态映射模型）",
+                    "desc": f"横轴映射二级市场估值与泡沫风险（美 {us_clock_x} / 中 {cn_clock_x}），纵轴映射产业链实际扩张强度与动能（美 {us_clock_y} / 中 {cn_clock_y}）。打点坐标随盘中行情与估值动态位移。"
                 }
             }
 
@@ -589,10 +626,12 @@ class AIOverview:
             return {
                 "cycle_score": heat_score,
                 "heat_score": heat_score,
+                "momentum_1d": momentum_1d,
+                "momentum_1d_pct": round(weighted_pct_raw, 2),
                 "market_heat_score": heat_score,
                 "industry_cycle_score": None,
                 "score_scope": "market_heat",
-                "score_note": f"七因子市值加权动能模型 (美股 AI 加权 PE {us_ai_pe}x | 年化 CapEx ${hyperscaler_capex['annual_run_rate_b']}B | 美债 10Y {us_10y_yield:.2f}%)",
+                "score_note": f"平滑七因子模型 (美股 AI 加权 PE {us_ai_pe}x | 年化 CapEx ${hyperscaler_capex['annual_run_rate_b']}B | 美债 10Y {us_10y_yield:.2f}%)",
                 "cycle_phase": cycle_phase,
                 "cycle_status": cycle_status,
                 "cycle_desc": cycle_desc,
