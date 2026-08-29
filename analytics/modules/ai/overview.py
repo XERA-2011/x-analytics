@@ -34,9 +34,10 @@ class AIOverview:
 
     @staticmethod
     @cached(
-        "ai:overview_v9", 
+        "ai:overview_v10", 
         ttl=settings.CACHE_TTL["ai_overview"],
-        stale_ttl=settings.CACHE_TTL["ai_overview"] * settings.STALE_TTL_RATIO
+        stale_ttl=settings.CACHE_TTL["ai_overview"] * settings.STALE_TTL_RATIO,
+        sync_on_cold=True
     )
     def get_overview() -> Dict[str, Any]:
         """
