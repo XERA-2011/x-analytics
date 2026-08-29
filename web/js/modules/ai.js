@@ -373,15 +373,15 @@ class AIMarketController {
                             const cnPctX = investment_clock?.cn_position?.x || 48;
                             const cnPctY = investment_clock?.cn_position?.y || 62;
 
-                            // 将 0~100 映射到 SVG (cx=160, cy=100, W=320, H=200)
+                            // 将 0~100 映射到 SVG (cx=160, cy=95, W=320, H=190)
                             const usX = (usPctX / 100) * 240 + 40; 
-                            const usY = ((100 - usPctY) / 100) * 140 + 30; 
+                            const usY = ((100 - usPctY) / 100) * 130 + 30; 
                             const cnX = (cnPctX / 100) * 240 + 40;
-                            const cnY = ((100 - cnPctY) / 100) * 140 + 30;
+                            const cnY = ((100 - cnPctY) / 100) * 130 + 30;
 
                             return `
                                 <div class="svg-clock-box">
-                                    <svg viewBox="0 0 320 200" class="svg-clock-chart">
+                                    <svg viewBox="0 0 320 190" class="svg-clock-chart">
                                         <defs>
                                             <radialGradient id="radar-sweep-grad" cx="50%" cy="50%" r="50%">
                                                 <stop offset="0%" stop-color="rgba(59,130,246,0.35)"/>
@@ -389,41 +389,54 @@ class AIMarketController {
                                             </radialGradient>
                                         </defs>
                                         <!-- 十字坐标轴 -->
-                                        <line x1="160" y1="15" x2="160" y2="185" stroke="rgba(203,213,225,0.6)" stroke-width="1" stroke-dasharray="4 4"/>
-                                        <line x1="20" y1="100" x2="300" y2="100" stroke="rgba(203,213,225,0.6)" stroke-width="1" stroke-dasharray="4 4"/>
+                                        <line x1="160" y1="15" x2="160" y2="175" stroke="rgba(203,213,225,0.6)" stroke-width="1" stroke-dasharray="4 4"/>
+                                        <line x1="20" y1="95" x2="300" y2="95" stroke="rgba(203,213,225,0.6)" stroke-width="1" stroke-dasharray="4 4"/>
                                         
                                         <!-- 同心圆轨道 -->
-                                        <circle cx="160" cy="100" r="45" fill="none" stroke="rgba(226,232,240,0.8)" stroke-width="1"/>
-                                        <circle cx="160" cy="100" r="80" fill="none" stroke="rgba(226,232,240,0.5)" stroke-width="1"/>
+                                        <circle cx="160" cy="95" r="42" fill="none" stroke="rgba(226,232,240,0.8)" stroke-width="1"/>
+                                        <circle cx="160" cy="95" r="76" fill="none" stroke="rgba(226,232,240,0.5)" stroke-width="1"/>
                                         
                                         <!-- 360° 雷达旋转扫掠 -->
-                                        <path d="M 160 100 L 160 20 A 80 80 0 0 1 240 100 Z" fill="url(#radar-sweep-grad)" class="radar-sweep-arc" style="transform-origin: 160px 100px;"/>
+                                        <path d="M 160 95 L 160 19 A 76 76 0 0 1 236 95 Z" fill="url(#radar-sweep-grad)" class="radar-sweep-arc" style="transform-origin: 160px 95px;"/>
                                         
-                                        <!-- 4 象限边角标签 (提升字号与对比度) -->
+                                        <!-- 4 象限边角标签 (清晰大字) -->
                                         <text x="24" y="24" font-size="11" fill="var(--text-tertiary)" font-weight="700">泡沫期</text>
                                         <text x="200" y="24" font-size="11" fill="#059669" font-weight="700">硬件与能源爆发期</text>
-                                        <text x="24" y="188" font-size="11" fill="var(--text-tertiary)" font-weight="700">需求验证期</text>
-                                        <text x="220" y="188" font-size="11" fill="#2563eb" font-weight="700">应用落地期</text>
+                                        <text x="24" y="180" font-size="11" fill="var(--text-tertiary)" font-weight="700">需求验证期</text>
+                                        <text x="220" y="180" font-size="11" fill="#2563eb" font-weight="700">应用落地期</text>
 
                                         <!-- 中美连线 -->
-                                        <line x1="${usX}" y1="${usY}" x2="${cnX}" y2="${cnY}" stroke="rgba(59,130,246,0.5)" stroke-width="1.5" stroke-dasharray="3 3"/>
+                                        <line x1="${usX}" y1="${usY}" x2="${cnX}" y2="${cnY}" stroke="rgba(59,130,246,0.4)" stroke-width="1.5" stroke-dasharray="3 3"/>
 
-                                        <!-- 美国打点 -->
+                                        <!-- 美国打点 (紧凑徽标，不重叠) -->
                                         <g transform="translate(${usX}, ${usY})">
                                             <circle r="6" fill="#2563eb" class="clock-point-pulse"/>
-                                            <rect x="8" y="-12" width="138" height="22" rx="4" fill="rgba(255,255,255,0.94)" stroke="rgba(37,99,235,0.4)"/>
-                                            <text x="12" y="3" font-size="10.5" font-weight="700" fill="#1e40af">美：${investment_clock?.us_position?.stage || '能源硬件扩张'}</text>
+                                            <rect x="-42" y="-22" width="40" height="18" rx="4" fill="rgba(37,99,235,0.95)" />
+                                            <text x="-22" y="-10" font-size="10" font-weight="700" fill="#ffffff" text-anchor="middle">美国</text>
                                         </g>
 
-                                        <!-- 中国打点 -->
+                                        <!-- 中国打点 (紧凑徽标，不重叠) -->
                                         <g transform="translate(${cnX}, ${cnY})">
                                             <circle r="6" fill="#de2910" class="clock-point-pulse"/>
-                                            <rect x="8" y="-12" width="138" height="22" rx="4" fill="rgba(255,255,255,0.94)" stroke="rgba(222,41,16,0.4)"/>
-                                            <text x="12" y="3" font-size="10.5" font-weight="700" fill="#de2910">中：${investment_clock?.cn_position?.stage || '基建算力建设'}</text>
+                                            <rect x="8" y="-9" width="40" height="18" rx="4" fill="rgba(222,41,16,0.95)" />
+                                            <text x="28" y="3" font-size="10" font-weight="700" fill="#ffffff" text-anchor="middle">中国</text>
                                         </g>
                                     </svg>
-                                    <div style="font-size: 11px; color: var(--text-secondary); text-align: center; margin-top: 4px;">
-                                        动态映射：X 泡沫风险 (美 ${usPctX} / 中 ${cnPctX}) · Y 扩张动能 (美 ${usPctY} / 中 ${cnPctY})
+                                </div>
+                                <div class="clock-status-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 6px;">
+                                    <div style="background: rgba(37,99,235,0.06); border: 1px solid rgba(37,99,235,0.18); border-radius: 6px; padding: 6px 8px;">
+                                        <div style="font-weight: 700; color: #1e40af; font-size: 11px; display: flex; justify-content: space-between;">
+                                            <span>● 美国 (${usPctX}, ${usPctY})</span>
+                                            <span style="color: #2563eb; font-size: 10.5px;">硬件扩张</span>
+                                        </div>
+                                        <div style="font-size: 10.5px; color: var(--text-secondary); margin-top: 2px;">${investment_clock?.us_position?.stage || '能源硬件扩张 ➔ 应用验证'}</div>
+                                    </div>
+                                    <div style="background: rgba(222,41,16,0.06); border: 1px solid rgba(222,41,16,0.18); border-radius: 6px; padding: 6px 8px;">
+                                        <div style="font-weight: 700; color: #de2910; font-size: 11px; display: flex; justify-content: space-between;">
+                                            <span>● 中国 (${cnPctX}, ${cnPctY})</span>
+                                            <span style="color: #dc2626; font-size: 10.5px;">基建算力</span>
+                                        </div>
+                                        <div style="font-size: 10.5px; color: var(--text-secondary); margin-top: 2px;">${investment_clock?.cn_position?.stage || '基建算力建设 ➔ 应用探索'}</div>
                                     </div>
                                 </div>
                             `;
@@ -436,15 +449,22 @@ class AIMarketController {
                     <div class="card-header">
                         <div class="card-title"><i data-lucide="history" width="16" style="vertical-align: middle;"></i> 历史科技周期推演映射</div>
                     </div>
-                    <div class="card-body" style="padding-top: 4px;">
+                    <div class="card-body" style="padding-top: 4px; display: flex; flex-direction: column; justify-content: space-between; height: 100%;">
                         ${historical_match ? `
-                            <div class="history-box">
-                                <div class="history-match-era">${historical_match.matched_era}</div>
-                                <div class="history-sim-bar">
-                                    <span>周期相似度: <strong>${historical_match.similarity_pct}%</strong></span>
-                                    <span>${historical_match.bubble_distance}</span>
+                            <div class="history-box" style="display: flex; flex-direction: column; gap: 8px;">
+                                <div class="history-match-era" style="font-size: 14px; font-weight: 800; color: var(--text-primary);">
+                                    ${historical_match.matched_era}
                                 </div>
-                                <div class="history-summary">${historical_match.summary}</div>
+                                <div class="history-sim-bar" style="display: flex; justify-content: space-between; align-items: center; font-size: 11.5px; color: #2563eb; background: rgba(37,99,235,0.08); padding: 7px 10px; border-radius: 6px;">
+                                    <span>周期相似度: <strong style="font-size: 13px;">${historical_match.similarity_pct}%</strong></span>
+                                    <span style="font-weight: 600; color: #059669;">${historical_match.bubble_distance}</span>
+                                </div>
+                                <div class="history-summary" style="font-size: 11.5px; color: var(--text-secondary); line-height: 1.55;">
+                                    ${historical_match.summary}
+                                </div>
+                            </div>
+                            <div style="background: rgba(0,0,0,0.02); border-left: 3px solid #059669; padding: 7px 10px; border-radius: 0 4px 4px 0; font-size: 11px; color: var(--text-secondary); margin-top: 8px;">
+                                <strong>💡 历史启示：</strong> 对标 1997 年思科与微软基建大扩容期，资本开支与硬件订单处于兑现高潮，应用层变现与盈利模式仍在加速探索阶段。
                             </div>
                         ` : '<div class="text-secondary" style="font-size: 12px;">暂无历史匹配数据</div>'}
                     </div>
