@@ -2037,14 +2037,14 @@ footer {
 .svg-radar-chart-box {
     position: relative;
     width: 100%;
-    max-width: 270px;
+    max-width: 240px;
     margin: 0 auto;
 }
 
 .svg-radar-chart {
     width: 100%;
     height: auto;
-    max-height: 170px;
+    max-height: 145px;
     overflow: visible;
 }
 

@@ -227,15 +227,15 @@ class AIMarketController {
             <div class="ai-grid-row">
                 <!-- 左卡：中美 AI 产业五维对比 -->
                 <div class="card ai-card-module">
-                    <div class="card-header" style="margin-bottom: 6px;">
-                        <div class="card-title"><i data-lucide="git-compare" width="16" style="vertical-align: middle;"></i> 中美 AI 产业五维对比 (Radar Matrix)</div>
+                    <div class="card-header" style="margin-bottom: 4px;">
+                        <div class="card-title" style="font-size: 13px;"><i data-lucide="git-compare" width="15" style="vertical-align: middle;"></i> 中美 AI 产业五维对比 (Radar Matrix)</div>
                         <button class="info-btn" id="info-ai-matrix" title="模型说明"><i data-lucide="help-circle" width="14"></i></button>
                     </div>
-                    <div class="card-body" style="padding: 2px 8px 6px 8px; justify-content: center;">
+                    <div class="card-body" style="padding: 2px 6px 4px 6px; justify-content: center; align-items: center;">
                         ${(() => {
                             if (!us_cn_comparison) return '';
                             const keys = Object.keys(us_cn_comparison);
-                            const cx = 135, cy = 82, r = 52;
+                            const cx = 120, cy = 72, r = 44;
                             const angles = [-Math.PI / 2, -Math.PI / 2 + (2 * Math.PI / 5), -Math.PI / 2 + (4 * Math.PI / 5), -Math.PI / 2 + (6 * Math.PI / 5), -Math.PI / 2 + (8 * Math.PI / 5)];
 
                             const usPoints = [];
@@ -262,9 +262,9 @@ class AIMarketController {
                                 const axY = cy + r * Math.sin(angle);
                                 axisLines.push(`<line x1="${cx}" y1="${cy}" x2="${axX.toFixed(1)}" y2="${axY.toFixed(1)}" stroke="rgba(203,213,225,0.6)" stroke-dasharray="2 2"/>`);
 
-                                const lx = cx + (r + 17) * Math.cos(angle);
-                                const ly = cy + (r + 9) * Math.sin(angle) + 3;
-                                labels.push(`<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="middle" font-size="10" font-weight="600" fill="var(--text-secondary)">${item.label}</text>`);
+                                const lx = cx + (r + 14) * Math.cos(angle);
+                                const ly = cy + (r + 8) * Math.sin(angle) + 3;
+                                labels.push(`<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="middle" font-size="9.5" font-weight="600" fill="var(--text-secondary)">${item.label}</text>`);
                             });
 
                             const webPolysHtml = gridPolys.map(scale => {
@@ -273,18 +273,18 @@ class AIMarketController {
                             }).join('');
 
                             return `
-                                <div class="svg-radar-layout">
-                                    <div class="svg-radar-chart-box">
-                                        <svg viewBox="0 0 270 170" class="svg-radar-chart">
+                                <div class="svg-radar-layout" style="width: 100%;">
+                                    <div class="svg-radar-chart-box" style="max-width: 240px; margin: 0 auto;">
+                                        <svg viewBox="0 0 240 145" class="svg-radar-chart" style="max-height: 140px;">
                                             ${webPolysHtml}
                                             ${axisLines.join('')}
                                             <polygon points="${usPoints.join(' ')}" fill="rgba(59,130,246,0.22)" stroke="#3b82f6" stroke-width="1.8" class="radar-poly-us"/>
                                             <polygon points="${cnPoints.join(' ')}" fill="rgba(222,41,16,0.22)" stroke="#de2910" stroke-width="1.8" class="radar-poly-cn"/>
                                             ${labels.join('')}
                                         </svg>
-                                        <div class="svg-radar-legend" style="margin-top: 4px; font-size: 11px; gap: 14px;">
-                                            <span class="legend-item"><span class="legend-dot-us"></span>美国 AI (全栈优势)</span>
-                                            <span class="legend-item"><span class="legend-dot-cn"></span>中国 AI (追赶突破)</span>
+                                        <div class="svg-radar-legend" style="margin-top: 2px; font-size: 10.5px; gap: 12px;">
+                                            <span class="legend-item"><span class="legend-dot-us"></span>美国 AI (优势)</span>
+                                            <span class="legend-item"><span class="legend-dot-cn"></span>中国 AI (追赶)</span>
                                         </div>
                                     </div>
                                 </div>
@@ -295,11 +295,11 @@ class AIMarketController {
 
                 <!-- 右卡：AI 泡沫温度计 -->
                 <div class="card ai-card-module">
-                    <div class="card-header" style="margin-bottom: 6px;">
-                        <div class="card-title"><i data-lucide="thermometer" width="16" style="vertical-align: middle;"></i> AI 泡沫温度计 (Bubble Risk)</div>
+                    <div class="card-header" style="margin-bottom: 4px;">
+                        <div class="card-title" style="font-size: 13px;"><i data-lucide="thermometer" width="15" style="vertical-align: middle;"></i> AI 泡沫温度计 (Bubble Risk)</div>
                         <button class="info-btn" id="info-ai-bubble" title="温度计说明"><i data-lucide="help-circle" width="14"></i></button>
                     </div>
-                    <div class="card-body" style="padding: 2px 8px 6px 8px; justify-content: space-between;">
+                    <div class="card-body" style="padding: 2px 6px 4px 6px; justify-content: space-between;">
                         ${(() => {
                             if (!bubble_meter) return '';
                             const usBM = bubble_meter.us || {};
@@ -310,19 +310,19 @@ class AIMarketController {
                             const renderThermoRow = (country, bm, riskVal, isCn) => {
                                 const colorGrad = isCn ? 'url(#grad-cn-thermo)' : 'url(#grad-us-thermo)';
                                 const badgeClass = bm.status_class === 'healthy' ? 'healthy' : 'warning';
-                                const peStr = bm.pe_ratio ? `加权 PE: <strong>${bm.pe_ratio}x</strong> (标杆 ${bm.pe_benchmark || '--'}x)` : `价值分: <strong>${bm.value_score}</strong>`;
+                                const peStr = bm.pe_ratio ? `真实加权 PE: <strong>${bm.pe_ratio}x</strong> (标杆 ${bm.pe_benchmark || '--'}x)` : `产业价值分: <strong>${bm.value_score}</strong>`;
 
                                 return `
-                                    <div class="svg-thermo-row" style="padding: 6px 10px; margin-bottom: 6px;">
-                                        <div class="svg-thermo-head" style="margin-bottom: 3px;">
-                                            <span class="svg-thermo-title" style="font-size: 11.5px;">${country} AI 估值偏离与泡沫风险</span>
-                                            <span class="svg-thermo-badge ${badgeClass}" style="font-size: 9.5px; padding: 1px 6px;">${bm.status_text}</span>
+                                    <div class="svg-thermo-row" style="background: var(--bg-secondary, #f8fafc); border: 1px solid var(--border-light); border-radius: 6px; padding: 7px 10px; margin-bottom: 5px;">
+                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px; flex-wrap: wrap; gap: 4px;">
+                                            <span style="font-size: 11.5px; font-weight: 700; color: var(--text-primary);">${country} AI 估值偏离与泡沫风险</span>
+                                            <span class="svg-thermo-badge ${badgeClass}" style="font-size: 9.5px; padding: 1px 6px; border-radius: 4px;">${bm.status_text}</span>
                                         </div>
-                                        <div style="font-size: 10.5px; color: var(--text-secondary); margin-bottom: 4px; display: flex; justify-content: space-between; align-items: center;">
+                                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 10.5px; color: var(--text-secondary); margin-bottom: 4px;">
                                             <span>${peStr}</span>
-                                            <span>泡沫风险: <strong class="text-down">${riskVal} / 100</strong></span>
+                                            <span>泡沫风险: <strong class="text-down" style="font-family: var(--font-mono); font-weight: 700;">${riskVal} / 100</strong></span>
                                         </div>
-                                        <svg class="svg-thermo-bar-svg" viewBox="0 0 300 14" style="height: 14px;">
+                                        <svg class="svg-thermo-bar-svg" viewBox="0 0 300 12" style="width: 100%; height: 12px; display: block;">
                                             <defs>
                                                 <linearGradient id="grad-us-thermo" x1="0%" y1="0%" x2="100%" y2="0%">
                                                     <stop offset="0%" stop-color="#3b82f6" />
@@ -333,11 +333,11 @@ class AIMarketController {
                                                     <stop offset="100%" stop-color="#ef4444" />
                                                 </linearGradient>
                                             </defs>
-                                            <rect x="0" y="2" width="300" height="10" rx="5" fill="rgba(226,232,240,0.6)"/>
-                                            <rect x="0" y="2" width="${Math.min(300, riskVal * 3)}" height="10" rx="5" fill="${colorGrad}" class="thermo-liquid"/>
-                                            <line x1="75" y1="2" x2="75" y2="12" stroke="rgba(255,255,255,0.4)" stroke-width="1"/>
-                                            <line x1="150" y1="2" x2="150" y2="12" stroke="rgba(255,255,255,0.6)" stroke-width="1.5"/>
-                                            <line x1="225" y1="2" x2="225" y2="12" stroke="rgba(255,255,255,0.4)" stroke-width="1"/>
+                                            <rect x="0" y="0" width="300" height="12" rx="6" fill="rgba(226,232,240,0.6)"/>
+                                            <rect x="0" y="0" width="${Math.min(300, riskVal * 3)}" height="12" rx="6" fill="${colorGrad}" class="thermo-liquid"/>
+                                            <line x1="75" y1="0" x2="75" y2="12" stroke="rgba(255,255,255,0.5)" stroke-width="1"/>
+                                            <line x1="150" y1="0" x2="150" y2="12" stroke="rgba(255,255,255,0.7)" stroke-width="1.5"/>
+                                            <line x1="225" y1="0" x2="225" y2="12" stroke="rgba(255,255,255,0.5)" stroke-width="1"/>
                                         </svg>
                                     </div>
                                 `;
@@ -359,29 +359,34 @@ class AIMarketController {
 
             <!-- 4. 宏观推演与资本开支底座 (Row 2: 对称双卡片栅格) -->
             <div class="ai-grid-row">
-                <!-- 左卡：AI 历史科技周期推演映射 -->
+                <!-- 左卡：历史科技周期推演映射 (宏观坐标系) -->
                 <div class="card ai-card-module">
-                    <div class="card-header">
-                        <div class="card-title"><i data-lucide="history" width="16" style="vertical-align: middle;"></i> 历史科技周期推演映射</div>
+                    <div class="card-header" style="margin-bottom: 6px;">
+                        <div class="card-title" style="font-size: 13.5px;"><i data-lucide="history" width="16" style="vertical-align: middle;"></i> 历史科技周期推演映射</div>
+                        <button class="info-btn" id="info-ai-history" title="推演模型说明"><i data-lucide="help-circle" width="14"></i></button>
                     </div>
-                    <div class="card-body" style="padding-top: 4px; display: flex; flex-direction: column; justify-content: space-between; height: 100%;">
-                        ${historical_match ? `
-                            <div class="history-box" style="display: flex; flex-direction: column; gap: 8px;">
-                                <div class="history-match-era" style="font-size: 14px; font-weight: 800; color: var(--text-primary);">
-                                    ${historical_match.matched_era}
+                    <div class="card-body" style="padding-top: 2px;">
+                        ${(() => {
+                            const hm = data.historical_match;
+                            if (!hm) return '<div class="text-secondary">暂无周期比对数据</div>';
+                            return `
+                                <div class="history-box">
+                                    <div class="history-match-era" style="font-size: 13px; font-weight: 700; color: var(--text-primary);">
+                                        ${hm.match_era}
+                                    </div>
+                                    <div class="history-sim-bar" style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.03); padding: 5px 8px; border-radius: 4px;">
+                                        <span style="font-size: 11px; color: var(--color-primary, #3b82f6); font-weight: 600;">周期相似度: ${hm.similarity_score}%</span>
+                                        <span style="font-size: 10.5px; color: #059669; font-weight: 700; background: rgba(16, 185, 129, 0.12); padding: 1px 6px; border-radius: 4px;">${hm.phase_feature}</span>
+                                    </div>
+                                    <div style="font-size: 11px; color: var(--text-secondary); line-height: 1.4;">
+                                        ${hm.historical_narrative}
+                                    </div>
+                                    <div style="font-size: 10.5px; color: var(--text-tertiary); background: var(--bg-subtle, #f8fafc); border-left: 3px solid var(--color-primary, #3b82f6); padding: 5px 8px; border-radius: 0 4px 4px 0; line-height: 1.35;">
+                                        💡 <strong>历史启示：</strong> ${hm.lesson}
+                                    </div>
                                 </div>
-                                <div class="history-sim-bar" style="display: flex; justify-content: space-between; align-items: center; font-size: 11.5px; color: #2563eb; background: rgba(37,99,235,0.08); padding: 7px 10px; border-radius: 6px;">
-                                    <span>周期相似度: <strong style="font-size: 13px;">${historical_match.similarity_pct}%</strong></span>
-                                    <span style="font-weight: 600; color: #059669;">${historical_match.bubble_distance}</span>
-                                </div>
-                                <div class="history-summary" style="font-size: 11.5px; color: var(--text-secondary); line-height: 1.55;">
-                                    ${historical_match.summary}
-                                </div>
-                            </div>
-                            <div style="background: rgba(0,0,0,0.02); border-left: 3px solid #059669; padding: 7px 10px; border-radius: 0 4px 4px 0; font-size: 11px; color: var(--text-secondary); margin-top: 8px;">
-                                <strong>💡 历史启示：</strong> 对标 1997 年思科与微软基建大扩容期，资本开支与硬件订单处于兑现高潮，应用层变现与盈利模式仍在加速探索阶段。
-                            </div>
-                        ` : '<div class="text-secondary" style="font-size: 12px;">暂无历史匹配数据</div>'}
+                            `;
+                        })()}
                     </div>
                 </div>
 
@@ -395,8 +400,8 @@ class AIMarketController {
                                 <div class="card-title" style="font-size: 13.5px;">
                                     <i data-lucide="bar-chart-3" width="16" style="vertical-align: middle;"></i> 四大云巨头 CapEx 晴雨表
                                 </div>
-                                <div style="display: flex; align-items: center; gap: 4px;">
-                                    <span style="font-size: 10.5px; color: #059669; font-weight: 700; background: rgba(16, 185, 129, 0.12); padding: 1px 6px; border-radius: 4px;">
+                                <div style="display: flex; align-items: center; gap: 4px; margin-left: auto;">
+                                    <span style="font-size: 10.5px; color: #059669; font-weight: 700; background: rgba(16, 185, 129, 0.12); padding: 1px 6px; border-radius: 4px; white-space: nowrap;">
                                         ${capex.status}
                                     </span>
                                 </div>
@@ -436,12 +441,12 @@ class AIMarketController {
 
             <!-- 6. AI 产业链 7 层全景精简拆解 (L0 - L6 代表成分股) -->
             <div class="card ai-card-module" style="margin-bottom: 16px;">
-                <div class="card-header" style="margin-bottom: 4px;">
-                    <div class="card-title">
+                <div class="card-header" style="margin-bottom: 4px; flex-wrap: wrap; gap: 6px;">
+                    <div class="card-title" style="font-size: 13.5px;">
                         <i data-lucide="layers" width="16" style="vertical-align: middle;"></i> AI 产业链 7 层全景拆解 (L0 - L6 代表成分股)
                     </div>
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <span style="font-size: 11px; color: var(--text-tertiary);">共 7 大层级 · 30 只核心标的</span>
+                    <div style="display: flex; align-items: center; gap: 6px; margin-left: auto;">
+                        <span style="font-size: 10.5px; color: var(--text-tertiary); white-space: nowrap;">7 大层级 · 30 只核心标的</span>
                         <button class="info-btn" id="info-ai-layers" title="拆解说明"><i data-lucide="help-circle" width="14"></i></button>
                     </div>
                 </div>
