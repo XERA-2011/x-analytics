@@ -235,8 +235,16 @@ class AIMarketController {
                         ${(() => {
                             if (!us_cn_comparison) return '';
                             const keys = Object.keys(us_cn_comparison);
-                            const cx = 120, cy = 72, r = 44;
+                            const cx = 150, cy = 82, r = 52;
                             const angles = [-Math.PI / 2, -Math.PI / 2 + (2 * Math.PI / 5), -Math.PI / 2 + (4 * Math.PI / 5), -Math.PI / 2 + (6 * Math.PI / 5), -Math.PI / 2 + (8 * Math.PI / 5)];
+
+                            const labelConfigs = [
+                                { anchor: 'middle', baseline: 'auto', dx: 0, dy: -9 },
+                                { anchor: 'start', baseline: 'central', dx: 9, dy: 1 },
+                                { anchor: 'start', baseline: 'hanging', dx: 4, dy: 14 },
+                                { anchor: 'end', baseline: 'hanging', dx: -4, dy: 14 },
+                                { anchor: 'end', baseline: 'central', dx: -9, dy: 1 }
+                            ];
 
                             const usPoints = [];
                             const cnPoints = [];
@@ -262,9 +270,10 @@ class AIMarketController {
                                 const axY = cy + r * Math.sin(angle);
                                 axisLines.push(`<line x1="${cx}" y1="${cy}" x2="${axX.toFixed(1)}" y2="${axY.toFixed(1)}" stroke="rgba(203,213,225,0.6)" stroke-dasharray="2 2"/>`);
 
-                                const lx = cx + (r + 14) * Math.cos(angle);
-                                const ly = cy + (r + 8) * Math.sin(angle) + 3;
-                                labels.push(`<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="middle" font-size="9.5" font-weight="600" fill="var(--text-secondary)">${item.label}</text>`);
+                                const cfg = labelConfigs[idx] || { anchor: 'middle', baseline: 'auto', dx: 0, dy: 0 };
+                                const lx = axX + cfg.dx;
+                                const ly = axY + cfg.dy;
+                                labels.push(`<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="${cfg.anchor}" dominant-baseline="${cfg.baseline}" font-size="10" font-weight="600" fill="var(--text-secondary)">${item.label}</text>`);
                             });
 
                             const webPolysHtml = gridPolys.map(scale => {
@@ -274,15 +283,15 @@ class AIMarketController {
 
                             return `
                                 <div class="svg-radar-layout" style="width: 100%;">
-                                    <div class="svg-radar-chart-box" style="max-width: 240px; margin: 0 auto;">
-                                        <svg viewBox="0 0 240 145" class="svg-radar-chart" style="max-height: 140px;">
+                                    <div class="svg-radar-chart-box" style="max-width: 290px; margin: 0 auto;">
+                                        <svg viewBox="0 0 300 168" class="svg-radar-chart" style="max-height: 165px;">
                                             ${webPolysHtml}
                                             ${axisLines.join('')}
                                             <polygon points="${usPoints.join(' ')}" fill="rgba(59,130,246,0.22)" stroke="#3b82f6" stroke-width="1.8" class="radar-poly-us"/>
                                             <polygon points="${cnPoints.join(' ')}" fill="rgba(222,41,16,0.22)" stroke="#de2910" stroke-width="1.8" class="radar-poly-cn"/>
                                             ${labels.join('')}
                                         </svg>
-                                        <div class="svg-radar-legend" style="margin-top: 2px; font-size: 10.5px; gap: 12px;">
+                                        <div class="svg-radar-legend" style="margin-top: 2px; font-size: 11px; gap: 14px;">
                                             <span class="legend-item"><span class="legend-dot-us"></span>美国 AI (优势)</span>
                                             <span class="legend-item"><span class="legend-dot-cn"></span>中国 AI (追赶)</span>
                                         </div>
