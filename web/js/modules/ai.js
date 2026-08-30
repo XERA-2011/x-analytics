@@ -40,7 +40,7 @@ class AIMarketController {
         const { 
             trend_str, risk_level, risk_class, cycle_phase, cycle_status, cycle_desc,
             us_cn_comparison, bubble_meter, rotation_mode, rotation_class, rotation_desc,
-            historical_match, investment_clock, signals, layers 
+            historical_match, signals, layers 
         } = data;
 
         const scoreClass = cycleScore >= 70 ? 'text-up' : cycleScore <= 40 ? 'text-down' : 'text-neutral';
@@ -358,93 +358,9 @@ class AIMarketController {
                 </div>
             </div>
 
-            <!-- 3. AI 投资时钟与历史科技映射 (对称双卡片栅格) -->
+            <!-- 4. 宏观推演与资本开支底座 (Row 2: 对称双卡片栅格) -->
             <div class="ai-grid-row">
-                <!-- 左卡：SVG 量化动态投资时钟 -->
-                <div class="card ai-card-module">
-                    <div class="card-header">
-                        <div class="card-title"><i data-lucide="clock" width="16" style="vertical-align: middle;"></i> AI 四象限投资时钟 (Radar Map)</div>
-                        <button class="info-btn" id="info-ai-clock" title="时钟说明"><i data-lucide="help-circle" width="14"></i></button>
-                    </div>
-                    <div class="card-body" style="padding-top: 4px;">
-                        ${(() => {
-                            const usPctX = investment_clock?.us_position?.x || 68;
-                            const usPctY = investment_clock?.us_position?.y || 82;
-                            const cnPctX = investment_clock?.cn_position?.x || 48;
-                            const cnPctY = investment_clock?.cn_position?.y || 62;
-
-                            // 将 0~100 映射到 SVG (cx=160, cy=95, W=320, H=190)
-                            const usX = (usPctX / 100) * 240 + 40; 
-                            const usY = ((100 - usPctY) / 100) * 130 + 30; 
-                            const cnX = (cnPctX / 100) * 240 + 40;
-                            const cnY = ((100 - cnPctY) / 100) * 130 + 30;
-
-                            return `
-                                <div class="svg-clock-box">
-                                    <svg viewBox="0 0 320 190" class="svg-clock-chart">
-                                        <defs>
-                                            <radialGradient id="radar-sweep-grad" cx="50%" cy="50%" r="50%">
-                                                <stop offset="0%" stop-color="rgba(59,130,246,0.35)"/>
-                                                <stop offset="100%" stop-color="rgba(59,130,246,0.0)"/>
-                                            </radialGradient>
-                                        </defs>
-                                        <!-- 十字坐标轴 -->
-                                        <line x1="160" y1="15" x2="160" y2="175" stroke="rgba(203,213,225,0.6)" stroke-width="1" stroke-dasharray="4 4"/>
-                                        <line x1="20" y1="95" x2="300" y2="95" stroke="rgba(203,213,225,0.6)" stroke-width="1" stroke-dasharray="4 4"/>
-                                        
-                                        <!-- 同心圆轨道 -->
-                                        <circle cx="160" cy="95" r="42" fill="none" stroke="rgba(226,232,240,0.8)" stroke-width="1"/>
-                                        <circle cx="160" cy="95" r="76" fill="none" stroke="rgba(226,232,240,0.5)" stroke-width="1"/>
-                                        
-                                        <!-- 360° 雷达旋转扫掠 -->
-                                        <path d="M 160 95 L 160 19 A 76 76 0 0 1 236 95 Z" fill="url(#radar-sweep-grad)" class="radar-sweep-arc" style="transform-origin: 160px 95px;"/>
-                                        
-                                        <!-- 4 象限边角标签 (清晰大字) -->
-                                        <text x="24" y="24" font-size="11" fill="var(--text-tertiary)" font-weight="700">泡沫期</text>
-                                        <text x="200" y="24" font-size="11" fill="#059669" font-weight="700">硬件与能源爆发期</text>
-                                        <text x="24" y="180" font-size="11" fill="var(--text-tertiary)" font-weight="700">需求验证期</text>
-                                        <text x="220" y="180" font-size="11" fill="#2563eb" font-weight="700">应用落地期</text>
-
-                                        <!-- 中美连线 -->
-                                        <line x1="${usX}" y1="${usY}" x2="${cnX}" y2="${cnY}" stroke="rgba(59,130,246,0.4)" stroke-width="1.5" stroke-dasharray="3 3"/>
-
-                                        <!-- 美国打点 (紧凑徽标，不重叠) -->
-                                        <g transform="translate(${usX}, ${usY})">
-                                            <circle r="6" fill="#2563eb" class="clock-point-pulse"/>
-                                            <rect x="-42" y="-22" width="40" height="18" rx="4" fill="rgba(37,99,235,0.95)" />
-                                            <text x="-22" y="-10" font-size="10" font-weight="700" fill="#ffffff" text-anchor="middle">美国</text>
-                                        </g>
-
-                                        <!-- 中国打点 (紧凑徽标，不重叠) -->
-                                        <g transform="translate(${cnX}, ${cnY})">
-                                            <circle r="6" fill="#de2910" class="clock-point-pulse"/>
-                                            <rect x="8" y="-9" width="40" height="18" rx="4" fill="rgba(222,41,16,0.95)" />
-                                            <text x="28" y="3" font-size="10" font-weight="700" fill="#ffffff" text-anchor="middle">中国</text>
-                                        </g>
-                                    </svg>
-                                </div>
-                                <div class="clock-status-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 6px;">
-                                    <div style="background: rgba(37,99,235,0.06); border: 1px solid rgba(37,99,235,0.18); border-radius: 6px; padding: 6px 8px;">
-                                        <div style="font-weight: 700; color: #1e40af; font-size: 11px; display: flex; justify-content: space-between;">
-                                            <span>● 美国 (${usPctX}, ${usPctY})</span>
-                                            <span style="color: #2563eb; font-size: 10.5px;">硬件扩张</span>
-                                        </div>
-                                        <div style="font-size: 10.5px; color: var(--text-secondary); margin-top: 2px;">${investment_clock?.us_position?.stage || '能源硬件扩张 ➔ 应用验证'}</div>
-                                    </div>
-                                    <div style="background: rgba(222,41,16,0.06); border: 1px solid rgba(222,41,16,0.18); border-radius: 6px; padding: 6px 8px;">
-                                        <div style="font-weight: 700; color: #de2910; font-size: 11px; display: flex; justify-content: space-between;">
-                                            <span>● 中国 (${cnPctX}, ${cnPctY})</span>
-                                            <span style="color: #dc2626; font-size: 10.5px;">基建算力</span>
-                                        </div>
-                                        <div style="font-size: 10.5px; color: var(--text-secondary); margin-top: 2px;">${investment_clock?.cn_position?.stage || '基建算力建设 ➔ 应用探索'}</div>
-                                    </div>
-                                </div>
-                            `;
-                        })()}
-                    </div>
-                </div>
-
-                <!-- 右卡：AI 历史科技周期推演映射 -->
+                <!-- 左卡：AI 历史科技周期推演映射 -->
                 <div class="card ai-card-module">
                     <div class="card-header">
                         <div class="card-title"><i data-lucide="history" width="16" style="vertical-align: middle;"></i> 历史科技周期推演映射</div>
@@ -469,59 +385,55 @@ class AIMarketController {
                         ` : '<div class="text-secondary" style="font-size: 12px;">暂无历史匹配数据</div>'}
                     </div>
                 </div>
-            </div>
 
-            <!-- 5. 全球四大云巨头 CapEx 资本开支晴雨表 (基本面底座) -->
-            ${(() => {
-                const capex = data.hyperscaler_capex;
-                if (!capex) return '';
-                return `
-                    <div class="card ai-card-module" style="margin-bottom: 16px;">
-                        <div class="card-header" style="margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
-                            <div class="card-title">
-                                <i data-lucide="bar-chart-3" width="16" style="vertical-align: middle;"></i> 北美四大云巨头 CapEx 资本开支晴雨表 (Fundamental Anchor)
-                            </div>
-                            <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-                                <span style="font-size: 11px; color: var(--text-secondary); background: rgba(59, 130, 246, 0.08); padding: 2px 8px; border-radius: 4px; font-weight: 600;">
-                                    📊 ${capex.basis || '2025/2026 最新季度财报基准'}
-                                </span>
-                                <span style="font-size: 11px; color: #059669; font-weight: 700; background: rgba(16, 185, 129, 0.12); padding: 2px 8px; border-radius: 4px;">
-                                    ${capex.status}
-                                </span>
-                            </div>
-                        </div>
-                        <div class="card-body">
-                            <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
-                                <span>全球年化运行率：<strong style="color: var(--color-primary, #3b82f6); font-size: 14px;">$${capex.annual_run_rate_b}B</strong></span>
-                                <span>季度同比增速：<strong style="color: #059669; font-size: 14px;">+${capex.yoy_growth_pct}% YoY</strong></span>
-                                <span style="color: var(--text-tertiary);">底座对标：1997年网络基础设施大扩容红利期</span>
-                            </div>
-                            <div class="ai-capex-grid">
-                                <div class="ai-capex-item">
-                                    <div class="ai-capex-company">微软 (Microsoft / Azure)</div>
-                                    <div class="ai-capex-val font-mono">$${capex.msft_quarterly_capex_b}B <span style="font-size: 10px; font-weight: 500; color: var(--text-tertiary);">/季</span></div>
-                                    <div class="ai-capex-sub">聚焦数据中心与 OpenAI 算力底座扩展</div>
+                <!-- 右卡：全球四大云巨头 CapEx 资本开支晴雨表 (基本面底座) -->
+                ${(() => {
+                    const capex = data.hyperscaler_capex;
+                    if (!capex) return '<div class="card ai-card-module"><div class="card-header"><div class="card-title">CapEx 资本开支</div></div><div class="card-body text-secondary">暂无数据</div></div>';
+                    return `
+                        <div class="card ai-card-module">
+                            <div class="card-header" style="margin-bottom: 6px; flex-wrap: wrap; gap: 6px;">
+                                <div class="card-title" style="font-size: 13.5px;">
+                                    <i data-lucide="bar-chart-3" width="16" style="vertical-align: middle;"></i> 四大云巨头 CapEx 晴雨表
                                 </div>
-                                <div class="ai-capex-item">
-                                    <div class="ai-capex-company">亚马逊 (Amazon / AWS)</div>
-                                    <div class="ai-capex-val font-mono">$${capex.amzn_quarterly_capex_b}B <span style="font-size: 10px; font-weight: 500; color: var(--text-tertiary);">/季</span></div>
-                                    <div class="ai-capex-sub">AWS 全球基建扩容与 Trainium 自研芯片</div>
+                                <div style="display: flex; align-items: center; gap: 4px;">
+                                    <span style="font-size: 10.5px; color: #059669; font-weight: 700; background: rgba(16, 185, 129, 0.12); padding: 1px 6px; border-radius: 4px;">
+                                        ${capex.status}
+                                    </span>
                                 </div>
-                                <div class="ai-capex-item">
-                                    <div class="ai-capex-company">谷歌 (Alphabet / GCP)</div>
-                                    <div class="ai-capex-val font-mono">$${capex.googl_quarterly_capex_b}B <span style="font-size: 10px; font-weight: 500; color: var(--text-tertiary);">/季</span></div>
-                                    <div class="ai-capex-sub">TPU v5/v6 集群建设与搜索 AI 化改造</div>
+                            </div>
+                            <div class="card-body" style="padding-top: 2px;">
+                                <div style="font-size: 11.5px; color: var(--text-secondary); margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px;">
+                                    <span>全球年化运行率: <strong style="color: var(--color-primary, #3b82f6); font-size: 13px;">$${capex.annual_run_rate_b}B</strong></span>
+                                    <span>季度同比增速: <strong style="color: #059669; font-size: 13px;">+${capex.yoy_growth_pct}% YoY</strong></span>
                                 </div>
-                                <div class="ai-capex-item">
-                                    <div class="ai-capex-company">Meta (算力集群自建)</div>
-                                    <div class="ai-capex-val font-mono">$${capex.meta_quarterly_capex_b}B <span style="font-size: 10px; font-weight: 500; color: var(--text-tertiary);">/季</span></div>
-                                    <div class="ai-capex-sub">Llama 训练算力基座与核心推荐引擎</div>
+                                <div class="ai-capex-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                                    <div class="ai-capex-item">
+                                        <div class="ai-capex-company">微软 (Azure)</div>
+                                        <div class="ai-capex-val font-mono">$${capex.msft_quarterly_capex_b}B <span style="font-size: 9.5px; font-weight: 500; color: var(--text-tertiary);">/季</span></div>
+                                        <div class="ai-capex-sub">数据中心与算力底座</div>
+                                    </div>
+                                    <div class="ai-capex-item">
+                                        <div class="ai-capex-company">亚马逊 (AWS)</div>
+                                        <div class="ai-capex-val font-mono">$${capex.amzn_quarterly_capex_b}B <span style="font-size: 9.5px; font-weight: 500; color: var(--text-tertiary);">/季</span></div>
+                                        <div class="ai-capex-sub">全球基建与自研芯片</div>
+                                    </div>
+                                    <div class="ai-capex-item">
+                                        <div class="ai-capex-company">谷歌 (GCP)</div>
+                                        <div class="ai-capex-val font-mono">$${capex.googl_quarterly_capex_b}B <span style="font-size: 9.5px; font-weight: 500; color: var(--text-tertiary);">/季</span></div>
+                                        <div class="ai-capex-sub">TPU集群与搜索AI化</div>
+                                    </div>
+                                    <div class="ai-capex-item">
+                                        <div class="ai-capex-company">Meta (自建集群)</div>
+                                        <div class="ai-capex-val font-mono">$${capex.meta_quarterly_capex_b}B <span style="font-size: 9.5px; font-weight: 500; color: var(--text-tertiary);">/季</span></div>
+                                        <div class="ai-capex-sub">Llama训练算力基座</div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                `;
-            })()}
+                    `;
+                })()}
+            </div>
 
             <!-- 6. AI 产业链 7 层全景精简拆解 (L0 - L6 代表成分股) -->
             <div class="card ai-card-module" style="margin-bottom: 16px;">
@@ -774,30 +686,7 @@ class AIMarketController {
             };
         }
 
-        // 4. AI 投资时钟弹窗
-        const clockBtn = document.getElementById('info-ai-clock');
-        if (clockBtn) {
-            clockBtn.onclick = (e) => {
-                e.stopPropagation();
-                const exp = explanations.investment_clock || {};
-                const bodyHtml = `
-                    <div class="ai-info-modal" style="white-space: normal; font-size: 12px; color: var(--text-primary); line-height: 1.4;">
-                        <div style="background: rgba(255,255,255,0.03); border-radius: 4px; padding: 8px 10px; margin-bottom: 8px;">
-                            <div style="font-weight: 600; color: var(--color-primary, #3b82f6); margin-bottom: 2px;">🕒 量化动态打点与四象限轮动</div>
-                            <div style="color: var(--text-secondary); font-size: 11px;">
-                                结合美林时钟原理，横轴量化二级市场估值与泡沫偏离风险，纵轴量化产业链硬件/电力实际扩张强度。
-                            </div>
-                        </div>
-                        <div style="font-size: 11px; color: var(--text-secondary); line-height: 1.4; background: rgba(255,255,255,0.02); padding: 8px 10px; border-radius: 4px;">
-                            📌 <strong>打点动态性：</strong> 点位坐标随盘中加权估值与七层动能实时位移，非静态固定图表。
-                        </div>
-                    </div>
-                `;
-                utils.showInfoModal(exp.title || 'AI 四象限投资时钟（量化动态映射）说明', bodyHtml);
-            };
-        }
-
-        // 5. 产业链 7 层拆解说明弹窗
+        // 4. 产业链 7 层拆解说明弹窗
         const layersBtn = document.getElementById('info-ai-layers');
         if (layersBtn) {
             layersBtn.onclick = (e) => {

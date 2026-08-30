@@ -34,7 +34,7 @@ class AIOverview:
 
     @staticmethod
     @cached(
-        "ai:overview_v10", 
+        "ai:overview_v11", 
         ttl=settings.CACHE_TTL["ai_overview"],
         stale_ttl=settings.CACHE_TTL["ai_overview"] * settings.STALE_TTL_RATIO,
         sync_on_cold=True
@@ -468,22 +468,7 @@ class AIOverview:
                 "summary": summary_desc
             }
 
-            # 13. AI 四象限投资时钟 (量化动态打点模型)
-            # X 轴：估值与泡沫风险度量 (0~100)
-            # Y 轴：产业景气与资本扩张强度 (0~100)
-            us_clock_x = round(min(92.0, max(15.0, us_bubble_risk)), 1)
-            us_clock_y = round(min(95.0, max(20.0, 50.0 + (l0_avg * 0.35 + l1_avg * 0.45 + l4_avg * 0.20) * 4.5 + 28.0)), 1)
-
-            cn_clock_x = round(min(92.0, max(15.0, cn_bubble_risk)), 1)
-            cn_clock_y = round(min(95.0, max(20.0, 50.0 + l6_avg * 4.0 + 12.0)), 1)
-
-            investment_clock = {
-                "quadrant": "硬件与能源爆发期" if us_clock_y >= 60 else "应用落地验证期",
-                "us_position": {"x": us_clock_x, "y": us_clock_y, "stage": "能源硬件扩张 ➔ 应用验证"},
-                "cn_position": {"x": cn_clock_x, "y": cn_clock_y, "stage": "基建算力建设 ➔ 应用探索"}
-            }
-
-            # 14. 四大核心验证信号
+            # 13. 四大核心验证信号
             sig1_status = "充足" if l0_avg >= 0.5 else ("平稳" if l0_avg >= 0 else "紧张")
             sig1_cls = "up" if l0_avg >= 0 else "down"
             sig1_desc = f"GEV ({format_change(gev)}) / CEG ({format_change(ceg)}) / VST ({format_change(vst)})"
@@ -551,10 +536,6 @@ class AIOverview:
                 "bubble_meter": {
                     "title": "AI 泡沫温度计与真实估值中枢",
                     "desc": f"美股 AI 核心篮子加权 PE 为 {us_ai_pe}x (标杆中枢 28.0x)；国内 AI 龙头加权 PE 为 {cn_ai_pe}x (标杆中枢 45.0x)。当前美债 10Y 收益率 {us_10y_yield:.2f}%，提供真实折现率锚定。"
-                },
-                "investment_clock": {
-                    "title": "AI 四象限投资时钟（量化动态映射模型）",
-                    "desc": f"横轴映射二级市场估值与泡沫风险（美 {us_clock_x} / 中 {cn_clock_x}），纵轴映射产业链实际扩张强度与动能（美 {us_clock_y} / 中 {cn_clock_y}）。打点坐标随盘中行情与估值动态位移。"
                 }
             }
 
@@ -650,7 +631,6 @@ class AIOverview:
                 "rotation_class": rotation_class,
                 "rotation_desc": rotation_desc,
                 "historical_match": historical_match,
-                "investment_clock": investment_clock,
                 "signals": signals,
                 "explanations": explanations,
                 "update_time": get_beijing_time().strftime("%Y-%m-%d %H:%M:%S")
