@@ -227,21 +227,21 @@ class AIMarketController {
             <div class="ai-grid-row">
                 <!-- 左卡：中美 AI 产业五维对比 -->
                 <div class="card ai-card-module">
-                    <div class="card-header">
+                    <div class="card-header" style="margin-bottom: 6px;">
                         <div class="card-title"><i data-lucide="git-compare" width="16" style="vertical-align: middle;"></i> 中美 AI 产业五维对比 (Radar Matrix)</div>
                         <button class="info-btn" id="info-ai-matrix" title="模型说明"><i data-lucide="help-circle" width="14"></i></button>
                     </div>
-                    <div class="card-body" style="padding-top: 4px;">
+                    <div class="card-body" style="padding: 2px 8px 6px 8px; justify-content: center;">
                         ${(() => {
                             if (!us_cn_comparison) return '';
                             const keys = Object.keys(us_cn_comparison);
-                            const cx = 180, cy = 135, r = 98;
+                            const cx = 135, cy = 82, r = 52;
                             const angles = [-Math.PI / 2, -Math.PI / 2 + (2 * Math.PI / 5), -Math.PI / 2 + (4 * Math.PI / 5), -Math.PI / 2 + (6 * Math.PI / 5), -Math.PI / 2 + (8 * Math.PI / 5)];
 
                             const usPoints = [];
                             const cnPoints = [];
                             const axisLines = [];
-                            const gridPolys = [0.25, 0.5, 0.75, 1.0];
+                            const gridPolys = [0.33, 0.66, 1.0];
                             const labels = [];
 
                             keys.forEach((key, idx) => {
@@ -260,11 +260,11 @@ class AIMarketController {
 
                                 const axX = cx + r * Math.cos(angle);
                                 const axY = cy + r * Math.sin(angle);
-                                axisLines.push(`<line x1="${cx}" y1="${cy}" x2="${axX.toFixed(1)}" y2="${axY.toFixed(1)}" stroke="rgba(203,213,225,0.6)" stroke-dasharray="3 3"/>`);
+                                axisLines.push(`<line x1="${cx}" y1="${cy}" x2="${axX.toFixed(1)}" y2="${axY.toFixed(1)}" stroke="rgba(203,213,225,0.6)" stroke-dasharray="2 2"/>`);
 
-                                const lx = cx + (r + 24) * Math.cos(angle);
-                                const ly = cy + (r + 14) * Math.sin(angle);
-                                labels.push(`<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="middle" font-size="11.5" font-weight="600" fill="var(--text-secondary)">${item.label}</text>`);
+                                const lx = cx + (r + 17) * Math.cos(angle);
+                                const ly = cy + (r + 9) * Math.sin(angle) + 3;
+                                labels.push(`<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="middle" font-size="10" font-weight="600" fill="var(--text-secondary)">${item.label}</text>`);
                             });
 
                             const webPolysHtml = gridPolys.map(scale => {
@@ -275,14 +275,14 @@ class AIMarketController {
                             return `
                                 <div class="svg-radar-layout">
                                     <div class="svg-radar-chart-box">
-                                        <svg viewBox="0 0 360 280" class="svg-radar-chart">
+                                        <svg viewBox="0 0 270 170" class="svg-radar-chart">
                                             ${webPolysHtml}
                                             ${axisLines.join('')}
-                                            <polygon points="${usPoints.join(' ')}" fill="rgba(59,130,246,0.22)" stroke="#3b82f6" stroke-width="2" class="radar-poly-us"/>
-                                            <polygon points="${cnPoints.join(' ')}" fill="rgba(222,41,16,0.22)" stroke="#de2910" stroke-width="2" class="radar-poly-cn"/>
+                                            <polygon points="${usPoints.join(' ')}" fill="rgba(59,130,246,0.22)" stroke="#3b82f6" stroke-width="1.8" class="radar-poly-us"/>
+                                            <polygon points="${cnPoints.join(' ')}" fill="rgba(222,41,16,0.22)" stroke="#de2910" stroke-width="1.8" class="radar-poly-cn"/>
                                             ${labels.join('')}
                                         </svg>
-                                        <div class="svg-radar-legend">
+                                        <div class="svg-radar-legend" style="margin-top: 4px; font-size: 11px; gap: 14px;">
                                             <span class="legend-item"><span class="legend-dot-us"></span>美国 AI (全栈优势)</span>
                                             <span class="legend-item"><span class="legend-dot-cn"></span>中国 AI (追赶突破)</span>
                                         </div>
@@ -295,11 +295,11 @@ class AIMarketController {
 
                 <!-- 右卡：AI 泡沫温度计 -->
                 <div class="card ai-card-module">
-                    <div class="card-header">
+                    <div class="card-header" style="margin-bottom: 6px;">
                         <div class="card-title"><i data-lucide="thermometer" width="16" style="vertical-align: middle;"></i> AI 泡沫温度计 (Bubble Risk)</div>
                         <button class="info-btn" id="info-ai-bubble" title="温度计说明"><i data-lucide="help-circle" width="14"></i></button>
                     </div>
-                    <div class="card-body" style="padding-top: 4px;">
+                    <div class="card-body" style="padding: 2px 8px 6px 8px; justify-content: space-between;">
                         ${(() => {
                             if (!bubble_meter) return '';
                             const usBM = bubble_meter.us || {};
@@ -310,22 +310,19 @@ class AIMarketController {
                             const renderThermoRow = (country, bm, riskVal, isCn) => {
                                 const colorGrad = isCn ? 'url(#grad-cn-thermo)' : 'url(#grad-us-thermo)';
                                 const badgeClass = bm.status_class === 'healthy' ? 'healthy' : 'warning';
-                                const isHot = Number(riskVal) > 70;
-                                const liquidW = Math.min(300, Math.max(0, riskVal * 3));
-                                const endX = Math.min(292, Math.max(12, liquidW - 8));
-                                const bubbleBubble = isHot ? `<circle cx="${endX}" cy="12" r="3.5" fill="#ef4444" class="bubble-anim"/>` : '';
-                                const peStr = bm.pe_ratio ? `真实加权PE: <strong>${bm.pe_ratio}x</strong> (标杆 ${bm.pe_benchmark || '--'}x)` : `产业价值分: <strong>${bm.value_score}</strong>`;
+                                const peStr = bm.pe_ratio ? `加权 PE: <strong>${bm.pe_ratio}x</strong> (标杆 ${bm.pe_benchmark || '--'}x)` : `价值分: <strong>${bm.value_score}</strong>`;
 
                                 return `
-                                    <div class="svg-thermo-row">
-                                        <div class="svg-thermo-head">
-                                            <span class="svg-thermo-title">${country} AI 真实估值偏离与泡沫风险</span>
-                                            <span class="svg-thermo-badge ${badgeClass}">${bm.status_text}</span>
+                                    <div class="svg-thermo-row" style="padding: 6px 10px; margin-bottom: 6px;">
+                                        <div class="svg-thermo-head" style="margin-bottom: 3px;">
+                                            <span class="svg-thermo-title" style="font-size: 11.5px;">${country} AI 估值偏离与泡沫风险</span>
+                                            <span class="svg-thermo-badge ${badgeClass}" style="font-size: 9.5px; padding: 1px 6px;">${bm.status_text}</span>
                                         </div>
-                                        <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 6px;">
-                                            ${peStr} | 泡沫风险指数: <strong class="text-down">${riskVal} / 100</strong>
+                                        <div style="font-size: 10.5px; color: var(--text-secondary); margin-bottom: 4px; display: flex; justify-content: space-between; align-items: center;">
+                                            <span>${peStr}</span>
+                                            <span>泡沫风险: <strong class="text-down">${riskVal} / 100</strong></span>
                                         </div>
-                                        <svg class="svg-thermo-bar-svg" viewBox="0 0 300 24">
+                                        <svg class="svg-thermo-bar-svg" viewBox="0 0 300 14" style="height: 14px;">
                                             <defs>
                                                 <linearGradient id="grad-us-thermo" x1="0%" y1="0%" x2="100%" y2="0%">
                                                     <stop offset="0%" stop-color="#3b82f6" />
@@ -336,21 +333,23 @@ class AIMarketController {
                                                     <stop offset="100%" stop-color="#ef4444" />
                                                 </linearGradient>
                                             </defs>
-                                            <rect x="0" y="4" width="300" height="16" rx="8" fill="rgba(226,232,240,0.6)"/>
-                                            <rect x="0" y="4" width="${Math.min(300, riskVal * 3)}" height="16" rx="8" fill="${colorGrad}" class="thermo-liquid"/>
-                                            <line x1="75" y1="4" x2="75" y2="20" stroke="rgba(255,255,255,0.4)" stroke-width="1"/>
-                                            <line x1="150" y1="4" x2="150" y2="20" stroke="rgba(255,255,255,0.6)" stroke-width="1.5"/>
-                                            <line x1="225" y1="4" x2="225" y2="20" stroke="rgba(255,255,255,0.4)" stroke-width="1"/>
-                                            ${bubbleBubble}
+                                            <rect x="0" y="2" width="300" height="10" rx="5" fill="rgba(226,232,240,0.6)"/>
+                                            <rect x="0" y="2" width="${Math.min(300, riskVal * 3)}" height="10" rx="5" fill="${colorGrad}" class="thermo-liquid"/>
+                                            <line x1="75" y1="2" x2="75" y2="12" stroke="rgba(255,255,255,0.4)" stroke-width="1"/>
+                                            <line x1="150" y1="2" x2="150" y2="12" stroke="rgba(255,255,255,0.6)" stroke-width="1.5"/>
+                                            <line x1="225" y1="2" x2="225" y2="12" stroke="rgba(255,255,255,0.4)" stroke-width="1"/>
                                         </svg>
                                     </div>
                                 `;
                             };
 
                             return `
-                                <div class="svg-thermo-container">
+                                <div class="svg-thermo-container" style="gap: 2px;">
                                     ${renderThermoRow('美国', usBM, usRisk, false)}
                                     ${renderThermoRow('中国', cnBM, cnRisk, true)}
+                                </div>
+                                <div style="font-size: 10px; color: var(--text-tertiary); background: rgba(0,0,0,0.02); padding: 4px 8px; border-radius: 4px; text-align: center; border: 1px dashed var(--border-light); margin-top: 2px;">
+                                    折现锚定：10Y 美债收益率 ${data.us_10y_yield || 4.25}% · 动态折现中枢
                                 </div>
                             `;
                         })()}
@@ -491,16 +490,18 @@ class AIMarketController {
 
                                 return `
                                     <div class="ai-stream-row">
-                                        <div class="ai-stream-meta">
-                                            <span class="ai-stream-badge font-mono">${layer.layer_id}</span>
-                                            <span class="ai-stream-title">${cleanTitle}</span>
-                                            <span class="ai-stream-tag">${layer.importance}</span>
+                                        <div class="ai-stream-header">
+                                            <div class="ai-stream-meta">
+                                                <span class="ai-stream-badge font-mono">${layer.layer_id}</span>
+                                                <span class="ai-stream-title">${cleanTitle}</span>
+                                                <span class="ai-stream-tag">${layer.importance}</span>
+                                            </div>
+                                            <div class="ai-stream-avg">
+                                                <span class="ai-stream-avg-val ${avgClass}">${avgSign}${avgVal.toFixed(2)}%</span>
+                                            </div>
                                         </div>
                                         <div class="ai-stream-stocks">
                                             ${stocksHtml}
-                                        </div>
-                                        <div class="ai-stream-avg">
-                                            <span class="ai-stream-avg-val ${avgClass}">${avgSign}${avgVal.toFixed(2)}%</span>
                                         </div>
                                     </div>
                                 `;

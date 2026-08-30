@@ -1607,10 +1607,10 @@ footer {
 
 .ai-stream-row {
     display: flex;
-    align-items: center;
-    padding: 10px 14px;
+    flex-direction: column;
+    padding: 8px 12px;
     border-bottom: 1px solid var(--border-light);
-    gap: 16px;
+    gap: 6px;
     transition: background 0.15s ease;
 }
 
@@ -1630,18 +1630,26 @@ footer {
     background: rgba(255, 255, 255, 0.02);
 }
 
+.ai-stream-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    gap: 8px;
+}
+
 .ai-stream-meta {
     display: flex;
     align-items: center;
-    gap: 8px;
-    min-width: 175px;
-    flex-shrink: 0;
+    gap: 6px;
+    min-width: 0;
+    flex-wrap: wrap;
 }
 
 .ai-stream-badge {
     font-size: 11px;
     font-weight: 700;
-    padding: 2px 6px;
+    padding: 1px 5px;
     border-radius: 4px;
     background: var(--bg-secondary, #e2e8f0);
     color: var(--text-primary);
@@ -1653,14 +1661,14 @@ footer {
 }
 
 .ai-stream-title {
-    font-size: 13px;
+    font-size: 12.5px;
     font-weight: 700;
     color: var(--text-primary);
     white-space: nowrap;
 }
 
 .ai-stream-tag {
-    font-size: 10.5px;
+    font-size: 10px;
     color: var(--text-tertiary);
     background: rgba(0, 0, 0, 0.04);
     padding: 1px 5px;
@@ -1676,8 +1684,8 @@ footer {
     display: flex;
     align-items: center;
     flex-wrap: wrap;
-    gap: 6px 8px;
-    flex: 1;
+    gap: 5px 6px;
+    width: 100%;
 }
 
 .ai-stock-chip {
@@ -1997,23 +2005,20 @@ footer {
         gap: 6px;
     }
     .ai-capex-item {
-        padding: 8px;
+        padding: 6px 8px;
     }
     .ai-capex-val {
-        font-size: 15px;
+        font-size: 14px;
     }
-    .ai-stream-row {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 8px;
-        padding: 10px 8px;
+    .rotation-flow {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        flex-wrap: nowrap;
+        padding-bottom: 4px;
+        scrollbar-width: none;
     }
-    .ai-stream-meta {
-        width: 100%;
-        justify-content: space-between;
-    }
-    .ai-stream-avg {
-        align-self: flex-end;
+    .rotation-flow::-webkit-scrollbar {
+        display: none;
     }
 }
 
@@ -2032,13 +2037,14 @@ footer {
 .svg-radar-chart-box {
     position: relative;
     width: 100%;
-    max-width: 420px;
+    max-width: 270px;
     margin: 0 auto;
 }
 
 .svg-radar-chart {
     width: 100%;
     height: auto;
+    max-height: 170px;
     overflow: visible;
 }
 
@@ -2053,53 +2059,59 @@ footer {
 .svg-radar-legend {
     display: flex;
     justify-content: center;
-    gap: 20px;
-    margin-top: 8px;
-    font-size: 12px;
+    gap: 16px;
+    margin-top: 4px;
+    font-size: 11px;
     font-weight: 600;
 }
 
 .legend-item {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 5px;
 }
 
-.legend-dot-us { width: 10px; height: 10px; border-radius: 50%; background: #3b82f6; box-shadow: 0 0 6px rgba(59,130,246,0.5); }
-.legend-dot-cn { width: 10px; height: 10px; border-radius: 50%; background: #de2910; box-shadow: 0 0 6px rgba(222,41,16,0.5); }
+.legend-dot-us { width: 8px; height: 8px; border-radius: 50%; background: #3b82f6; box-shadow: 0 0 4px rgba(59,130,246,0.5); }
+.legend-dot-cn { width: 8px; height: 8px; border-radius: 50%; background: #de2910; box-shadow: 0 0 4px rgba(222,41,16,0.5); }
 
 /* 2. AI 泡沫温度计 SVG 熔炉刻度条 */
 .svg-thermo-container {
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 4px;
+    width: 100%;
 }
 
 .svg-thermo-row {
     background: rgba(255, 255, 255, 0.6);
     border: 1px solid var(--border-light);
-    border-radius: 8px;
-    padding: 10px 14px;
+    border-radius: 6px;
+    padding: 6px 10px;
+}
+
+[data-theme="dark"] .svg-thermo-row {
+    background: rgba(255, 255, 255, 0.02);
+    border-color: var(--border-color);
 }
 
 .svg-thermo-head {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 6px;
+    margin-bottom: 3px;
 }
 
 .svg-thermo-title {
-    font-size: 13px;
+    font-size: 11.5px;
     font-weight: 700;
     color: var(--text-primary);
 }
 
 .svg-thermo-badge {
-    font-size: 10px;
+    font-size: 9.5px;
     font-weight: 700;
-    padding: 2px 8px;
-    border-radius: 10px;
+    padding: 1px 6px;
+    border-radius: 8px;
 }
 
 .svg-thermo-badge.healthy { background: #ecfdf5; color: #059669; border: 1px solid rgba(16,185,129,0.3); }
@@ -2107,7 +2119,7 @@ footer {
 
 .svg-thermo-bar-svg {
     width: 100%;
-    height: 24px;
+    height: 14px;
     overflow: visible;
 }
 
@@ -3453,12 +3465,13 @@ footer {
     }
 
     .ai-signals-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 6px;
     }
 
     .svg-radar-chart-box {
         width: 100%;
-        max-width: 320px;
+        max-width: 270px;
         margin: 0 auto;
     }
 
