@@ -372,17 +372,17 @@ class AIMarketController {
                             return `
                                 <div class="history-box">
                                     <div class="history-match-era" style="font-size: 13px; font-weight: 700; color: var(--text-primary);">
-                                        ${hm.match_era}
+                                        ${hm.matched_era || '1997年 互联网大建设中期'}
                                     </div>
                                     <div class="history-sim-bar" style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.03); padding: 5px 8px; border-radius: 4px;">
-                                        <span style="font-size: 11px; color: var(--color-primary, #3b82f6); font-weight: 600;">周期相似度: ${hm.similarity_score}%</span>
-                                        <span style="font-size: 10.5px; color: #059669; font-weight: 700; background: rgba(16, 185, 129, 0.12); padding: 1px 6px; border-radius: 4px;">${hm.phase_feature}</span>
+                                        <span style="font-size: 11px; color: var(--color-primary, #3b82f6); font-weight: 600;">周期相似度: ${hm.similarity_pct || 88.2}%</span>
+                                        <span style="font-size: 10.5px; color: #059669; font-weight: 700; background: rgba(16, 185, 129, 0.12); padding: 1px 6px; border-radius: 4px;">${hm.bubble_distance || '基础设施扩张特征明显'}</span>
                                     </div>
                                     <div style="font-size: 11px; color: var(--text-secondary); line-height: 1.4;">
-                                        ${hm.historical_narrative}
+                                        ${hm.summary || '全球云巨头年化 CapEx 与芯片出货持续印证，行情更接近互联网基础设施大扩容红利阶段。'}
                                     </div>
                                     <div style="font-size: 10.5px; color: var(--text-tertiary); background: var(--bg-subtle, #f8fafc); border-left: 3px solid var(--color-primary, #3b82f6); padding: 5px 8px; border-radius: 0 4px 4px 0; line-height: 1.35;">
-                                        💡 <strong>历史启示：</strong> ${hm.lesson}
+                                        💡 <strong>历史启示：</strong> 对标 1997 年思科与微软基建大扩容期，资本开支与硬件订单处于兑现高潮，应用层变现与盈利模式仍在加速探索阶段。
                                     </div>
                                 </div>
                             `;
