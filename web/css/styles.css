@@ -1943,6 +1943,8 @@ footer {
     padding: 2px 6px;
     border-radius: 4px;
     color: var(--text-primary);
+}
+
 /* 历史周期比对 */
 .history-box {
     display: flex;
@@ -2136,6 +2138,31 @@ footer {
     50% { opacity: 0.9; }
     100% { transform: translateY(-12px) scale(1.2); opacity: 0; }
 }
+/* Utility & Tag Styles */
+.font-mono {
+    font-family: var(--font-mono, "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace);
+}
+
+.fund-tag {
+    background: rgba(115, 115, 115, 0.08);
+    color: var(--text-secondary);
+    font-size: 10px;
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-weight: 600;
+    margin-left: 6px;
+    border: 1px solid rgba(115, 115, 115, 0.25);
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.alloc-warning-wrapper {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 2px;
+    cursor: help;
+}
+
 /* QDII Funds Component Styles */
 .table-wrapper {
     width: 100%;
