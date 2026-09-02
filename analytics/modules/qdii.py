@@ -1089,7 +1089,7 @@ def fetch_fund_scale(session: requests.Session, code: str) -> Optional[str]:
     return None
 
 
-@cached("qdii:passive_funds_v41", ttl=86400, stale_ttl=86400 * 7, sync_on_cold=True)
+@cached("qdii:passive_funds_v42", ttl=86400, stale_ttl=86400 * 7, sync_on_cold=True)
 def get_qdii_passive_funds() -> Dict[str, Any]:
     """获取国内纳斯达克100 & 标普500 场外被动 QDII A类基金数据列表
 
@@ -1249,15 +1249,21 @@ def get_qdii_passive_funds() -> Dict[str, Any]:
                 def_total_stock = default_alloc.get("stock_pct", 0.0)
                 if def_total_stock > 0 and live_alloc.get("stock_pct", 0) > 0:
                     live_stock = live_alloc["stock_pct"]
-                    for k in ["stock_us_pct", "stock_hk_pct", "stock_cn_pct", "stock_other_pct"]:
-                        if k in default_alloc:
-                            asset_alloc[k] = round(live_stock * (default_alloc[k] / def_total_stock), 1)
+                    sub_keys = [k for k in ["stock_us_pct", "stock_hk_pct", "stock_cn_pct", "stock_other_pct"] if k in default_alloc]
+                    sub_sum = 0.0
+                    for k in sub_keys[:-1]:
+                        val = round(live_stock * (default_alloc[k] / def_total_stock), 1)
+                        asset_alloc[k] = val
+                        sub_sum += val
+                    if sub_keys:
+                        last_k = sub_keys[-1]
+                        asset_alloc[last_k] = round(max(0.0, live_stock - sub_sum), 1)
                 else:
                     for k in ["stock_us_pct", "stock_hk_pct", "stock_cn_pct", "stock_other_pct"]:
                         if k in default_alloc:
                             asset_alloc[k] = default_alloc[k]
         else:
-            asset_alloc = default_alloc
+            asset_alloc = dict(default_alloc)
 
         # 对于所有主投美股市场的指数/行业基金，其全部股票资产 100% 投资于美股上市成份股
         US_MARKET_INDICES = ["NDX", "SPX", "NBI", "TECH", "SPX_TECH", "CONS", "SPX_CONS", "SEMI"]
@@ -1363,7 +1369,7 @@ def _fetch_full_holdings_count(session: requests.Session, fetch_code: str, defau
     return final_count
 
 
-@cached("qdii:top_holdings_v13", ttl=86400 * 7, stale_ttl=86400 * 30, sync_on_cold=True)
+@cached("qdii:top_holdings_v14", ttl=86400 * 7, stale_ttl=86400 * 30, sync_on_cold=True)
 def get_qdii_top_holdings(code: str) -> Dict[str, Any]:
     """获取 QDII 基金最新披露的重仓持仓股票列表（升级支持最大100只完整持仓）"""
     # 联接基金到目标 ETF 的精准映射，当联接基金本身无股票持仓披露时，自动穿透到对应的目标 ETF 获取底层真实持仓
@@ -1381,7 +1387,10 @@ def get_qdii_top_holdings(code: str) -> Dict[str, Any]:
         "018966": "159660",  # 汇添富纳斯达克100ETF发起式联接A -> 汇添富纳斯达克100ETF (159660)
         "015299": "513300",  # 华夏纳斯达克100ETF发起式联接A -> 华夏纳斯达克100ETF (513300)
         "050025": "513500",  # 博时标普500ETF联接A -> 博时标普500ETF (513500)
+        "007721": "513500",  # 天弘标普500 FOF -> 博时标普500ETF (513500)
         "017028": "159612",  # 国泰标普500ETF发起联接A -> 国泰标普500ETF (159612)
+        "019441": "513100",  # 万家纳斯达克100指数发起式A -> 国泰纳斯达克100 (513100)
+        "016452": "513100",  # 南方纳斯达克100指数发起A -> 国泰纳斯达克100 (513100)
     }
     fetch_code = FEEDER_TO_TARGET_ETF.get(code, code)
     try:

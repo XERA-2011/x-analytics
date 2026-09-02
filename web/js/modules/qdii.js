@@ -164,7 +164,6 @@ class QDIIController {
                 }
 
                 let allocLabel = subParts.join('<span class="alloc-sep">·</span>');
-                let warningHtml = item.allocation_estimated ? `<span class="alloc-warning-wrapper" title="提示：二季报官方国家/地区明细未完全披露，各地区占比为基于底层资产或历史持仓的估算参考值" style="cursor: help; display: inline-flex; align-items: center; margin-left: 2px;"><i data-lucide="alert-circle" style="width: 12px; height: 12px; color: var(--accent-red); vertical-align: middle;"></i></span>` : '';
 
                 let tooltipParts = [];
                 tooltipParts.push(`股票: ${stockPct}%${hasDetailed ? ' (美股 ' + (usPct || '0.0') + '%, 港股 ' + (hkPct || '0.0') + '%' + (cnPct ? ', A股 ' + cnPct + '%' : '') + (otherPct ? ', 日韩/台股 ' + otherPct + '%' : '') + ')' : ''}`);
@@ -179,7 +178,7 @@ class QDIIController {
                 allocHtml = `
                     <div class="allocation-cell" title="${cellTooltipTitle}">
                         <div class="allocation-text">
-                            ${allocLabel}${warningHtml}
+                            ${allocLabel}
                         </div>
                         <div class="allocation-bar-track">
                             ${barHtml}
@@ -307,7 +306,6 @@ class QDIIController {
                 }
 
                 let allocLabel = subParts.join('<span class="alloc-sep">·</span>');
-                let warningHtml = item.allocation_estimated ? `<span class="alloc-warning-wrapper" title="估算参考值" style="margin-left: 2px;"><i data-lucide="alert-circle" style="width: 10px; height: 10px; color: var(--accent-red); vertical-align: middle;"></i></span>` : '';
 
                 allocMobileHtml = `
                     <div class="qdii-mcard-alloc-box">
