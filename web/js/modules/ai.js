@@ -43,27 +43,25 @@ class AIMarketController {
             historical_match, signals, layers 
         } = data;
 
-        const scoreClass = cycleScore >= 70 ? 'text-up' : cycleScore <= 40 ? 'text-down' : 'text-neutral';
+        const scoreClass = cycleScore >= 65 ? 'text-up' : cycleScore <= 45 ? 'text-down' : 'text-neutral';
 
-        // 计算 SVG Gauge 指针角度与主题色
-        let gaugeDegree = -22.5;
-        let activeColor = '#3b82f6';
-        let shortStageLabel = '探索期';
+        // 计算 SVG Gauge 指针角度 (0~100 映射至 -80° ~ +80° 连续弧度区间)
+        const clampedScore = Math.max(0, Math.min(100, Number(cycleScore) || 50));
+        const gaugeDegree = -80 + (clampedScore / 100) * 160;
+
+        let activeColor = '#10b981';
+        let shortStageLabel = '爆发期';
 
         if (cycle_status === 'active') {
-            gaugeDegree = -67.5;
             activeColor = '#10b981';
             shortStageLabel = '爆发期';
         } else if (cycle_status === 'neutral') {
-            gaugeDegree = -22.5;
             activeColor = '#3b82f6';
             shortStageLabel = '探索期';
         } else if (cycle_status === 'warning') {
-            gaugeDegree = 22.5;
             activeColor = '#ef4444';
             shortStageLabel = '预警期';
         } else if (cycle_status === 'cooling') {
-            gaugeDegree = 67.5;
             activeColor = '#64748b';
             shortStageLabel = '降温期';
         }
@@ -126,14 +124,14 @@ class AIMarketController {
                                     <!-- 底色完整弧线轨迹 -->
                                     <path d="M 15 80 A 65 65 0 0 1 145 80" fill="none" stroke="rgba(226, 232, 240, 0.8)" stroke-width="12" stroke-linecap="round"/>
 
-                                    <!-- 4 阶段不同颜色弧线分段 -->
-                                    <path d="M 15 80 A 65 65 0 0 1 34.04 34.04" fill="none" stroke="url(#grad-active)" stroke-width="11" stroke-linecap="round"/>
+                                    <!-- 4 阶段不同颜色弧线分段：左(降温/筑底) -> 中左(探索) -> 中右(爆发) -> 右(预警/过热) -->
+                                    <path d="M 15 80 A 65 65 0 0 1 34.04 34.04" fill="none" stroke="url(#grad-cooling)" stroke-width="11" stroke-linecap="round"/>
                                     <path d="M 36 32 A 65 65 0 0 1 78 15" fill="none" stroke="url(#grad-neutral)" stroke-width="11" stroke-linecap="round"/>
-                                    <path d="M 82 15 A 65 65 0 0 1 124 32" fill="none" stroke="url(#grad-warning)" stroke-width="11" stroke-linecap="round"/>
-                                    <path d="M 125.96 34.04 A 65 65 0 0 1 145 80" fill="none" stroke="url(#grad-cooling)" stroke-width="11" stroke-linecap="round"/>
+                                    <path d="M 82 15 A 65 65 0 0 1 124 32" fill="none" stroke="url(#grad-active)" stroke-width="11" stroke-linecap="round"/>
+                                    <path d="M 125.96 34.04 A 65 65 0 0 1 145 80" fill="none" stroke="url(#grad-warning)" stroke-width="11" stroke-linecap="round"/>
 
                                     <!-- 旋转游标针与高亮点 -->
-                                    <g class="gauge-needle-group" style="transform: rotate(${gaugeDegree}deg); transform-origin: 80px 80px;">
+                                    <g class="gauge-needle-group" style="transform: rotate(${gaugeDegree.toFixed(1)}deg); transform-origin: 80px 80px;">
                                         <line x1="80" y1="80" x2="80" y2="24" stroke="var(--text-primary)" stroke-width="3" stroke-linecap="round"/>
                                         <circle cx="80" cy="24" r="5" fill="${activeColor}" filter="url(#gauge-glow)" class="gauge-pulse-dot"/>
                                         <circle cx="80" cy="80" r="5" fill="var(--text-primary)"/>
@@ -484,9 +482,10 @@ class AIMarketController {
                                         const mcapStr = item.market_cap != null && item.market_cap > 0 ? (isCnStock ? `市值: ${item.market_cap.toFixed(0)}亿` : `市值: $${(item.market_cap / 1000).toFixed(1)}B`) : '';
 
                                         // 提取精简且辨识度高的标的名称
-                                        const cleanName = item.name
-                                            .replace(/科技|架构|ASIC|半导体|AI服务器|液冷电源|核电|电力|电气|电脑|云/g, '')
-                                            .trim() || item.name;
+                                        const cleanName = item.symbol === 'SMH' ? 'SMH半导体' :
+                                            item.name
+                                                .replace(/科技|架构|ASIC|AI服务器|液冷电源|核电|电力|电气|电脑|云/g, '')
+                                                .trim() || item.name;
 
                                         // 悬浮 Tooltip 呈现机构级完整信息
                                         const tooltip = `${item.name} (${item.symbol})\n最新价: ${priceStr}  涨跌幅: ${changeStr}${peStr ? '\n' + peStr : ''}${mcapStr ? '\n' + mcapStr : ''}`;

@@ -34,7 +34,7 @@ class AIOverview:
 
     @staticmethod
     @cached(
-        "ai:overview_v11", 
+        "ai:overview_v12", 
         ttl=settings.CACHE_TTL["ai_overview"],
         stale_ttl=settings.CACHE_TTL["ai_overview"] * settings.STALE_TTL_RATIO,
         sync_on_cold=True
@@ -284,9 +284,15 @@ class AIOverview:
                 from ...modules.market_western.treasury import USTreasury
                 bond_res = USTreasury.get_us_bond_yields()
                 if bond_res and not bond_res.get("error"):
-                    raw_y = bond_res.get("latest", {}).get("us_10y")
-                    if raw_y is not None:
-                        us_10y_yield = float(raw_y)
+                    metrics = bond_res.get("data", {}).get("metrics", [])
+                    for m in metrics:
+                        # 精确匹配 10 年期国债收益率（避免匹配到 10Y-2Y 利差）
+                        m_name = m.get("name", "")
+                        if "10" in m_name and "2" not in m_name:
+                            val = safe_float(m.get("value"))
+                            if val and val > 0:
+                                us_10y_yield = round(val, 2)
+                                break
             except Exception as b_err:
                 logger.debug(f"美债收益率读取备用: {b_err}")
 
@@ -309,16 +315,16 @@ class AIOverview:
 
             # 泡沫风险指数 (0~100 分，融合 真实PE偏离度 + 利率折现溢价 + 盘中动能)
             # 当 10Y 美债收益率 > 4.3% 时，高估值折现压力加大
-            rate_penalty = max(0.0, (us_10y_yield - 4.20) * 15.0)
+            rate_penalty = max(0.0, (us_10y_yield - 4.20) * 12.0)
             us_bubble_risk = round(min(100.0, max(15.0, 30.0 + max(0.0, us_ai_pe - 22.0) * 1.35 + rate_penalty + (l1_avg - l5_avg) * 0.6)), 1)
             cn_bubble_risk = round(min(100.0, max(20.0, 45.0 + max(0.0, cn_ai_pe - 40.0) * 0.38 + (l6_avg - l1_avg) * 0.8)), 1)
 
-            # 6. 云巨头真实 CapEx 资本开支底表 (2025/2026 最新季度财报基准)
+            # 6. 云巨头真实 CapEx 资本开支底表 (2024~2025 最新季度财报基准)
             hyperscaler_capex = {
-                "annual_run_rate_b": 245.0,
+                "annual_run_rate_b": 248.0,
                 "yoy_growth_pct": 45.0,
                 "status": "高景气大扩张 (真实基本面支撑)",
-                "basis": "2025/2026 最新季度财报基准",
+                "basis": "2024~2025 最新滚动季度财报基准",
                 "msft_quarterly_capex_b": 20.5,
                 "amzn_quarterly_capex_b": 18.0,
                 "googl_quarterly_capex_b": 13.5,
@@ -438,8 +444,8 @@ class AIOverview:
                     "bubble_risk": cn_bubble_risk,
                     "pe_ratio": cn_ai_pe,
                     "pe_benchmark": cn_pe_benchmark,
-                    "status_text": "主题情绪扩散" if cn_bubble_risk >= 70.0 else "相对平稳",
-                    "status_class": "warning" if cn_bubble_risk >= 70.0 else "healthy"
+                    "status_text": "主题情绪过热" if cn_bubble_risk >= 70.0 else ("估值溢价偏高" if cn_bubble_risk >= 55.0 else "相对平稳"),
+                    "status_class": "warning" if cn_bubble_risk >= 70.0 else ("neutral" if cn_bubble_risk >= 55.0 else "healthy")
                 }
             }
 
