@@ -20,7 +20,7 @@ class AIOverview:
         "NVDA", "AMD", "AVGO", "MU", "TSM", "ASML",
         "MSFT", "GOOGL", "AMZN", "META", "SMCI", 
         "VRT", "PLTR", "NOW", "CRM", "SOXX",
-        "GEV", "CEG", "VST", "ETN", "ARM", "MRVL", "DELL", "ORCL", "SMH"
+        "GEV", "CEG", "VST", "ETN", "ARM", "MRVL", "DELL", "ORCL", "SMH", "ANET"
     ]
 
     # A 股核心 AI 龙头代码映射 (腾讯极速接口通道)
@@ -28,13 +28,16 @@ class AIOverview:
         ("sh688256", "688256", "寒武纪"),
         ("sh688041", "688041", "海光信息"),
         ("sz300308", "300308", "中际旭创"),
+        ("sz300502", "300502", "新易盛"),
         ("sh601138", "601138", "工业富联"),
-        ("sz000977", "000977", "浪潮信息")
+        ("sz000977", "000977", "浪潮信息"),
+        ("sz300476", "300476", "胜宏科技"),
+        ("sz002230", "002230", "科大讯飞"),
     ]
 
     @staticmethod
     @cached(
-        "ai:overview_v12", 
+        "ai:overview_v13", 
         ttl=settings.CACHE_TTL["ai_overview"],
         stale_ttl=settings.CACHE_TTL["ai_overview"] * settings.STALE_TTL_RATIO,
         sync_on_cold=True
@@ -115,10 +118,11 @@ class AIOverview:
             smh = get_stock("SMH", "半导体ETF")
             soxx = get_stock("SOXX", "费半ETF")
 
-            # L2 存储与代工
+            # L2 存储、代工与集群互联
             mu = get_stock("MU", "美光科技")
             tsm = get_stock("TSM", "台积电")
             asml = get_stock("ASML", "阿斯麦")
+            anet = get_stock("ANET", "Arista网络")
 
             # L3 数据中心与基建
             smci = get_stock("SMCI", "超微电脑")
@@ -206,7 +210,7 @@ class AIOverview:
             l1_stocks = [nvda, amd, avgo, arm, mrvl, smh, soxx]
             l1_raw = cap_weighted_change(l1_stocks)
 
-            l2_stocks = [mu, tsm, asml]
+            l2_stocks = [mu, tsm, asml, anet]
             l2_raw = cap_weighted_change(l2_stocks)
 
             l3_stocks = [smci, vrt, dell]
@@ -319,14 +323,14 @@ class AIOverview:
             us_bubble_risk = round(min(100.0, max(15.0, 30.0 + max(0.0, us_ai_pe - 22.0) * 1.35 + rate_penalty + (l1_avg - l5_avg) * 0.6)), 1)
             cn_bubble_risk = round(min(100.0, max(20.0, 45.0 + max(0.0, cn_ai_pe - 40.0) * 0.38 + (l6_avg - l1_avg) * 0.8)), 1)
 
-            # 6. 云巨头真实 CapEx 资本开支底表 (2024~2025 最新季度财报基准)
+            # 6. 云巨头真实 CapEx 资本开支底表 (2025~2026 最新季度财报基准)
             hyperscaler_capex = {
-                "annual_run_rate_b": 248.0,
+                "annual_run_rate_b": 252.0,
                 "yoy_growth_pct": 45.0,
                 "status": "高景气大扩张 (真实基本面支撑)",
-                "basis": "2024~2025 最新滚动季度财报基准",
+                "basis": "2025~2026 最新滚动季度财报基准",
                 "msft_quarterly_capex_b": 20.5,
-                "amzn_quarterly_capex_b": 18.0,
+                "amzn_quarterly_capex_b": 18.5,
                 "googl_quarterly_capex_b": 13.5,
                 "meta_quarterly_capex_b": 10.5
             }
@@ -522,11 +526,11 @@ class AIOverview:
                     "weights": [
                         {"layer": "L0 能源电力", "weight": "10%", "targets": "GEV, CEG, VST, ETN"},
                         {"layer": "L1 算力芯片", "weight": "25%", "targets": "NVDA, AMD, AVGO, ARM, MRVL"},
-                        {"layer": "L2 存储代工", "weight": "20%", "targets": "MU, TSM, ASML"},
+                        {"layer": "L2 存储代工与互联", "weight": "20%", "targets": "MU, TSM, ASML, ANET"},
                         {"layer": "L3 服务器与液冷基建", "weight": "15%", "targets": "SMCI, DELL, VRT"},
                         {"layer": "L4 云计算四大巨头", "weight": "10%", "targets": "MSFT, GOOGL, AMZN, META, ORCL"},
                         {"layer": "L5 软件应用", "weight": "10%", "targets": "PLTR, NOW, CRM"},
-                        {"layer": "L6 A股概念题材", "weight": "10%", "targets": "寒武纪, 海光信息, 中际旭创等"}
+                        {"layer": "L6 A股核心标的", "weight": "10%", "targets": "寒武纪, 海光, 旭创, 新易盛, 工业富联, 浪潮, 胜宏, 讯飞"}
                     ]
                 },
                 "us_cn_matrix": {
@@ -566,12 +570,12 @@ class AIOverview:
                 },
                 {
                     "layer_id": "L2",
-                    "title": "第二层：AI 存储与代工 (HBM/CoWoS)",
+                    "title": "第二层：AI 存储与代工 (HBM/CoWoS/互联)",
                     "star": "★★★★★",
                     "importance": "真实产能供需",
                     "avg_change": round(l2_avg, 2),
                     "items": l2_stocks,
-                    "desc": "美光 MU (HBM内存)、台积电 TSM (先进封装) 及阿斯麦 ASML (光刻机)。"
+                    "desc": "美光 MU (HBM内存)、台积电 TSM (先进封装)、阿斯麦 ASML (光刻机) 及 Arista (AI集群网络)。"
                 },
                 {
                     "layer_id": "L3",
@@ -607,7 +611,7 @@ class AIOverview:
                     "importance": "国内算力与溢价",
                     "avg_change": round(l6_avg, 2),
                     "items": l6_stocks,
-                    "desc": f"寒武纪/海光信息/中际旭创/工业富联/浪潮信息 (加权 PE: {cn_ai_pe}x)。"
+                    "desc": f"寒武纪/海光信息/中际旭创/新易盛/工业富联/浪潮信息/胜宏科技/科大讯飞 (加权 PE: {cn_ai_pe}x)。"
                 }
             ]
 

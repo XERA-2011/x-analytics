@@ -548,11 +548,11 @@ class AIMarketController {
                 const defaultWeights = [
                     { layer: 'L0 能源电力', weight: '10%', targets: 'GEV, CEG, VST, ETN' },
                     { layer: 'L1 算力芯片', weight: '25%', targets: 'NVDA, AMD, AVGO, ARM, MRVL' },
-                    { layer: 'L2 存储代工', weight: '20%', targets: 'MU, TSM, ASML' },
+                    { layer: 'L2 存储代工与互联', weight: '20%', targets: 'MU, TSM, ASML, ANET' },
                     { layer: 'L3 服务器与液冷基建', weight: '15%', targets: 'SMCI, DELL, VRT' },
                     { layer: 'L4 云计算四大巨头', weight: '10%', targets: 'MSFT, GOOGL, AMZN, META, ORCL' },
                     { layer: 'L5 软件应用', weight: '10%', targets: 'PLTR, NOW, CRM' },
-                    { layer: 'L6 A股AI龙头', weight: '10%', targets: '寒武纪, 海光, 旭创, 工业富联, 浪潮信息' }
+                    { layer: 'L6 A股核心标的', weight: '10%', targets: '寒武纪, 海光, 旭创, 新易盛, 工业富联, 浪潮, 胜宏, 讯飞' }
                 ];
                 const weightsList = (exp.weights && exp.weights.length > 0) ? exp.weights : defaultWeights;
 
@@ -716,7 +716,7 @@ class AIMarketController {
                                 <strong style="color: var(--color-primary, #3b82f6);">L1 算力芯片与架构</strong>：包含 NVDA, AMD, AVGO, ARM, MRVL 及费半 ETF，资本最核心风向标。
                             </div>
                             <div style="padding: 5px 8px; background: rgba(255,255,255,0.03); border-radius: 4px;">
-                                <strong style="color: var(--color-primary, #3b82f6);">L2 存储与代工</strong>：美光 HBM 内存与台积电 CoWoS 封装，体现真实硬件产能供需。
+                                <strong style="color: var(--color-primary, #3b82f6);">L2 存储代工与互联</strong>：美光 HBM 内存、台积电 CoWoS 封装及 Arista 集群网络，体现真实硬件产能供需。
                             </div>
                             <div style="padding: 5px 8px; background: rgba(255,255,255,0.03); border-radius: 4px;">
                                 <strong style="color: var(--color-primary, #3b82f6);">L3 数据中心基建</strong>：服务器与液冷/电源（SMCI / VRT / DELL），反映基建落地开支。
@@ -728,7 +728,7 @@ class AIMarketController {
                                 <strong style="color: var(--color-primary, #3b82f6);">L5 Agent 与应用</strong>：Palantir、ServiceNow、Salesforce 等 SaaS 软件，体现商业化变现成果。
                             </div>
                             <div style="padding: 5px 8px; background: rgba(255,255,255,0.03); border-radius: 4px;">
-                                <strong style="color: #ef4444;">L6 A股/边缘概念</strong>：寒武纪/海光等龙头与游资偏好题材，狂热暴涨预示短线情绪近尾声。
+                                <strong style="color: var(--color-primary, #3b82f6);">L6 A股核心标的</strong>：涵盖寒武纪/海光(芯片)、旭创/新易盛(光模块)、工业富联/浪潮(服务器)、胜宏(PCB)及科大讯飞(大模型)。
                             </div>
                         </div>
                     </div>
