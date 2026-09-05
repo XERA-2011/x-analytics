@@ -37,7 +37,7 @@ class AIOverview:
 
     @staticmethod
     @cached(
-        "ai:overview_v13", 
+        "ai:overview_v14", 
         ttl=settings.CACHE_TTL["ai_overview"],
         stale_ttl=settings.CACHE_TTL["ai_overview"] * settings.STALE_TTL_RATIO,
         sync_on_cold=True
@@ -354,9 +354,9 @@ class AIOverview:
                 rotation_class = "healthy"
                 rotation_desc = f"资金优先集中于电力基础设施 (L0) 与核心芯片 (L1)，美股 AI 加权 PE 为 {us_ai_pe}x，基本面订单支撑强劲。"
             elif l6_avg > l1_avg and l6_avg > 1.5:
-                rotation_mode = "泡沫轮动 (概念投机)"
+                rotation_mode = "题材分化 (概念投机)"
                 rotation_class = "bubble"
-                rotation_desc = f"边缘小票与概念题材快速轮动暴涨 (A股 AI PE 达 {cn_ai_pe}x)，算力与电力主线动能相对偏弱，警惕短线情绪过热。"
+                rotation_desc = f"部分概念题材快速轮动活跃 (A股 AI PE 达 {cn_ai_pe}x)，算力与电力主线动能相对偏弱，警惕短线情绪过热。"
             else:
                 rotation_mode = "均衡传导 (扩散中)"
                 rotation_class = "neutral"
@@ -385,13 +385,20 @@ class AIOverview:
                 trend_str = "↓ 回调"
                 risk_level = "偏高"
                 risk_class = "high"
-            elif rotation_class == "healthy" and nvda_change > 0.3 and l0_avg > 0.2:
+            elif rotation_class == "healthy" and nvda_change > 0.3 and l0_avg > 0.2 and heat_score >= 68.0:
                 cycle_phase = "能源与算力共振强势市场"
                 cycle_status = "active"
                 cycle_desc = "AI 电网基建与算力强共振。机会聚焦：★★★★★ 算力芯片、存储封装与电力设备 | 真实 CapEx 与订单共振。"
                 trend_str = "↑ 强劲"
                 risk_level = "低"
                 risk_class = "low"
+            elif heat_score >= 55.0 and (l0_avg > 0 or l1_avg > 0):
+                cycle_phase = "结构分化与基建消化市场"
+                cycle_status = "neutral"
+                cycle_desc = "上游算力与电网基建韧性支撑，下游云巨头与软件处于回调消化期。机会聚焦：★★★★☆ 业绩确定性上游算力与电力基建 | 风险防范：下游商业化兑现节奏。"
+                trend_str = "↗ 温和分化"
+                risk_level = "中等"
+                risk_class = "medium"
             else:
                 cycle_phase = "稳健消化与应用探索市场"
                 cycle_status = "neutral"

@@ -215,7 +215,7 @@ class AIMarketController {
                             <span style="color: var(--text-tertiary);">➔</span>
                             <span class="flow-step" style="background: rgba(168, 85, 247, 0.1); color: #9333ea;">L5 软件Agent</span>
                             <span style="color: var(--text-tertiary);">➔</span>
-                            <span class="flow-step" style="background: rgba(239, 68, 68, 0.1); color: #dc2626;">L6 边缘概念</span>
+                            <span class="flow-step" style="background: rgba(239, 68, 68, 0.1); color: #dc2626;">L6 A股核心</span>
                         </div>
                     </div>
                 </div>
@@ -453,7 +453,7 @@ class AIMarketController {
                         <i data-lucide="layers" width="16" style="vertical-align: middle;"></i> AI 产业链 7 层全景拆解 (L0 - L6 代表成分股)
                     </div>
                     <div style="display: flex; align-items: center; gap: 6px; margin-left: auto;">
-                        <span style="font-size: 10.5px; color: var(--text-tertiary); white-space: nowrap;">7 大层级 · 30 只核心标的</span>
+                        <span style="font-size: 10.5px; color: var(--text-tertiary); white-space: nowrap;">${layers ? layers.length : 7} 大层级 · ${(layers && layers.length > 0) ? layers.reduce((acc, l) => acc + (l.items ? l.items.length : 0), 0) : 34} 只核心标的</span>
                         <button class="info-btn" id="info-ai-layers" title="拆解说明"><i data-lucide="help-circle" width="14"></i></button>
                     </div>
                 </div>
