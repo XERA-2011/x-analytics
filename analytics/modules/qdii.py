@@ -747,6 +747,22 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "default_asset_allocation": {"stock_pct": 79.96, "stock_us_pct": 40.10, "stock_cn_pct": 23.88, "stock_hk_pct": 15.39, "stock_other_pct": 0.59, "cash_pct": 2.75, "bond_pct": 21.67},
         "tag": "多资产配置",
     },
+    {
+        "code": "007280",
+        "name": "摩根日本精选股票(QDII)A",
+        "index_code": "ACTIVE",
+        "index_name": "主动管理型",
+        "type": "active",
+        "fee_rate": "1.40%",
+        "tracking_error": "--",
+        "inception_date": "2019-07-31",
+        "default_return_1y": 18.04,
+        "default_nav": 2.1997,
+        "default_nav_date": "2026-09-04",
+        "default_scale": "23.94亿元",
+        "default_asset_allocation": {"stock_pct": 93.00, "stock_other_pct": 93.00, "cash_pct": 9.30, "bond_pct": 0.0},
+        "tag": "日本精选",
+    },
 ]
 
 
@@ -1010,6 +1026,8 @@ def _generate_active_fund_tag(item: Dict[str, Any], total_count: int, top10_conc
     alloc = item.get("default_asset_allocation", {})
     if "新能源" in name or "车" in name:
         return "新能源车"
+    if "日本" in name or code == "007280":
+        return "日本精选"
     if "半导体" in name or "芯片" in name or code == "019454":
         return "中韩芯片"
     if "新兴市场" in name or code == "539002":
@@ -1089,7 +1107,7 @@ def fetch_fund_scale(session: requests.Session, code: str) -> Optional[str]:
     return None
 
 
-@cached("qdii:passive_funds_v42", ttl=86400, stale_ttl=86400 * 7, sync_on_cold=True)
+@cached("qdii:passive_funds_v43", ttl=86400, stale_ttl=86400 * 7, sync_on_cold=True)
 def get_qdii_passive_funds() -> Dict[str, Any]:
     """获取国内纳斯达克100 & 标普500 场外被动 QDII A类基金数据列表
 
@@ -1309,7 +1327,7 @@ def get_qdii_passive_funds() -> Dict[str, Any]:
             "allocation_estimated": item.get("allocation_estimated", False),
             "tag": fund_tag,
             "buy_status": buy_status,
-            "scale": scale_map.get(code) or "--",
+            "scale": scale_map.get(code) or item.get("default_scale") or "--",
         })
 
     # 按 近1年收益 (return_1y) 降序排序
@@ -1369,7 +1387,7 @@ def _fetch_full_holdings_count(session: requests.Session, fetch_code: str, defau
     return final_count
 
 
-@cached("qdii:top_holdings_v14", ttl=86400 * 7, stale_ttl=86400 * 30, sync_on_cold=True)
+@cached("qdii:top_holdings_v15", ttl=86400 * 7, stale_ttl=86400 * 30, sync_on_cold=True)
 def get_qdii_top_holdings(code: str) -> Dict[str, Any]:
     """获取 QDII 基金最新披露的重仓持仓股票列表（升级支持最大100只完整持仓）"""
     # 联接基金到目标 ETF 的精准映射，当联接基金本身无股票持仓披露时，自动穿透到对应的目标 ETF 获取底层真实持仓
@@ -1564,9 +1582,15 @@ def get_qdii_top_holdings(code: str) -> Dict[str, Any]:
                             stock_type = "美股"
                         elif re.match(r'^\d{5}$', s_code_clean):
                             stock_type = "港股"
+                        elif code == "007280" or re.match(r'^\d{4}$', s_code_clean) or "日本" in s_name_clean:
+                            stock_type = "日股"
                         else:
-                            # 韩国、日本、台湾等其他未被东财直接关联行情链接的跨境证券，统一归为“其他”
+                            # 韩国、台湾等其他未被东财直接关联行情链接的跨境证券，统一归为“其他”
                             stock_type = "其他"
+
+                # 若是日本精选基金且非现金，统一确认其标的归属为日股
+                if code == "007280" and stock_type != "现金":
+                    stock_type = "日股"
 
                 holdings.append({
                     "rank": rank_str,

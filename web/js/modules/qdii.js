@@ -125,11 +125,13 @@ class QDIIController {
 
                 let subParts = [];
                 const hasDetailed = (usPct != null && parseFloat(usPct) > 0) || (hkPct != null && parseFloat(hkPct) > 0) || (cnPct != null && parseFloat(cnPct) > 0) || (otherPct != null && parseFloat(otherPct) > 0);
+                const isJapanFund = (item.name && item.name.includes('日本')) || (item.tag && item.tag.includes('日本'));
+                const otherRegionText = isJapanFund ? '日股' : '日韩/台股';
                 if (hasDetailed) {
                     if (usPct != null && parseFloat(usPct) > 0) subParts.push(`<span class="alloc-text-item alloc-text-us">${usPct}% 美股</span>`);
                     if (hkPct != null && parseFloat(hkPct) > 0) subParts.push(`<span class="alloc-text-item alloc-text-hk">${hkPct}% 港股</span>`);
                     if (cnPct != null && parseFloat(cnPct) > 0) subParts.push(`<span class="alloc-text-item alloc-text-cn">${cnPct}% A股</span>`);
-                    if (otherPct != null && parseFloat(otherPct) > 0) subParts.push(`<span class="alloc-text-item alloc-text-other">${otherPct}% 日韩/台股</span>`);
+                    if (otherPct != null && parseFloat(otherPct) > 0) subParts.push(`<span class="alloc-text-item alloc-text-other">${otherPct}% ${otherRegionText}</span>`);
                 } else {
                     subParts.push(`<span class="alloc-text-item alloc-text-stock">${stockPct}% 股票</span>`);
                 }
@@ -141,7 +143,7 @@ class QDIIController {
                     if (usPct != null && parseFloat(usPct) > 0) barSegments.push({ cls: 'allocation-bar-us', val: parseFloat(usPct), title: `美股股票: ${usPct}%` });
                     if (hkPct != null && parseFloat(hkPct) > 0) barSegments.push({ cls: 'allocation-bar-hk', val: parseFloat(hkPct), title: `港股股票: ${hkPct}%` });
                     if (cnPct != null && parseFloat(cnPct) > 0) barSegments.push({ cls: 'allocation-bar-cn', val: parseFloat(cnPct), title: `A股股票: ${cnPct}%` });
-                    if (otherPct != null && parseFloat(otherPct) > 0) barSegments.push({ cls: 'allocation-bar-other', val: parseFloat(otherPct), title: `日韩/台股: ${otherPct}%` });
+                    if (otherPct != null && parseFloat(otherPct) > 0) barSegments.push({ cls: 'allocation-bar-other', val: parseFloat(otherPct), title: `${isJapanFund ? '日本股票' : '日韩/台股'}: ${otherPct}%` });
                 } else {
                     barSegments.push({ cls: 'allocation-bar-stock', val: parseFloat(stockPct), title: `股票: ${stockPct}%` });
                 }
@@ -166,7 +168,7 @@ class QDIIController {
                 let allocLabel = subParts.join('<span class="alloc-sep">·</span>');
 
                 let tooltipParts = [];
-                tooltipParts.push(`股票: ${stockPct}%${hasDetailed ? ' (美股 ' + (usPct || '0.0') + '%, 港股 ' + (hkPct || '0.0') + '%' + (cnPct ? ', A股 ' + cnPct + '%' : '') + (otherPct ? ', 日韩/台股 ' + otherPct + '%' : '') + ')' : ''}`);
+                tooltipParts.push(`股票: ${stockPct}%${hasDetailed ? ' (美股 ' + (usPct || '0.0') + '%, 港股 ' + (hkPct || '0.0') + '%' + (cnPct ? ', A股 ' + cnPct + '%' : '') + (otherPct ? ', ' + (isJapanFund ? '日股 ' : '日韩/台股 ') + otherPct + '%' : '') + ')' : ''}`);
                 if (alloc.cash_pct > 0.1) tooltipParts.push(`现金: ${cashPct}%`);
                 if (alloc.bond_pct > 0.5) tooltipParts.push(`债券: ${bondPct}%`);
                 if (totalVal < 99.5) {
@@ -268,11 +270,13 @@ class QDIIController {
 
                 let subParts = [];
                 const hasDetailed = (usPct != null && parseFloat(usPct) > 0) || (hkPct != null && parseFloat(hkPct) > 0) || (cnPct != null && parseFloat(cnPct) > 0) || (otherPct != null && parseFloat(otherPct) > 0);
+                const isJapanFund = (item.name && item.name.includes('日本')) || (item.tag && item.tag.includes('日本'));
+                const otherRegionText = isJapanFund ? '日股' : '日韩/台股';
                 if (hasDetailed) {
                     if (usPct != null && parseFloat(usPct) > 0) subParts.push(`<span class="alloc-text-item alloc-text-us">${usPct}% 美股</span>`);
                     if (hkPct != null && parseFloat(hkPct) > 0) subParts.push(`<span class="alloc-text-item alloc-text-hk">${hkPct}% 港股</span>`);
                     if (cnPct != null && parseFloat(cnPct) > 0) subParts.push(`<span class="alloc-text-item alloc-text-cn">${cnPct}% A股</span>`);
-                    if (otherPct != null && parseFloat(otherPct) > 0) subParts.push(`<span class="alloc-text-item alloc-text-other">${otherPct}% 日韩/台股</span>`);
+                    if (otherPct != null && parseFloat(otherPct) > 0) subParts.push(`<span class="alloc-text-item alloc-text-other">${otherPct}% ${otherRegionText}</span>`);
                 } else {
                     subParts.push(`<span class="alloc-text-item alloc-text-stock">${stockPct}% 股票</span>`);
                 }
@@ -525,6 +529,9 @@ class QDIIController {
                     } else if (h.stock_type === '港股') {
                         bgColor = 'rgba(34, 197, 94, 0.1)';
                         textColor = 'var(--accent-green)';
+                    } else if (h.stock_type === '日股') {
+                        bgColor = 'rgba(245, 158, 11, 0.1)';
+                        textColor = 'var(--accent-orange, #f59e0b)';
                     } else if (h.stock_type === '其他' || h.stock_type === '现金') {
                         bgColor = 'rgba(115, 115, 115, 0.1)';
                         textColor = 'var(--text-secondary)';
