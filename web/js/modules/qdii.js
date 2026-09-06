@@ -514,30 +514,44 @@ class QDIIController {
                 const rawRatio = h.ratio_val || 0;
                 const barWidth = rawRatio > 0 ? Math.max(0.5, Math.min(100, rawRatio)) : 0;
                 
-                // 渲染持仓证券类型徽章
+                // 渲染持仓证券类型徽章 (与主表格/卡片顶栏图例严格对齐配色规范)
                 let badgeHtml = '';
                 if (h.stock_type) {
-                    let bgColor = 'rgba(115, 115, 115, 0.1)';
-                    let textColor = 'var(--text-secondary)';
+                    let bgColor = 'rgba(156, 163, 175, 0.12)';
+                    let textColor = '#6b7280';
+                    let borderColor = 'rgba(156, 163, 175, 0.25)';
                     
                     if (h.stock_type === 'A股') {
-                        bgColor = 'rgba(239, 68, 68, 0.1)';
-                        textColor = 'var(--accent-red)';
+                        bgColor = 'rgba(222, 41, 16, 0.12)';
+                        textColor = '#de2910';
+                        borderColor = 'rgba(222, 41, 16, 0.25)';
                     } else if (h.stock_type === '美股') {
-                        bgColor = 'rgba(59, 130, 246, 0.1)';
-                        textColor = 'var(--accent-blue)';
+                        bgColor = 'rgba(37, 99, 235, 0.12)';
+                        textColor = '#2563eb';
+                        borderColor = 'rgba(37, 99, 235, 0.25)';
                     } else if (h.stock_type === '港股') {
-                        bgColor = 'rgba(34, 197, 94, 0.1)';
-                        textColor = 'var(--accent-green)';
-                    } else if (h.stock_type === '日股') {
-                        bgColor = 'rgba(245, 158, 11, 0.1)';
-                        textColor = 'var(--accent-orange, #f59e0b)';
-                    } else if (h.stock_type === '其他' || h.stock_type === '现金') {
-                        bgColor = 'rgba(115, 115, 115, 0.1)';
-                        textColor = 'var(--text-secondary)';
+                        bgColor = 'rgba(147, 51, 234, 0.12)';
+                        textColor = '#9333ea';
+                        borderColor = 'rgba(147, 51, 234, 0.25)';
+                    } else if (['日股', '台股', '韩股', '日韩/台股', '日韩台股'].includes(h.stock_type)) {
+                        bgColor = 'rgba(249, 115, 22, 0.12)';
+                        textColor = '#ea580c';
+                        borderColor = 'rgba(249, 115, 22, 0.25)';
+                    } else if (h.stock_type === '现金') {
+                        bgColor = 'rgba(16, 185, 129, 0.12)';
+                        textColor = '#10b981';
+                        borderColor = 'rgba(16, 185, 129, 0.25)';
+                    } else if (h.stock_type === '债券') {
+                        bgColor = 'rgba(245, 158, 11, 0.12)';
+                        textColor = '#d97706';
+                        borderColor = 'rgba(245, 158, 11, 0.25)';
+                    } else if (h.stock_type === '其他' || h.stock_type === '其它') {
+                        bgColor = 'rgba(156, 163, 175, 0.12)';
+                        textColor = '#6b7280';
+                        borderColor = 'rgba(156, 163, 175, 0.25)';
                     }
                     
-                    badgeHtml = `<span style="font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; font-weight: bold; background: ${bgColor}; color: ${textColor}; display: inline-flex; align-items: center; justify-content: center; line-height: 1; vertical-align: middle;">${h.stock_type}</span>`;
+                    badgeHtml = `<span style="font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; font-weight: 700; background: ${bgColor}; color: ${textColor}; border: 1px solid ${borderColor}; display: inline-flex; align-items: center; justify-content: center; line-height: 1; vertical-align: middle;">${h.stock_type}</span>`;
                 }
 
                 // 计算较上季变化渲染内容

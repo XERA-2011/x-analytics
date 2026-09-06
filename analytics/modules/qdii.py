@@ -1387,7 +1387,7 @@ def _fetch_full_holdings_count(session: requests.Session, fetch_code: str, defau
     return final_count
 
 
-@cached("qdii:top_holdings_v15", ttl=86400 * 7, stale_ttl=86400 * 30, sync_on_cold=True)
+@cached("qdii:top_holdings_v16", ttl=86400 * 7, stale_ttl=86400 * 30, sync_on_cold=True)
 def get_qdii_top_holdings(code: str) -> Dict[str, Any]:
     """获取 QDII 基金最新披露的重仓持仓股票列表（升级支持最大100只完整持仓）"""
     # 联接基金到目标 ETF 的精准映射，当联接基金本身无股票持仓披露时，自动穿透到对应的目标 ETF 获取底层真实持仓
@@ -1582,10 +1582,19 @@ def get_qdii_top_holdings(code: str) -> Dict[str, Any]:
                             stock_type = "美股"
                         elif re.match(r'^\d{5}$', s_code_clean):
                             stock_type = "港股"
-                        elif code == "007280" or re.match(r'^\d{4}$', s_code_clean) or "日本" in s_name_clean:
+                        elif code == "007280" or "日本" in s_name_clean or any(k in s_name_clean for k in ["制作所", "三菱", "索尼", "三井", "日立", "丰田", "任天堂", "KIOXIA", "瑞可利", "大冢商会", "富士电机", "花王", "角川", "大和工业", "卡普空", "铃木"]):
                             stock_type = "日股"
+                        elif any(k in s_name_clean for k in ["三星", "SK", "Samsung", "现代", "LG", "Hynix", "韩"]):
+                            stock_type = "韩股"
+                        elif any(k in s_name_clean for k in ["台积电", "联发科", "台达电", "智邦", "鸿海", "大立光", "日月光", "台"]):
+                            stock_type = "台股"
+                        elif re.match(r'^\d{4}$', s_code_clean):
+                            # 4位数字在跨境亚太基金中多为台股或日股
+                            stock_type = "台股" if s_code_clean.startswith(('2', '3')) else "日股"
+                        elif re.match(r'^\d{6}$', s_code_clean):
+                            # 6位数字在跨境亚太基金中多为韩股 (如 005930, 000660, 009150, 402340)
+                            stock_type = "韩股"
                         else:
-                            # 韩国、台湾等其他未被东财直接关联行情链接的跨境证券，统一归为“其他”
                             stock_type = "其他"
 
                 # 若是日本精选基金且非现金，统一确认其标的归属为日股
