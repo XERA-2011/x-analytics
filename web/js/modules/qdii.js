@@ -48,6 +48,16 @@ class QDIIController {
                 this.benchmarks = data.benchmarks;
             }
 
+            const urlParams = new URLSearchParams(window.location.search);
+            const initialFilter = urlParams.get('filter') || urlParams.get('subtab');
+            if (initialFilter && ['active', 'nasdaq100', 'sp500'].includes(initialFilter)) {
+                this.currentFilter = initialFilter;
+                const buttons = document.querySelectorAll('.qdii-filter-btn');
+                buttons.forEach(b => {
+                    b.classList.toggle('active', b.dataset.filter === initialFilter);
+                });
+            }
+
             this.rawFunds = funds;
             this.renderTable();
             this.bindFilterButtons();
@@ -63,7 +73,10 @@ class QDIIController {
             btn.onclick = () => {
                 buttons.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
-                this.currentFilter = btn.dataset.filter || 'nasdaq100';
+                this.currentFilter = btn.dataset.filter || 'active';
+                const url = new URL(window.location.href);
+                url.searchParams.set('filter', this.currentFilter);
+                window.history.replaceState({}, '', url.toString());
                 this.renderTable();
             };
         });
