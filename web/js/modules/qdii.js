@@ -69,6 +69,88 @@ class QDIIController {
         });
     }
 
+    _calcNormalizedAllocation(item) {
+        const alloc = item.asset_allocation;
+        if (!alloc || alloc.stock_pct == null) return null;
+
+        const usRaw = alloc.stock_us_pct != null ? alloc.stock_us_pct : null;
+        const hkRaw = alloc.stock_hk_pct != null ? alloc.stock_hk_pct : null;
+        const cnRaw = alloc.stock_cn_pct != null ? alloc.stock_cn_pct : null;
+        const otherRaw = alloc.stock_other_pct != null ? alloc.stock_other_pct : null;
+        const stockRaw = alloc.stock_pct != null ? alloc.stock_pct : null;
+        const cashRaw = alloc.cash_pct != null ? alloc.cash_pct : 0;
+        const bondRaw = alloc.bond_pct != null ? alloc.bond_pct : 0;
+
+        const hasDetailed = (usRaw != null && parseFloat(usRaw) > 0) || 
+                            (hkRaw != null && parseFloat(hkRaw) > 0) || 
+                            (cnRaw != null && parseFloat(cnRaw) > 0) || 
+                            (otherRaw != null && parseFloat(otherRaw) > 0);
+
+        const isJapanFund = (item.name && item.name.includes('日本')) || (item.tag && item.tag.includes('日本'));
+        const otherRegionText = isJapanFund ? '日股' : '日韩/台股';
+
+        let segments = [];
+        if (hasDetailed) {
+            if (usRaw != null && parseFloat(usRaw) > 0) {
+                segments.push({ key: 'us', name: '美股', rawVal: parseFloat(usRaw), cls: 'allocation-bar-us', textCls: 'alloc-text-us' });
+            }
+            if (hkRaw != null && parseFloat(hkRaw) > 0) {
+                segments.push({ key: 'hk', name: '港股', rawVal: parseFloat(hkRaw), cls: 'allocation-bar-hk', textCls: 'alloc-text-hk' });
+            }
+            if (cnRaw != null && parseFloat(cnRaw) > 0) {
+                segments.push({ key: 'cn', name: 'A股', rawVal: parseFloat(cnRaw), cls: 'allocation-bar-cn', textCls: 'alloc-text-cn' });
+            }
+            if (otherRaw != null && parseFloat(otherRaw) > 0) {
+                segments.push({ key: 'other', name: otherRegionText, rawVal: parseFloat(otherRaw), cls: 'allocation-bar-other', textCls: 'alloc-text-other' });
+            }
+        } else {
+            if (stockRaw != null && parseFloat(stockRaw) > 0) {
+                segments.push({ key: 'stock', name: '股票', rawVal: parseFloat(stockRaw), cls: 'allocation-bar-stock', textCls: 'alloc-text-stock' });
+            }
+        }
+
+        if (cashRaw != null && parseFloat(cashRaw) > 0.05) {
+            segments.push({ key: 'cash', name: '现金', rawVal: parseFloat(cashRaw), cls: 'allocation-bar-cash', textCls: 'alloc-text-cash' });
+        }
+        if (bondRaw != null && parseFloat(bondRaw) > 0.05) {
+            segments.push({ key: 'bond', name: '债券', rawVal: parseFloat(bondRaw), cls: 'allocation-bar-bond', textCls: 'alloc-text-bond' });
+        }
+
+        const totalVal = segments.reduce((sum, s) => sum + s.rawVal, 0);
+        if (totalVal <= 0) return null;
+
+        // 严格按比例归一化为 100.0%
+        let sumNorm = 0;
+        segments.forEach((s, idx) => {
+            if (idx === segments.length - 1) {
+                s.normVal = Math.max(0.1, Math.round((100.0 - sumNorm) * 10) / 10);
+            } else {
+                s.normVal = Math.round(((s.rawVal / totalVal) * 100) * 10) / 10;
+                sumNorm += s.normVal;
+            }
+            s.pctStr = s.normVal.toFixed(1);
+            s.rawStr = s.rawVal.toFixed(1);
+        });
+
+        // 构造悬浮详情 Tooltip (展示归一化后的资产结构和官方季报原始净值口径)
+        const normSummary = segments.map(s => `${s.pctStr}% ${s.name}`).join(' · ');
+        const rawSummary = segments.map(s => `${s.name} ${s.rawStr}%`).join(', ');
+        const reportNotice = totalVal > 100.5
+            ? `(季报占净比合计 ${totalVal.toFixed(1)}%，因含待清算款/应付款等净资产口径略大于100%)`
+            : totalVal < 98.5
+            ? `(季报占净比合计 ${totalVal.toFixed(1)}%，其余为存出保证金及应收清算款项)`
+            : `(季报占净比合计 ${totalVal.toFixed(1)}%)`;
+        
+        const tooltip = `资产配置结构: ${normSummary}\n官方季报口径: ${rawSummary} ${reportNotice}`;
+
+        return {
+            segments,
+            normSummary,
+            tooltip,
+            totalVal
+        };
+    }
+
     renderTable() {
         const container = document.getElementById('qdii-table-container');
         if (!container) return;
@@ -111,74 +193,22 @@ class QDIIController {
             const vol = item.volatility;
             const volStr = vol != null ? `${utils.formatPercentage(vol)}` : '--';
 
-            const alloc = item.asset_allocation;
+            const allocInfo = this._calcNormalizedAllocation(item);
             let allocHtml = '<span style="color: var(--text-tertiary);">--</span>';
 
-            if (alloc && alloc.stock_pct != null) {
-                const stockPct = alloc.stock_pct.toFixed(1);
-                const usPct = alloc.stock_us_pct != null ? alloc.stock_us_pct.toFixed(1) : null;
-                const hkPct = alloc.stock_hk_pct != null ? alloc.stock_hk_pct.toFixed(1) : null;
-                const cnPct = alloc.stock_cn_pct != null ? alloc.stock_cn_pct.toFixed(1) : null;
-                const otherPct = alloc.stock_other_pct != null ? alloc.stock_other_pct.toFixed(1) : null;
-                const cashPct = alloc.cash_pct != null ? alloc.cash_pct.toFixed(1) : '0.0';
-                const bondPct = alloc.bond_pct != null ? alloc.bond_pct.toFixed(1) : '0.0';
+            if (allocInfo && allocInfo.segments.length > 0) {
+                const subParts = allocInfo.segments.map(s => 
+                    `<span class="alloc-text-item ${s.textCls}">${s.pctStr}% ${s.name}</span>`
+                );
+                const allocLabel = subParts.join('<span class="alloc-sep">·</span>');
 
-                let subParts = [];
-                const hasDetailed = (usPct != null && parseFloat(usPct) > 0) || (hkPct != null && parseFloat(hkPct) > 0) || (cnPct != null && parseFloat(cnPct) > 0) || (otherPct != null && parseFloat(otherPct) > 0);
-                const isJapanFund = (item.name && item.name.includes('日本')) || (item.tag && item.tag.includes('日本'));
-                const otherRegionText = isJapanFund ? '日股' : '日韩/台股';
-                if (hasDetailed) {
-                    if (usPct != null && parseFloat(usPct) > 0) subParts.push(`<span class="alloc-text-item alloc-text-us">${usPct}% 美股</span>`);
-                    if (hkPct != null && parseFloat(hkPct) > 0) subParts.push(`<span class="alloc-text-item alloc-text-hk">${hkPct}% 港股</span>`);
-                    if (cnPct != null && parseFloat(cnPct) > 0) subParts.push(`<span class="alloc-text-item alloc-text-cn">${cnPct}% A股</span>`);
-                    if (otherPct != null && parseFloat(otherPct) > 0) subParts.push(`<span class="alloc-text-item alloc-text-other">${otherPct}% ${otherRegionText}</span>`);
-                } else {
-                    subParts.push(`<span class="alloc-text-item alloc-text-stock">${stockPct}% 股票</span>`);
-                }
-                if (alloc.cash_pct > 0.1) subParts.push(`<span class="alloc-text-item alloc-text-cash">${cashPct}% 现金</span>`);
-                if (alloc.bond_pct > 0.5) subParts.push(`<span class="alloc-text-item alloc-text-bond">${bondPct}% 债券</span>`);
-
-                let barSegments = [];
-                if (hasDetailed) {
-                    if (usPct != null && parseFloat(usPct) > 0) barSegments.push({ cls: 'allocation-bar-us', val: parseFloat(usPct), title: `美股股票: ${usPct}%` });
-                    if (hkPct != null && parseFloat(hkPct) > 0) barSegments.push({ cls: 'allocation-bar-hk', val: parseFloat(hkPct), title: `港股股票: ${hkPct}%` });
-                    if (cnPct != null && parseFloat(cnPct) > 0) barSegments.push({ cls: 'allocation-bar-cn', val: parseFloat(cnPct), title: `A股股票: ${cnPct}%` });
-                    if (otherPct != null && parseFloat(otherPct) > 0) barSegments.push({ cls: 'allocation-bar-other', val: parseFloat(otherPct), title: `${isJapanFund ? '日本股票' : '日韩/台股'}: ${otherPct}%` });
-                } else {
-                    barSegments.push({ cls: 'allocation-bar-stock', val: parseFloat(stockPct), title: `股票: ${stockPct}%` });
-                }
-                if (alloc.cash_pct > 0.1) barSegments.push({ cls: 'allocation-bar-cash', val: parseFloat(cashPct), title: `现金: ${cashPct}%` });
-                if (alloc.bond_pct > 0.5) barSegments.push({ cls: 'allocation-bar-bond', val: parseFloat(bondPct), title: `债券: ${bondPct}%` });
-
-                const totalVal = barSegments.reduce((sum, s) => sum + s.val, 0);
-                const barScale = totalVal > 100 ? (100 / totalVal) : 1;
-                let barHtml = barSegments.map(s => {
-                    const w = (s.val * barScale).toFixed(1);
-                    return `<div class="${s.cls}" style="flex: 0 0 ${w}%; width: ${w}%;" title="${s.title}"></div>`;
+                const barHtml = allocInfo.segments.map(s => {
+                    const w = s.pctStr;
+                    return `<div class="${s.cls}" style="flex: 0 0 ${w}%; width: ${w}%;" title="${s.name}: ${w}% (季报原值: ${s.rawStr}%)"></div>`;
                 }).join('');
 
-                if (totalVal < 98.5) {
-                    const unclassifiedPct = (100.0 - totalVal).toFixed(1);
-                    barHtml += `<div class="allocation-bar-unclassified" style="flex: 0 0 ${unclassifiedPct}%; width: ${unclassifiedPct}%;" title="其它资产: ${unclassifiedPct}%"></div>`;
-                    if (parseFloat(unclassifiedPct) >= 1.0) {
-                        subParts.push(`<span class="alloc-text-item alloc-text-unclassified">${unclassifiedPct}% 其它</span>`);
-                    }
-                }
-
-                let allocLabel = subParts.join('<span class="alloc-sep">·</span>');
-
-                let tooltipParts = [];
-                tooltipParts.push(`股票: ${stockPct}%${hasDetailed ? ' (美股 ' + (usPct || '0.0') + '%, 港股 ' + (hkPct || '0.0') + '%' + (cnPct ? ', A股 ' + cnPct + '%' : '') + (otherPct ? ', ' + (isJapanFund ? '日股 ' : '日韩/台股 ') + otherPct + '%' : '') + ')' : ''}`);
-                if (alloc.cash_pct > 0.1) tooltipParts.push(`现金: ${cashPct}%`);
-                if (alloc.bond_pct > 0.5) tooltipParts.push(`债券: ${bondPct}%`);
-                if (totalVal < 99.5) {
-                    const unclassifiedPct = (100.0 - totalVal).toFixed(1);
-                    tooltipParts.push(`其它: ${unclassifiedPct}%`);
-                }
-                const cellTooltipTitle = tooltipParts.join(', ');
-
                 allocHtml = `
-                    <div class="allocation-cell" title="${cellTooltipTitle}">
+                    <div class="allocation-cell" title="${allocInfo.tooltip}">
                         <div class="allocation-text">
                             ${allocLabel}
                         </div>
@@ -257,62 +287,16 @@ class QDIIController {
             const tagHtml = item.tag ? `<span class="qdii-mcard-tag">${item.tag}</span>` : '';
 
             // 资产配置
-            const alloc = item.asset_allocation;
+            const allocInfo = this._calcNormalizedAllocation(item);
             let allocMobileHtml = '';
-            if (alloc && alloc.stock_pct != null) {
-                const usPct = alloc.stock_us_pct != null ? alloc.stock_us_pct.toFixed(1) : null;
-                const hkPct = alloc.stock_hk_pct != null ? alloc.stock_hk_pct.toFixed(1) : null;
-                const cnPct = alloc.stock_cn_pct != null ? alloc.stock_cn_pct.toFixed(1) : null;
-                const otherPct = alloc.stock_other_pct != null ? alloc.stock_other_pct.toFixed(1) : null;
-                const stockPct = alloc.stock_pct.toFixed(1);
-                const cashPct = alloc.cash_pct != null ? alloc.cash_pct.toFixed(1) : '0.0';
-                const bondPct = alloc.bond_pct != null ? alloc.bond_pct.toFixed(1) : '0.0';
-
-                let subParts = [];
-                const hasDetailed = (usPct != null && parseFloat(usPct) > 0) || (hkPct != null && parseFloat(hkPct) > 0) || (cnPct != null && parseFloat(cnPct) > 0) || (otherPct != null && parseFloat(otherPct) > 0);
-                const isJapanFund = (item.name && item.name.includes('日本')) || (item.tag && item.tag.includes('日本'));
-                const otherRegionText = isJapanFund ? '日股' : '日韩/台股';
-                if (hasDetailed) {
-                    if (usPct != null && parseFloat(usPct) > 0) subParts.push(`<span class="alloc-text-item alloc-text-us">${usPct}% 美股</span>`);
-                    if (hkPct != null && parseFloat(hkPct) > 0) subParts.push(`<span class="alloc-text-item alloc-text-hk">${hkPct}% 港股</span>`);
-                    if (cnPct != null && parseFloat(cnPct) > 0) subParts.push(`<span class="alloc-text-item alloc-text-cn">${cnPct}% A股</span>`);
-                    if (otherPct != null && parseFloat(otherPct) > 0) subParts.push(`<span class="alloc-text-item alloc-text-other">${otherPct}% ${otherRegionText}</span>`);
-                } else {
-                    subParts.push(`<span class="alloc-text-item alloc-text-stock">${stockPct}% 股票</span>`);
-                }
-                if (alloc.cash_pct > 0.1) subParts.push(`<span class="alloc-text-item alloc-text-cash">${cashPct}% 现金</span>`);
-                if (alloc.bond_pct > 0.5) subParts.push(`<span class="alloc-text-item alloc-text-bond">${bondPct}% 债券</span>`);
-
-                let barSegments = [];
-                if (hasDetailed) {
-                    if (usPct != null && parseFloat(usPct) > 0) barSegments.push({ cls: 'allocation-bar-us', val: parseFloat(usPct) });
-                    if (hkPct != null && parseFloat(hkPct) > 0) barSegments.push({ cls: 'allocation-bar-hk', val: parseFloat(hkPct) });
-                    if (cnPct != null && parseFloat(cnPct) > 0) barSegments.push({ cls: 'allocation-bar-cn', val: parseFloat(cnPct) });
-                    if (otherPct != null && parseFloat(otherPct) > 0) barSegments.push({ cls: 'allocation-bar-other', val: parseFloat(otherPct) });
-                } else {
-                    barSegments.push({ cls: 'allocation-bar-stock', val: parseFloat(stockPct) });
-                }
-                if (alloc.cash_pct > 0.1) barSegments.push({ cls: 'allocation-bar-cash', val: parseFloat(cashPct) });
-                if (alloc.bond_pct > 0.5) barSegments.push({ cls: 'allocation-bar-bond', val: parseFloat(bondPct) });
-
-                const totalVal = barSegments.reduce((sum, s) => sum + s.val, 0);
-                const barScale = totalVal > 100 ? (100 / totalVal) : 1;
-                let barHtml = barSegments.map(s => {
-                    const w = (s.val * barScale).toFixed(1);
+            if (allocInfo && allocInfo.segments.length > 0) {
+                const barHtml = allocInfo.segments.map(s => {
+                    const w = s.pctStr;
                     return `<div class="${s.cls}" style="flex: 0 0 ${w}%; width: ${w}%;"></div>`;
                 }).join('');
-                if (totalVal < 98.5) {
-                    const unclassifiedPct = (100.0 - totalVal).toFixed(1);
-                    barHtml += `<div class="allocation-bar-unclassified" style="flex: 0 0 ${unclassifiedPct}%; width: ${unclassifiedPct}%;"></div>`;
-                    if (parseFloat(unclassifiedPct) >= 1.0) {
-                        subParts.push(`<span class="alloc-text-item alloc-text-unclassified">${unclassifiedPct}% 其它</span>`);
-                    }
-                }
-
-                let allocLabel = subParts.join('<span class="alloc-sep">·</span>');
 
                 allocMobileHtml = `
-                    <div class="qdii-mcard-alloc-box">
+                    <div class="qdii-mcard-alloc-box" title="${allocInfo.tooltip}">
                         <div class="allocation-bar-track qdii-mcard-bar-track">
                             ${barHtml}
                         </div>
@@ -374,13 +358,12 @@ class QDIIController {
                     <span class="qdii-legend-tag tag-other">日韩/台股</span>
                     <span class="qdii-legend-tag tag-cash">现金</span>
                     <span class="qdii-legend-tag tag-bond">债券</span>
-                    <span class="qdii-legend-tag tag-unclassified">其它</span>
                 </div>
             </div>
         ` : (this.currentFilter === 'active' ? `
             <div style="padding: 10px 14px; margin-bottom: 12px; border-radius: 6px; background: var(--bg-body); border: 1px solid var(--border-light); font-size: clamp(0.72rem, 2.5vw, 0.78rem); color: var(--text-secondary); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
                 <div>
-                    🎯 <strong>【主动型 QDII】全球市场动态主动配置</strong>
+                    📌 <strong>【精选主动 & 特色 QDII】全市场共 26 只精选标的 · 全球动态跨市场配置</strong>
                 </div>
                 <div class="qdii-legend-group">
                     <span class="qdii-legend-tag tag-us">美股</span>
@@ -389,7 +372,6 @@ class QDIIController {
                     <span class="qdii-legend-tag tag-other">日韩/台股</span>
                     <span class="qdii-legend-tag tag-cash">现金</span>
                     <span class="qdii-legend-tag tag-bond">债券</span>
-                    <span class="qdii-legend-tag tag-unclassified">其它</span>
                 </div>
             </div>
         ` : '');
