@@ -74,14 +74,22 @@ class AIOverview:
                     "is_sector": False
                 }
 
-            def cap_weighted_change(items: List[Dict[str, Any]]) -> float:
-                """按总市值加权计算涨跌幅，若无市值则退化为有效行情算术平均。"""
+            def cap_weighted_change(items: List[Dict[str, Any]], max_weight: float = 0.40) -> float:
+                """按总市值加权计算涨跌幅，并施加单股权重上限(默认40%)避免巨头过度主导，若无市值则退化为有效行情算术平均。"""
                 valid_items = [it for it in items if it.get("change_pct") is not None]
                 if not valid_items:
                     return 0.0
-                total_cap = sum(it.get("market_cap", 0.0) or 0.0 for it in valid_items)
-                if total_cap > 0:
-                    return sum((it["change_pct"] * (it.get("market_cap", 0.0) or 0.0)) for it in valid_items) / total_cap
+                caps = [max(0.0, float(it.get("market_cap") or 0.0)) for it in valid_items]
+                total_cap = sum(caps)
+                if total_cap > 0 and len(valid_items) > 1:
+                    raw_weights = [c / total_cap for c in caps]
+                    capped_weights = [min(w, max_weight) for w in raw_weights]
+                    capped_sum = sum(capped_weights)
+                    if capped_sum > 0:
+                        weights = [w / capped_sum for w in capped_weights]
+                        return sum(it["change_pct"] * w for it, w in zip(valid_items, weights))
+                elif total_cap > 0:
+                    return valid_items[0]["change_pct"]
                 return sum(it["change_pct"] for it in valid_items) / len(valid_items)
 
             def cap_weighted_pe(items: List[Dict[str, Any]], fallback_pe: float = 30.0) -> float:
@@ -562,7 +570,7 @@ class AIOverview:
                     "title": "零层：能源与电力基础设施",
                     "star": "★★★★★",
                     "importance": "AI扩张核心瓶颈",
-                    "avg_change": round(l0_avg, 2),
+                    "avg_change": round(l0_raw, 2),
                     "items": l0_stocks,
                     "desc": "涵盖 GEV(电气设备)、CEG(核电)、VST(电力公用) 及 ETN(配电管理)。"
                 },
@@ -571,7 +579,7 @@ class AIOverview:
                     "title": "第一层：AI 算力芯片与架构",
                     "star": "★★★★★",
                     "importance": "核心总风向标",
-                    "avg_change": round(l1_avg, 2),
+                    "avg_change": round(l1_raw, 2),
                     "items": l1_stocks,
                     "desc": f"NVDA/AMD/博通/ARM/MRVL (市值加权 PE: {us_ai_pe}x)，决定资金总风向。"
                 },
@@ -580,7 +588,7 @@ class AIOverview:
                     "title": "第二层：AI 存储与代工 (HBM/CoWoS/互联)",
                     "star": "★★★★★",
                     "importance": "真实产能供需",
-                    "avg_change": round(l2_avg, 2),
+                    "avg_change": round(l2_raw, 2),
                     "items": l2_stocks,
                     "desc": "美光 MU (HBM内存)、台积电 TSM (先进封装)、阿斯麦 ASML (光刻机) 及 Arista (AI集群网络)。"
                 },
@@ -589,7 +597,7 @@ class AIOverview:
                     "title": "第三层：数据中心与基础设施",
                     "star": "★★★★☆",
                     "importance": "基建开支落地",
-                    "avg_change": round(l3_avg, 2),
+                    "avg_change": round(l3_raw, 2),
                     "items": l3_stocks,
                     "desc": "超微电脑、维谛液冷电源及戴尔服务器，反映硬件基础设施落地。"
                 },
@@ -598,7 +606,7 @@ class AIOverview:
                     "title": "第四层：云计算四大巨头与 AI 云",
                     "star": "★★★★☆",
                     "importance": "云巨头行情动能",
-                    "avg_change": round(l4_avg, 2),
+                    "avg_change": round(l4_raw, 2),
                     "items": l4_stocks,
                     "desc": f"微软/谷歌/亚马逊/Meta/甲骨文 (年化 CapEx ${hyperscaler_capex['annual_run_rate_b']}B)。"
                 },
@@ -607,7 +615,7 @@ class AIOverview:
                     "title": "第五层：AI 软件与 Agent 应用",
                     "star": "★★★☆☆",
                     "importance": "商业化变现",
-                    "avg_change": round(l5_avg, 2),
+                    "avg_change": round(l5_raw, 2),
                     "items": l5_stocks,
                     "desc": "Palantir、ServiceNow、Salesforce 代表的企业级 AI Agent 与 SaaS 应用。"
                 },
@@ -616,7 +624,7 @@ class AIOverview:
                     "title": "第六层：A股 AI 核心龙头",
                     "star": "★★★☆☆",
                     "importance": "国内算力与溢价",
-                    "avg_change": round(l6_avg, 2),
+                    "avg_change": round(l6_raw, 2),
                     "items": l6_stocks,
                     "desc": f"寒武纪/海光信息/中际旭创/新易盛/工业富联/浪潮信息/胜宏科技/科大讯飞 (加权 PE: {cn_ai_pe}x)。"
                 }

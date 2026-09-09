@@ -2117,6 +2117,7 @@ footer {
 }
 
 .svg-thermo-badge.healthy { background: #ecfdf5; color: #059669; border: 1px solid rgba(16,185,129,0.3); }
+.svg-thermo-badge.neutral { background: #fffbeb; color: #d97706; border: 1px solid rgba(245,158,11,0.3); }
 .svg-thermo-badge.warning { background: #fef2f2; color: #dc2626; border: 1px solid rgba(239,68,68,0.3); }
 
 .svg-thermo-bar-svg {

@@ -49,14 +49,14 @@ class AIMarketController {
         const clampedScore = Math.max(0, Math.min(100, Number(cycleScore) || 50));
         const gaugeDegree = -80 + (clampedScore / 100) * 160;
 
-        let activeColor = '#10b981';
-        let shortStageLabel = '爆发期';
+        let activeColor = '#0284c7';
+        let shortStageLabel = '探索期';
 
         if (cycle_status === 'active') {
             activeColor = '#10b981';
             shortStageLabel = '爆发期';
         } else if (cycle_status === 'neutral') {
-            activeColor = '#3b82f6';
+            activeColor = '#0284c7';
             shortStageLabel = '探索期';
         } else if (cycle_status === 'warning') {
             activeColor = '#ef4444';
@@ -85,10 +85,14 @@ class AIMarketController {
                         <div class="ai-score-scope" style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">
                             平滑七因子模型 (40%即时 + 60%历史滚动均值)
                         </div>
-                        <div class="ai-meta-row" style="margin-top: 6px; gap: 6px; display: flex; flex-wrap: wrap;">
+                        <div class="ai-meta-row" style="margin-top: 6px; gap: 6px; display: flex; flex-wrap: wrap; align-items: center;">
                             <span class="ai-trend-tag">${trendTag}</span>
                             <span class="ai-risk-tag" ${riskClassAttr}>风险: ${riskTag}</span>
-                            ${data.momentum_1d != null ? `<span class="ai-momentum-tag" style="font-size: 11px; padding: 2px 7px; border-radius: 4px; background: rgba(0,0,0,0.05); color: var(--text-secondary); font-weight: 500;">1D即时: ${data.momentum_1d}分</span>` : ''}
+                            ${data.momentum_1d_pct != null ? `
+                                <span class="ai-momentum-tag" style="font-size: 11px; padding: 2px 7px; border-radius: 4px; font-weight: 600; ${data.momentum_1d_pct > 0 ? 'background: rgba(16, 185, 129, 0.12); color: #059669;' : (data.momentum_1d_pct < 0 ? 'background: rgba(239, 68, 68, 0.12); color: #dc2626;' : 'background: rgba(0,0,0,0.05); color: var(--text-secondary);')}">
+                                    1D动能: ${data.momentum_1d_pct > 0 ? '+' : ''}${data.momentum_1d_pct.toFixed(2)}%
+                                </span>
+                            ` : (data.momentum_1d != null ? `<span class="ai-momentum-tag" style="font-size: 11px; padding: 2px 7px; border-radius: 4px; background: rgba(0,0,0,0.05); color: var(--text-secondary); font-weight: 500;">1D即时: ${data.momentum_1d}分</span>` : '')}
                         </div>
                     </div>
 
@@ -104,7 +108,7 @@ class AIMarketController {
                                             <stop offset="100%" stop-color="#10b981" />
                                         </linearGradient>
                                         <linearGradient id="grad-neutral" x1="0%" y1="0%" x2="100%" y2="100%">
-                                            <stop offset="0%" stop-color="#3b82f6" />
+                                            <stop offset="0%" stop-color="#0284c7" />
                                             <stop offset="100%" stop-color="#06b6d4" />
                                         </linearGradient>
                                         <linearGradient id="grad-warning" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -121,14 +125,14 @@ class AIMarketController {
                                         </filter>
                                     </defs>
 
-                                    <!-- 底色完整弧线轨迹 -->
-                                    <path d="M 15 80 A 65 65 0 0 1 145 80" fill="none" stroke="rgba(226, 232, 240, 0.8)" stroke-width="12" stroke-linecap="round"/>
+                                    <!-- 底色完整弧线轨迹 (-80° 至 +80°) -->
+                                    <path d="M 16 68.7 A 65 65 0 0 1 144 68.7" fill="none" stroke="rgba(226, 232, 240, 0.75)" stroke-width="12" stroke-linecap="round"/>
 
-                                    <!-- 4 阶段不同颜色弧线分段：左(降温/筑底) -> 中左(探索) -> 中右(爆发) -> 右(预警/过热) -->
-                                    <path d="M 15 80 A 65 65 0 0 1 34.04 34.04" fill="none" stroke="url(#grad-cooling)" stroke-width="11" stroke-linecap="round"/>
-                                    <path d="M 36 32 A 65 65 0 0 1 78 15" fill="none" stroke="url(#grad-neutral)" stroke-width="11" stroke-linecap="round"/>
-                                    <path d="M 82 15 A 65 65 0 0 1 124 32" fill="none" stroke="url(#grad-active)" stroke-width="11" stroke-linecap="round"/>
-                                    <path d="M 125.96 34.04 A 65 65 0 0 1 145 80" fill="none" stroke="url(#grad-warning)" stroke-width="11" stroke-linecap="round"/>
+                                    <!-- 4 阶段不同颜色弧线分段：左(0-35 降温) -> 中(35-65 探索) -> 中右(65-85 爆发) -> 右(85-100 预警) -->
+                                    <path d="M 16 68.7 A 65 65 0 0 1 52.5 21.1" fill="none" stroke="url(#grad-cooling)" stroke-width="11" stroke-linecap="round"/>
+                                    <path d="M 55.6 19.7 A 65 65 0 0 1 104.4 19.7" fill="none" stroke="url(#grad-neutral)" stroke-width="11" stroke-linecap="round"/>
+                                    <path d="M 107.5 21.1 A 65 65 0 0 1 133.9 43.6" fill="none" stroke="url(#grad-active)" stroke-width="11" stroke-linecap="round"/>
+                                    <path d="M 135.7 46.5 A 65 65 0 0 1 144 68.7" fill="none" stroke="url(#grad-warning)" stroke-width="11" stroke-linecap="round"/>
 
                                     <!-- 旋转游标针与高亮点 -->
                                     <g class="gauge-needle-group" style="transform: rotate(${gaugeDegree.toFixed(1)}deg); transform-origin: 80px 80px;">
@@ -316,8 +320,10 @@ class AIMarketController {
 
                             const renderThermoRow = (country, bm, riskVal, isCn) => {
                                 const colorGrad = isCn ? 'url(#grad-cn-thermo)' : 'url(#grad-us-thermo)';
-                                const badgeClass = bm.status_class === 'healthy' ? 'healthy' : 'warning';
+                                const badgeClass = bm.status_class === 'healthy' ? 'healthy' : (bm.status_class === 'neutral' ? 'neutral' : 'warning');
                                 const peStr = bm.pe_ratio ? `真实加权 PE: <strong>${bm.pe_ratio}x</strong> (标杆 ${bm.pe_benchmark || '--'}x)` : `产业价值分: <strong>${bm.value_score}</strong>`;
+                                const riskNum = Number(riskVal) || 0;
+                                const riskValColor = riskNum >= 75 ? 'color: #dc2626;' : (riskNum >= 45 ? 'color: #d97706;' : 'color: #059669;');
 
                                 return `
                                     <div class="svg-thermo-row" style="background: var(--bg-secondary, #f8fafc); border: 1px solid var(--border-light); border-radius: 6px; padding: 7px 10px; margin-bottom: 5px;">
@@ -327,7 +333,7 @@ class AIMarketController {
                                         </div>
                                         <div style="display: flex; justify-content: space-between; align-items: center; font-size: 10.5px; color: var(--text-secondary); margin-bottom: 4px;">
                                             <span>${peStr}</span>
-                                            <span>泡沫风险: <strong class="text-down" style="font-family: var(--font-mono); font-weight: 700;">${riskVal} / 100</strong></span>
+                                            <span>泡沫风险: <strong style="font-family: var(--font-mono); font-weight: 700; ${riskValColor}">${riskVal} / 100</strong></span>
                                         </div>
                                         <svg class="svg-thermo-bar-svg" viewBox="0 0 300 12" style="width: 100%; height: 12px; display: block;">
                                             <defs>
