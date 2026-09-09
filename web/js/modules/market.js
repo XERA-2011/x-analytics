@@ -169,12 +169,19 @@ class AsiaMarketController {
         // Center content
         container.style.justifyContent = 'center';
 
+        const factorsHtml = this.renderFearGreedFactors(data.indicators, false);
+
         container.innerHTML = `
             <div class="fg-gauge" id="asia-fear-greed-gauge"></div>
             <div class="fg-info" style="flex: 0 1 auto;">
                 <div class="fg-level">${data.level}</div>
-                <div class="fg-desc">${data.description}</div>
-                <div class="fg-desc" style="font-size: 11px; color: var(--text-secondary); margin-top: 8px;">${utils.getFearGreedMetaLine(data)}</div>
+                <div class="fg-desc">${data.description || ''}</div>
+                <div class="fg-sub-badge">
+                    <span>多因子量化合成</span>
+                    <span>·</span>
+                    <span>A股行情与技术面</span>
+                </div>
+                ${factorsHtml}
             </div>
         `;
 
@@ -183,6 +190,49 @@ class AsiaMarketController {
                 charts.createFearGreedGauge('asia-fear-greed-gauge', data);
             }, 100);
         }
+    }
+
+    renderFearGreedFactors(indicators, isUS = false) {
+        if (!indicators || typeof indicators !== 'object') return '';
+        const fallbackNames = {
+            volatility: isUS ? 'VIX波动' : '年化波动',
+            momentum: isUS ? '标普动量' : '价格动量',
+            breadth: isUS ? '市场广度' : '价格区间',
+            flow: '成交资金',
+            rsi: 'RSI(14)',
+            daily_change: '当日涨跌',
+            price_position: '价格区间',
+            vix: 'VIX波动',
+            sp500_momentum: '标普动量',
+            market_breadth: '市场广度'
+        };
+        let chipsHtml = '';
+        for (const [key, val] of Object.entries(indicators)) {
+            if (!val || typeof val !== 'object' || val.score == null) continue;
+            const label = val.label || fallbackNames[key] || key;
+            const score = Math.round(val.score);
+
+            let chipClass = 'chip-neutral';
+            if (isUS) {
+                if (score >= 58) chipClass = 'chip-high';
+                else if (score <= 42) chipClass = 'chip-low';
+            } else {
+                if (score >= 58) chipClass = 'chip-low'; // A股偏多用红
+                else if (score <= 42) chipClass = 'chip-high'; // A股恐慌用绿
+            }
+
+            const weightStr = val.weight ? ` · 权重 ${Math.round(val.weight * 100)}%` : '';
+            const valStr = val.value != null ? ` · 当前值: ${val.value}` : '';
+            const noteStr = val.note ? `\n说明: ${val.note}` : '';
+            const tooltip = `${label}\n因子分: ${score}分${weightStr}${valStr}${noteStr}`;
+
+            chipsHtml += `
+                <span class="fg-factor-chip ${chipClass}" title="${tooltip}">
+                    ${label} ${score}
+                </span>
+            `;
+        }
+        return chipsHtml ? `<div class="fg-factors-grid">${chipsHtml}</div>` : '';
     }
 
     renderCNBonds(data) {
@@ -332,24 +382,64 @@ class WesternMarketController {
 
     getIndicatorName(key) {
         const names = {
-            volatility: '波动率',
-            momentum: '动量',
-            breadth: '广度',
+            volatility: 'VIX波动',
+            momentum: '标普动量',
+            breadth: '市场广度',
             flow: '资金流',
             rsi: 'RSI',
             vix: 'VIX波动率',
             sp500_momentum: '标普动量',
-            market_breadth: '市场分化',
+            market_breadth: '市场广度',
+            daily_change: '当日涨跌',
+            price_position: '价格区间',
             safe_haven: '避险需求',
             junk_bond_demand: '垃圾债',
             market_volatility: '波动率',
             put_call_options: '期权',
             market_momentum: '动量',
-            stock_price_strength: '股价',
-            stock_price_breadth: '广度',
+            stock_price_strength: '股价强度',
+            stock_price_breadth: '市场广度',
             safe_haven_demand: '避险'
         };
         return names[key] || key;
+    }
+
+    renderFearGreedFactors(indicators, isUS = true) {
+        if (!indicators || typeof indicators !== 'object') return '';
+        const fallbackNames = {
+            volatility: 'VIX波动',
+            momentum: '标普动量',
+            breadth: '市场广度',
+            flow: '资金流',
+            rsi: 'RSI(14)',
+            daily_change: '当日涨跌',
+            price_position: '价格区间',
+            vix: 'VIX波动',
+            sp500_momentum: '标普动量',
+            market_breadth: '市场广度'
+        };
+        let chipsHtml = '';
+        for (const [key, val] of Object.entries(indicators)) {
+            if (!val || typeof val !== 'object' || val.score == null) continue;
+            const label = val.label || fallbackNames[key] || this.getIndicatorName(key);
+            const score = Math.round(val.score);
+
+            let chipClass = 'chip-neutral';
+            if (score >= 58) chipClass = 'chip-high';
+            else if (score <= 42) chipClass = 'chip-low';
+
+            const weightStr = val.weight ? ` · 权重 ${Math.round(val.weight * 100)}%` : '';
+            const valStr = val.value != null ? ` · 当前值: ${val.value}` : '';
+            const noteStr = val.note ? `\n说明: ${val.note}` : '';
+            const tooltip = `${label}\n因子分: ${score}分${weightStr}${valStr}${noteStr}`;
+
+            chipsHtml += `
+                <span class="fg-factor-chip ${chipClass}" title="${tooltip}">
+                    ${label} ${score}
+                </span>
+            `;
+        }
+        return chipsHtml ? `<div class="fg-factors-grid">${chipsHtml}</div>` : '';
     }
 
     renderUSFearGreed(data) {
@@ -396,44 +486,34 @@ class WesternMarketController {
             return;
         }
 
+        const factorsHtml = this.renderFearGreedFactors(indicators, true);
+
         let contentHtml = `
             <div class="fg-gauge" id="western-fear-greed-gauge"></div>
             <div class="fg-info" style="flex: 0 1 auto;">
                 <div class="fg-level">${level}</div>
                 <div class="fg-desc">${data.description || ''}</div>
-                <div class="fg-desc" style="font-size: 11px; color: var(--text-secondary); margin-top: 8px;">${utils.getFearGreedMetaLine(data)}</div>
-        `;
-
-        if (indicators) {
-            contentHtml += `<div class="fg-desc" style="display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 8px;">`;
-            for (const [key, val] of Object.entries(indicators)) {
-                if (typeof val !== 'object' || val.score == null) continue;
-                contentHtml += `
-                    <span class="heat-tag heat-gray" title="${this.getIndicatorName(key)}: ${Math.round(val.score)}">
-                        ${this.getIndicatorName(key)}
-                    </span>
-                    `;
-            }
-            contentHtml += `</div>`;
-        }
-
-        contentHtml += `
-            <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-color); width: 100%; display: flex; justify-content: center;">
-                <a href="https://edition.cnn.com/markets/fear-and-greed" target="_blank" style="display: inline-flex; align-items: center; gap: 4px; color: var(--text-secondary); text-decoration: none; font-size: 11px; transition: color 0.2s;">
-                    CNN 官方参考(非同口径)
-                    <i data-lucide="external-link" width="10"></i>
-                </a>
+                <div class="fg-sub-badge">
+                    <span>美股多因子量化代理</span>
+                    <span>·</span>
+                    <a href="https://edition.cnn.com/markets/fear-and-greed" target="_blank" class="fg-sub-link" title="查看 CNN 官网 Fear & Greed 实时指数">
+                        CNN官方参考
+                        <i data-lucide="external-link" width="10"></i>
+                    </a>
+                </div>
+                ${factorsHtml}
             </div>
         `;
-
-        contentHtml += '</div>';
 
         container.innerHTML = contentHtml;
 
         if (window.charts) {
             setTimeout(() => {
-                charts.createFearGreedGauge('western-fear-greed-gauge', { score, level });
+                charts.createFearGreedGauge('western-fear-greed-gauge', data);
             }, 100);
+        }
+        if (window.lucide) {
+            lucide.createIcons();
         }
     }
 

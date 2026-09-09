@@ -46,11 +46,17 @@ class Charts {
             return null;
         }
 
-        // 根据分数确定颜色（优先使用后端 levels 配置）
+        // 根据市场区分调色板：美股(CNN标准: 贪婪绿/恐慌红) vs A股(A股习惯: 贪婪红/恐慌蓝绿)
+        const isUS = containerId.includes('western') || data?.meta?.market === 'US' || data?.market === 'US';
+        const paletteUS7 = ['#10b981', '#22c55e', '#84cc16', '#6b7280', '#f59e0b', '#f97316', '#ef4444'];
+        const paletteCN7 = ['#ef4444', '#f59e0b', '#eab308', '#6b7280', '#3b82f6', '#8b5cf6', '#10b981'];
+        const palette7 = isUS ? paletteUS7 : paletteCN7;
+        const palette5 = isUS 
+            ? ['#10b981', '#84cc16', '#6b7280', '#f97316', '#ef4444']
+            : ['#ef4444', '#f59e0b', '#6b7280', '#3b82f6', '#10b981'];
+
         const levels = Array.isArray(data.levels) ? data.levels.slice() : null;
         let color;
-        const palette7 = ['#ef4444', '#f59e0b', '#eab308', '#6b7280', '#3b82f6', '#8b5cf6', '#10b981'];
-        const palette5 = ['#ef4444', '#f59e0b', '#6b7280', '#3b82f6', '#10b981'];
 
         if (levels && levels.length > 0) {
             levels.sort((a, b) => b.min - a.min);
@@ -59,13 +65,14 @@ class Charts {
             if (idx === -1) idx = levels.length - 1;
             color = palette[Math.min(idx, palette.length - 1)];
         } else {
-            if (score >= 80) color = '#ef4444'; // 极度贪婪 - 红色
-            else if (score >= 65) color = '#f59e0b'; // 贪婪 - 橙色
-            else if (score >= 55) color = '#eab308'; // 轻微贪婪 - 黄色
-            else if (score >= 45) color = '#6b7280'; // 中性 - 灰色
-            else if (score >= 35) color = '#3b82f6'; // 轻微恐慌 - 蓝色
-            else if (score >= 20) color = '#8b5cf6'; // 恐慌 - 紫色
-            else color = '#10b981'; // 极度恐慌 - 绿色
+            const palette = palette7;
+            if (score >= 80) color = palette[0];
+            else if (score >= 65) color = palette[1];
+            else if (score >= 55) color = palette[2];
+            else if (score >= 45) color = palette[3];
+            else if (score >= 35) color = palette[4];
+            else if (score >= 20) color = palette[5];
+            else color = palette[6];
         }
 
         const option = {
@@ -124,12 +131,15 @@ class Charts {
                 detail: {
                     valueAnimation: true,
                     width: '60%',
-                    lineHeight: 20,
+                    lineHeight: 22,
                     borderRadius: 4,
-                    offsetCenter: [0, '-10%'],
-                    fontSize: 16,
-                    fontWeight: 'bold',
-                    formatter: '{value}',
+                    offsetCenter: [0, '-8%'],
+                    fontSize: 18,
+                    fontWeight: '700',
+                    fontFamily: 'var(--font-mono, monospace)',
+                    formatter: function (val) {
+                        return Math.round(val);
+                    },
                     color: color
                 },
                 data: [{

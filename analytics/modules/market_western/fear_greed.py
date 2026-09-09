@@ -415,7 +415,7 @@ class USFearGreedIndex:
                 value=round(avg_change, 2),
                 score=score,
                 weight=USFearGreedIndex._get_weights()["breadth"],
-                label="市场分化",
+                label="市场广度",
                 note="以道指/纳指近5日表现近似广度",
                 dji_5d_change=round(dji_change, 2),
                 ndx_5d_change=round(ndx_change, 2),

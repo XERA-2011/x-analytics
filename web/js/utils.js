@@ -141,27 +141,34 @@ class Utils {
         const indicators = data.indicators || {};
         const tags = [];
         if (indicators.rsi && !indicators.rsi.error) {
-            tags.push(`<span class="heat-tag heat-gray has-tooltip" data-tooltip="相对强弱指标，<30超卖，>70超买">RSI:${Math.round(indicators.rsi.value)}</span>`);
+            const rsiVal = Math.round(indicators.rsi.value);
+            const rsiCls = rsiVal >= 70 ? 'heat-red' : (rsiVal <= 30 ? 'heat-green' : 'heat-gray');
+            tags.push(`<span class="heat-tag ${rsiCls} has-tooltip" data-tooltip="相对强弱指标，<30超卖，>70超买">RSI: ${rsiVal}</span>`);
         }
         if (indicators.macd && !indicators.macd.error) {
-            const macdSign = indicators.macd.histogram > 0 ? '+' : '-';
-            tags.push(`<span class="heat-tag heat-gray has-tooltip" data-tooltip="柱状图正负号，+代表多头，-代表空头">MACD:${macdSign}</span>`);
+            const isMacdBull = indicators.macd.histogram > 0;
+            const macdCls = isMacdBull ? 'heat-red' : 'heat-green';
+            const macdTxt = isMacdBull ? '多头(+)' : '空头(-)';
+            tags.push(`<span class="heat-tag ${macdCls} has-tooltip" data-tooltip="柱状图正负号，+代表多头，-代表空头">MACD: ${macdTxt}</span>`);
         }
         if (indicators.bollinger && !indicators.bollinger.error) {
-            const bollPos = indicators.bollinger.position > 0.5 ? '▲' :
-                indicators.bollinger.position < -0.5 ? '▼' : '―';
-            tags.push(`<span class="heat-tag heat-gray has-tooltip" data-tooltip="布林带位置，▲触及上轨，▼触及下轨">布林:${bollPos}</span>`);
+            const bollPos = indicators.bollinger.position > 0.5 ? '上轨(▲)' :
+                indicators.bollinger.position < -0.5 ? '下轨(▼)' : '中轨';
+            const bollCls = indicators.bollinger.position > 0.5 ? 'heat-red' :
+                indicators.bollinger.position < -0.5 ? 'heat-green' : 'heat-gray';
+            tags.push(`<span class="heat-tag ${bollCls} has-tooltip" data-tooltip="布林带位置，▲触及上轨，▼触及下轨">布林: ${bollPos}</span>`);
         }
         if (indicators.kdj && !indicators.kdj.error) {
-            const kdjSignal = indicators.kdj.k > 80 ? '▲' : indicators.kdj.k < 20 ? '▼' : 'N';
-            tags.push(`<span class="heat-tag heat-gray has-tooltip" data-tooltip="随机指标，▲超买，▼超卖">KDJ:${kdjSignal}</span>`);
+            const kdjSignal = indicators.kdj.k > 80 ? '超买(▲)' : indicators.kdj.k < 20 ? '超卖(▼)' : '中性';
+            const kdjCls = indicators.kdj.k > 80 ? 'heat-red' : indicators.kdj.k < 20 ? 'heat-green' : 'heat-gray';
+            tags.push(`<span class="heat-tag ${kdjCls} has-tooltip" data-tooltip="随机指标，▲超买，▼超卖">KDJ: ${kdjSignal}</span>`);
         }
 
         container.innerHTML = `
             <div class="obo-signal ${signalClass}">
                 <span class="obo-label">技术信号</span>
                 <span class="obo-level">${signalText}</span>
-                <span class="obo-strength">${strength.toFixed(1)}</span>
+                <span class="obo-strength">${strength.toFixed(1)}分</span>
             </div>
             <div class="obo-tags">
                 ${tags.join('')}

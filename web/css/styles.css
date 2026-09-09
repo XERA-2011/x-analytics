@@ -378,6 +378,67 @@ body {
     line-height: 1.4;
 }
 
+.fg-sub-badge {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    margin-top: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.fg-sub-link {
+    color: var(--text-secondary);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    transition: color 0.15s ease;
+}
+
+.fg-sub-link:hover {
+    color: var(--color-primary, #3b82f6);
+}
+
+.fg-factors-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    justify-content: center;
+    margin-top: 10px;
+    max-width: 320px;
+}
+
+.fg-factor-chip {
+    font-size: 11px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-weight: 500;
+    cursor: default;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+}
+
+.fg-factor-chip.chip-high {
+    background: rgba(16, 185, 129, 0.12);
+    color: #059669;
+    border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+.fg-factor-chip.chip-low {
+    background: rgba(239, 68, 68, 0.1);
+    color: #dc2626;
+    border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+.fg-factor-chip.chip-neutral {
+    background: rgba(0, 0, 0, 0.04);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-light);
+}
+
 /* 2. Lists & Tables */
 .list-container {
     overflow-x: auto;
