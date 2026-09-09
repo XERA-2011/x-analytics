@@ -75,7 +75,12 @@ class QDIIController {
                 btn.classList.add('active');
                 this.currentFilter = btn.dataset.filter || 'active';
                 const url = new URL(window.location.href);
-                url.searchParams.set('filter', this.currentFilter);
+                if (this.currentFilter === 'active') {
+                    url.searchParams.delete('filter');
+                    url.searchParams.delete('subtab');
+                } else {
+                    url.searchParams.set('filter', this.currentFilter);
+                }
                 window.history.replaceState({}, '', url.toString());
                 this.renderTable();
             };

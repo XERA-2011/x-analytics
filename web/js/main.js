@@ -129,8 +129,21 @@ class App {
         this.currentTab = tabId;
         this.updatePageTitle(tabId);
 
-        // 更新URL
-        utils.setUrlParam('tab', tabId);
+        // 更新URL并清除其他非当前 Tab 的子级参数（如 filter, subtab 等）
+        const url = new URL(window.location.href);
+        url.searchParams.set('tab', tabId);
+        if (tabId !== 'qdii') {
+            url.searchParams.delete('filter');
+            url.searchParams.delete('subtab');
+        } else {
+            if (window.qdiiController && window.qdiiController.currentFilter && window.qdiiController.currentFilter !== 'active') {
+                url.searchParams.set('filter', window.qdiiController.currentFilter);
+            } else {
+                url.searchParams.delete('filter');
+                url.searchParams.delete('subtab');
+            }
+        }
+        window.history.replaceState({}, '', url.toString());
 
         // 懒加载：仅首次切换到该 Tab 时加载数据
         if (!this.loadedTabs.has(tabId)) {
