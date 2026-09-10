@@ -16,7 +16,7 @@
 
     <link rel="icon" href="favicon.ico" type="image/x-icon">
     <script src="js/lucide.min.js?v=33"></script>
-    <link rel="stylesheet" href="css/styles.css?v=50">
+    <link rel="stylesheet" href="css/styles.css?v=51">
 </head>
 
 <body>
@@ -326,8 +326,9 @@
             <div class="grid" style="grid-template-columns: 1fr;">
                 <!-- ETF 涨跌排行 -->
                 <div class="card">
-                    <div class="card-header">
+                    <div class="card-header" style="flex-wrap: wrap; gap: 4px;">
                         <div class="card-title">ETF 涨跌排行</div>
+                        <span style="font-size: 11px; color: var(--text-secondary);">全市场 · 成交≥2000万</span>
                     </div>
                     <div id="etf-ranking">
                         <div class="loading">Loading...</div>
