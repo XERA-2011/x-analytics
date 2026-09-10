@@ -17,7 +17,6 @@ class App {
             'global': new MarketController(),
             'ai': new AIMarketController(),
             'gold': new GoldController(),
-            'etf': new ETFController(),
             'qdii': new QDIIController()
         };
 
@@ -29,7 +28,6 @@ class App {
             'global': 'Global',
             'ai': 'AI',
             'gold': 'Gold',
-            'etf': 'ETF',
             'qdii': 'QDII',
         };
         const sectionTitle = titles[tabId] || 'X-Analytics';
@@ -93,10 +91,6 @@ class App {
                         this.switchTab('gold');
                         break;
                     case '4':
-                        event.preventDefault();
-                        this.switchTab('etf');
-                        break;
-                    case '5':
                         event.preventDefault();
                         this.switchTab('qdii');
                         break;
@@ -229,9 +223,10 @@ class App {
             'market-us': 'global',
             'us': 'global',
             'market': 'global',
-            'metals': 'gold'
+            'metals': 'gold',
+            'etf': 'global'
         };
-        const validTabs = ['global', 'ai', 'gold', 'etf', 'qdii'];
+        const validTabs = ['global', 'ai', 'gold', 'qdii'];
         const targetTab = legacyMap[urlTab] || urlTab;
 
         if (targetTab && validTabs.includes(targetTab)) {

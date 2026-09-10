@@ -586,26 +586,16 @@ class Charts {
                         const styleName = colorMap[d.analysisColor] || 's7';
 
                         labelStr += `{rowLabel|情绪:} {${styleName}|${d.analysis}}\n`;
-                        // Custom conditionals for trailing properties
-                        if (d.code) {
-                            // ETF Layout
-                            const amtStr = d.amount ? (d.amount / 100000000).toFixed(1) : '--';
-                            labelStr += `{rowLabel|成交:} {rowVal|${amtStr}亿}\n`;
-                            labelStr += `{rowLabel|换手:} {rowVal|${d.turnover !== null && d.turnover !== undefined ? d.turnover + '%' : '--'}}\n`;
-                            labelStr += `{rowLabel|代码:} {rowVal|${d.code}}`;
-                        } else {
-                            // Sector Layout
-                            labelStr += `{rowLabel|市值:} {rowVal|${capStr}亿}\n`;
-                            labelStr += `{rowLabel|换手:} {rowVal|${d.turnover !== null && d.turnover !== undefined ? d.turnover + '%' : '--'}}`;
-                            if (d.top_cap_stock) {
-                                labelStr += `\n{rowLabel|龙头:} {rowVal|${d.top_cap_stock}}`;
-                            }
-                            if (d.leading_stock && d.leading_stock !== 'undefined') {
-                                labelStr += `\n{rowLabel|领涨:} {rowVal|${d.leading_stock}}`;
-                            }
-                            if (d.lagging_stock && d.lagging_stock !== 'undefined') {
-                                labelStr += `\n{rowLabel|领跌:} {rowVal|${d.lagging_stock}}`;
-                            }
+                        labelStr += `{rowLabel|市值:} {rowVal|${capStr}亿}\n`;
+                        labelStr += `{rowLabel|换手:} {rowVal|${d.turnover !== null && d.turnover !== undefined ? d.turnover + '%' : '--'}}`;
+                        if (d.top_cap_stock) {
+                            labelStr += `\n{rowLabel|龙头:} {rowVal|${d.top_cap_stock}}`;
+                        }
+                        if (d.leading_stock && d.leading_stock !== 'undefined') {
+                            labelStr += `\n{rowLabel|领涨:} {rowVal|${d.leading_stock}}`;
+                        }
+                        if (d.lagging_stock && d.lagging_stock !== 'undefined') {
+                            labelStr += `\n{rowLabel|领跌:} {rowVal|${d.lagging_stock}}`;
                         }
 
                         return labelStr;

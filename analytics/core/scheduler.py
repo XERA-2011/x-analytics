@@ -461,19 +461,6 @@ def setup_default_jobs():
         use_warmup_cache=True,
         trading_interval_minutes=5,
     )
-    # =========================================================================
-    # ETF 市场 (ETF Market)
-    # =========================================================================
-    from ..modules.etf import ETFHeatmap
-
-    scheduler.add_market_job(
-        job_id="warmup:etf:heatmap",
-        func=ETFHeatmap.get_heatmap_data,
-        market="market_asia",
-        use_warmup_cache=True,
-        trading_interval_minutes=10,
-        non_trading_max_age_seconds=settings.CACHE_TTL["etf_heatmap"],
-    )
 
     # =========================================================================
     # 超买超卖信号 (Overbought/Oversold Signals)
@@ -615,9 +602,6 @@ def initial_warmup():
         from ..modules.gold.fear_greed import SilverFearGreedIndex
         warmup_cache(SilverFearGreedIndex.calculate)
 
-        # ETF
-        from ..modules.etf import ETFHeatmap
-        warmup_cache(ETFHeatmap.get_heatmap_data)
 
         # AI
         from ..modules.ai import AIOverview

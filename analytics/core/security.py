@@ -26,7 +26,6 @@ PUBLIC_API_PATHS = [
     "/market-hk/",
     "/market-western/",
     "/metals/",
-    "/etf/",
     "/ai/",
     "/qdii/",
     "/analytics/api/",
@@ -34,7 +33,6 @@ PUBLIC_API_PATHS = [
     "/analytics/market-hk/",
     "/analytics/market-western/",
     "/analytics/metals/",
-    "/analytics/etf/",
     "/analytics/ai/",
     "/analytics/qdii/",
 ]

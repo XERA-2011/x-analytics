@@ -57,14 +57,6 @@ def test_gold_routes():
         response = requests.get(f"{BASE_URL}{route}")
         assert response.status_code in (200, 503)
 
-def test_etf_routes():
-    routes = [
-        "/etf/heatmap"
-    ]
-    for route in routes:
-        response = requests.get(f"{BASE_URL}{route}")
-        assert response.status_code in (200, 503)
-
 def test_ai_routes():
     routes = [
         "/ai/overview"

@@ -320,10 +320,6 @@ class API {
         return this.request('/market-asia/lpr');
     }
 
-    // ETF API
-    async getETFHeatmap() {
-        return this.request('/etf/heatmap');
-    }
 
     // AI 产业链 API
     async getAIOverview() {

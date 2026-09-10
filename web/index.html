@@ -53,9 +53,6 @@
             <button class="tab-btn" data-tab="gold">
                 Gold
             </button>
-            <button class="tab-btn" data-tab="etf">
-                ETF
-            </button>
             <button class="tab-btn" data-tab="qdii">
                 QDII
             </button>
@@ -315,38 +312,6 @@
             </div>
         </section>
 
-        <!-- ETF Market -->
-        <section class="tab-content" id="etf">
-            <div class="section-header">
-                <h2 class="section-title">ETF</h2>
-                <button class="refresh-btn" onclick="window.app.refreshCurrentTab()" title="点击刷新"><i
-                        data-lucide="refresh-cw" width="14"></i> 刷新</button>
-            </div>
-
-            <div class="grid" style="grid-template-columns: 1fr;">
-                <!-- ETF 涨跌排行 -->
-                <div class="card">
-                    <div class="card-header" style="flex-wrap: wrap; gap: 4px;">
-                        <div class="card-title">ETF 涨跌排行</div>
-                        <span style="font-size: 11px; color: var(--text-secondary);">全市场 · 成交≥2000万</span>
-                    </div>
-                    <div id="etf-ranking">
-                        <div class="loading">Loading...</div>
-                    </div>
-                </div>
-
-                <!-- ETF 热力图 -->
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-title">ETF 热力图</div>
-                        <span id="etf-match-info" style="font-size: 11px; color: var(--text-secondary);"></span>
-                    </div>
-                    <div id="etf-heatmap" class="w-full heatmap-container">
-                        <div class="loading">Loading...</div>
-                    </div>
-                </div>
-            </div>
-        </section>
 
         <!-- QDII Funds -->
         <section class="tab-content" id="qdii">
@@ -380,15 +345,14 @@
     <div id="tooltip" style="display:none;"></div>
 
     <script src="js/echarts.min.js?v=33"></script>
-    <script src="js/api.js?v=35"></script>
+    <script src="js/api.js?v=36"></script>
     <script src="js/charts.js?v=39"></script>
     <script src="js/utils.js?v=34"></script>
     <script src="js/modules/market.js?v=35"></script>
     <script src="js/modules/ai.js?v=49"></script>
     <script src="js/modules/gold.js?v=40"></script>
-    <script src="js/modules/etf.js?v=33"></script>
     <script src="js/modules/qdii.js?v=71"></script>
-    <script src="js/main.js?v=34"></script>
+    <script src="js/main.js?v=35"></script>
     <script>lucide.createIcons();</script>
 </body>
 
