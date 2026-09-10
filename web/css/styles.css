@@ -40,8 +40,6 @@ html,
 body {
     overscroll-behavior: none;
     /* Disable elastic scrolling */
-    overflow-x: hidden;
-    width: 100%;
 }
 
 body {
