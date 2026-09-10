@@ -1105,7 +1105,7 @@ footer {
 
 .ai-header-grid {
     display: grid;
-    grid-template-columns: 210px 1.15fr 1.15fr;
+    grid-template-columns: 1.45fr 0.9fr 1.35fr;
     gap: 16px;
     align-items: stretch;
 }
@@ -1126,6 +1126,10 @@ footer {
     font-weight: 600;
 }
 
+/* ==========================================================================
+   AI Market Heat 主评分卡 (Expanded Score Box)
+   ========================================================================== */
+
 .ai-score-box {
     background: #f8fafc;
     border: 1px solid var(--border-light);
@@ -1134,13 +1138,58 @@ footer {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+    min-width: 0;
+}
+
+[data-theme="dark"] .ai-score-box {
+    background: rgba(255, 255, 255, 0.02);
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+.ai-score-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.ai-model-pill {
+    font-size: 10px;
+    color: var(--text-tertiary);
+    background: rgba(0, 0, 0, 0.05);
+    padding: 2px 7px;
+    border-radius: 10px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+[data-theme="dark"] .ai-model-pill {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.ai-score-main-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    margin-top: 2px;
+    margin-bottom: 6px;
+}
+
+.ai-score-num-group {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
 }
 
 .ai-score-num {
-    font-size: 38px;
+    font-size: 40px;
     font-weight: 800;
     font-family: var(--font-mono);
-    line-height: 1.1;
+    line-height: 1;
+    letter-spacing: -1px;
 }
 
 .ai-score-max {
@@ -1149,11 +1198,117 @@ footer {
     font-weight: 500;
 }
 
-.ai-score-scope {
-    margin-top: 4px;
-    color: var(--text-secondary);
+.ai-score-status-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+}
+
+/* 连续温度指示条 (Visual Heat Spectrum) */
+.ai-spectrum-wrapper {
+    margin: 8px 0 6px 0;
+    position: relative;
+    padding: 4px 0 0 0;
+}
+
+.ai-spectrum-track {
+    display: flex;
+    height: 7px;
+    border-radius: 4px;
+    overflow: visible;
+    position: relative;
+    background: rgba(0, 0, 0, 0.06);
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="dark"] .ai-spectrum-track {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.ai-spectrum-zone {
+    height: 100%;
+}
+
+.ai-spectrum-zone.zone-cooling {
+    width: 35%;
+    background: linear-gradient(90deg, #64748b, #0284c7);
+    border-top-left-radius: 4px;
+    border-bottom-left-radius: 4px;
+}
+
+.ai-spectrum-zone.zone-neutral {
+    width: 30%;
+    background: linear-gradient(90deg, #0284c7, #06b6d4);
+}
+
+.ai-spectrum-zone.zone-active {
+    width: 20%;
+    background: linear-gradient(90deg, #06b6d4, #10b981);
+}
+
+.ai-spectrum-zone.zone-warning {
+    width: 15%;
+    background: linear-gradient(90deg, #f59e0b, #ef4444);
+    border-top-right-radius: 4px;
+    border-bottom-right-radius: 4px;
+}
+
+.ai-spectrum-pin {
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 2;
+    transition: left 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.ai-spectrum-dot {
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    border: 2px solid #ffffff;
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.35);
+}
+
+[data-theme="dark"] .ai-spectrum-dot {
+    border-color: #1e293b;
+}
+
+.ai-spectrum-labels {
+    display: flex;
+    justify-content: space-between;
     font-size: 10px;
-    line-height: 1.4;
+    color: var(--text-tertiary);
+    margin-top: 5px;
+    padding: 0 1px;
+}
+
+.ai-spectrum-labels span.active-zone {
+    color: var(--text-primary);
+    font-weight: 700;
+}
+
+.ai-score-footer {
+    font-size: 10.5px;
+    color: var(--text-tertiary);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding-top: 8px;
+    border-top: 1px dashed var(--border-light);
+    margin-top: 4px;
+}
+
+[data-theme="dark"] .ai-score-footer {
+    border-top-color: rgba(255, 255, 255, 0.08);
+}
+
+.ai-footer-pe strong {
+    color: var(--text-primary);
+    font-family: var(--font-mono);
 }
 
 .ai-grid-row {
@@ -1192,6 +1347,10 @@ footer {
     margin-top: 6px;
 }
 
+/* ==========================================================================
+   当前市场阶段 (Simplified Cycle Box)
+   ========================================================================== */
+
 .ai-cycle-box {
     background: #f8fafc;
     border: 1px solid var(--border-light);
@@ -1203,99 +1362,120 @@ footer {
     min-width: 0;
 }
 
-.ai-cycle-content {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    flex: 1;
-    margin-top: 4px;
-    min-width: 0;
+[data-theme="dark"] .ai-cycle-box {
+    background: rgba(255, 255, 255, 0.02);
+    border-color: rgba(255, 255, 255, 0.08);
 }
 
-.ai-gauge-wrapper {
-    position: relative;
-    width: 115px;
-    flex-shrink: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-}
-
-.ai-cycle-gauge {
-    width: 100%;
-    height: auto;
-    overflow: visible;
-}
-
-.gauge-needle-group {
-    transition: transform 1.2s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.gauge-pulse-dot {
-    animation: gauge-dot-pulse 2s infinite ease-in-out;
-}
-
-@keyframes gauge-dot-pulse {
-    0%, 100% { r: 5; opacity: 1; }
-    50% { r: 7.5; opacity: 0.8; }
-}
-
-.ai-gauge-badge {
-    margin-top: -10px;
+.ai-stage-pill {
     font-size: 11px;
     font-weight: 700;
-    padding: 3px 10px;
+    padding: 2px 8px;
     border-radius: 12px;
-    background: #ffffff;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
     border: 1px solid var(--border-color);
-    letter-spacing: 0.5px;
 }
 
-.ai-gauge-badge.status-active { color: #059669; border-color: rgba(16,185,129,0.35); background: #ecfdf5; }
-.ai-gauge-badge.status-neutral { color: #2563eb; border-color: rgba(59,130,246,0.35); background: #eff6ff; }
-.ai-gauge-badge.status-warning { color: #dc2626; border-color: rgba(239,68,68,0.35); background: #fef2f2; }
-.ai-gauge-badge.status-cooling { color: #475569; border-color: rgba(100,116,139,0.35); background: #f8fafc; }
+.ai-stage-pill.status-active { color: #059669; border-color: rgba(16,185,129,0.35); background: #ecfdf5; }
+.ai-stage-pill.status-neutral { color: #2563eb; border-color: rgba(59,130,246,0.35); background: #eff6ff; }
+.ai-stage-pill.status-warning { color: #dc2626; border-color: rgba(239,68,68,0.35); background: #fef2f2; }
+.ai-stage-pill.status-cooling { color: #475569; border-color: rgba(100,116,139,0.35); background: #f8fafc; }
 
-.ai-cycle-info {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-}
+[data-theme="dark"] .ai-stage-pill.status-active { background: rgba(16,185,129,0.15); }
+[data-theme="dark"] .ai-stage-pill.status-neutral { background: rgba(59,130,246,0.15); }
+[data-theme="dark"] .ai-stage-pill.status-warning { background: rgba(239,68,68,0.15); }
+[data-theme="dark"] .ai-stage-pill.status-cooling { background: rgba(100,116,139,0.15); }
 
-.ai-cycle-title {
-    font-size: 16px;
+.ai-stage-title {
+    font-size: 15px;
     font-weight: 700;
     line-height: 1.35;
-    margin-bottom: 6px;
+    margin: 4px 0 8px 0;
     letter-spacing: -0.2px;
     word-break: break-word;
 }
 
-.ai-cycle-title.status-active { color: #059669; }
-.ai-cycle-title.status-neutral { color: #1d4ed8; }
-.ai-cycle-title.status-warning { color: #dc2626; }
-.ai-cycle-title.status-cooling { color: #334155; }
+.ai-stage-title.status-active { color: #059669; }
+.ai-stage-title.status-neutral { color: #1d4ed8; }
+.ai-stage-title.status-warning { color: #dc2626; }
+.ai-stage-title.status-cooling { color: #334155; }
+[data-theme="dark"] .ai-stage-title.status-neutral { color: #60a5fa; }
+[data-theme="dark"] .ai-stage-title.status-cooling { color: #94a3b8; }
 
-.ai-cycle-desc {
+.ai-stage-stepper {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
+    margin-bottom: 8px;
+}
+
+.stage-step {
+    font-size: 10.5px;
+    font-weight: 600;
+    text-align: center;
+    padding: 4px 2px;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.04);
+    color: var(--text-tertiary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+}
+
+[data-theme="dark"] .stage-step {
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.stage-step.active {
+    font-weight: 700;
+}
+
+.stage-step.step-cooling.active { background: rgba(100, 116, 139, 0.15); color: #475569; border-color: rgba(100, 116, 139, 0.3); }
+.stage-step.step-neutral.active { background: rgba(37, 99, 235, 0.12); color: #2563eb; border-color: rgba(37, 99, 235, 0.3); }
+.stage-step.step-active.active { background: rgba(16, 185, 129, 0.12); color: #059669; border-color: rgba(16, 185, 129, 0.3); }
+.stage-step.step-warning.active { background: rgba(239, 68, 68, 0.12); color: #dc2626; border-color: rgba(239, 68, 68, 0.3); }
+
+[data-theme="dark"] .stage-step.step-cooling.active { color: #94a3b8; }
+[data-theme="dark"] .stage-step.step-neutral.active { color: #60a5fa; }
+[data-theme="dark"] .stage-step.step-active.active { color: #34d399; }
+[data-theme="dark"] .stage-step.step-warning.active { color: #f87171; }
+
+.stage-step .step-dot {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: currentColor;
+    display: none;
+}
+
+.stage-step.active .step-dot {
+    display: inline-block;
+}
+
+.ai-stage-focus {
     font-size: 11px;
     color: var(--text-secondary);
-    line-height: 1.5;
+    line-height: 1.45;
     background: rgba(255, 255, 255, 0.7);
     border: 1px solid rgba(226, 232, 240, 0.8);
     border-left: 3px solid var(--border-color);
-    padding: 6px 10px;
+    padding: 6px 9px;
     border-radius: 6px;
     word-break: break-word;
+    margin-top: auto;
 }
 
-.ai-cycle-desc.status-active { border-left-color: #10b981; }
-.ai-cycle-desc.status-neutral { border-left-color: #3b82f6; }
-.ai-cycle-desc.status-warning { border-left-color: #ef4444; }
-.ai-cycle-desc.status-cooling { border-left-color: #64748b; }
+.ai-stage-focus.status-active { border-left-color: #10b981; }
+.ai-stage-focus.status-neutral { border-left-color: #3b82f6; }
+.ai-stage-focus.status-warning { border-left-color: #ef4444; }
+.ai-stage-focus.status-cooling { border-left-color: #64748b; }
+
+[data-theme="dark"] .ai-stage-focus {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.08);
+}
 
 .ai-signals-box {
     background: #f8fafc;
@@ -3258,14 +3438,13 @@ footer {
         font-size: 32px;
     }
 
-    .ai-cycle-content {
-        flex-direction: column;
-        align-items: center;
-        gap: 8px;
+    .ai-spectrum-labels {
+        font-size: 9.5px;
     }
 
-    .ai-cycle-info {
-        width: 100%;
+    .stage-step {
+        font-size: 9.5px;
+        padding: 3px 1px;
     }
 
     .ai-cycle-desc {

@@ -71,82 +71,101 @@ class AIMarketController {
         const riskCls = risk_class || '';
         const riskClassAttr = (riskCls === 'high' || cycle_status === 'warning' || cycle_status === 'cooling') ? 'style="color: var(--color-danger); border-color: rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.1);"' : '';
 
+        // 精简研判描述（移除冗长的五星符号与杂乱符号）
+        let conciseFocus = (cycle_desc || '')
+            .replace(/★+☆*/g, '')
+            .replace(/机会聚焦：/g, '聚焦: ')
+            .replace(/风险警示：/g, '风险: ')
+            .replace(/\|/g, '·')
+            .trim();
+        if (conciseFocus.length > 70) {
+            conciseFocus = conciseFocus.slice(0, 67) + '...';
+        }
+
         let html = `
             <!-- 1. AI 全球产业周期总评分 Dashboard Header -->
             <div class="card hero ai-hero-card" style="margin-bottom: 16px;">
                 <div class="ai-header-grid">
-                    <!-- 左侧：AI Market Heat -->
+                    <!-- 左侧：AI Market Heat (占据更多空间，突出核心指数地位) -->
                     <div class="ai-score-box">
-                        <div class="ai-badge-label" style="display: flex; align-items: center; justify-content: space-between;">
-                            <span>AI Market Heat（综合热度分）</span>
-                            <button class="info-btn" id="info-ai-score" title="算法说明" style="margin-left: 6px; display: inline-flex; align-items: center;"><i data-lucide="help-circle" width="14"></i></button>
+                        <div class="ai-score-header">
+                            <div class="ai-badge-label" style="display: flex; align-items: center; margin-bottom: 0;">
+                                <span>AI Market Heat（综合热度分）</span>
+                                <button class="info-btn" id="info-ai-score" title="算法说明" style="margin-left: 6px; display: inline-flex; align-items: center;"><i data-lucide="help-circle" width="14"></i></button>
+                            </div>
+                            <span class="ai-model-pill">七因子模型</span>
                         </div>
-                        <div class="ai-score-num ${scoreClass}">${cycleScore} <span class="ai-score-max">/ 100</span></div>
-                        <div class="ai-score-scope" style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">
-                            平滑七因子模型 (40%即时 + 60%历史滚动均值)
+
+                        <div class="ai-score-main-row">
+                            <div class="ai-score-num-group">
+                                <span class="ai-score-num ${scoreClass}">${cycleScore}</span>
+                                <span class="ai-score-max">/ 100</span>
+                            </div>
+                            <div class="ai-score-status-group">
+                                <span class="ai-trend-tag">${trendTag}</span>
+                                <span class="ai-risk-tag" ${riskClassAttr}>风险: ${riskTag}</span>
+                                ${data.momentum_1d_pct != null ? `
+                                    <span class="ai-momentum-tag" style="font-size: 11px; padding: 2px 7px; border-radius: 4px; font-weight: 600; ${data.momentum_1d_pct > 0 ? 'background: rgba(16, 185, 129, 0.12); color: #059669;' : (data.momentum_1d_pct < 0 ? 'background: rgba(239, 68, 68, 0.12); color: #dc2626;' : 'background: rgba(0,0,0,0.05); color: var(--text-secondary);')}">
+                                        1D动能: ${data.momentum_1d_pct > 0 ? '+' : ''}${data.momentum_1d_pct.toFixed(2)}%
+                                    </span>
+                                ` : (data.momentum_1d != null ? `<span class="ai-momentum-tag" style="font-size: 11px; padding: 2px 7px; border-radius: 4px; background: rgba(0,0,0,0.05); color: var(--text-secondary); font-weight: 500;">1D即时: ${data.momentum_1d}分</span>` : '')}
+                            </div>
                         </div>
-                        <div class="ai-meta-row" style="margin-top: 6px; gap: 6px; display: flex; flex-wrap: wrap; align-items: center;">
-                            <span class="ai-trend-tag">${trendTag}</span>
-                            <span class="ai-risk-tag" ${riskClassAttr}>风险: ${riskTag}</span>
-                            ${data.momentum_1d_pct != null ? `
-                                <span class="ai-momentum-tag" style="font-size: 11px; padding: 2px 7px; border-radius: 4px; font-weight: 600; ${data.momentum_1d_pct > 0 ? 'background: rgba(16, 185, 129, 0.12); color: #059669;' : (data.momentum_1d_pct < 0 ? 'background: rgba(239, 68, 68, 0.12); color: #dc2626;' : 'background: rgba(0,0,0,0.05); color: var(--text-secondary);')}">
-                                    1D动能: ${data.momentum_1d_pct > 0 ? '+' : ''}${data.momentum_1d_pct.toFixed(2)}%
-                                </span>
-                            ` : (data.momentum_1d != null ? `<span class="ai-momentum-tag" style="font-size: 11px; padding: 2px 7px; border-radius: 4px; background: rgba(0,0,0,0.05); color: var(--text-secondary); font-weight: 500;">1D即时: ${data.momentum_1d}分</span>` : '')}
+
+                        <!-- 动态温度刻度带 (0~100 连续游标指示) -->
+                        <div class="ai-spectrum-wrapper">
+                            <div class="ai-spectrum-track">
+                                <div class="ai-spectrum-zone zone-cooling" title="0-35 降温收缩"></div>
+                                <div class="ai-spectrum-zone zone-neutral" title="35-65 探索整理"></div>
+                                <div class="ai-spectrum-zone zone-active" title="65-85 爆发扩张"></div>
+                                <div class="ai-spectrum-zone zone-warning" title="85-100 过热预警"></div>
+                                <div class="ai-spectrum-pin" style="left: ${clampedScore}%;">
+                                    <div class="ai-spectrum-dot" style="background: ${activeColor};"></div>
+                                </div>
+                            </div>
+                            <div class="ai-spectrum-labels">
+                                <span class="${clampedScore < 35 ? 'active-zone' : ''}">降温 0~35</span>
+                                <span class="${clampedScore >= 35 && clampedScore < 65 ? 'active-zone' : ''}">探索 35~65</span>
+                                <span class="${clampedScore >= 65 && clampedScore < 85 ? 'active-zone' : ''}">爆发 65~85</span>
+                                <span class="${clampedScore >= 85 ? 'active-zone' : ''}">预警 85~100</span>
+                            </div>
+                        </div>
+
+                        <div class="ai-score-footer">
+                            <span class="ai-footer-note">40%即时动能 + 60%历史滚动均值</span>
+                            ${data.us_ai_pe ? `<span class="ai-footer-pe">美股 AI PE: <strong>${data.us_ai_pe}x</strong></span>` : ''}
                         </div>
                     </div>
 
-                    <!-- 中间：当前产业周期阶段 (带 SVG 动态仪表盘) -->
+                    <!-- 中间：当前市场阶段 (简化轻量显示) -->
                     <div class="ai-cycle-box">
-                        <div class="ai-badge-label">当前市场阶段</div>
-                        <div class="ai-cycle-content">
-                            <div class="ai-gauge-wrapper">
-                                <svg viewBox="0 0 160 95" class="ai-cycle-gauge">
-                                    <defs>
-                                        <linearGradient id="grad-active" x1="0%" y1="0%" x2="100%" y2="100%">
-                                            <stop offset="0%" stop-color="#06b6d4" />
-                                            <stop offset="100%" stop-color="#10b981" />
-                                        </linearGradient>
-                                        <linearGradient id="grad-neutral" x1="0%" y1="0%" x2="100%" y2="100%">
-                                            <stop offset="0%" stop-color="#0284c7" />
-                                            <stop offset="100%" stop-color="#06b6d4" />
-                                        </linearGradient>
-                                        <linearGradient id="grad-warning" x1="0%" y1="0%" x2="100%" y2="100%">
-                                            <stop offset="0%" stop-color="#f59e0b" />
-                                            <stop offset="100%" stop-color="#ef4444" />
-                                        </linearGradient>
-                                        <linearGradient id="grad-cooling" x1="0%" y1="0%" x2="100%" y2="100%">
-                                            <stop offset="0%" stop-color="#64748b" />
-                                            <stop offset="100%" stop-color="#94a3b8" />
-                                        </linearGradient>
-                                        <filter id="gauge-glow" x="-20%" y="-20%" width="140%" height="140%">
-                                            <feGaussianBlur stdDeviation="2.5" result="blur" />
-                                            <feComposite in="SourceGraphic" in2="blur" operator="over" />
-                                        </filter>
-                                    </defs>
+                        <div class="ai-badge-label" style="display: flex; align-items: center; justify-content: space-between;">
+                            <span>当前市场阶段</span>
+                            <span class="ai-stage-pill status-${cycle_status}">${shortStageLabel}</span>
+                        </div>
 
-                                    <!-- 底色完整弧线轨迹 (-80° 至 +80°) -->
-                                    <path d="M 16 68.7 A 65 65 0 0 1 144 68.7" fill="none" stroke="rgba(226, 232, 240, 0.75)" stroke-width="12" stroke-linecap="round"/>
+                        <div class="ai-stage-title status-${cycle_status}">
+                            ${cycle_phase}
+                        </div>
 
-                                    <!-- 4 阶段不同颜色弧线分段：左(0-35 降温) -> 中(35-65 探索) -> 中右(65-85 爆发) -> 右(85-100 预警) -->
-                                    <path d="M 16 68.7 A 65 65 0 0 1 52.5 21.1" fill="none" stroke="url(#grad-cooling)" stroke-width="11" stroke-linecap="round"/>
-                                    <path d="M 55.6 19.7 A 65 65 0 0 1 104.4 19.7" fill="none" stroke="url(#grad-neutral)" stroke-width="11" stroke-linecap="round"/>
-                                    <path d="M 107.5 21.1 A 65 65 0 0 1 133.9 43.6" fill="none" stroke="url(#grad-active)" stroke-width="11" stroke-linecap="round"/>
-                                    <path d="M 135.7 46.5 A 65 65 0 0 1 144 68.7" fill="none" stroke="url(#grad-warning)" stroke-width="11" stroke-linecap="round"/>
-
-                                    <!-- 旋转游标针与高亮点 -->
-                                    <g class="gauge-needle-group" style="transform: rotate(${gaugeDegree.toFixed(1)}deg); transform-origin: 80px 80px;">
-                                        <line x1="80" y1="80" x2="80" y2="24" stroke="var(--text-primary)" stroke-width="3" stroke-linecap="round"/>
-                                        <circle cx="80" cy="24" r="5" fill="${activeColor}" filter="url(#gauge-glow)" class="gauge-pulse-dot"/>
-                                        <circle cx="80" cy="80" r="5" fill="var(--text-primary)"/>
-                                    </g>
-                                </svg>
-                                <div class="ai-gauge-badge status-${cycle_status}">${shortStageLabel}</div>
+                        <!-- 4 阶段极简进度步进器 -->
+                        <div class="ai-stage-stepper">
+                            <div class="stage-step step-cooling ${cycle_status === 'cooling' ? 'active' : ''}">
+                                <span class="step-dot"></span>降温
                             </div>
-                            <div class="ai-cycle-info">
-                                <div class="ai-cycle-title status-${cycle_status}">${cycle_phase}</div>
-                                <div class="ai-cycle-desc status-${cycle_status}">${cycle_desc}</div>
+                            <div class="stage-step step-neutral ${cycle_status === 'neutral' ? 'active' : ''}">
+                                <span class="step-dot"></span>探索
                             </div>
+                            <div class="stage-step step-active ${cycle_status === 'active' ? 'active' : ''}">
+                                <span class="step-dot"></span>爆发
+                            </div>
+                            <div class="stage-step step-warning ${cycle_status === 'warning' ? 'active' : ''}">
+                                <span class="step-dot"></span>预警
+                            </div>
+                        </div>
+
+                        <div class="ai-stage-focus status-${cycle_status}">
+                            ${conciseFocus}
                         </div>
                     </div>
 
