@@ -171,7 +171,7 @@ class AIMarketController {
                     <div class="ai-signal-card">
                         <div class="ai-signal-card-head">
                             <span class="ai-signal-card-title">
-                                <i data-lucide="${iconName}" width="13" style="vertical-align: middle;"></i>
+                                <i data-lucide="${iconName}" width="14" style="vertical-align: middle;"></i>
                                 ${sig.title.replace(/^信号\d：/, '')}
                             </span>
                             <span class="ai-signal-card-badge ${badgeClass}">
@@ -230,7 +230,7 @@ class AIMarketController {
                 <!-- 左卡：中美 AI 产业五维对比 -->
                 <div class="card ai-card-module">
                     <div class="card-header" style="margin-bottom: 4px;">
-                        <div class="card-title" style="font-size: 13px;"><i data-lucide="git-compare" width="15" style="vertical-align: middle;"></i> 中美 AI 产业五维对比 (Radar Matrix)</div>
+                        <div class="card-title"><i data-lucide="git-compare" width="16" style="vertical-align: middle;"></i> 中美 AI 产业五维对比 (Radar Matrix)</div>
                         <button class="info-btn" id="info-ai-matrix" title="模型说明"><i data-lucide="help-circle" width="14"></i></button>
                     </div>
                     <div class="card-body" style="padding: 2px 6px 4px 6px; justify-content: center; align-items: center;">
@@ -307,7 +307,7 @@ class AIMarketController {
                 <!-- 右卡：AI 泡沫温度计 -->
                 <div class="card ai-card-module">
                     <div class="card-header" style="margin-bottom: 4px;">
-                        <div class="card-title" style="font-size: 13px;"><i data-lucide="thermometer" width="15" style="vertical-align: middle;"></i> AI 泡沫温度计 (Bubble Risk)</div>
+                        <div class="card-title"><i data-lucide="thermometer" width="16" style="vertical-align: middle;"></i> AI 泡沫温度计 (Bubble Risk)</div>
                         <button class="info-btn" id="info-ai-bubble" title="温度计说明"><i data-lucide="help-circle" width="14"></i></button>
                     </div>
                     <div class="card-body" style="padding: 2px 6px 4px 6px; justify-content: space-between;">
@@ -375,7 +375,7 @@ class AIMarketController {
                 <!-- 左卡：历史科技周期推演映射 (宏观坐标系) -->
                 <div class="card ai-card-module">
                     <div class="card-header" style="margin-bottom: 6px;">
-                        <div class="card-title" style="font-size: 13.5px;"><i data-lucide="history" width="16" style="vertical-align: middle;"></i> 历史科技周期推演映射</div>
+                        <div class="card-title"><i data-lucide="history" width="16" style="vertical-align: middle;"></i> 历史科技周期推演映射</div>
                         <button class="info-btn" id="info-ai-history" title="推演模型说明"><i data-lucide="help-circle" width="14"></i></button>
                     </div>
                     <div class="card-body" style="padding-top: 2px;">
@@ -394,8 +394,9 @@ class AIMarketController {
                                     <div style="font-size: 11px; color: var(--text-secondary); line-height: 1.4;">
                                         ${hm.summary || '全球云巨头年化 CapEx 与芯片出货持续印证，行情更接近互联网基础设施大扩容红利阶段。'}
                                     </div>
-                                    <div style="font-size: 10.5px; color: var(--text-tertiary); background: var(--bg-subtle, #f8fafc); border-left: 3px solid var(--color-primary, #3b82f6); padding: 5px 8px; border-radius: 0 4px 4px 0; line-height: 1.35;">
-                                        💡 <strong>历史启示：</strong> 对标 1997 年思科与微软基建大扩容期，资本开支与硬件订单处于兑现高潮，应用层变现与盈利模式仍在加速探索阶段。
+                                    <div style="font-size: 10.5px; color: var(--text-tertiary); background: var(--bg-subtle, #f8fafc); border-left: 3px solid var(--color-primary, #3b82f6); padding: 5px 8px; border-radius: 0 4px 4px 0; line-height: 1.35; display: flex; align-items: flex-start; gap: 4px;">
+                                        <i data-lucide="lightbulb" width="14" style="color: #f59e0b; flex-shrink: 0; margin-top: 2px;"></i>
+                                        <div><strong>历史启示：</strong> 对标 1997 年思科与微软基建大扩容期，资本开支与硬件订单处于兑现高潮，应用层变现与盈利模式仍在加速探索阶段。</div>
                                     </div>
                                 </div>
                             `;
@@ -410,7 +411,7 @@ class AIMarketController {
                     return `
                         <div class="card ai-card-module">
                             <div class="card-header" style="margin-bottom: 6px; flex-wrap: wrap; gap: 6px;">
-                                <div class="card-title" style="font-size: 13.5px;">
+                                <div class="card-title">
                                     <i data-lucide="bar-chart-3" width="16" style="vertical-align: middle;"></i> 四大云巨头 CapEx 晴雨表
                                 </div>
                                 <div style="display: flex; align-items: center; gap: 4px; margin-left: auto;">
@@ -455,7 +456,7 @@ class AIMarketController {
             <!-- 6. AI 产业链 7 层全景精简拆解 (L0 - L6 代表成分股) -->
             <div class="card ai-card-module" style="margin-bottom: 16px;">
                 <div class="card-header" style="margin-bottom: 4px; flex-wrap: wrap; gap: 6px;">
-                    <div class="card-title" style="font-size: 13.5px;">
+                    <div class="card-title">
                         <i data-lucide="layers" width="16" style="vertical-align: middle;"></i> AI 产业链 7 层全景拆解 (L0 - L6 代表成分股)
                     </div>
                     <div style="display: flex; align-items: center; gap: 6px; margin-left: auto;">
