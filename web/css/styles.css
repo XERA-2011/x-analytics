@@ -365,11 +365,11 @@ body {
 }
 
 .fg-level {
-    font-size: 28px;
+    font-size: 22px;
     font-weight: 700;
     text-transform: uppercase;
+    margin-top: 4px;
     margin-bottom: 4px;
-    /* removed margin-top */
 }
 
 .fg-desc {

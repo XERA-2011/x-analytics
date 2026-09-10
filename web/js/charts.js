@@ -130,13 +130,10 @@ class Charts {
                 },
                 detail: {
                     valueAnimation: true,
-                    width: '60%',
-                    lineHeight: 22,
-                    borderRadius: 4,
-                    offsetCenter: [0, '-8%'],
-                    fontSize: 18,
+                    offsetCenter: [0, '-10%'],
+                    fontSize: 34,
                     fontWeight: '700',
-                    fontFamily: 'var(--font-mono, monospace)',
+                    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
                     formatter: function (val) {
                         return Math.round(val);
                     },
