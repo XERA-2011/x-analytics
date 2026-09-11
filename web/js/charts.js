@@ -75,6 +75,53 @@ class Charts {
             else color = palette[6];
         }
 
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        const trackColor = isDark ? 'rgba(255, 255, 255, 0.08)' : '#e2e8f0';
+        const tickColor = isDark ? 'rgba(255, 255, 255, 0.3)' : '#94a3b8';
+
+        // 方案 B：单弧动态流光渐变 (Dynamic Progress LinearGradient)
+        let gradientColor;
+        if (isUS) {
+            // 美股标准 (CNN: 恐慌红 -> 贪婪绿)
+            if (score >= 60) {
+                gradientColor = new echarts.graphic.LinearGradient(0, 1, 1, 0, [
+                    { offset: 0, color: '#f59e0b' },
+                    { offset: 0.5, color: '#84cc16' },
+                    { offset: 1, color: color }
+                ]);
+            } else if (score <= 40) {
+                gradientColor = new echarts.graphic.LinearGradient(0, 1, 1, 0, [
+                    { offset: 0, color: '#f59e0b' },
+                    { offset: 1, color: color }
+                ]);
+            } else {
+                gradientColor = new echarts.graphic.LinearGradient(0, 1, 1, 0, [
+                    { offset: 0, color: '#94a3b8' },
+                    { offset: 1, color: color }
+                ]);
+            }
+        } else {
+            // A股标准 (A股习惯: 恐慌蓝 -> 贪婪红)
+            if (score >= 60) {
+                gradientColor = new echarts.graphic.LinearGradient(0, 1, 1, 0, [
+                    { offset: 0, color: '#38bdf8' },
+                    { offset: 0.5, color: '#f59e0b' },
+                    { offset: 1, color: color }
+                ]);
+            } else if (score <= 40) {
+                gradientColor = new echarts.graphic.LinearGradient(0, 1, 1, 0, [
+                    { offset: 0, color: '#38bdf8' },
+                    { offset: 0.6, color: '#0284c7' },
+                    { offset: 1, color: color }
+                ]);
+            } else {
+                gradientColor = new echarts.graphic.LinearGradient(0, 1, 1, 0, [
+                    { offset: 0, color: '#38bdf8' },
+                    { offset: 1, color: color }
+                ]);
+            }
+        }
+
         const option = {
             series: [{
                 type: 'gauge',
@@ -86,40 +133,41 @@ class Charts {
                 max: 100,
                 splitNumber: 5,
                 itemStyle: {
-                    color: color
+                    color: gradientColor
                 },
                 progress: {
                     show: true,
-                    width: 12
+                    width: 14,
+                    roundCap: true
                 },
                 pointer: {
                     show: false
                 },
                 axisLine: {
                     lineStyle: {
-                        width: 12,
-                        color: [[1, '#e5e7eb']]
+                        width: 14,
+                        color: [[1, trackColor]]
                     }
                 },
                 axisTick: {
-                    distance: -20,
+                    distance: -18,
                     splitNumber: 5,
                     lineStyle: {
                         width: 1,
-                        color: '#999'
+                        color: tickColor
                     }
                 },
                 splitLine: {
-                    distance: -20,
-                    length: 8,
+                    distance: -18,
+                    length: 7,
                     lineStyle: {
                         width: 2,
-                        color: '#999'
+                        color: tickColor
                     }
                 },
                 axisLabel: {
                     distance: -15,
-                    color: '#999',
+                    color: tickColor,
                     fontSize: 8
                 },
                 anchor: {
@@ -132,7 +180,7 @@ class Charts {
                     valueAnimation: true,
                     offsetCenter: [0, '-10%'],
                     fontSize: 34,
-                    fontWeight: '700',
+                    fontWeight: '800',
                     fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
                     formatter: function (val) {
                         return Math.round(val);
