@@ -25,183 +25,163 @@ class Charts {
         };
     }
 
-    // 创建恐慌贪婪指数仪表盘
+    // 颜色插值算法（用于计算精确渐变过渡色）
+    _interpolateColor(color1, color2, factor) {
+        const c1 = parseInt(color1.slice(1), 16);
+        const c2 = parseInt(color2.slice(1), 16);
+        const r1 = (c1 >> 16) & 255, g1 = (c1 >> 8) & 255, b1 = c1 & 255;
+        const r2 = (c2 >> 16) & 255, g2 = (c2 >> 8) & 255, b2 = c2 & 255;
+        const r = Math.round(r1 + factor * (r2 - r1));
+        const g = Math.round(g1 + factor * (g2 - g1));
+        const b = Math.round(b1 + factor * (b2 - b1));
+        return `rgb(${r}, ${g}, ${b})`;
+    }
+
+    // 根据百分比从 stops 获取精确颜色
+    _getGradientAt(pct, stops) {
+        pct = Math.max(0, Math.min(1, pct));
+        for (let i = 0; i < stops.length - 1; i++) {
+            if (pct >= stops[i].pct && pct <= stops[i+1].pct) {
+                const factor = (pct - stops[i].pct) / (stops[i+1].pct - stops[i].pct);
+                return this._interpolateColor(stops[i].color, stops[i+1].color, factor);
+            }
+        }
+        return stops[stops.length - 1].color;
+    }
+
+    // 创建恐慌贪婪指数仪表盘 (风格 1: 外圈渐变弧线 + 内圈渐变刻度 + 箭头游标 + 居中分值)
     createFearGreedGauge(containerId, data) {
         const container = document.getElementById(containerId);
         if (!container) return null;
 
-        // 清理现有图表
+        // 清理现有图表 (兼容原 ECharts 实例清理)
         if (this.charts.has(containerId)) {
-            this.charts.get(containerId).dispose();
+            const old = this.charts.get(containerId);
+            if (old && typeof old.dispose === 'function') {
+                try { old.dispose(); } catch (e) {}
+            }
+            this.charts.delete(containerId);
         }
 
-        const chart = echarts.init(container);
-
         const score = data.score ?? data.current_value;
-        const level = data.level || data.current_level || '未知';
-
-        // 如果没有分数数据，不渲染图表
         if (score == null) {
             container.innerHTML = '<div class="loading error">数据不可用</div>';
             return null;
         }
 
-        // 根据市场区分调色板：美股(CNN标准: 贪婪绿/恐慌红) vs A股(A股习惯: 贪婪红/恐慌蓝绿)
         const isUS = containerId.includes('western') || data?.meta?.market === 'US' || data?.market === 'US';
-        const paletteUS7 = ['#10b981', '#22c55e', '#84cc16', '#6b7280', '#f59e0b', '#f97316', '#ef4444'];
-        const paletteCN7 = ['#ef4444', '#f59e0b', '#eab308', '#6b7280', '#3b82f6', '#8b5cf6', '#10b981'];
-        const palette7 = isUS ? paletteUS7 : paletteCN7;
-        const palette5 = isUS 
-            ? ['#10b981', '#84cc16', '#6b7280', '#f97316', '#ef4444']
-            : ['#ef4444', '#f59e0b', '#6b7280', '#3b82f6', '#10b981'];
-
-        const levels = Array.isArray(data.levels) ? data.levels.slice() : null;
-        let color;
-
-        if (levels && levels.length > 0) {
-            levels.sort((a, b) => b.min - a.min);
-            const palette = levels.length === 5 ? palette5 : palette7;
-            let idx = levels.findIndex(l => score >= l.min);
-            if (idx === -1) idx = levels.length - 1;
-            color = palette[Math.min(idx, palette.length - 1)];
-        } else {
-            const palette = palette7;
-            if (score >= 80) color = palette[0];
-            else if (score >= 65) color = palette[1];
-            else if (score >= 55) color = palette[2];
-            else if (score >= 45) color = palette[3];
-            else if (score >= 35) color = palette[4];
-            else if (score >= 20) color = palette[5];
-            else color = palette[6];
-        }
-
         const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-        const trackColor = isDark ? 'rgba(255, 255, 255, 0.08)' : '#e2e8f0';
-        const tickColor = isDark ? 'rgba(255, 255, 255, 0.3)' : '#94a3b8';
 
-        // 方案 B：单弧动态流光渐变 (Dynamic Progress LinearGradient)
-        let gradientColor;
-        if (isUS) {
-            // 美股标准 (CNN: 恐慌红 -> 贪婪绿)
-            if (score >= 60) {
-                gradientColor = new echarts.graphic.LinearGradient(0, 1, 1, 0, [
-                    { offset: 0, color: '#f59e0b' },
-                    { offset: 0.5, color: '#84cc16' },
-                    { offset: 1, color: color }
-                ]);
-            } else if (score <= 40) {
-                gradientColor = new echarts.graphic.LinearGradient(0, 1, 1, 0, [
-                    { offset: 0, color: '#f59e0b' },
-                    { offset: 1, color: color }
-                ]);
-            } else {
-                gradientColor = new echarts.graphic.LinearGradient(0, 1, 1, 0, [
-                    { offset: 0, color: '#94a3b8' },
-                    { offset: 1, color: color }
-                ]);
-            }
-        } else {
-            // A股标准 (A股习惯: 恐慌蓝 -> 贪婪红)
-            if (score >= 60) {
-                gradientColor = new echarts.graphic.LinearGradient(0, 1, 1, 0, [
-                    { offset: 0, color: '#38bdf8' },
-                    { offset: 0.5, color: '#f59e0b' },
-                    { offset: 1, color: color }
-                ]);
-            } else if (score <= 40) {
-                gradientColor = new echarts.graphic.LinearGradient(0, 1, 1, 0, [
-                    { offset: 0, color: '#38bdf8' },
-                    { offset: 0.6, color: '#0284c7' },
-                    { offset: 1, color: color }
-                ]);
-            } else {
-                gradientColor = new echarts.graphic.LinearGradient(0, 1, 1, 0, [
-                    { offset: 0, color: '#38bdf8' },
-                    { offset: 1, color: color }
-                ]);
+        // 风格 1：A股标准色谱 (蓝 -> 青 -> 灰 -> 橙 -> 红)
+        const STOPS_CN = [
+            { pct: 0.0, color: '#2563eb' },
+            { pct: 0.25, color: '#06b6d4' },
+            { pct: 0.50, color: '#64748b' },
+            { pct: 0.75, color: '#f59e0b' },
+            { pct: 1.0, color: '#ef4444' }
+        ];
+
+        // 美股标准色谱 (CNN Fear & Greed: 红 -> 橙 -> 黄 -> 青 -> 绿)
+        const STOPS_US = [
+            { pct: 0.0, color: '#ef4444' },
+            { pct: 0.25, color: '#f97316' },
+            { pct: 0.50, color: '#eab308' },
+            { pct: 0.75, color: '#06b6d4' },
+            { pct: 1.0, color: '#10b981' }
+        ];
+
+        const stops = isUS ? STOPS_US : STOPS_CN;
+        const pct = Math.max(0, Math.min(100, score)) / 100;
+        const currentColor = this._getGradientAt(pct, stops);
+
+        // 同步父容器中的情绪等级文字颜色
+        const parent = container.closest('.fg-container') || container.parentElement;
+        if (parent) {
+            const levelEl = parent.querySelector('.fg-level');
+            if (levelEl) {
+                levelEl.style.color = currentColor;
             }
         }
 
-        const option = {
-            series: [{
-                type: 'gauge',
-                center: ['50%', '55%'],
-                radius: '90%',
-                startAngle: 200,
-                endAngle: -20,
-                min: 0,
-                max: 100,
-                splitNumber: 5,
-                itemStyle: {
-                    color: gradientColor
-                },
-                progress: {
-                    show: true,
-                    width: 14,
-                    roundCap: true
-                },
-                pointer: {
-                    show: false
-                },
-                axisLine: {
-                    lineStyle: {
-                        width: 14,
-                        color: [[1, trackColor]]
-                    }
-                },
-                axisTick: {
-                    distance: -18,
-                    splitNumber: 5,
-                    lineStyle: {
-                        width: 1,
-                        color: tickColor
-                    }
-                },
-                splitLine: {
-                    distance: -18,
-                    length: 7,
-                    lineStyle: {
-                        width: 2,
-                        color: tickColor
-                    }
-                },
-                axisLabel: {
-                    distance: -15,
-                    color: tickColor,
-                    fontSize: 8
-                },
-                anchor: {
-                    show: false
-                },
-                title: {
-                    show: false
-                },
-                detail: {
-                    valueAnimation: true,
-                    offsetCenter: [0, '-10%'],
-                    fontSize: 34,
-                    fontWeight: '800',
-                    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-                    formatter: function (val) {
-                        return Math.round(val);
-                    },
-                    color: color
-                },
-                data: [{
-                    value: score
-                }]
-            }]
+        const safeId = containerId.replace(/[^a-zA-Z0-9_-]/g, '');
+        const gradId = `fg-grad-${safeId}`;
+        const shadowId = `fg-shadow-${safeId}`;
+
+        // 计算三角指示箭头顶点坐标 (精确指向刻度内圈)
+        const angleDeg = 180 - pct * 180;
+        const angleRad = (angleDeg * Math.PI) / 180;
+        const cx = 180, cy = 175;
+        const rTip = 96, rBase = 76, halfSpread = 0.085;
+        const tipX = (cx + rTip * Math.cos(angleRad)).toFixed(1);
+        const tipY = (cy - rTip * Math.sin(angleRad)).toFixed(1);
+        const b1X = (cx + rBase * Math.cos(angleRad - halfSpread)).toFixed(1);
+        const b1Y = (cy - rBase * Math.sin(angleRad - halfSpread)).toFixed(1);
+        const b2X = (cx + rBase * Math.cos(angleRad + halfSpread)).toFixed(1);
+        const b2Y = (cy - rBase * Math.sin(angleRad + halfSpread)).toFixed(1);
+
+        // 生成 33 条放射状同心刻度线
+        let ticksHtml = '';
+        const outerR = 116;
+        const totalTicks = 32;
+        for (let i = 0; i <= totalTicks; i++) {
+            const p = i / totalTicks;
+            const aRad = ((180 - p * 180) * Math.PI) / 180;
+            const isMajor = (i % 8 === 0);
+            const isMedium = (i % 4 === 0 && !isMajor);
+            const len = isMajor ? 11 : (isMedium ? 7 : 4.5);
+            const strokeWidth = isMajor ? 2.2 : (isMedium ? 1.4 : 1.0);
+            const innerR = outerR - len;
+            const x1 = (cx + outerR * Math.cos(aRad)).toFixed(1);
+            const y1 = (cy - outerR * Math.sin(aRad)).toFixed(1);
+            const x2 = (cx + innerR * Math.cos(aRad)).toFixed(1);
+            const y2 = (cy - innerR * Math.sin(aRad)).toFixed(1);
+            const c = this._getGradientAt(p, stops);
+            ticksHtml += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${c}" stroke-width="${strokeWidth}" stroke-linecap="round" opacity="${isMajor ? 1 : 0.85}" />`;
+        }
+
+        // 外围等级文本颜色 (根据 CN/US 区分)
+        const labelColors = isUS 
+            ? ['#ef4444', '#f97316', isDark ? '#facc15' : '#eab308', '#06b6d4', '#10b981']
+            : ['#2563eb', '#0284c7', isDark ? '#94a3b8' : '#64748b', '#f59e0b', '#ef4444'];
+
+        const gradStops = stops.map(s => `<stop offset="${(s.pct * 100).toFixed(0)}%" stop-color="${s.color}" />`).join('');
+
+        container.innerHTML = `
+            <svg viewBox="0 0 360 185" class="fg-custom-gauge" style="width:100%;height:auto;display:block;overflow:visible;">
+                <defs>
+                    <linearGradient id="${gradId}" x1="0%" y1="100%" x2="100%" y2="100%">
+                        ${gradStops}
+                    </linearGradient>
+                    <filter id="${shadowId}" x="-20%" y="-20%" width="140%" height="140%">
+                        <feDropShadow dx="0" dy="1.5" stdDeviation="1.5" flood-opacity="${isDark ? 0.4 : 0.2}" />
+                    </filter>
+                </defs>
+                <!-- 外层渐变主弧线 -->
+                <path d="M 55 175 A 125 125 0 0 1 305 175" fill="none" stroke="url(#${gradId})" stroke-width="4.5" stroke-linecap="round" />
+                <!-- 内层放射刻度 -->
+                <g>${ticksHtml}</g>
+                <!-- 外围等级标注 -->
+                <text x="44" y="180" font-size="10" font-weight="600" fill="${labelColors[0]}" text-anchor="end">极度恐慌</text>
+                <text x="76" y="76" font-size="10" font-weight="600" fill="${labelColors[1]}" text-anchor="middle">恐慌</text>
+                <text x="180" y="32" font-size="10.5" font-weight="600" fill="${labelColors[2]}" text-anchor="middle">中性</text>
+                <text x="284" y="76" font-size="10" font-weight="600" fill="${labelColors[3]}" text-anchor="middle">贪婪</text>
+                <text x="316" y="180" font-size="10" font-weight="600" fill="${labelColors[4]}" text-anchor="start">极度贪婪</text>
+                <!-- 三角指示游标 -->
+                <polygon points="${tipX},${tipY} ${b1X},${b1Y} ${b2X},${b2Y}" fill="${currentColor}" filter="url(#${shadowId})" />
+                <!-- 中心数值 -->
+                <text x="180" y="152" font-size="38" font-weight="800" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" fill="${currentColor}" text-anchor="middle">${Math.round(score)}</text>
+            </svg>
+        `;
+
+        const instance = {
+            resize: () => {},
+            dispose: () => {
+                container.innerHTML = '';
+            }
         };
 
-        chart.setOption(option);
-        this.charts.set(containerId, chart);
-
-        // 添加响应式处理
-        window.addEventListener('resize', () => {
-            chart.resize();
-        });
-
-        return chart;
+        this.charts.set(containerId, instance);
+        return instance;
     }
 
     // 创建收益率曲线图
