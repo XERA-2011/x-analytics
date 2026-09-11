@@ -105,7 +105,7 @@ class AIMarketController {
                                 <span class="ai-trend-tag">${trendTag}</span>
                                 <span class="ai-risk-tag" ${riskClassAttr}>风险: ${riskTag}</span>
                                 ${data.momentum_1d_pct != null ? `
-                                    <span class="ai-momentum-tag" style="font-size: 11px; padding: 2px 7px; border-radius: 4px; font-weight: 600; ${data.momentum_1d_pct > 0 ? 'background: rgba(16, 185, 129, 0.12); color: #059669;' : (data.momentum_1d_pct < 0 ? 'background: rgba(239, 68, 68, 0.12); color: #dc2626;' : 'background: rgba(0,0,0,0.05); color: var(--text-secondary);')}">
+                                    <span class="ai-momentum-tag" style="font-size: 11px; padding: 2px 7px; border-radius: 4px; font-weight: 600; ${data.momentum_1d_pct > 0 ? 'background: var(--color-up-light, rgba(239, 68, 68, 0.12)); color: var(--color-up-dark, #dc2626);' : (data.momentum_1d_pct < 0 ? 'background: var(--color-down-light, rgba(34, 197, 94, 0.12)); color: var(--color-down-dark, #16a34a);' : 'background: rgba(0,0,0,0.05); color: var(--text-secondary);')}">
                                         1D动能: ${data.momentum_1d_pct > 0 ? '+' : ''}${data.momentum_1d_pct.toFixed(2)}%
                                     </span>
                                 ` : (data.momentum_1d != null ? `<span class="ai-momentum-tag" style="font-size: 11px; padding: 2px 7px; border-radius: 4px; background: rgba(0,0,0,0.05); color: var(--text-secondary); font-weight: 500;">1D即时: ${data.momentum_1d}分</span>` : '')}
@@ -442,7 +442,7 @@ class AIMarketController {
                             <div class="card-body" style="padding-top: 2px;">
                                 <div style="font-size: 11.5px; color: var(--text-secondary); margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px;">
                                     <span>全球年化运行率: <strong style="color: var(--color-primary, #3b82f6); font-size: 13px;">$${capex.annual_run_rate_b}B</strong></span>
-                                    <span>季度同比增速: <strong style="color: #059669; font-size: 13px;">+${capex.yoy_growth_pct}% YoY</strong></span>
+                                    <span>季度同比增速: <strong style="color: var(--color-up, #ef4444); font-size: 13px;">+${capex.yoy_growth_pct}% YoY</strong></span>
                                 </div>
                                 <div class="ai-capex-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
                                     <div class="ai-capex-item">

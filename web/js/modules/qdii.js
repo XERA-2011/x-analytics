@@ -202,7 +202,7 @@ class QDIIController {
             const rankBadgeClass = rank === 1 ? 'rank-top1' : rank === 2 ? 'rank-top2' : rank === 3 ? 'rank-top3' : 'rank-other';
 
             const r1y = item.return_1y;
-            const r1yClass = r1y > 0 ? 'text-up-us' : r1y < 0 ? 'text-down-us' : '';
+            const r1yClass = typeof APP_CONFIG !== 'undefined' ? APP_CONFIG.getChangeClass(r1y) : (r1y > 0 ? 'text-up' : r1y < 0 ? 'text-down' : '');
             const r1yStr = r1y != null ? `${r1y > 0 ? '+' : ''}${utils.formatPercentage(r1y)}` : '--';
 
             const mdd = item.max_drawdown;
@@ -280,7 +280,7 @@ class QDIIController {
             const rankBadgeClass = rank === 1 ? 'rank-top1' : rank === 2 ? 'rank-top2' : rank === 3 ? 'rank-top3' : 'rank-other';
 
             const r1y = item.return_1y;
-            const r1yClass = r1y > 0 ? 'text-up-us' : r1y < 0 ? 'text-down-us' : '';
+            const r1yClass = typeof APP_CONFIG !== 'undefined' ? APP_CONFIG.getChangeClass(r1y) : (r1y > 0 ? 'text-up' : r1y < 0 ? 'text-down' : '');
             const r1yStr = r1y != null ? `${r1y > 0 ? '+' : ''}${utils.formatPercentage(r1y)}` : '--';
 
             const mdd = item.max_drawdown;
@@ -367,7 +367,7 @@ class QDIIController {
         const benchmarkNotice = activeBenchmark != null ? `
             <div style="padding: 10px 14px; margin-bottom: 12px; border-radius: 6px; background: var(--bg-body); border: 1px solid var(--border-light); font-size: clamp(0.72rem, 2.5vw, 0.78rem); color: var(--text-secondary); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
                 <div>
-                    📌 <strong>【标的基准】${indexName} 原生指数近1年收益：<span class="text-up-us">+${utils.formatPercentage(activeBenchmark)}</span></strong>
+                    📌 <strong>【标的基准】${indexName} 原生指数近1年收益：<span class="text-up">+${utils.formatPercentage(activeBenchmark)}</span></strong>
                 </div>
                 <div class="qdii-legend-group">
                     <span class="qdii-legend-tag tag-us">美股</span>
@@ -559,9 +559,9 @@ class QDIIController {
                 if (h.change_status === 'new') {
                     changeHtml = `<span style="font-size: 0.68rem; padding: 2px 6px; border-radius: 4px; font-weight: bold; background: rgba(59, 130, 246, 0.1); color: var(--accent-blue); border: 1px solid rgba(59, 130, 246, 0.25); display: inline-flex; align-items: center; gap: 2px;"><i data-lucide="sparkles" style="width: 10px; height: 10px;"></i>新进</span>`;
                 } else if (h.change_status === 'up') {
-                    changeHtml = `<span style="color: var(--accent-green); font-weight: 700; font-family: monospace; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 2px;">▲ ${h.change_pct}</span>`;
+                    changeHtml = `<span style="color: var(--color-up, #ef4444); font-weight: 700; font-family: monospace; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 2px;">▲ ${h.change_pct}</span>`;
                 } else if (h.change_status === 'down') {
-                    changeHtml = `<span style="color: var(--accent-red); font-weight: 700; font-family: monospace; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 2px;">▼ ${h.change_pct}</span>`;
+                    changeHtml = `<span style="color: var(--color-down, #22c55e); font-weight: 700; font-family: monospace; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 2px;">▼ ${h.change_pct}</span>`;
                 } else {
                     changeHtml = `<span style="color: var(--text-tertiary); font-family: monospace; font-size: 0.8rem;">0.00%</span>`;
                 }
@@ -636,7 +636,7 @@ class QDIIController {
                     <span>📅 截止日期：<strong>${reportDate}</strong></span>
                     <span>📦 总持仓：<strong>${totalCount} 只</strong></span>
                     <span>🎯 前十占比：<strong>${top10Concentration}</strong></span>
-                    <span>📈 近1年收益：<strong class="${fundItem.return_1y > 0 ? 'text-up-us' : ''}">${r1y}</strong></span>
+                    <span>📈 近1年收益：<strong class="${fundItem.return_1y != null ? (typeof APP_CONFIG !== 'undefined' ? APP_CONFIG.getChangeClass(fundItem.return_1y) : (fundItem.return_1y > 0 ? 'text-up' : 'text-down')) : ''}">${r1y}</strong></span>
                     <span>📉 近1年回撤：<strong>${mdd}</strong></span>
                     <span>⚡ 年化波动率：<strong>${vol}</strong></span>
                     <span>📐 夏普比率：<strong>${sharpe}</strong></span>

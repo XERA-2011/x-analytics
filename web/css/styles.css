@@ -1,6 +1,19 @@
 /* X-Analytics - Unified Design System */
 
 :root {
+    /* 核心涨跌配色变量（由 config.js 统一控制，默认红涨绿跌） */
+    --color-up: #ef4444;
+    --color-up-dark: #dc2626;
+    --color-up-light: rgba(239, 68, 68, 0.12);
+    --color-up-border: rgba(239, 68, 68, 0.25);
+
+    --color-down: #22c55e;
+    --color-down-dark: #16a34a;
+    --color-down-light: rgba(34, 197, 94, 0.12);
+    --color-down-border: rgba(34, 197, 94, 0.25);
+
+    --color-flat: #737373;
+
     /* Colors */
     --primary: #000000;
     --accent-red: #ef4444;
@@ -735,8 +748,8 @@ body {
 
 .val-oversold { color: #0284c7; }
 .val-overbought { color: #ef4444; }
-.val-up { color: #16a34a; }
-.val-down { color: #dc2626; }
+.val-up { color: var(--color-up, #ef4444); }
+.val-down { color: var(--color-down, #22c55e); }
 
 /* Dark mode overrides */
 [data-theme="dark"] .metal-pin-tooltip {
@@ -818,22 +831,15 @@ body {
     white-space: nowrap;
 }
 
-/* Utility Classes */
-.text-up {
-    color: var(--accent-red);
-}
-
-.text-down {
-    color: var(--accent-green);
-}
-
-/* US Market: Green up, Red down */
+/* Utility Classes: 统一由全局配色变量驱动 (默认红涨绿跌) */
+.text-up,
 .text-up-us {
-    color: var(--accent-green);
+    color: var(--color-up, #ef4444) !important;
 }
 
+.text-down,
 .text-down-us {
-    color: var(--accent-red);
+    color: var(--color-down, #22c55e) !important;
 }
 
 .text-mono {
@@ -1021,8 +1027,13 @@ footer {
 }
 
 .heat-red {
-    background: rgba(239, 68, 68, 0.15);
-    color: #dc2626;
+    background: var(--color-up-light, rgba(239, 68, 68, 0.15));
+    color: var(--color-up-dark, #dc2626);
+}
+
+.heat-green {
+    background: var(--color-down-light, rgba(34, 197, 94, 0.15));
+    color: var(--color-down-dark, #16a34a);
 }
 
 .heat-orange {
@@ -1176,11 +1187,11 @@ footer {
 }
 
 .ranking-header.up {
-    color: var(--accent-red);
+    color: var(--color-up, #ef4444);
 }
 
 .ranking-header.down {
-    color: var(--accent-green);
+    color: var(--color-down, #22c55e);
 }
 
 .ranking-item {
@@ -2180,15 +2191,15 @@ footer {
 }
 
 .ai-stock-chip.chip-up {
-    background: rgba(16, 185, 129, 0.08);
-    color: #059669;
-    border-color: rgba(16, 185, 129, 0.2);
+    background: var(--color-up-light, rgba(239, 68, 68, 0.08));
+    color: var(--color-up-dark, #dc2626);
+    border-color: var(--color-up-border, rgba(239, 68, 68, 0.2));
 }
 
 .ai-stock-chip.chip-down {
-    background: rgba(239, 68, 68, 0.08);
-    color: #dc2626;
-    border-color: rgba(239, 68, 68, 0.2);
+    background: var(--color-down-light, rgba(34, 197, 94, 0.08));
+    color: var(--color-down-dark, #16a34a);
+    border-color: var(--color-down-border, rgba(34, 197, 94, 0.2));
 }
 
 .ai-stock-chip.chip-neutral {
@@ -2198,12 +2209,24 @@ footer {
 }
 
 [data-theme="dark"] .ai-stock-chip.chip-up {
+    background: rgba(239, 68, 68, 0.15);
+    color: #f87171;
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+[data-theme="dark"] .ai-stock-chip.chip-down {
+    background: rgba(34, 197, 94, 0.15);
+    color: #4ade80;
+    border-color: rgba(34, 197, 94, 0.3);
+}
+
+[data-color-mode="green-up-red-down"][data-theme="dark"] .ai-stock-chip.chip-up {
     background: rgba(16, 185, 129, 0.15);
     color: #34d399;
     border-color: rgba(16, 185, 129, 0.3);
 }
 
-[data-theme="dark"] .ai-stock-chip.chip-down {
+[data-color-mode="green-up-red-down"][data-theme="dark"] .ai-stock-chip.chip-down {
     background: rgba(239, 68, 68, 0.15);
     color: #f87171;
     border-color: rgba(239, 68, 68, 0.3);
@@ -2241,21 +2264,31 @@ footer {
 }
 
 .ai-stream-avg-val.avg-up {
-    color: #059669;
-    background: rgba(16, 185, 129, 0.12);
+    color: var(--color-up-dark, #dc2626);
+    background: var(--color-up-light, rgba(239, 68, 68, 0.12));
 }
 
 .ai-stream-avg-val.avg-down {
-    color: #dc2626;
-    background: rgba(239, 68, 68, 0.12);
+    color: var(--color-down-dark, #16a34a);
+    background: var(--color-down-light, rgba(34, 197, 94, 0.12));
 }
 
 [data-theme="dark"] .ai-stream-avg-val.avg-up {
+    color: #f87171;
+    background: rgba(239, 68, 68, 0.2);
+}
+
+[data-theme="dark"] .ai-stream-avg-val.avg-down {
+    color: #4ade80;
+    background: rgba(34, 197, 94, 0.2);
+}
+
+[data-color-mode="green-up-red-down"][data-theme="dark"] .ai-stream-avg-val.avg-up {
     color: #34d399;
     background: rgba(16, 185, 129, 0.2);
 }
 
-[data-theme="dark"] .ai-stream-avg-val.avg-down {
+[data-color-mode="green-up-red-down"][data-theme="dark"] .ai-stream-avg-val.avg-down {
     color: #f87171;
     background: rgba(239, 68, 68, 0.2);
 }

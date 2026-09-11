@@ -29,7 +29,7 @@ class Utils {
         return `${formatted}%`;
     }
 
-    // 格式化价格变化 (支持不同市场颜色: us=绿涨红跌, cn/metals=红涨绿跌)
+    // 格式化价格变化 (由全局配置 APP_CONFIG 统一驱动，默认红涨绿跌)
     static formatChange(value, precision = 2, market = 'cn') {
         if (value === null || value === undefined || isNaN(value)) {
             return { text: '--', class: '' };
@@ -39,8 +39,10 @@ class Utils {
         const formatted = num.toFixed(precision);
         const text = num > 0 ? `+${formatted}%` : `${formatted}%`;
 
-        // 全项目统一颜色方案：红涨绿跌
-        const className = num > 0 ? 'text-up' : num < 0 ? 'text-down' : '';
+        // 全项目统一颜色方案：由 APP_CONFIG 统一配置 (默认红涨绿跌)
+        const className = typeof APP_CONFIG !== 'undefined' 
+            ? APP_CONFIG.getChangeClass(num) 
+            : (num > 0 ? 'text-up' : num < 0 ? 'text-down' : '');
         return { text, class: className };
     }
 

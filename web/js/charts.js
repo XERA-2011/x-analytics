@@ -90,7 +90,9 @@ class Charts {
             { pct: 1.0, color: '#10b981' }
         ];
 
-        const stops = isUS ? STOPS_US : STOPS_CN;
+        // 由全局配置项统一控制涨跌配色模式（默认红涨绿跌）
+        const isGreenUp = typeof APP_CONFIG !== 'undefined' && APP_CONFIG.colorMode === 'green-up-red-down';
+        const stops = isGreenUp ? STOPS_US : STOPS_CN;
         const pct = Math.max(0, Math.min(100, score)) / 100;
         const currentColor = this._getGradientAt(pct, stops);
 
@@ -439,17 +441,30 @@ class Charts {
                 }
             }
 
-            // 统一风格：采用标准的 Tailwind 色阶（500 级匹配文字，向下到 900 级），保持色彩高对比与纯正饱和度（防发白发灰）
+            // 由全局配置 APP_CONFIG 统一驱动涨跌色阶（默认红涨绿跌）
+            const isGreenUp = typeof APP_CONFIG !== 'undefined' && APP_CONFIG.colorMode === 'green-up-red-down';
             let bgColor;
-            if (change >= 3.0) { bgColor = '#ef4444'; }       // Red 500 (同文字大红)
-            else if (change >= 2.0) { bgColor = '#dc2626'; }  // Red 600
-            else if (change >= 1.0) { bgColor = '#b91c1c'; }  // Red 700
-            else if (change > 0) { bgColor = '#7f1d1d'; }     // Red 900 (极深红)
-            else if (change === 0) { bgColor = '#27272a'; }   // Zinc 800 (深中性暗灰)
-            else if (change > -1.0) { bgColor = '#14532d'; }  // Green 900 (极深绿)
-            else if (change > -2.0) { bgColor = '#15803d'; }  // Green 700
-            else if (change > -3.0) { bgColor = '#16a34a'; }  // Green 600
-            else { bgColor = '#22c55e'; }                     // Green 500 (同文字大绿)
+            if (isGreenUp) {
+                if (change >= 3.0) { bgColor = '#22c55e'; }       // Green 500
+                else if (change >= 2.0) { bgColor = '#16a34a'; }  // Green 600
+                else if (change >= 1.0) { bgColor = '#15803d'; }  // Green 700
+                else if (change > 0) { bgColor = '#14532d'; }     // Green 900
+                else if (change === 0) { bgColor = '#27272a'; }   // Zinc 800
+                else if (change > -1.0) { bgColor = '#7f1d1d'; }  // Red 900
+                else if (change > -2.0) { bgColor = '#b91c1c'; }  // Red 700
+                else if (change > -3.0) { bgColor = '#dc2626'; }  // Red 600
+                else { bgColor = '#ef4444'; }                     // Red 500
+            } else {
+                if (change >= 3.0) { bgColor = '#ef4444'; }       // Red 500 (同文字大红)
+                else if (change >= 2.0) { bgColor = '#dc2626'; }  // Red 600
+                else if (change >= 1.0) { bgColor = '#b91c1c'; }  // Red 700
+                else if (change > 0) { bgColor = '#7f1d1d'; }     // Red 900 (极深红)
+                else if (change === 0) { bgColor = '#27272a'; }   // Zinc 800 (深中性暗灰)
+                else if (change > -1.0) { bgColor = '#14532d'; }  // Green 900 (极深绿)
+                else if (change > -2.0) { bgColor = '#15803d'; }  // Green 700
+                else if (change > -3.0) { bgColor = '#16a34a'; }  // Green 600
+                else { bgColor = '#22c55e'; }                     // Green 500 (同文字大绿)
+            }
 
             return {
                 name: item.name,
@@ -519,7 +534,7 @@ class Charts {
                     }
                     const rawChange = d.change_pct !== undefined ? d.change_pct : 0;
                     const change = Number.isFinite(Number(rawChange)) ? Number(rawChange) : 0;
-                    const color = change >= 0 ? "#ef4444" : "#22c55e";
+                    const color = typeof APP_CONFIG !== 'undefined' ? APP_CONFIG.getChangeColor(change) : (change >= 0 ? "#ef4444" : "#22c55e");
                     let capStr = '--';
                     if (d.value && d.value !== 1) {
                         capStr = (d.value / 100000000).toFixed(0);

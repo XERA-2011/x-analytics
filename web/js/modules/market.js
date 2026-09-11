@@ -537,7 +537,7 @@ class WesternMarketController {
 
         const html = data.map(item => {
             const change = item.change_pct;
-            const changeClass = change >= 0 ? 'text-up-us' : 'text-down-us';
+            const changeClass = typeof APP_CONFIG !== 'undefined' ? APP_CONFIG.getChangeClass(change) : (change >= 0 ? 'text-up' : 'text-down');
 
             return `
                 <div class="heat-cell">
@@ -602,7 +602,7 @@ class WesternMarketController {
         metrics.forEach(item => {
             let changeHtml = '';
             if (item.change !== undefined) {
-                const changeClass = item.change > 0 ? 'text-up-us' : item.change < 0 ? 'text-down-us' : '';
+                const changeClass = typeof APP_CONFIG !== 'undefined' ? APP_CONFIG.getChangeClass(item.change) : (item.change > 0 ? 'text-up' : item.change < 0 ? 'text-down' : '');
                 const sign = item.change > 0 ? '+' : '';
                 changeHtml = `<span class="${changeClass}" style="font-size: 12px; margin-left: 6px;">${sign}${item.change}</span>`;
             }
@@ -610,16 +610,16 @@ class WesternMarketController {
             let analysisHtml = '';
             if (item.analysis) {
                 let color = 'var(--text-secondary)';
-                if (item.analysis.level === 'danger') color = 'var(--accent-red)';
+                if (item.analysis.level === 'danger') color = 'var(--color-up, var(--accent-red))';
                 if (item.analysis.level === 'warning') color = '#f59e0b';
-                if (item.analysis.level === 'good') color = 'var(--accent-green)';
+                if (item.analysis.level === 'good') color = 'var(--color-down, var(--accent-green))';
 
                 analysisHtml = `<div style="font-size: 11px; margin-top: 6px; color: ${color}; line-height: 1.3;">${item.analysis.text}</div>`;
             }
 
             let valClass = '';
             if (item.is_spread) {
-                valClass = item.value < 0 ? 'text-down-us' : 'text-up-us';
+                valClass = typeof APP_CONFIG !== 'undefined' ? APP_CONFIG.getChangeClass(item.value) : (item.value < 0 ? 'text-down' : 'text-up');
             }
 
             html += `
@@ -664,7 +664,7 @@ class WesternMarketController {
 
         let html = indices.map(item => {
             const changeVal = item.change_pct;
-            const changeClass = changeVal > 0 ? 'text-up-us' : changeVal < 0 ? 'text-down-us' : '';
+            const changeClass = typeof APP_CONFIG !== 'undefined' ? APP_CONFIG.getChangeClass(changeVal) : (changeVal > 0 ? 'text-up' : changeVal < 0 ? 'text-down' : '');
             const sign = changeVal > 0 ? '+' : '';
 
             const changeAmt = item.change_amount != null ? item.change_amount : (item.price * item.change_pct / 100);
