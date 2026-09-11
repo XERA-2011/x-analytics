@@ -61,14 +61,14 @@ class AIMarketController {
                 activeColor = '#ca8a04';
                 shortStageLabel = '探索期';
             } else if (cycle_status === 'warning') {
-                activeColor = '#166534';
+                activeColor = '#16a34a';
                 shortStageLabel = '预警期';
             } else if (cycle_status === 'cooling') {
-                activeColor = '#991b1b';
+                activeColor = '#dc2626';
                 shortStageLabel = '降温期';
             }
         } else {
-            // 红涨绿跌惯例：降温深绿(#166534)，探索绿/黄(#ca8a04)，爆发橙红(#ea580c)，预警深红(#991b1b)
+            // 红涨绿跌惯例：降温绿(#16a34a)，探索黄(#ca8a04)，爆发橙红(#ea580c)，预警红(#dc2626)，完全与项目统一
             if (cycle_status === 'active') {
                 activeColor = '#ea580c';
                 shortStageLabel = '爆发期';
@@ -76,25 +76,25 @@ class AIMarketController {
                 activeColor = '#ca8a04';
                 shortStageLabel = '探索期';
             } else if (cycle_status === 'warning') {
-                activeColor = '#991b1b';
+                activeColor = '#dc2626';
                 shortStageLabel = '预警期';
             } else if (cycle_status === 'cooling') {
-                activeColor = '#166534';
+                activeColor = '#16a34a';
                 shortStageLabel = '降温期';
             }
         }
 
         if (!cycle_status) {
             if (isGreenUp) {
-                if (clampedScore < 35) { activeColor = '#991b1b'; shortStageLabel = '降温期'; }
+                if (clampedScore < 35) { activeColor = '#dc2626'; shortStageLabel = '降温期'; }
                 else if (clampedScore < 65) { activeColor = '#ca8a04'; shortStageLabel = '探索期'; }
                 else if (clampedScore < 85) { activeColor = '#22c55e'; shortStageLabel = '爆发期'; }
-                else { activeColor = '#166534'; shortStageLabel = '预警期'; }
+                else { activeColor = '#16a34a'; shortStageLabel = '预警期'; }
             } else {
-                if (clampedScore < 35) { activeColor = '#166534'; shortStageLabel = '降温期'; }
+                if (clampedScore < 35) { activeColor = '#16a34a'; shortStageLabel = '降温期'; }
                 else if (clampedScore < 65) { activeColor = '#ca8a04'; shortStageLabel = '探索期'; }
                 else if (clampedScore < 85) { activeColor = '#ea580c'; shortStageLabel = '爆发期'; }
-                else { activeColor = '#991b1b'; shortStageLabel = '预警期'; }
+                else { activeColor = '#dc2626'; shortStageLabel = '预警期'; }
             }
         }
 

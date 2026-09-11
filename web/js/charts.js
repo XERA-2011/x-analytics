@@ -72,22 +72,22 @@ class Charts {
         const isUS = containerId.includes('western') || data?.meta?.market === 'US' || data?.market === 'US';
         const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
 
-        // 红涨绿跌色谱 (左端极度恐慌深绿 ➔ 绿 ➔ 中性灰 ➔ 橙红 ➔ 右端极度贪婪深红)
+        // 红涨绿跌色谱 (左端绿 ➔ 绿 ➔ 中性灰 ➔ 橙红 ➔ 右端红，完全与项目统一)
         const STOPS_CN = [
-            { pct: 0.0, color: '#166534' }, // 极度恐慌 深绿
-            { pct: 0.25, color: '#22c55e' }, // 恐慌 绿
+            { pct: 0.0, color: '#16a34a' }, // 极度恐慌 (项目统一深绿文字色)
+            { pct: 0.25, color: '#22c55e' }, // 恐慌 (项目统一主跌绿)
             { pct: 0.50, color: '#64748b' }, // 中性 灰
             { pct: 0.75, color: '#f97316' }, // 贪婪 橙红
-            { pct: 1.0, color: '#991b1b' }   // 极度贪婪 深红
+            { pct: 1.0, color: '#dc2626' }   // 极度贪婪 (项目统一深红文字色)
         ];
 
-        // 绿涨红跌色谱 (左端极度恐慌深红 ➔ 红 ➔ 中性灰 ➔ 绿 ➔ 右端极度贪婪深绿)
+        // 绿涨红跌色谱 (左端红 ➔ 红 ➔ 中性灰 ➔ 绿 ➔ 右端绿)
         const STOPS_US = [
-            { pct: 0.0, color: '#991b1b' }, // 极度恐慌 深红
-            { pct: 0.25, color: '#ef4444' }, // 恐慌 红
+            { pct: 0.0, color: '#dc2626' }, // 极度恐慌 (红)
+            { pct: 0.25, color: '#ef4444' }, // 恐慌 (明红)
             { pct: 0.50, color: '#64748b' }, // 中性 灰
-            { pct: 0.75, color: '#22c55e' }, // 贪婪 绿
-            { pct: 1.0, color: '#166534' }   // 极度贪婪 深绿
+            { pct: 0.75, color: '#22c55e' }, // 贪婪 (明绿)
+            { pct: 1.0, color: '#16a34a' }   // 极度贪婪 (深绿)
         ];
 
         // 由全局配置项统一控制涨跌配色模式（默认红涨绿跌）
@@ -141,10 +141,10 @@ class Charts {
             ticksHtml += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${c}" stroke-width="${strokeWidth}" stroke-linecap="round" opacity="${isMajor ? 1 : 0.85}" />`;
         }
 
-        // 外围等级文本颜色 (统一根据配置的红涨绿跌/绿涨红跌区分)
+        // 外围等级文本颜色 (统一根据配置的红涨绿跌/绿涨红跌区分，与项目芯片文字色完全统一)
         const labelColors = isGreenUp 
-            ? ['#991b1b', '#ef4444', isDark ? '#94a3b8' : '#64748b', '#22c55e', '#166534']
-            : ['#166534', '#22c55e', isDark ? '#94a3b8' : '#64748b', '#f97316', '#991b1b'];
+            ? ['#dc2626', '#ef4444', isDark ? '#94a3b8' : '#64748b', '#22c55e', '#16a34a']
+            : ['#16a34a', '#22c55e', isDark ? '#94a3b8' : '#64748b', '#f97316', '#dc2626'];
 
         const gradStops = stops.map(s => `<stop offset="${(s.pct * 100).toFixed(0)}%" stop-color="${s.color}" />`).join('');
 
