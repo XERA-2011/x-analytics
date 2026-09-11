@@ -110,7 +110,7 @@ class Charts {
         // 计算三角指示箭头顶点坐标 (精确指向刻度内圈)
         const angleDeg = 180 - pct * 180;
         const angleRad = (angleDeg * Math.PI) / 180;
-        const cx = 180, cy = 175;
+        const cx = 190, cy = 175;
         const rTip = 96, rBase = 76, halfSpread = 0.085;
         const tipX = (cx + rTip * Math.cos(angleRad)).toFixed(1);
         const tipY = (cy - rTip * Math.sin(angleRad)).toFixed(1);
@@ -147,7 +147,7 @@ class Charts {
         const gradStops = stops.map(s => `<stop offset="${(s.pct * 100).toFixed(0)}%" stop-color="${s.color}" />`).join('');
 
         container.innerHTML = `
-            <svg viewBox="0 0 360 185" class="fg-custom-gauge" style="width:100%;height:auto;display:block;overflow:visible;">
+            <svg viewBox="0 0 380 185" class="fg-custom-gauge" style="width:100%;height:auto;display:block;overflow:visible;">
                 <defs>
                     <linearGradient id="${gradId}" x1="0%" y1="100%" x2="100%" y2="100%">
                         ${gradStops}
@@ -157,19 +157,19 @@ class Charts {
                     </filter>
                 </defs>
                 <!-- 外层渐变主弧线 -->
-                <path d="M 55 175 A 125 125 0 0 1 305 175" fill="none" stroke="url(#${gradId})" stroke-width="4.5" stroke-linecap="round" />
+                <path d="M 65 175 A 125 125 0 0 1 315 175" fill="none" stroke="url(#${gradId})" stroke-width="4.5" stroke-linecap="round" />
                 <!-- 内层放射刻度 -->
                 <g>${ticksHtml}</g>
                 <!-- 外围等级标注 -->
-                <text x="44" y="180" font-size="10" font-weight="600" fill="${labelColors[0]}" text-anchor="end">极度恐慌</text>
-                <text x="76" y="76" font-size="10" font-weight="600" fill="${labelColors[1]}" text-anchor="middle">恐慌</text>
-                <text x="180" y="32" font-size="10.5" font-weight="600" fill="${labelColors[2]}" text-anchor="middle">中性</text>
-                <text x="284" y="76" font-size="10" font-weight="600" fill="${labelColors[3]}" text-anchor="middle">贪婪</text>
-                <text x="316" y="180" font-size="10" font-weight="600" fill="${labelColors[4]}" text-anchor="start">极度贪婪</text>
+                <text x="54" y="180" font-size="10" font-weight="600" fill="${labelColors[0]}" text-anchor="end">极度恐慌</text>
+                <text x="86" y="76" font-size="10" font-weight="600" fill="${labelColors[1]}" text-anchor="middle">恐慌</text>
+                <text x="190" y="32" font-size="10.5" font-weight="600" fill="${labelColors[2]}" text-anchor="middle">中性</text>
+                <text x="294" y="76" font-size="10" font-weight="600" fill="${labelColors[3]}" text-anchor="middle">贪婪</text>
+                <text x="326" y="180" font-size="10" font-weight="600" fill="${labelColors[4]}" text-anchor="start">极度贪婪</text>
                 <!-- 三角指示游标 -->
                 <polygon points="${tipX},${tipY} ${b1X},${b1Y} ${b2X},${b2Y}" fill="${currentColor}" filter="url(#${shadowId})" />
                 <!-- 中心数值 -->
-                <text x="180" y="152" font-size="38" font-weight="800" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" fill="${currentColor}" text-anchor="middle">${Math.round(score)}</text>
+                <text x="190" y="152" font-size="38" font-weight="800" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" fill="${currentColor}" text-anchor="middle">${Math.round(score)}</text>
             </svg>
         `;
 
