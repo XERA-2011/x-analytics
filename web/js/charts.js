@@ -72,22 +72,22 @@ class Charts {
         const isUS = containerId.includes('western') || data?.meta?.market === 'US' || data?.market === 'US';
         const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
 
-        // 风格 1：A股标准色谱 (蓝 -> 青 -> 灰 -> 橙 -> 红)
+        // 红涨绿跌色谱 (左端极度恐慌深绿 ➔ 绿 ➔ 中性灰 ➔ 橙红 ➔ 右端极度贪婪深红)
         const STOPS_CN = [
-            { pct: 0.0, color: '#2563eb' },
-            { pct: 0.25, color: '#06b6d4' },
-            { pct: 0.50, color: '#64748b' },
-            { pct: 0.75, color: '#f59e0b' },
-            { pct: 1.0, color: '#ef4444' }
+            { pct: 0.0, color: '#166534' }, // 极度恐慌 深绿
+            { pct: 0.25, color: '#22c55e' }, // 恐慌 绿
+            { pct: 0.50, color: '#64748b' }, // 中性 灰
+            { pct: 0.75, color: '#f97316' }, // 贪婪 橙红
+            { pct: 1.0, color: '#991b1b' }   // 极度贪婪 深红
         ];
 
-        // 美股标准色谱 (CNN Fear & Greed: 红 -> 橙 -> 黄 -> 青 -> 绿)
+        // 绿涨红跌色谱 (左端极度恐慌深红 ➔ 红 ➔ 中性灰 ➔ 绿 ➔ 右端极度贪婪深绿)
         const STOPS_US = [
-            { pct: 0.0, color: '#ef4444' },
-            { pct: 0.25, color: '#f97316' },
-            { pct: 0.50, color: '#eab308' },
-            { pct: 0.75, color: '#06b6d4' },
-            { pct: 1.0, color: '#10b981' }
+            { pct: 0.0, color: '#991b1b' }, // 极度恐慌 深红
+            { pct: 0.25, color: '#ef4444' }, // 恐慌 红
+            { pct: 0.50, color: '#64748b' }, // 中性 灰
+            { pct: 0.75, color: '#22c55e' }, // 贪婪 绿
+            { pct: 1.0, color: '#166534' }   // 极度贪婪 深绿
         ];
 
         // 由全局配置项统一控制涨跌配色模式（默认红涨绿跌）
@@ -141,10 +141,10 @@ class Charts {
             ticksHtml += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${c}" stroke-width="${strokeWidth}" stroke-linecap="round" opacity="${isMajor ? 1 : 0.85}" />`;
         }
 
-        // 外围等级文本颜色 (根据 CN/US 区分)
-        const labelColors = isUS 
-            ? ['#ef4444', '#f97316', isDark ? '#facc15' : '#eab308', '#06b6d4', '#10b981']
-            : ['#2563eb', '#0284c7', isDark ? '#94a3b8' : '#64748b', '#f59e0b', '#ef4444'];
+        // 外围等级文本颜色 (统一根据配置的红涨绿跌/绿涨红跌区分)
+        const labelColors = isGreenUp 
+            ? ['#991b1b', '#ef4444', isDark ? '#94a3b8' : '#64748b', '#22c55e', '#166534']
+            : ['#166534', '#22c55e', isDark ? '#94a3b8' : '#64748b', '#f97316', '#991b1b'];
 
         const gradStops = stops.map(s => `<stop offset="${(s.pct * 100).toFixed(0)}%" stop-color="${s.color}" />`).join('');
 

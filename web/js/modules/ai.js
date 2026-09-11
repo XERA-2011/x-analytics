@@ -49,21 +49,53 @@ class AIMarketController {
         const clampedScore = Math.max(0, Math.min(100, Number(cycleScore) || 50));
         const gaugeDegree = -80 + (clampedScore / 100) * 160;
 
-        let activeColor = '#0284c7';
+        const isGreenUp = typeof APP_CONFIG !== 'undefined' && APP_CONFIG.colorMode === 'green-up-red-down';
+        let activeColor = '#ca8a04';
         let shortStageLabel = '探索期';
 
-        if (cycle_status === 'active') {
-            activeColor = '#10b981';
-            shortStageLabel = '爆发期';
-        } else if (cycle_status === 'neutral') {
-            activeColor = '#0284c7';
-            shortStageLabel = '探索期';
-        } else if (cycle_status === 'warning') {
-            activeColor = '#ef4444';
-            shortStageLabel = '预警期';
-        } else if (cycle_status === 'cooling') {
-            activeColor = '#64748b';
-            shortStageLabel = '降温期';
+        if (isGreenUp) {
+            if (cycle_status === 'active') {
+                activeColor = '#22c55e';
+                shortStageLabel = '爆发期';
+            } else if (cycle_status === 'neutral') {
+                activeColor = '#ca8a04';
+                shortStageLabel = '探索期';
+            } else if (cycle_status === 'warning') {
+                activeColor = '#166534';
+                shortStageLabel = '预警期';
+            } else if (cycle_status === 'cooling') {
+                activeColor = '#991b1b';
+                shortStageLabel = '降温期';
+            }
+        } else {
+            // 红涨绿跌惯例：降温深绿(#166534)，探索绿/黄(#ca8a04)，爆发橙红(#ea580c)，预警深红(#991b1b)
+            if (cycle_status === 'active') {
+                activeColor = '#ea580c';
+                shortStageLabel = '爆发期';
+            } else if (cycle_status === 'neutral') {
+                activeColor = '#ca8a04';
+                shortStageLabel = '探索期';
+            } else if (cycle_status === 'warning') {
+                activeColor = '#991b1b';
+                shortStageLabel = '预警期';
+            } else if (cycle_status === 'cooling') {
+                activeColor = '#166534';
+                shortStageLabel = '降温期';
+            }
+        }
+
+        if (!cycle_status) {
+            if (isGreenUp) {
+                if (clampedScore < 35) { activeColor = '#991b1b'; shortStageLabel = '降温期'; }
+                else if (clampedScore < 65) { activeColor = '#ca8a04'; shortStageLabel = '探索期'; }
+                else if (clampedScore < 85) { activeColor = '#22c55e'; shortStageLabel = '爆发期'; }
+                else { activeColor = '#166534'; shortStageLabel = '预警期'; }
+            } else {
+                if (clampedScore < 35) { activeColor = '#166534'; shortStageLabel = '降温期'; }
+                else if (clampedScore < 65) { activeColor = '#ca8a04'; shortStageLabel = '探索期'; }
+                else if (clampedScore < 85) { activeColor = '#ea580c'; shortStageLabel = '爆发期'; }
+                else { activeColor = '#991b1b'; shortStageLabel = '预警期'; }
+            }
         }
 
         const trendTag = trend_str || (cycle_status === 'warning' ? '⚠️ 预警' : cycle_status === 'cooling' ? '↓ 回调' : cycle_status === 'active' ? '↑ 强劲' : '→ 震荡');

@@ -234,24 +234,46 @@ class GoldController {
         const level = data.level || '中性';
         const desc = data.description || '多因子技术面综合评估';
 
-        // 色彩阶梯判断（超卖/冷 ➔ 中性 ➔ 超买/热）
-        let themeColor = '#0284c7';
-        let bgTint = 'rgba(2, 132, 199, 0.12)';
-        if (score < 25) {
-            themeColor = '#2563eb';
-            bgTint = 'rgba(37, 99, 235, 0.12)';
-        } else if (score < 45) {
-            themeColor = '#0284c7';
-            bgTint = 'rgba(2, 132, 199, 0.12)';
-        } else if (score <= 55) {
-            themeColor = '#d97706';
-            bgTint = 'rgba(217, 119, 6, 0.12)';
-        } else if (score <= 75) {
-            themeColor = '#ea580c';
-            bgTint = 'rgba(234, 88, 12, 0.12)';
+        // 色彩阶梯判断（超卖/恐慌 ➔ 中性 ➔ 超买/贪婪）
+        // 红涨绿跌惯例：极度超卖为深绿(#166534)，极度超买为深红(#991b1b)
+        const isGreenUp = typeof APP_CONFIG !== 'undefined' && APP_CONFIG.colorMode === 'green-up-red-down';
+        let themeColor = '#64748b';
+        let bgTint = 'rgba(100, 116, 139, 0.12)';
+
+        if (isGreenUp) {
+            if (score < 25) {
+                themeColor = '#991b1b';
+                bgTint = 'rgba(153, 27, 27, 0.12)';
+            } else if (score < 45) {
+                themeColor = '#ef4444';
+                bgTint = 'rgba(239, 68, 68, 0.12)';
+            } else if (score <= 55) {
+                themeColor = '#64748b';
+                bgTint = 'rgba(100, 116, 139, 0.12)';
+            } else if (score <= 75) {
+                themeColor = '#22c55e';
+                bgTint = 'rgba(34, 197, 94, 0.12)';
+            } else {
+                themeColor = '#166534';
+                bgTint = 'rgba(22, 101, 52, 0.12)';
+            }
         } else {
-            themeColor = '#dc2626';
-            bgTint = 'rgba(220, 38, 38, 0.12)';
+            if (score < 25) {
+                themeColor = '#166534';
+                bgTint = 'rgba(22, 101, 52, 0.12)';
+            } else if (score < 45) {
+                themeColor = '#22c55e';
+                bgTint = 'rgba(34, 197, 94, 0.12)';
+            } else if (score <= 55) {
+                themeColor = '#64748b';
+                bgTint = 'rgba(100, 116, 139, 0.12)';
+            } else if (score <= 75) {
+                themeColor = '#ea580c';
+                bgTint = 'rgba(234, 88, 12, 0.12)';
+            } else {
+                themeColor = '#991b1b';
+                bgTint = 'rgba(153, 27, 27, 0.12)';
+            }
         }
 
         // 因子解析与格式化

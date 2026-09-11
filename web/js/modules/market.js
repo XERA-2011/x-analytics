@@ -213,13 +213,8 @@ class AsiaMarketController {
             const score = Math.round(val.score);
 
             let chipClass = 'chip-neutral';
-            if (isUS) {
-                if (score >= 58) chipClass = 'chip-high';
-                else if (score <= 42) chipClass = 'chip-low';
-            } else {
-                if (score >= 58) chipClass = 'chip-low'; // A股偏多用红
-                else if (score <= 42) chipClass = 'chip-high'; // A股恐慌用绿
-            }
+            if (score >= 58) chipClass = 'chip-up';
+            else if (score <= 42) chipClass = 'chip-down';
 
             const weightStr = val.weight ? ` · 权重 ${Math.round(val.weight * 100)}%` : '';
             const valStr = val.value != null ? ` · 当前值: ${val.value}` : '';
