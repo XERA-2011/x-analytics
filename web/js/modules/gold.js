@@ -221,7 +221,6 @@ class GoldController {
 
     renderMetalFearGreed(data, metal) {
         const container = document.getElementById(`${metal}-fear-greed`);
-
         if (!container) return;
 
         if (data.error) {
@@ -230,26 +229,105 @@ class GoldController {
             return;
         }
 
-        // Render Gauge + Info (Unified Style)
-        // Note: container is .fg-container, which has flex-direction: column and centered align
+        const score = data.score != null ? Math.round(data.score) : 50;
+        const percentile = data.percentile != null ? Math.round(data.percentile) : null;
+        const level = data.level || '中性';
+        const desc = data.description || '多因子技术面综合评估';
+
+        // 色彩阶梯判断（超卖/冷 ➔ 中性 ➔ 超买/热）
+        let themeColor = '#0284c7';
+        let bgTint = 'rgba(2, 132, 199, 0.12)';
+        if (score < 25) {
+            themeColor = '#2563eb';
+            bgTint = 'rgba(37, 99, 235, 0.12)';
+        } else if (score < 45) {
+            themeColor = '#0284c7';
+            bgTint = 'rgba(2, 132, 199, 0.12)';
+        } else if (score <= 55) {
+            themeColor = '#d97706';
+            bgTint = 'rgba(217, 119, 6, 0.12)';
+        } else if (score <= 75) {
+            themeColor = '#ea580c';
+            bgTint = 'rgba(234, 88, 12, 0.12)';
+        } else {
+            themeColor = '#dc2626';
+            bgTint = 'rgba(220, 38, 38, 0.12)';
+        }
+
+        // 因子解析与格式化
+        const indicators = data.indicators || {};
+        const rsiVal = indicators.rsi?.value != null ? Number(indicators.rsi.value).toFixed(1) : '--';
+        const rsiState = indicators.rsi?.value != null ? (indicators.rsi.value < 30 ? ' (超卖)' : (indicators.rsi.value > 70 ? ' (超买)' : '')) : '';
+        const rsiClass = indicators.rsi?.value != null ? (indicators.rsi.value < 30 ? 'val-oversold' : (indicators.rsi.value > 70 ? 'val-overbought' : '')) : '';
+
+        const ma50Val = indicators.momentum?.value != null ? (indicators.momentum.value >= 0 ? `+${Number(indicators.momentum.value).toFixed(2)}%` : `${Number(indicators.momentum.value).toFixed(2)}%`) : '--';
+        const ma50Class = indicators.momentum?.value != null ? (indicators.momentum.value >= 0 ? 'val-up' : 'val-down') : '';
+
+        const volVal = indicators.volatility?.value != null ? `${Number(indicators.volatility.value).toFixed(1)}%` : '--';
+        const volRatio = indicators.volatility?.ratio != null ? (indicators.volatility.ratio > 1.15 ? ' (偏高)' : (indicators.volatility.ratio < 0.85 ? ' (偏低)' : ' (正常)')) : '';
+
+        const changeVal = indicators.daily_change?.value != null ? (indicators.daily_change.value >= 0 ? `+${Number(indicators.daily_change.value).toFixed(2)}%` : `${Number(indicators.daily_change.value).toFixed(2)}%`) : '--';
+        const changeClass = indicators.daily_change?.value != null ? (indicators.daily_change.value >= 0 ? 'val-up' : 'val-down') : '';
+
+        // 限制游标在安全百分比内 (4% ~ 96%) 避免左右端溢出
+        const pinPos = Math.max(4, Math.min(96, score));
 
         container.innerHTML = `
-            <div class="fg-gauge" id="${metal}-gauge"></div>
-            <div class="fg-info" style="flex: 0 1 auto; width: 100%;">
-                <div class="fg-level">${data.level}</div>
-                <div style="font-size: 13px; font-weight: 600; color: var(--text-primary); margin: 6px 0;">近一年分位数: ${data.percentile != null ? data.percentile + '%' : '--'}</div>
+            <div class="metal-heat-wrapper">
+                <!-- 头部数值与分位数 -->
+                <div class="metal-score-row">
+                    <div class="metal-score-main">
+                        <span class="metal-score-val" style="color: ${themeColor}">${score}</span>
+                        <span class="metal-score-max">/ 100</span>
+                    </div>
+                    <div class="metal-badge-group">
+                        <span class="metal-level-pill" style="color: ${themeColor}; background: ${bgTint}">${level}</span>
+                        ${percentile != null ? `<span class="metal-percentile-pill">近一年分位 ${percentile}%</span>` : ''}
+                    </div>
+                </div>
+
+                <!-- 研判说明 -->
+                <div class="metal-heat-summary">${desc}</div>
+
+                <!-- 水平热度光谱条 -->
+                <div class="metal-spectrum-box">
+                    <div class="metal-spectrum-bar">
+                        <div class="metal-spectrum-pin" style="left: ${pinPos}%;">
+                            <div class="metal-pin-tooltip">${score}分${percentile != null ? ` (${percentile}%分位)` : ''}</div>
+                            <div class="metal-pin-pointer"></div>
+                            <div class="metal-spectrum-dot" style="background: ${themeColor};"></div>
+                        </div>
+                    </div>
+                    <div class="metal-scale-labels">
+                        <span class="scale-item scale-ext-oversold">极度超卖</span>
+                        <span class="scale-item scale-oversold">超卖</span>
+                        <span class="scale-item scale-neutral">中性</span>
+                        <span class="scale-item scale-overbought">超买</span>
+                        <span class="scale-item scale-ext-overbought">极度超买</span>
+                    </div>
+                </div>
+
+                <!-- 4 大量化技术因子胶囊 -->
+                <div class="metal-factors-grid">
+                    <div class="metal-factor-item">
+                        <span class="metal-factor-label">RSI (14)</span>
+                        <span class="metal-factor-val ${rsiClass}">${rsiVal}${rsiState}</span>
+                    </div>
+                    <div class="metal-factor-item">
+                        <span class="metal-factor-label">均线偏离 (MA50)</span>
+                        <span class="metal-factor-val ${ma50Class}">${ma50Val}</span>
+                    </div>
+                    <div class="metal-factor-item">
+                        <span class="metal-factor-label">波动率趋势</span>
+                        <span class="metal-factor-val">${volVal}${volRatio}</span>
+                    </div>
+                    <div class="metal-factor-item">
+                        <span class="metal-factor-label">当日涨跌</span>
+                        <span class="metal-factor-val ${changeClass}">${changeVal}</span>
+                    </div>
+                </div>
             </div>
         `;
-
-        // Render Gauge Chart
-        if (window.charts) {
-            setTimeout(() => {
-                charts.createFearGreedGauge(`${metal}-gauge`, {
-                    score: data.score,
-                    level: data.level
-                });
-            }, 100);
-        }
     }
 
     renderMetalSpotPrices(data) {
