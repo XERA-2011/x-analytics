@@ -2903,8 +2903,33 @@ footer {
 }
 
 .col-return {
-    width: 78px;
+    width: 132px;
+    min-width: 124px;
     text-align: right;
+    white-space: nowrap;
+}
+
+.qdii-return-cell {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 3px;
+    vertical-align: middle;
+    text-align: right;
+    min-width: 110px;
+}
+
+.qdii-return-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    line-height: 1.25;
+}
+
+.qdii-return-lbl {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    font-weight: 500;
     white-space: nowrap;
 }
 

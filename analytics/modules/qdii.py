@@ -1121,7 +1121,7 @@ def fetch_fund_scale(session: requests.Session, code: str) -> Optional[str]:
     return None
 
 
-@cached("qdii:passive_funds_v44", ttl=86400, stale_ttl=86400 * 7, sync_on_cold=True)
+@cached("qdii:passive_funds_v45", ttl=86400, stale_ttl=86400 * 7, sync_on_cold=True)
 def get_qdii_passive_funds() -> Dict[str, Any]:
     """获取国内纳斯达克100 & 标普500 场外被动 QDII A类基金数据列表
 
@@ -1138,16 +1138,17 @@ def get_qdii_passive_funds() -> Dict[str, Any]:
             "nav_date": info.get("nav_date"),
         }
 
-    # 2. 尝试 雪球 并发获取每个基金的真实近1年收益率、最大回撤、年化波动率与夏普比率
+    # 2. 尝试 雪球 并发获取每个基金的真实近1年/近3年收益率、最大回撤、年化波动率与夏普比率
     try:
         def fetch_xq_fund_metrics(code: str) -> Tuple[str, Dict[str, Optional[float]]]:
             metrics: Dict[str, Optional[float]] = {
                 "return_1y": None,
+                "return_3y": None,
                 "max_drawdown": None,
                 "volatility": None,
                 "sharpe": None,
             }
-            # 1. 尝试从雪球阶段业绩获取近1年收益率与最大回撤
+            # 1. 尝试从雪球阶段业绩获取近1年、近3年收益率与最大回撤
             try:
                 df1 = ak.fund_individual_achievement_xq(symbol=code)
                 if df1 is not None and not df1.empty:
@@ -1159,6 +1160,12 @@ def get_qdii_passive_funds() -> Dict[str, Any]:
                             metrics["return_1y"] = safe_float(r_val)
                         if mdd_val is not None and not pd.isna(mdd_val):
                             metrics["max_drawdown"] = safe_float(mdd_val)
+
+                    row_3y = df1[(df1["业绩类型"] == "阶段业绩") & (df1["周期"] == "近3年")]
+                    if not row_3y.empty:
+                        r3_val = row_3y.iloc[0].get("本产品区间收益")
+                        if r3_val is not None and not pd.isna(r3_val):
+                            metrics["return_3y"] = safe_float(r3_val)
             except Exception as e:
                 logger.debug(f"雪球获取阶段业绩失败 [{code}]: {e}")
 
@@ -1189,6 +1196,8 @@ def get_qdii_passive_funds() -> Dict[str, Any]:
                     rank_map[c] = {}
                 if m_dict.get("return_1y") is not None:
                     rank_map[c]["return_1y"] = m_dict["return_1y"]
+                if m_dict.get("return_3y") is not None:
+                    rank_map[c]["return_3y"] = m_dict["return_3y"]
                 if m_dict.get("max_drawdown") is not None:
                     rank_map[c]["max_drawdown"] = m_dict["max_drawdown"]
                 if m_dict.get("volatility") is not None:
@@ -1262,6 +1271,7 @@ def get_qdii_passive_funds() -> Dict[str, Any]:
         live_data = rank_map.get(code, {})
 
         r_1y = live_data.get("return_1y")
+        r_3y = live_data.get("return_3y")
         nav_val = live_data.get("nav")
         nav_date = live_data.get("nav_date")
         mdd_val = live_data.get("max_drawdown")
@@ -1269,6 +1279,7 @@ def get_qdii_passive_funds() -> Dict[str, Any]:
         shp_val = live_data.get("sharpe")
 
         final_r1y = r_1y if r_1y is not None else item["default_return_1y"]
+        final_r3y = r_3y if r_3y is not None else item.get("default_return_3y")
         final_nav = nav_val if nav_val is not None else item["default_nav"]
         final_date = nav_date if nav_date else item["default_nav_date"]
 
@@ -1334,6 +1345,7 @@ def get_qdii_passive_funds() -> Dict[str, Any]:
             "nav": final_nav,
             "nav_date": final_date,
             "return_1y": final_r1y,
+            "return_3y": final_r3y,
             "max_drawdown": mdd_val,
             "volatility": vol_val,
             "sharpe": shp_val,

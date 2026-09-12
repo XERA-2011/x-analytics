@@ -205,6 +205,10 @@ class QDIIController {
             const r1yClass = typeof APP_CONFIG !== 'undefined' ? APP_CONFIG.getChangeClass(r1y) : (r1y > 0 ? 'text-up' : r1y < 0 ? 'text-down' : '');
             const r1yStr = r1y != null ? `${r1y > 0 ? '+' : ''}${utils.formatPercentage(r1y)}` : '--';
 
+            const r3y = item.return_3y;
+            const r3yClass = r3y != null ? (typeof APP_CONFIG !== 'undefined' ? APP_CONFIG.getChangeClass(r3y) : (r3y > 0 ? 'text-up' : r3y < 0 ? 'text-down' : '')) : '';
+            const r3yStr = r3y != null ? `${r3y > 0 ? '+' : ''}${utils.formatPercentage(r3y)}` : '--';
+
             const mdd = item.max_drawdown;
             const mddStr = mdd != null ? `${utils.formatPercentage(mdd)}` : '--';
 
@@ -263,7 +267,18 @@ class QDIIController {
                         </div>
                     </td>
                     <td class="col-allocation qdii-clickable" data-code="${item.code}" data-name="${item.name}" title="点击查看 ${item.name} 前十大重仓股">${allocHtml}</td>
-                    <td class="col-return font-mono ${r1yClass}" style="font-weight: 700;">${r1yStr}</td>
+                    <td class="col-return">
+                        <div class="qdii-return-cell">
+                            <div class="qdii-return-row">
+                                <span class="qdii-return-lbl">近一年</span>
+                                <span class="font-mono ${r1yClass}" style="font-weight: 700;">${r1yStr}</span>
+                            </div>
+                            <div class="qdii-return-row">
+                                <span class="qdii-return-lbl">近三年</span>
+                                <span class="font-mono ${r3yClass}" style="font-weight: ${r3y != null ? '700' : '400'}; ${r3y == null ? 'color: var(--text-tertiary);' : ''}">${r3yStr}</span>
+                            </div>
+                        </div>
+                    </td>
                     <td class="col-drawdown font-mono" style="color: var(--text-secondary);">${mddStr}</td>
                     <td class="col-volatility font-mono" style="color: var(--text-secondary);">${volStr}</td>
                     <td class="col-fee font-mono">${item.fee_rate}</td>
@@ -404,7 +419,7 @@ class QDIIController {
                             <th class="col-rank">排名</th>
                             <th class="col-name">基金名称</th>
                             <th class="col-allocation">资产配置 / 仓位</th>
-                            <th class="col-return">近1年收益</th>
+                            <th class="col-return">收益</th>
                             <th class="col-drawdown">近1年回撤</th>
                             <th class="col-volatility">年化波动率</th>
                             <th class="col-fee">综合费率</th>
