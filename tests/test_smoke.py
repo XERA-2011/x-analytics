@@ -82,3 +82,13 @@ def test_index_valuation_routes():
         response = requests.get(f"{BASE_URL}{route}")
         assert response.status_code in (200, 503, 202) # support 202/503 for warming up states
 
+
+def test_qdii_routes():
+    routes = [
+        "/qdii/funds",
+        "/qdii/holdings/519981"
+    ]
+    for route in routes:
+        response = requests.get(f"{BASE_URL}{route}")
+        assert response.status_code in (200, 503, 202)
+

@@ -378,6 +378,20 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "default_asset_allocation": {"stock_pct": 99.17, "stock_us_pct": 99.17, "cash_pct": 0.76, "bond_pct": 0.0},
         "tag": "消费精选",
     },
+    {
+        "code": "519981",
+        "name": "长信标普100等权重指数(QDII)A",
+        "index_code": "SPX_100",
+        "index_name": "标普100",
+        "fee_rate": "1.30%",
+        "tracking_error": "0.35%",
+        "inception_date": "2011-03-30",
+        "default_return_1y": 12.22,
+        "default_nav": 2.5744,
+        "default_nav_date": "2026-09-10",
+        "default_asset_allocation": {"stock_pct": 85.54, "stock_us_pct": 85.54, "cash_pct": 3.38, "bond_pct": 13.19},
+        "tag": "标普100",
+    },
 
     # --- 主动型 QDII 精选 (参考 DCA HUB 推荐列表) ---
     {
@@ -1107,7 +1121,7 @@ def fetch_fund_scale(session: requests.Session, code: str) -> Optional[str]:
     return None
 
 
-@cached("qdii:passive_funds_v43", ttl=86400, stale_ttl=86400 * 7, sync_on_cold=True)
+@cached("qdii:passive_funds_v44", ttl=86400, stale_ttl=86400 * 7, sync_on_cold=True)
 def get_qdii_passive_funds() -> Dict[str, Any]:
     """获取国内纳斯达克100 & 标普500 场外被动 QDII A类基金数据列表
 
@@ -1284,9 +1298,9 @@ def get_qdii_passive_funds() -> Dict[str, Any]:
             asset_alloc = dict(default_alloc)
 
         # 对于所有主投美股市场的指数/行业基金，其全部股票资产 100% 投资于美股上市成份股
-        US_MARKET_INDICES = ["NDX", "SPX", "NBI", "TECH", "SPX_TECH", "CONS", "SPX_CONS", "SEMI"]
+        US_MARKET_INDICES = ["NDX", "SPX", "NBI", "TECH", "SPX_TECH", "CONS", "SPX_CONS", "SEMI", "SPX_100"]
         if (
-            (item.get("index_code") in US_MARKET_INDICES or item.get("tag") in ["纳指100", "标普500", "生物科技", "信息科技", "消费精选", "半导体"])
+            (item.get("index_code") in US_MARKET_INDICES or item.get("tag") in ["纳指100", "标普500", "生物科技", "信息科技", "消费精选", "半导体", "标普100"])
             and "stock_us_pct" not in asset_alloc
             and "stock_pct" in asset_alloc
             and not any(k in asset_alloc for k in ["stock_hk_pct", "stock_cn_pct", "stock_other_pct"])
