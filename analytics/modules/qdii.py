@@ -1121,7 +1121,7 @@ def fetch_fund_scale(session: requests.Session, code: str) -> Optional[str]:
     return None
 
 
-@cached("qdii:passive_funds_v45", ttl=86400, stale_ttl=86400 * 7, sync_on_cold=True)
+@cached("qdii:passive_funds_v46", ttl=86400, stale_ttl=86400 * 7, sync_on_cold=True)
 def get_qdii_passive_funds() -> Dict[str, Any]:
     """获取国内纳斯达克100 & 标普500 场外被动 QDII A类基金数据列表
 
@@ -1247,19 +1247,37 @@ def get_qdii_passive_funds() -> Dict[str, Any]:
     except Exception as err:
         print(f"⚠️ 资产配置、费率与规模并发抓取跳过: {err}")
 
-    # 4. 获取所有注册基金的场外日常申购限额状态 (开放申购/限大额/暂停申购)
+    # 4. 获取所有注册基金的场外日常申购限额状态与单日累计限额金额
     status_map: Dict[str, str] = {}
+    limit_map: Dict[str, Optional[float]] = {}
     try:
-        df_daily = ak.fund_open_fund_daily_em()
-        if df_daily is not None and not df_daily.empty:
-            for _, row in df_daily.iterrows():
-                code = row.get("基金代码")
+        df_purchase = ak.fund_purchase_em()
+        if df_purchase is not None and not df_purchase.empty:
+            for _, row in df_purchase.iterrows():
+                code = str(row.get("基金代码", "")).zfill(6)
                 if code in target_codes:
                     status = row.get("申购状态")
                     if status:
                         status_map[code] = status
+                    limit_val = row.get("日累计限定金额")
+                    if limit_val is not None and not pd.isna(limit_val):
+                        try:
+                            limit_map[code] = float(limit_val)
+                        except (ValueError, TypeError):
+                            pass
     except Exception as err:
-        print(f"⚠️ 天天基金获取每日申购状态报错: {err}")
+        print(f"⚠️ 天天基金获取申购状态与限额报错: {err}")
+        try:
+            df_daily = ak.fund_open_fund_daily_em()
+            if df_daily is not None and not df_daily.empty:
+                for _, row in df_daily.iterrows():
+                    code = str(row.get("基金代码", "")).zfill(6)
+                    if code in target_codes:
+                        status = row.get("申购状态")
+                        if status:
+                            status_map[code] = status
+        except Exception:
+            pass
 
     # 5. 获取原生指数收益对标基准
     benchmarks = fetch_us_index_returns()
@@ -1320,6 +1338,16 @@ def get_qdii_passive_funds() -> Dict[str, Any]:
 
         fee_rate = fee_map.get(code) or item["fee_rate"]
         buy_status = status_map.get(code) or "开放申购"
+        raw_limit = limit_map.get(code)
+        buy_limit_str = None
+        if raw_limit is not None and 0 < raw_limit < 1000000000:
+            if raw_limit >= 10000:
+                if raw_limit % 10000 == 0:
+                    buy_limit_str = f"{int(raw_limit // 10000)}万元"
+                else:
+                    buy_limit_str = f"{raw_limit / 10000:.1f}万元"
+            else:
+                buy_limit_str = f"{int(raw_limit)}元"
 
         # 针对主动型基金动态计算其风格标签
         fund_tag = item.get("tag")
@@ -1353,6 +1381,8 @@ def get_qdii_passive_funds() -> Dict[str, Any]:
             "allocation_estimated": item.get("allocation_estimated", False),
             "tag": fund_tag,
             "buy_status": buy_status,
+            "buy_limit": buy_limit_str,
+            "buy_limit_val": raw_limit,
             "scale": scale_map.get(code) or item.get("default_scale") or "--",
         })
 

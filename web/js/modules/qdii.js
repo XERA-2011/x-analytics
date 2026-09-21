@@ -244,14 +244,23 @@ class QDIIController {
             const tagHtml = item.tag ? `<span class="fund-tag" style="background: rgba(115,115,115,0.08); color: var(--text-secondary); font-size: 10px; padding: 1px 4px; border-radius: 3px; font-weight: 600; margin-left: 6px; border: 1px solid rgba(115,115,115,0.25); display: inline-block; vertical-align: middle; transform: translateY(-1.5px);">${item.tag}</span>` : '';
 
             const buyStatus = item.buy_status || '开放申购';
+            const buyLimit = item.buy_limit;
             let statusText = '开放';
             let statusClass = 'status-open';
+            let statusTooltip = '正常开放申购';
+
             if (buyStatus === '限大额') {
-                statusText = '限额';
+                statusText = buyLimit ? `限${buyLimit}` : '限额';
                 statusClass = 'status-limit';
+                statusTooltip = buyLimit ? `单日累计购买上限：${buyLimit}` : '限制大额申购';
             } else if (buyStatus.includes('暂停')) {
                 statusText = '暂停';
                 statusClass = 'status-paused';
+                statusTooltip = buyLimit ? `暂停申购 (单日限额：${buyLimit})` : '暂停申购';
+            } else if (buyStatus.includes('场内')) {
+                statusText = '场内';
+                statusClass = 'status-etf';
+                statusTooltip = '场内交易型基金 (无场外申购限额)';
             }
 
             return `
@@ -283,7 +292,7 @@ class QDIIController {
                     <td class="col-volatility font-mono" style="color: var(--text-secondary);">${volStr}</td>
                     <td class="col-fee font-mono">${item.fee_rate}</td>
                     <td class="col-scale font-mono" style="color: var(--text-secondary);">${item.scale || '--'}</td>
-                    <td class="col-status"><span class="status-badge ${statusClass}">${statusText}</span></td>
+                    <td class="col-status"><span class="status-badge ${statusClass}" title="${statusTooltip}">${statusText}</span></td>
                     <td class="col-date" style="color: var(--text-secondary);">${item.inception_date || '--'}</td>
                 </tr>
             `;
@@ -307,14 +316,23 @@ class QDIIController {
             const scaleShort = item.scale ? item.scale.replace('亿元', '亿') : '--';
 
             const buyStatus = item.buy_status || '开放申购';
+            const buyLimit = item.buy_limit;
             let statusText = '开放';
             let statusClass = 'status-open';
+            let statusTooltip = '正常开放申购';
+
             if (buyStatus === '限大额') {
-                statusText = '限额';
+                statusText = buyLimit ? `限${buyLimit}` : '限额';
                 statusClass = 'status-limit';
+                statusTooltip = buyLimit ? `限制大额申购 (单日上限：${buyLimit})` : '限制大额申购';
             } else if (buyStatus.includes('暂停')) {
                 statusText = '暂停';
                 statusClass = 'status-paused';
+                statusTooltip = buyLimit ? `暂停申购 (单日限额：${buyLimit})` : '暂停申购';
+            } else if (buyStatus.includes('场内')) {
+                statusText = '场内';
+                statusClass = 'status-etf';
+                statusTooltip = '场内交易型基金 (无场外申购限额)';
             }
 
             const tagHtml = item.tag ? `<span class="qdii-mcard-tag">${item.tag}</span>` : '';
@@ -353,7 +371,7 @@ class QDIIController {
                             </div>
                         </div>
                         <div class="qdii-mcard-status-col">
-                            <span class="status-badge ${statusClass}">${statusText}</span>
+                            <span class="status-badge ${statusClass}" title="${statusTooltip}">${statusText}</span>
                         </div>
                     </div>
                     <div class="qdii-mcard-grid">
