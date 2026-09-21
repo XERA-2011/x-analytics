@@ -138,3 +138,24 @@ python -c "import redis, os; from dotenv import load_dotenv; load_dotenv('.env.l
 # 重置历史数据表
 python scripts/reset_sentiment_history.py
 ```
+
+---
+
+## 🚀 生产部署 (本地一键发布)
+
+为彻底避免 GitHub Actions 境外节点执行 SSH 导致阿里云安全中心触发【ECS在非常用地登录】告警邮件，项目提供了全自动本地发布脚本：
+
+```bash
+# 1. 全自动发布 (自动检查代码 -> git push -> 监听镜像构建 -> 远程更新容器 -> 自动健康检查)
+./deploy.sh
+
+# 2. 镜像已构建完成，直接在服务器拉取并重启 (10秒生效)
+./deploy.sh --skip-build
+
+# 3. 查看线上容器实时日志
+./deploy.sh --logs
+
+# 4. 查看服务器全部容器状态
+./deploy.sh --status
+```
+
