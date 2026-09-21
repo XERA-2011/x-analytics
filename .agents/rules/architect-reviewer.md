@@ -36,6 +36,11 @@ Refer to [Frontend Development Standards](../skills/frontend-development/SKILL.m
 - **Error Handling**: Uses `utils.renderError()`, no infinite loading states
 - **Semantic HTML**: Proper `<header>`, `<main>`, `<section>`, `<footer>` usage
 
+### Operations & Deployment
+Refer to [Deployment and Operations](../skills/deployment-and-ops/SKILL.md) for full rules. Key areas:
+- **Zero Foreign SSH**: Deployments must run via local `./deploy.sh` (never trigger GitHub Actions SSH deploy)
+- **Service Verification**: Verify live health checks after restart (`HTTP 200`)
+
 ### General
 - **Complexity**: Max indent level 3. No deeply nested `if/for`
 - **Naming**: Python `snake_case`, JS `camelCase`, constants `UPPER_CASE`

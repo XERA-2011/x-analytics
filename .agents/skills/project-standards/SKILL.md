@@ -194,11 +194,12 @@ For 24/7 markets (Crypto, Metals) or high-volatility assets:
 - [ ] No Python 3.10+ syntax (Docker uses 3.9)
 - [ ] Clean up temporary files (e.g., `test_*.py`, `debug.json`)
 
-### Before Merging
+### Before Merging & Deploying
 - [ ] Tested on real data source (not cached/stale)
 - [ ] Verified warming up → loaded → error states work
 - [ ] No console errors in browser
 - [ ] Responsive design checked on 3 breakpoints
+- [ ] Deploy via local trusted script (`./deploy.sh`) to eliminate foreign SSH security alerts
 
 ---
 

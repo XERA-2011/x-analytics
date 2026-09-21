@@ -55,6 +55,7 @@ npm install -g prettier
 > After resolving major bugs or discovering new best practices, check if the following files need updates:
 > - `.agents/skills/python-development/SKILL.md`
 > - `.agents/skills/frontend-development/SKILL.md`
+> - `.agents/skills/deployment-and-ops/SKILL.md`
 > - `.agents/rules/*.md`
 
 ---

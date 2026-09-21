@@ -49,7 +49,11 @@ Before finishing, you **MUST** perform these final actions:
     -   "If the API fails, does the UI show an error?"
     -   "Are error messages centered?"
 
-4.  **Self-Correction**: If any check fails, fix it immediately.
+4.  **Deployment Check**:
+    -   When deploying changes to production, **ALWAYS use `./deploy.sh` (or `./deploy.sh --skip-build`)**.
+    -   **NEVER trigger `deploy-aliyun.yml` via GitHub Actions** (to prevent Aliyun foreign IP login alerts).
+
+5.  **Self-Correction**: If any check fails, fix it immediately.
 
 ---
 

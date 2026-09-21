@@ -118,8 +118,8 @@ Complex logic must be split by business domain into separate modules under `web/
 |:-------|:-----|:------------|
 | Global Market | `market.js` | Combined Asia & Western markets (indices, fear & greed, bonds, LPR, treasury, heat map) |
 | AI Industry | `ai.js` | AI 7-layer supply chain monitoring & cycle indicators |
-| Metals | `metals.js` | Precious metals spot prices, gold/silver ratio, fear & greed |
-| ETF | `etf.js` | ETF heatmaps and rankings |
+| Gold & Metals | `gold.js` | Precious metals spot prices, gold/silver ratio, fear & greed |
+| QDII Funds | `qdii.js` | QDII fund dashboard, premium/discount rates, top holdings, purchase limits, 1Y/3Y returns |
 
 ## 7. User Experience & Resilience
 ### Error Handling & Loading

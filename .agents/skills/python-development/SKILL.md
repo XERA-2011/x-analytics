@@ -22,10 +22,13 @@ description: "⚠️ MANDATORY: Read before modifying ANY .py files. Contains Py
   - `us_spot_helper.py`: EastMoney direct HTTP Push2 API client for real-time US market data.
   - `fear_greed.py`: Base fear & greed index calculation logic.
 - **Modules (`analytics/modules/`)**: Business logic grouped by domain.
-  - `market_cn/`: A-share market (indices, leaders/sectors, bonds, LPR, fear & greed).
+  - `market_asia/`: A-share & Asian markets (indices, leaders/sectors, bonds, LPR, fear & greed).
   - `market_hk/`: Hong Kong market (indices, fear & greed).
-  - `market_us/`: US market (indices, leaders, treasury, fear & greed, heat map).
-  - `metals/`: Precious metals (spot prices, gold/silver, fear & greed).
+  - `market_western/`: US & Western markets (indices, leaders, treasury, fear & greed, heat map).
+  - `gold/`: Precious metals (gold/silver spot prices, gold/silver ratio, fear & greed).
+  - `qdii.py`: QDII funds tracking (real-time estimates, premium/discount rates, top holdings, purchase limits, 1Y/3Y returns).
+  - `index_valuation.py`: Stock index valuation metrics and percentiles.
+  - `ai/`: AI supply chain 7-layer hierarchy and industry cycle indicators.
   - `signals/`: Cross-market technical signals (overbought/oversold).
   - Modules should focus on data fetching and processing.
   - **Stateless**: Modules should not hold state; rely on Redis cache.
