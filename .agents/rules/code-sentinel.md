@@ -1,66 +1,34 @@
 ---
-description: Run automated code quality checks (Linting, Formatting, Type Checking)
+description: Automated code quality checks (Linting, Formatting, Type Checking, and Python 3.9 compatibility).
 ---
 
 # Code Sentinel Workflow
 
-This workflow executes a suite of automated tools to ensure code quality and consistency.
+Automated checks to ensure code hygiene and runtime compatibility before committing.
 
-## Capabilities
-- **Python**: Uses `ruff` for fast linting/formatting and `mypy` for static type checking.
-- **Web**: Uses `prettier` (via npx) for formatting HTML/CSS/JS.
+## Quality Checks
 
-## Usage
-
-### 1. Quick Check (Fast)
-Run basic linting and formatting without strict type checking.
+### 1. Fast Linting & Formatting (Ruff)
 ```bash
-python .shared/code-sentinel/scripts/check.py --quick
+# Check code style and common bugs
+ruff check analytics/ server.py
+
+# Automatically fix fixable issues
+ruff check analytics/ server.py --fix
 ```
 
-### 2. Full Audit (Strict)
-Run all checks including strict type analysis.
+### 2. Static Type Analysis (MyPy)
 ```bash
-python .shared/code-sentinel/scripts/check.py --full
+mypy analytics/
 ```
 
-### 3. Auto Fix
-Attempt to automatically fix linting and formatting errors.
+### 3. Python 3.9 Compatibility Scan (CRITICAL)
+Scan for Python 3.10+ syntax that will crash the Python 3.9 Docker container:
 ```bash
-python .shared/code-sentinel/scripts/check.py --fix
+grep -rn ": dict\[\|: list\[\| | None\|-> dict\[\|-> list\[" analytics/ --include="*.py"
 ```
 
-### 4. Python 3.9 Compatibility Check
-Scan for Python 3.10+ syntax that will break Docker builds.
+### 4. Web Formatting (Prettier)
 ```bash
-# Check for incompatible type syntax
-grep -rn ": dict\[" analytics/ --include="*.py"
-grep -rn ": list\[" analytics/ --include="*.py"
-grep -rn " | None" analytics/ --include="*.py"
-grep -rn "-> dict\[" analytics/ --include="*.py"
+npx prettier --check "web/**/*.{html,css,js}"
 ```
-
-## Setup
-If tools are missing, install them:
-```bash
-pip install ruff mypy
-# For web
-npm install -g prettier
-```
-
----
-
-## 📚 Lessons Learned Reminder
-
-> After resolving major bugs or discovering new best practices, check if the following files need updates:
-> - `.agents/skills/python-development/SKILL.md`
-> - `.agents/skills/frontend-development/SKILL.md`
-> - `.agents/skills/deployment-and-ops/SKILL.md`
-> - `.agents/rules/*.md`
-
----
-
-## ⚙️ Language Policy
-
-> **All content in `.agents/` directory MUST be written in English.**
-> This ensures consistency and optimal AI comprehension.

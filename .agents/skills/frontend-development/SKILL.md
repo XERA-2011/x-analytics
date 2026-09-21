@@ -7,146 +7,69 @@ description: "⚠️ MANDATORY: Read before modifying ANY .js/.html/.css files. 
 
 ## 1. Core Principles
 - **Mobile-First**: Design for the smallest screen (iPhone SE/mini) first, then expand.
-- **Simplicity**: Minimalist UI, single-column flow on mobile.
-- **Unified Styles**: Use a single `styles.css` instead of fragmented files.
-
-## 2. CSS Architecture (`web/css/styles.css`)
-### Responsive Grid
-Use `auto-fit` for automatic column adjustment without media queries where possible:
-```css
-.grid {
-    display: grid;
-    gap: 16px;
-    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
-}
-```
-
-### Breakpoints
-- **Mobile**: Default (< 768px) -> Single column
-- **Tablet**: > 768px
-- **Desktop**: > 1024px
-
-### Color System (Design Tokens)
-| Token | Var | Description |
-|:---|:---|:---|
-| **Primary** | `--primary` | Main text, brand elements (#000000) |
-| **Accent Red** | `--accent-red` | Negative values, danger (#ef4444) |
-| **Accent Green** | `--accent-green` | Positive values, success (#22c55e) |
-| **Accent Blue** | `--accent-blue` | Links, info (#3b82f6) |
-| **Text Sec** | `--text-secondary` | Subtitles, meta info (#737373) |
-| **Background** | `--bg-body` / `--bg-card` | Surface layers |
-
-### Typography
-- **Sans**: System fonts for UI (Inter/San Francisco)
-- **Mono**: Data values for alignment (JetBrains Mono/Consolas)
-- **Sizes**: Base 14px, Title 16px, Section Header 20px, Hero Score 36px
-
-## 3. Component Patterns
-
-### Cards (`.card`)
-Standard container for all widgets.
-- Use `.card-header` with flexbox for titles + actions.
-- Use `.card-body` for content.
-- **Hero Card**: Add `.hero` class for top border accent.
-
-### Data Lists (`.list-item`)
-Standard row for financial data.
-- **Left**: `.item-main` (Title + Subtitle)
-- **Right**: `.item-value` (Mono font) + `.item-change` (Color coded)
-
-### Heatmap Grid (`.heat-grid`)
-For displaying matrix data (Score + Metrics).
-- Returns to 2-column grid even on mobile.
-- Use `.heat-cell` for items.
-
-### Horizontal Scroll (`.bond-scroll`)
-For series data (Yield Curves) that exceeds screen width.
-- Must enable `overflow-x: auto`.
-- Hide scrollbars for cleaner UI (`scrollbar-width: none`).
-
-## 4. HTML Structure
-- Use Semantic Tags: `<header>`, `<main>`, `<section>`, `<footer>`.
-- **JS-Driven**: Keep HTML skeleton simple; render data-heavy content via JS.
-
-## 5. JavaScript Rendering & Interaction
-
-### State Management
-- **Manual Refresh Only**: Do not use `setInterval` for auto-refreshing data.
-- **Loading States**: UI must show immediate feedback (spinners/skeleton) upon user action.
-
-### Data Formatting
-- **Null Handling**: Missing data (`null`/`undefined`) must render as `--`. Never show `0` or `NaN`.
-- **Formatters**:
-  - Use `utils.formatNumber(val)` for general stats.
-  - Use `utils.formatPercentage(val)` for rates/ratios.
-  - Use `utils.formatTime(ts)` for timestamps.
-
-### Market-Specific Colors
-- **CN / Metals / Crypto**:
-  - Up (涨): **Red** (`var(--accent-red)`) `.text-up`
-  - Down (跌): **Green** (`var(--accent-green)`) `.text-down`
-- **US Market**:
-  - Up (Gain): **Green** (`var(--accent-green)`) `.text-up-us`
-  - Down (Loss): **Red** (`var(--accent-red)`) `.text-down-us`
-
-### DOM Manipulation
-- **Class Coupling**: JS render functions must use classes defined in `styles.css`.
-- **Injection**: Use `innerHTML` with template literals for list rendering; ensure content is escaped if user-generated (not applicable for internal API data).
-
-## 6. JavaScript Architecture
-### Modular Design (Controller Pattern)
-Complex logic must be split by business domain into separate modules under `web/js/modules/`:
-- **Modules**: Separate files for distinct business logic (e.g., `market.js`, `metals.js`).
-  - Each module exports Controller class(es) (e.g., `MarketController`, `AsiaMarketController`, `WesternMarketController`).
-  - Controllers handle data fetching (`loadData`) and rendering (`render*`).
-  - Modules **must not** hardcode global event listeners; they should focus on their specific DOM section.
-
-### App Shell (`main.js`)
-- Acts as the central orchestrator.
-- **Responsibilities**:
-  - Global Event Listeners (Keyboard shortcuts, window resize).
-  - Tab Switching logic.
-  - Instantiating Controllers in `this.modules`.
-  - Routing `refreshCurrentTab()` calls to the active controller.
-
-- **`api.js`**: All network requests and response unwrapping.
-- **`charts.js`**: ECharts wrappers, theme configuration, and chart rendering (includes Treemap, Gauge, Line, Bar).
-- **`utils.js`**: Shared formatting utilities (`formatNumber`, `formatPercentage`, `formatTime`, `renderError`).
-
-### Module Files (`web/js/modules/`)
-| Module | File | Description |
-|:-------|:-----|:------------|
-| Global Market | `market.js` | Combined Asia & Western markets (indices, fear & greed, bonds, LPR, treasury, heat map) |
-| AI Industry | `ai.js` | AI 7-layer supply chain monitoring & cycle indicators |
-| Gold & Metals | `gold.js` | Precious metals spot prices, gold/silver ratio, fear & greed |
-| QDII Funds | `qdii.js` | QDII fund dashboard, premium/discount rates, top holdings, purchase limits, 1Y/3Y returns |
-
-## 7. User Experience & Resilience
-### Error Handling & Loading
-- **Unified Error Rendering**: ALWAYS use `utils.renderError(containerId, msg)` instead of ad-hoc `innerHTML`. This ensures consistent styling, centering, and icon usage.
-- **No Infinite Loading**: EVERY async operation must handle failure states. Ensure containers never get stuck in "Loading..." state.
-- **Partial Failure Robustness**: When loading multiple independent data sources (e.g., via `Promise.all`), use `.catch()` on individual promises or `Promise.allSettled` to prevent one failure from blocking others.
-- **Layout Stability**: Error/Loading containers must have `width: 100%` / `flex: 1` to prevent layout collapse in Flex/Grid parents.
-
-### Interactive Elements
-- **Conditional Visibility**: Info/Action buttons (like "Explain") must be `display: none` by default and only shown (via JS) when data is successfully loaded and relevant context is available. Avoid showing non-functional buttons.
-- **Icons**: Use semantic icons:
-  - Wait/Warming Up: `clock`
-  - Info: `help-circle`
-  - Error: `alert-circle`
+- **Simplicity**: Minimalist UI, single-column flow on mobile (< 768px).
+- **Unified Styles**: Use the central design token system in `styles.css` instead of fragmented or inline styles.
 
 ---
 
-## 📚 Lessons Learned Reminder
+## 2. CSS Architecture & Color System (`web/css/styles.css`)
 
-> After resolving major issues or discovering new best practices, check if the following files need updates:
-> - `.agents/skills/python-development/SKILL.md` - Python development guidelines
-> - `.agents/skills/frontend-development/SKILL.md` - Frontend development guidelines
-> - `.agents/rules/*.md` - Rule/workflow configurations
+### 2.1 Responsive Layout
+- **Mobile (< 768px)**: Default single-column layout. Touch targets must be at least 44×44px.
+- **Desktop (>= 1024px)**: Expanded multi-column grid (`display: grid` with `auto-fit` / `minmax`).
+
+### 2.2 Color Tokens & Market Conventions
+| Market Context | Up / Positive | Down / Negative | CSS Classes |
+|:---------------|:--------------|:----------------|:------------|
+| **CN / HK / Metals / Crypto** | **Red** 🔴 (`#ef4444` / `#dc2626`) | **Green** 🟢 (`#22c55e` / `#16a34a`) | `.text-up` / `.text-down` |
+| **US / Western Markets** | **Green** 🟢 (`#22c55e` / `#16a34a`) | **Red** 🔴 (`#ef4444` / `#dc2626`) | `.text-up-us` / `.text-down-us` |
+
+- **Chart Palette**: ECharts indicators and visual gauges must adhere to the project palette `#16a34a` (green) and `#dc2626` (red).
 
 ---
 
-## ⚙️ Language Policy
+## 3. Component & DOM Patterns
 
-> **All content in `.agents/` directory MUST be written in English.**
-> This ensures consistency and optimal AI comprehension.
+### 3.1 Standard Cards (`.card`)
+Container for UI widgets:
+- `.card-header`: Flexbox container for titles + status badges / action buttons.
+- `.card-body`: Content container.
+- `.hero`: Class added for prominent top-card border accents.
+
+### 3.2 Data Formatting & Null Safety
+- **Null Safety**: Missing or null data (`null`, `undefined`) MUST render as `--`. Never render `0`, `NaN`, or empty strings as data.
+- **Shared Helpers**:
+  - `utils.formatNumber(val)`: General numbers and prices.
+  - `utils.formatPercentage(val)`: Rates, yields, and percentages.
+  - `utils.formatTime(ts)`: Timestamps and dates.
+
+---
+
+## 4. JavaScript Architecture (Controller Pattern)
+
+The web frontend is structured cleanly without heavy frameworks:
+
+### 4.1 Orchestrator (`web/js/main.js`)
+Acts as the central application shell:
+- Manages tab switching, URL hash/query sync, and window resize listeners.
+- Instantiates and orchestrates module controllers in `this.modules`.
+- Routes refresh events to the currently active controller.
+
+### 4.2 Shared Services
+- **`web/js/api.js`**: Centralized HTTP client. Automatically handles `status: "ok" | "warming_up" | "error"`.
+- **`web/js/charts.js`**: ECharts lifecycle manager, auto-resize handler, and unified theme configuration.
+- **`web/js/utils.js`**: Shared formatting, DOM helpers, and standard error rendering.
+
+### 4.3 Domain Controllers (`web/js/modules/*.js`)
+Each business tab/view has a dedicated Controller class in `web/js/modules/`:
+- **Single Responsibility**: Encapsulates data fetching (`loadData`) and DOM rendering for its specific view.
+- **Scoped Events**: Controllers must never bind loose event listeners to `window` or `document`. All UI event handling must be scoped within their container element.
+- **Extensible**: New views are added simply by creating a new `*Controller` in `web/js/modules/` and registering it in `main.js`. No changes to documentation required.
+
+---
+
+## 5. Resilience & Error Handling
+
+- **Unified Error Display**: ALWAYS use `utils.renderError(containerId, msg)` instead of manual `innerHTML`. This guarantees consistent styling, centering, and icon layout.
+- **Zero Infinite Spinners**: Every asynchronous operation MUST have an error branch. Never leave containers stuck in loading states.
+- **Partial Failure Isolation**: When fetching multiple independent datasets, use `Promise.allSettled` or individual `.catch()` handlers so that one failing endpoint never breaks the entire dashboard.

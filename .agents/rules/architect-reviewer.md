@@ -1,6 +1,7 @@
 ---
-description: Perform deep architectural reviews and logic analysis
+description: Perform deep architectural reviews and logic analysis against project guidelines.
 ---
+
 # Architect & Reviewer Workflow
 
 This workflow is for deep, intelligent analysis of code structure, logic, and design patterns.
@@ -8,48 +9,38 @@ This workflow is for deep, intelligent analysis of code structure, logic, and de
 ## Usage
 
 ### 1. Structured Review
-Ask the agent to review a specific file or module against the project guidelines.
-> "Run Architect Review on `analytics/modules/metals/fear_greed.py` focusing on caching strategy."
-> "Run Architect Review on `web/js/modules/market.js` checking for UI compliance."
+Request a review for a specific module or component:
+> "Run Architect Review on `analytics/modules/qdii.py` focusing on caching strategy and anti-scraping."
+> "Run Architect Review on `web/js/modules/qdii.js` checking for UI and null-safety compliance."
 
 ### 2. Architecture Plan
-Before starting a big feature, ask for an architectural plan.
+Before implementing a major feature, request an architectural plan:
 > "Draft an architecture plan for a new 'Portfolio Tracker' module."
-
-## Review Checklist
-
-The reviewer must enforce all standards defined in the Skills documents:
-
-### Backend (Python)
-Refer to [Python Development Standards](../skills/python-development/SKILL.md) for the full rules. Key areas:
-- **Type Safety**: All functions typed (`mypy` compliant)
-- **No Magic Numbers**: Constants extracted (e.g., `MAX_RETRIES = 5`)
-- **Python 3.9 Compatibility**: No `X | Y`, `dict[K, V]`, `list[T]` syntax
-- **Caching**: Uses `@cached` decorator with centralized TTL from `settings`
-- **Anti-Scraping**: Uses `akshare_call_with_retry`, never direct `ak.xxx()` calls
-
-### Frontend (JS/HTML/CSS)
-Refer to [Frontend Development Standards](../skills/frontend-development/SKILL.md) for the full rules. Key areas:
-- **Mobile-First**: Layout functional on iPhone SE/mini
-- **Color Conventions**: CN/HK = red-up/green-down, US = green-up/red-down
-- **CSS Variables**: Uses design tokens from `styles.css`, no hardcoded hex
-- **Error Handling**: Uses `utils.renderError()`, no infinite loading states
-- **Semantic HTML**: Proper `<header>`, `<main>`, `<section>`, `<footer>` usage
-
-### Operations & Deployment
-Refer to [Deployment and Operations](../skills/deployment-and-ops/SKILL.md) for full rules. Key areas:
-- **Zero Foreign SSH**: Deployments must run via local `./deploy.sh` (never trigger GitHub Actions SSH deploy)
-- **Service Verification**: Verify live health checks after restart (`HTTP 200`)
-
-### General
-- **Complexity**: Max indent level 3. No deeply nested `if/for`
-- **Naming**: Python `snake_case`, JS `camelCase`, constants `UPPER_CASE`
-- **Dead Code**: No commented-out code blocks
-- **DRY / KISS / YAGNI**: No over-engineering or duplication
 
 ---
 
-## ⚙️ Language Policy
+## Review Criteria (Single Source of Truth)
 
-> **All content in `.agents/` directory MUST be written in English.**
-> This ensures consistency and optimal AI comprehension.
+The reviewer verifies pull requests and new features against the authoritative skill guides:
+
+1. **Backend Code**: Enforce [Python Development Standards](../skills/python-development/SKILL.md)
+   - Python 3.9 syntax compatibility (no `X | Y`, no `dict[K, V]`).
+   - Anti-scraping guard (`akshare_call_with_retry`).
+   - Stateless business modules with centralized Redis TTLs (`settings.CACHE_TTL`).
+   - Defensive parsing (`safe_float`).
+
+2. **Frontend Code**: Enforce [Frontend Development Standards](../skills/frontend-development/SKILL.md)
+   - Controller pattern in `web/js/modules/` without loose global listeners.
+   - Mobile-first layout (iPhone SE responsive) and market color semantics.
+   - Resilient state handling: no infinite loading, unified `utils.renderError()`, null rendered as `--`.
+
+3. **Data Integrity & Architecture**: Enforce [Project Standards](../skills/project-standards/SKILL.md)
+   - Absolute rule: Error > Misleading > Fake. No hardcoded mock/fallback data in production.
+   - Redis-First data flow: user requests never trigger blocking external scrapes.
+
+4. **Production Operations**: Enforce [Deployment & Operations](../skills/deployment-and-ops/SKILL.md)
+   - Zero Foreign SSH: Deployments must be executed via local `./deploy.sh` to prevent Aliyun alerts.
+
+5. **General Code Quality**:
+   - Complexity: Max indent level 3. No deeply nested blocks.
+   - DRY / KISS / YAGNI: Avoid speculative generalization or duplicated logic.

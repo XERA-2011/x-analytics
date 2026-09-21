@@ -337,6 +337,7 @@ async function loadData(endpoint) {
 |:------|:-----|:-------------|
 | Frontend Standards | `.agents/skills/frontend-development/SKILL.md` | Modifying `.js`, `.html`, `.css` |
 | Python Standards | `.agents/skills/python-development/SKILL.md` | Modifying `.py` files |
+| Deployment & Ops | `.agents/skills/deployment-and-ops/SKILL.md` | Deploying, restarting, or server checks |
 
 ---
 

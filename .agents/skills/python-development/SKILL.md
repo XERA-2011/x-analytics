@@ -3,147 +3,88 @@ name: python-development
 description: "⚠️ MANDATORY: Read before modifying ANY .py files. Contains Python 3.9 syntax requirements, caching patterns, and anti-scraping rules."
 ---
 
-# Development Standards
+# Python Development Standards
 
-## 1. Project Architecture
-- **Core (`analytics/core/`)**: Infrastructure code only.
-  - `config.py`: Centralized configuration (TTLs, Intervals).
-  - `cache.py`: Redis interface and decorators.
-  - `data_provider.py`: Shared data provider (AkShare wrapper with singleton pattern).
-  - `scheduler.py`: Background task scheduler (periodic data refresh, warmup).
-  - `patch.py`: Anti-scraping patches (User-Agent, Headers).
-  - `throttler.py`: Global request rate limiting.
-  - `rate_limiter.py`: API endpoint rate limiting (public/admin).
-  - `security.py`: Authentication and security middleware.
-  - `utils.py`: Shared utilities (`safe_float`, `akshare_call_with_retry`, `get_beijing_time`).
-  - `db.py`: Database initialization (Tortoise ORM).
-  - `decorators.py`: Shared decorators.
-  - `logger.py`: Logging configuration.
-  - `us_spot_helper.py`: EastMoney direct HTTP Push2 API client for real-time US market data.
-  - `fear_greed.py`: Base fear & greed index calculation logic.
-- **Modules (`analytics/modules/`)**: Business logic grouped by domain.
-  - `market_asia/`: A-share & Asian markets (indices, leaders/sectors, bonds, LPR, fear & greed).
-  - `market_hk/`: Hong Kong market (indices, fear & greed).
-  - `market_western/`: US & Western markets (indices, leaders, treasury, fear & greed, heat map).
-  - `gold/`: Precious metals (gold/silver spot prices, gold/silver ratio, fear & greed).
-  - `qdii.py`: QDII funds tracking (real-time estimates, premium/discount rates, top holdings, purchase limits, 1Y/3Y returns).
-  - `index_valuation.py`: Stock index valuation metrics and percentiles.
-  - `ai/`: AI supply chain 7-layer hierarchy and industry cycle indicators.
-  - `signals/`: Cross-market technical signals (overbought/oversold).
-  - Modules should focus on data fetching and processing.
-  - **Stateless**: Modules should not hold state; rely on Redis cache.
+## 1. Architecture & Layering Principles
 
-## 2. Data Fetching & Anti-Scraping
-Direct calls to `akshare` are **FORBIDDEN** in production code. You MUST use the shared infrastructure to prevent blocking.
+The backend is organized into three distinct, decoupled layers. AI agents must respect these architectural boundaries without needing a static file inventory:
 
-- **Use Retry Logic**:
-  ```python
-  from ...core.utils import akshare_call_with_retry
-  df = akshare_call_with_retry(ak.some_api, symbol="...", max_retries=3)
-  ```
-- **Use Throttling**: Heavy interfaces must pass through `fetch_with_throttle`.
-- **Patching**: Entry points (scripts/server) must verify `apply_patches()` is called.
+### 1.1 Infrastructure Layer (`analytics/core/`)
+Houses shared platform capabilities:
+- **Centralized Config & TTLs**: `config.py` holds all timeout, interval, and cache TTL definitions (`settings.CACHE_TTL`).
+- **Caching Engine**: `cache.py` provides the Redis interface and `@cached` decorator.
+- **Data Provider & Anti-Scraping**: `data_provider.py`, `throttler.py`, and `patch.py` encapsulate AkShare wrappers, request rate-limiting, and client impersonation.
+- **Background Scheduler**: `scheduler.py` manages background tasks for periodic cache warmup and index calculations.
+- **Shared Utilities**: `utils.py` contains defensive helpers like `safe_float`, `akshare_call_with_retry`, and Beijing timezone helpers.
+- **Persistence Bootstrap**: `db.py` initializes Tortoise ORM.
 
-## 3. Caching Strategy
-- **Centralized TTL**: Do NOT hardcode TTLs. Use `settings.CACHE_TTL["key"]`.
+### 1.2 Domain Business Layer (`analytics/modules/`)
+Contains domain-specific calculations, financial metrics, and indicator logic organized by asset class or market.
+- **Stateless Mandate**: Business modules MUST NOT hold mutable in-memory state. All cached outputs must be stored in Redis.
+- **Zero Raw External Calls**: Never invoke raw `ak.*` directly in business modules. Always wrap external data access through `akshare_call_with_retry` or core helpers.
+- **Centralized TTL**: Never hardcode cache durations. Always use `settings.CACHE_TTL["category"]`.
+- **Defensive Parsing**: Always use `safe_float(val, default=None)` on external API responses to avoid `ValueError` or unexpected null crashes.
+
+### 1.3 Persistence Layer (`analytics/models/`)
+Tortoise ORM models for long-term historical records and analytics snapshots.
+- **Async-Only**: All database interactions must be `await`ed.
+- **Multi-DB Compatibility**: Must support both SQLite (local dev) and PostgreSQL (production) via `settings.DATABASE_URL`.
+
+---
+
+## 2. Data Fetching & Anti-Scraping Rules
+
+Direct, unguarded calls to `akshare` in business logic are **STRICTLY FORBIDDEN**.
+
+```python
+# ✅ REQUIRED: Wrap external calls with retry and backoff
+from analytics.core.utils import akshare_call_with_retry
+
+df = akshare_call_with_retry(ak.fund_purchase_em, max_retries=3)
+```
+
+- **Throttling**: High-frequency or rate-sensitive data sources must pass through `fetch_with_throttle`.
+- **Patches**: Entry points (`server.py`, CLI scripts) must ensure `apply_patches()` is executed on startup.
+
+---
+
+## 3. Caching Strategy & Redis-First Policy
+
 - **Decorator Usage**:
   ```python
   @cached("namespace:key", ttl=settings.CACHE_TTL["category"])
-  def get_data(): ...
+  async def get_market_data(): ...
   ```
-- **Passive Mode**: In "Extreme Rate Limiting" mode, ensure code handles cache misses gracefully (return None/Loading) or triggers async separate from the user request if possible.
-- **Cache Invalidation**:
-  - If logic changes significantly, update the cache key version (e.g., `market:data_v2`) to force invalidation of persistent Redis data.
-  - Do NOT rely on manual Redis flushing in production.
+- **Passive Serving**: During rate-limiting or cold start, endpoints return structured `"warming_up"` status instead of blocking user requests.
+- **Cache Key Versioning**: When data structure or calculation logic changes significantly, increment the cache key version (e.g. `qdii:passive_funds_v46`) to safely invalidate legacy cache without flushing entire Redis databases in production.
 
-## 4. Database & ORM
-- **Tortoise ORM**: Use Tortoise ORM for all database interactions.
-- **Code First**: Define models in `analytics/models/` and let the app handle schema generation.
-- **Async Only**: All database operations must be `await`ed.
-- **Migration**: Schema changes in development (SQLite) are automatic, but production (Postgres) requires careful management.
-- **Connection**: Use `settings.DATABASE_URL` to support both SQLite (local) and Postgres (remote).
+---
 
-## 5. Error Handling
-- **Never Crash**: API endpoints must return a valid JSON structure even on failure.
-  ```python
-  except Exception as e:
-      print(f"❌ Error: {e}")
-      return {"error": str(e), "data": []} # Graceful fallback
-  ```
-- **Safe Conversions**: Use `safe_float(val, default=None)` for financial data. Avoid `float()` directly on API responses.
+## 4. Python 3.9 Compatibility (CRITICAL)
 
-## 6. Code Hygiene & Readability (Strict)
-### Type Hinting
-- **Mandatory**: All function signatures MUST have type hints.
-  ```python
-  # ✅ Good
-  def calculate_yield(price: float, dividend: float) -> Optional[float]: ...
-  
-  # ❌ Bad
-  def calculate_yield(price, dividend): ...
-  ```
-- **Explicit Returns**: If a function returns nothing, explicit `-> None` is preferred.
+> ⚠️ **CRITICAL CONSTRAINT**: The production Docker container runs **Python 3.9**.
+> **Python 3.10+ syntax will crash the container on boot!**
 
-### Documentation (Docstrings)
-- **Google Style**: Use Google-style docstrings for all complex functions.
-- **AI-Readable**: Explain *why* logic exists, not just *what* it does. This helps future Agents understand intent.
+### Forbidden Syntax vs. 3.9 Compatible
+| Python 3.10+ (❌ FORBIDDEN) | Python 3.9 (✅ REQUIRED) | Import Required |
+|:----------------------------|:-------------------------|:----------------|
+| `X \| Y`                   | `Union[X, Y]`            | `from typing import Union` |
+| `X \| None`                | `Optional[X]`            | `from typing import Optional` |
+| `dict[K, V]`                | `Dict[K, V]`             | `from typing import Dict` |
+| `list[T]`                   | `List[T]`                | `from typing import List` |
+| `tuple[T, ...]`             | `Tuple[T, ...]`          | `from typing import Tuple` |
 
-### Imports
-- **Grouping**: Standard Lib -> Third Party -> Local Application.
-- **Sorting**: Alphabetical order (or use `isort`).
-- **No Wildcards**: `from module import *` is STRICTLY FORBIDDEN.
-
-### Constants & Magic Numbers
-- **No Magic Numbers**: Do not use hardcoded numbers (e.g. `if ratio > 90`) in logic.
-- **Extraction**: Extract them as clear constants (e.g. `RATIO_THRESHOLD_HIGH = 90`) at the class or module level.
-
-### Temporary Files & Debugging
-- **Cleanup Required**: Temporary test files created for debugging or verification **MUST** be deleted before completing the task.
-- **File Naming**: Debug scripts should be prefixed with `debug_` or `test_`.
-- Do not commit `debug_*.py` files unless they are converted to permanent unit tests.
-
-## 7. Python 3.9 Compatibility
-
-> ⚠️ **CRITICAL**: Docker environment uses **Python 3.9**. Python 3.10+ syntax is FORBIDDEN!
-
-### Forbidden Syntax
-```python
-# ❌ Python 3.10+ syntax (will crash Docker)
-def func(x: str | None) -> dict[str, Any]: ...
-
-# ✅ Python 3.9 compatible syntax
-from typing import Optional, Dict, List, Any
-def func(x: Optional[str]) -> Dict[str, Any]: ...
-```
-
-### Replacement Rules
-| Python 3.10+ | Python 3.9 Compatible | Import |
-|-------------|----------------------|--------|
-| `X \| Y` | `Union[X, Y]` | `from typing import Union` |
-| `X \| None` | `Optional[X]` | `from typing import Optional` |
-| `dict[K, V]` | `Dict[K, V]` | `from typing import Dict` |
-| `list[T]` | `List[T]` | `from typing import List` |
-
-### Pre-commit Check Commands
+### Pre-commit Verification Command
+Run this grep command before committing any Python changes:
 ```bash
-# Scan for incompatible syntax before committing
-grep -rn ": dict\[" analytics/ --include="*.py"
-grep -rn ": list\[" analytics/ --include="*.py"
-grep -rn " | None" analytics/ --include="*.py"
+grep -rn ": dict\[\|: list\[\| | None\|-> dict\[\|-> list\[" analytics/ --include="*.py"
 ```
 
 ---
 
-## 📚 Lessons Learned Reminder
+## 5. Code Hygiene & Quality Standards
 
-> After resolving major issues or discovering new best practices, check if the following files need updates:
-> - `.agents/skills/python-development/SKILL.md` - Python development guidelines
-> - `.agents/skills/frontend-development/SKILL.md` - Frontend development guidelines
-> - `.agents/rules/*.md` - Rule/workflow configurations
-
----
-
-## ⚙️ Language Policy
-
-> **All content in `.agents/` directory MUST be written in English.**
-> This ensures consistency and optimal AI comprehension.
+- **Type Hints**: All public function signatures MUST have explicit type annotations.
+- **No Magic Numbers**: Extract domain thresholds into named constants (e.g. `STALE_THRESHOLD_SECONDS = 300`).
+- **No Wildcard Imports**: `from module import *` is strictly forbidden.
+- **Clean Temporary Files**: Always delete debug/test scripts (`test_*.py`, `debug_*.py`) created during development before marking tasks complete.
