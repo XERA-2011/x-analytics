@@ -14,9 +14,9 @@ env:
   # GitHub Container Registry
   GHCR_REGISTRY: ghcr.io
   GHCR_IMAGE: ${{ github.repository }}
-  # 阿里云容器镜像服务
-  ALIYUN_REGISTRY: crpi-8pt82bfwac9xhe36.cn-shenzhen.personal.cr.aliyuncs.com
-  ALIYUN_IMAGE: xera_2011/x-analytics
+  # 阿里云容器镜像服务 (通过 GitHub 仓库变量注入，杜绝在公开 workflow 中暴露个人专有实例编号)
+  ALIYUN_REGISTRY: ${{ vars.ALIYUN_REGISTRY }}
+  ALIYUN_IMAGE: ${{ vars.ALIYUN_IMAGE }}
 
 jobs:
   build-and-push:

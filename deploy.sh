@@ -12,13 +12,28 @@
 
 set -e
 
-# --- 服务器与服务配置 ---
-SERVER_HOST="8.129.84.229"
-SERVER_USER="root"
-REMOTE_DIR="/opt/xera"
-CONTAINER_NAME="xanalytics"
-HEALTH_CHECK_URL="http://8.129.84.229:2012/?tab=qdii"
-REPO_NAME="xera-2011/x-analytics"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# 优先读取本地私有环境变量配置 (.env.local, .env)
+if [ -f "${SCRIPT_DIR}/.env.local" ]; then
+  # shellcheck disable=SC1091
+  set -a
+  source "${SCRIPT_DIR}/.env.local"
+  set +a
+elif [ -f "${SCRIPT_DIR}/.env" ]; then
+  # shellcheck disable=SC1091
+  set -a
+  source "${SCRIPT_DIR}/.env"
+  set +a
+fi
+
+# --- 服务器与服务配置 (优先从环境变量读取，杜绝硬编码敏感生产资产) ---
+SERVER_HOST="${DEPLOY_SERVER_HOST:-${ALIYUN_HOST:-}}"
+SERVER_USER="${DEPLOY_SERVER_USER:-${ALIYUN_USER:-root}}"
+REMOTE_DIR="${DEPLOY_REMOTE_DIR:-/opt/xera}"
+CONTAINER_NAME="${DEPLOY_CONTAINER_NAME:-xanalytics}"
+HEALTH_CHECK_URL="${DEPLOY_HEALTH_CHECK_URL:-http://${SERVER_HOST}:2012/?tab=qdii}"
+REPO_NAME="${DEPLOY_REPO_NAME:-xera-2011/x-analytics}"
 
 # --- 颜色定义 ---
 GREEN='\033[0;32m'
@@ -56,8 +71,13 @@ x-analytics 部署管理工具
 EOF
 }
 
-# 1. 检查 SSH 连接
+# 1. 检查配置与 SSH 连接
 check_ssh() {
+  if [ -z "$SERVER_HOST" ]; then
+    error "未检测到服务器目标地址 (DEPLOY_SERVER_HOST 或 ALIYUN_HOST)。"
+    info "请在本地 .env.local 或环境中配置: DEPLOY_SERVER_HOST=\"your-server-ip\""
+    exit 1
+  fi
   if ! ssh -o BatchMode=yes -o ConnectTimeout=5 "${SERVER_USER}@${SERVER_HOST}" "echo ok" >/dev/null 2>&1; then
     error "无法免密连接到服务器 ${SERVER_USER}@${SERVER_HOST}，请检查 ~/.ssh 密钥配置。"
     exit 1

@@ -13,10 +13,10 @@ This document defines standard operating procedures for deployment, server opera
 
 ### 1.1 Two-Stage Pipeline
 1. **Image Build (`x-analytics`)**:
-   - Pushing code to `main` branch triggers GitHub Actions (`docker-publish.yml`) to build the Docker image and push it to Aliyun Container Registry (`crpi-8pt82bfwac9xhe36.cn-shenzhen.personal.cr.aliyuncs.com/xera_2011/x-analytics:latest`).
+   - Pushing code to `main` branch triggers GitHub Actions (`docker-publish.yml`) to build the Docker image and push it to Aliyun Container Registry (`${{ vars.ALIYUN_REGISTRY }}/${{ vars.ALIYUN_IMAGE }}:latest`).
    - *Security Note*: The build runs entirely on GitHub compute and pushes via Aliyun ACR HTTPS API. It **never** connects to the ECS server and will **never** trigger security alerts.
 2. **Local Direct Deploy (`deploy.sh`)**:
-   - Deployment to the production ECS server (`8.129.84.229`) is executed directly from the local developer machine via domestic SSH.
+   - Deployment to the production ECS server is executed directly from the local developer machine via domestic SSH using credentials configured in `.env.local`.
 
 ### 1.2 ⚠️ Zero Foreign SSH Login Rule
 > [!IMPORTANT]
@@ -39,7 +39,7 @@ This automated workflow:
 1. Checks for uncommitted changes (prompts to commit if dirty).
 2. Pushes commits to `origin main`.
 3. Discovers and tracks the GitHub Actions build run (`gh run watch`).
-4. Once the ACR image is ready, establishes local SSH to `root@8.129.84.229`:
+4. Once the ACR image is ready, establishes local SSH to the configured host (`${SERVER_USER}@${SERVER_HOST}`):
    - `docker compose pull xanalytics`
    - `docker compose up -d --force-recreate --remove-orphans xanalytics`
    - `docker image prune -f`
@@ -90,17 +90,17 @@ cd /Users/xera/GitHub/x-actions
 To verify that the production service is responding:
 ```bash
 # Verify base page response
-curl -sI http://8.129.84.229:2012/?tab=qdii
+curl -sI http://<server-ip>:2012/?tab=qdii
 
 # Check specific script version or module asset
-curl -s http://8.129.84.229:2012/?tab=qdii | grep qdii.js
+curl -s http://<server-ip>:2012/?tab=qdii | grep qdii.js
 ```
 
 ### 4.2 Cache Control APIs
-- **Manual Cache Warmup**: `POST http://8.129.84.229:2012/api/cache/warmup`
-- **Clear All Caches**: `DELETE http://8.129.84.229:2012/api/cache/clear`
-- **Clear Specific Pattern**: `DELETE http://8.129.84.229:2012/api/cache/clear/{pattern}`
-  - Example: `DELETE http://8.129.84.229:2012/api/cache/clear/qdii:passive_funds*`
+- **Manual Cache Warmup**: `POST http://<server-ip>:2012/api/cache/warmup` (requires `X-Admin-Token` header)
+- **Clear All Caches**: `DELETE http://<server-ip>:2012/api/cache/clear` (requires `X-Admin-Token` header)
+- **Clear Specific Pattern**: `DELETE http://<server-ip>:2012/api/cache/clear/{pattern}` (requires `X-Admin-Token` header)
+  - Example: `DELETE http://<server-ip>:2012/api/cache/clear/qdii:passive_funds*`
 
 ---
 
