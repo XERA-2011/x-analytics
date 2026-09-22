@@ -67,11 +67,9 @@ jobs:
           cache-to: type=gha,mode=max
           provenance: false
 
-      # 2. 尝试推送到阿里云 (国内加速，允许失败)
-      #    由于使用了缓存，这一步应该非常快（复用上一步的层）
-      - name: Push to Aliyun Container Registry (Best Effort)
+      # 2. 推送到阿里云容器镜像服务 (生产服务器拉取源，必须成功)
+      - name: Push to Aliyun Container Registry
         uses: docker/build-push-action@v5
-        continue-on-error: true
         with:
           context: .
           push: true

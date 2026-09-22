@@ -61,16 +61,15 @@ def _is_static_path(path: str) -> bool:
 
 def get_client_ip(request: Request) -> str:
     """获取客户端真实 IP"""
-    # 优先从 X-Forwarded-For 头获取（反向代理场景）
-    forwarded = request.headers.get("X-Forwarded-For")
-    if forwarded:
-        # 取第一个 IP（最原始的客户端）
-        return forwarded.split(",")[0].strip()
-    
-    # 其次从 X-Real-IP 获取
+    # 优先从 X-Real-IP 获取 (由 Nginx 等可信反代从 $remote_addr 注入，防止客户端伪造)
     real_ip = request.headers.get("X-Real-IP")
     if real_ip:
         return real_ip.strip()
+    
+    # 其次从 X-Forwarded-For 获取
+    forwarded = request.headers.get("X-Forwarded-For")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
     
     # 最后使用直接连接的 IP
     if request.client:
@@ -98,32 +97,19 @@ class SecurityMiddleware(BaseHTTPMiddleware):
         
         # 1. 检查是否为管理 API
         if any(path.startswith(p) for p in ADMIN_API_PATHS):
-            # Admin token 鉴权
             from .config import settings
             admin_token = settings.ADMIN_TOKEN
-            LOCALHOST_IPS = ("127.0.0.1", "::1", "localhost")
+            request_token = request.headers.get("X-Admin-Token")
 
-            if admin_token:
-                # Token 已配置 — 必须匹配
-                request_token = request.headers.get("X-Admin-Token")
-                if request_token != admin_token:
-                    return JSONResponse(
-                        status_code=403,
-                        content={
-                            "status": "error",
-                            "message": "Forbidden: invalid or missing admin token",
-                        }
-                    )
-            else:
-                # Token 未配置 — 仅允许 localhost 访问
-                if client_ip not in LOCALHOST_IPS:
-                    return JSONResponse(
-                        status_code=403,
-                        content={
-                            "status": "error",
-                            "message": "Forbidden: admin API is restricted to localhost (set ADMIN_TOKEN to enable remote access)",
-                        }
-                    )
+            # 强制要求配置并匹配有效 ADMIN_TOKEN，严禁仅依靠易伪造的 IP 判定
+            if not admin_token or request_token != admin_token:
+                return JSONResponse(
+                    status_code=403,
+                    content={
+                        "status": "error",
+                        "message": "Forbidden: valid X-Admin-Token required",
+                    }
+                )
 
             # 管理 API 限流
             if not admin_limiter.is_allowed(client_ip):
