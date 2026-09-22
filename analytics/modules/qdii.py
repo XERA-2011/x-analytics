@@ -16,7 +16,7 @@ import pandas as pd
 import akshare as ak
 from ..core.cache import cached, cache
 from ..core.config import settings
-from ..core.utils import akshare_call_with_retry, safe_float, fetch_url_via_proxy
+from ..core.utils import akshare_call_with_retry, safe_float, fetch_url_via_proxy, get_beijing_time
 
 # 目标 QDII 基金基础元数据注册表 (纳斯达克100 与 标普500 场外 A类基金，提供基准行情与后备数据)
 QDII_FUND_METADATA: List[Dict[str, Any]] = [
@@ -781,10 +781,10 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
 
 
 def fetch_sina_fund_navs(codes: List[str]) -> Dict[str, Dict[str, Any]]:
-    """使用新浪财经 API 极速批量获取基金最新净值 (毫秒级响应，防封禁)"""
+    """使用新浪财经 API 批量获取基金官方确认净值与盘中参考估值 (毫秒级响应，防封禁)"""
     res: Dict[str, Dict[str, Any]] = {}
     try:
-        # 同时查询 fu_ (QDII类) 和 f_ (普通开放式类) 两种前缀，确保新发行或不同分类基金均有数据
+        # 同时查询 fu_ (QDII实时估值/上一日净值) 和 f_ (普通开放式官方确认净值)
         query_items = []
         for c in codes:
             query_items.append(f"fu_{c}")
@@ -792,38 +792,65 @@ def fetch_sina_fund_navs(codes: List[str]) -> Dict[str, Dict[str, Any]]:
         query = ",".join(query_items)
         url = f"http://hq.sinajs.cn/list={query}"
         headers = {"Referer": "http://finance.sina.com.cn"}
-        r = requests.get(url, headers=headers, timeout=3)
+        r = requests.get(url, headers=headers, timeout=5)
         if r.status_code == 200:
-            for line in r.text.strip().split("\n"):
-                if "=" in line and '""' not in line:
+            raw_lines = r.text.strip().split("\n")
+
+            # 1. 优先解析 f_ 官方确认净值行
+            # 格式: var hq_str_f_019454="基金名,官方净值,累计净值,前日净值,净值确认日期,日涨跌幅...";
+            for line in raw_lines:
+                if "hq_str_f_" in line and "=" in line and '""' not in line:
                     parts = line.split("=")
-                    var_name = parts[0].strip()
-                    is_fu = "hq_str_fu_" in var_name
-                    code = var_name.replace("var hq_str_fu_", "").replace("var hq_str_f_", "")
+                    code = parts[0].strip().replace("var hq_str_f_", "")
                     content = parts[1].strip('";').split(",")
-                    
-                    try:
-                        if is_fu:
-                            if len(content) >= 8 and content[2]:
-                                nav_val = float(content[2])
-                                date_str = content[7]
-                            else:
-                                continue
-                        else:
-                            if len(content) >= 5 and content[1]:
-                                nav_val = float(content[1])
-                                date_str = content[4]
-                            else:
-                                continue
-                                
-                        # 如果是新数据，或者日期更新，则进行覆盖/保存
-                        if code not in res or date_str > res[code]["nav_date"]:
-                            res[code] = {
-                                "nav": nav_val,
-                                "nav_date": date_str
-                            }
-                    except (ValueError, IndexError):
-                        pass
+                    if len(content) >= 5 and content[1]:
+                        try:
+                            nav_val = float(content[1])
+                            nav_date = content[4]
+                            if code not in res:
+                                res[code] = {}
+                            res[code]["official_nav"] = nav_val
+                            res[code]["official_nav_date"] = nav_date
+                            # 保持向下兼容：nav 必须为官方确认净值，不可用估值混淆！
+                            res[code]["nav"] = nav_val
+                            res[code]["nav_date"] = nav_date
+                        except (ValueError, IndexError):
+                            pass
+
+            # 2. 解析 fu_ 盘中估值与估值时间，同时提供确认净值备用
+            # 格式: var hq_str_fu_019454="基金名,估算时间,估算净值,昨日官方净值,累计净值,0,估算涨跌幅,估算日期...";
+            for line in raw_lines:
+                if "hq_str_fu_" in line and "=" in line and '""' not in line:
+                    parts = line.split("=")
+                    code = parts[0].strip().replace("var hq_str_fu_", "")
+                    content = parts[1].strip('";').split(",")
+                    if len(content) >= 8:
+                        try:
+                            est_time = content[1]
+                            est_val = float(content[2]) if content[2] else None
+                            prev_confirmed_val = float(content[3]) if content[3] else None
+                            est_change_pct = float(content[6]) if content[6] else None
+                            est_date = content[7]
+                            
+                            if code not in res:
+                                res[code] = {}
+                            
+                            # 若 f_ 未返回有效净值，用 fu_ 中的上期确认净值保底
+                            if "official_nav" not in res[code] and prev_confirmed_val is not None:
+                                res[code]["official_nav"] = prev_confirmed_val
+                                res[code]["official_nav_date"] = "最新披露"
+                                res[code]["nav"] = prev_confirmed_val
+                                res[code]["nav_date"] = "最新披露"
+
+                            # 提取明确的盘中参考估值字段
+                            if est_val is not None and est_val > 0:
+                                res[code]["estimated_nav"] = round(est_val, 4)
+                                res[code]["estimated_time"] = est_time
+                                res[code]["estimated_change_pct"] = round(est_change_pct, 2) if est_change_pct is not None else None
+                                res[code]["estimated_date"] = est_date
+                                res[code]["is_estimated"] = True
+                        except (ValueError, IndexError):
+                            pass
     except Exception as e:
         print(f"⚠️ 新浪基金行情抓取跳过: {e}")
     return res
@@ -1121,21 +1148,28 @@ def fetch_fund_scale(session: requests.Session, code: str) -> Optional[str]:
     return None
 
 
-@cached("qdii:passive_funds_v46", ttl=86400, stale_ttl=86400 * 7, sync_on_cold=True)
+@cached("qdii:passive_funds_v47", ttl=86400, stale_ttl=86400 * 7, sync_on_cold=True)
 def get_qdii_passive_funds() -> Dict[str, Any]:
     """获取国内纳斯达克100 & 标普500 场外被动 QDII A类基金数据列表
 
-    数据一天刷新一次 (86400s)。包含标的指数原生收益率对标、实时排行、净值、综合费率、最大回撤、年化波动率与真实资产配置仓位。
+    数据一天刷新一次 (86400s)。包含标的指数原生收益率对标、实时排行、官方净值与盘中估值、综合费率、最大回撤、年化波动率与资产配置。
     """
     rank_map: Dict[str, Dict[str, Any]] = {}
     target_codes = [item["code"] for item in QDII_FUND_METADATA]
 
-    # 1. 尝试新浪行情极速获取实时净值
+    # 1. 尝试新浪行情极速获取官方确认净值与盘中参考估值
     sina_nav_map = fetch_sina_fund_navs(target_codes)
     for c, info in sina_nav_map.items():
         rank_map[c] = {
-            "nav": info.get("nav"),
-            "nav_date": info.get("nav_date"),
+            "official_nav": info.get("official_nav"),
+            "official_nav_date": info.get("official_nav_date"),
+            "estimated_nav": info.get("estimated_nav"),
+            "estimated_time": info.get("estimated_time"),
+            "estimated_change_pct": info.get("estimated_change_pct"),
+            "estimated_date": info.get("estimated_date"),
+            "is_estimated": info.get("is_estimated", False),
+            "nav": info.get("official_nav") or info.get("nav"),
+            "nav_date": info.get("official_nav_date") or info.get("nav_date"),
         }
 
     # 2. 尝试 雪球 并发获取每个基金的真实近1年/近3年收益率、最大回撤、年化波动率与夏普比率
@@ -1290,43 +1324,65 @@ def get_qdii_passive_funds() -> Dict[str, Any]:
 
         r_1y = live_data.get("return_1y")
         r_3y = live_data.get("return_3y")
-        nav_val = live_data.get("nav")
-        nav_date = live_data.get("nav_date")
+
+        # 官方确认净值 (不可被盘中估值覆盖)
+        official_nav = live_data.get("official_nav") or live_data.get("nav") or item["default_nav"]
+        official_nav_date = live_data.get("official_nav_date") or live_data.get("nav_date") or item["default_nav_date"]
+
+        # 盘中参考估值 (若无则为 None)
+        estimated_nav = live_data.get("estimated_nav")
+        estimated_time = live_data.get("estimated_time")
+        estimated_change_pct = live_data.get("estimated_change_pct")
+        estimated_date = live_data.get("estimated_date")
+        is_estimated = bool(live_data.get("is_estimated") and estimated_nav is not None)
+
         mdd_val = live_data.get("max_drawdown")
         vol_val = live_data.get("volatility")
         shp_val = live_data.get("sharpe")
 
         final_r1y = r_1y if r_1y is not None else item["default_return_1y"]
         final_r3y = r_3y if r_3y is not None else item.get("default_return_3y")
-        final_nav = nav_val if nav_val is not None else item["default_nav"]
-        final_date = nav_date if nav_date else item["default_nav_date"]
+        final_nav = official_nav
+        final_date = official_nav_date
 
-        # 优先使用实时并发抓取的仓位配置与费率，若失败退回该基金真实的元数据配置
+        # 资产配置仓位与口径判定 (季报披露原值 vs 地区推算 vs 静态基准)
         default_alloc = item.get("default_asset_allocation", {})
         live_alloc = alloc_map.get(code)
+        alloc_report_date = (live_alloc and live_alloc.get("report_date")) or item.get("default_nav_date") or "2026-06-30"
+
+        allocation_source_type = "metadata_fallback"
+        allocation_source_desc = "季报静态基准兜底"
+
         if live_alloc:
             asset_alloc = dict(live_alloc)
-            if any(k in default_alloc for k in ["stock_us_pct", "stock_hk_pct", "stock_cn_pct", "stock_other_pct"]):
+            sub_keys = [k for k in ["stock_us_pct", "stock_hk_pct", "stock_cn_pct", "stock_other_pct"] if k in default_alloc]
+            if sub_keys:
                 def_total_stock = default_alloc.get("stock_pct", 0.0)
                 if def_total_stock > 0 and live_alloc.get("stock_pct", 0) > 0:
                     live_stock = live_alloc["stock_pct"]
-                    sub_keys = [k for k in ["stock_us_pct", "stock_hk_pct", "stock_cn_pct", "stock_other_pct"] if k in default_alloc]
                     sub_sum = 0.0
                     for k in sub_keys[:-1]:
                         val = round(live_stock * (default_alloc[k] / def_total_stock), 1)
                         asset_alloc[k] = val
                         sub_sum += val
-                    if sub_keys:
-                        last_k = sub_keys[-1]
-                        asset_alloc[last_k] = round(max(0.0, live_stock - sub_sum), 1)
+                    last_k = sub_keys[-1]
+                    asset_alloc[last_k] = round(max(0.0, live_stock - sub_sum), 1)
+                    allocation_source_type = "stock_scaled_estimate"
+                    allocation_source_desc = f"基于最新季报总仓位({live_stock}%)与历史地区结构推算"
                 else:
-                    for k in ["stock_us_pct", "stock_hk_pct", "stock_cn_pct", "stock_other_pct"]:
-                        if k in default_alloc:
-                            asset_alloc[k] = default_alloc[k]
+                    for k in sub_keys:
+                        asset_alloc[k] = default_alloc[k]
+                    allocation_source_type = "metadata_fallback"
+                    allocation_source_desc = "季报历史地区比例"
+            else:
+                allocation_source_type = "quarterly_direct"
+                allocation_source_desc = "最新季报大类资产配置"
         else:
             asset_alloc = dict(default_alloc)
+            allocation_source_type = "metadata_fallback"
+            allocation_source_desc = "季报静态基准兜底"
 
-        # 对于所有主投美股市场的指数/行业基金，其全部股票资产 100% 投资于美股上市成份股
+        # 对于纯美股指数/行业基金，契约明确规定 100% 美股股票
         US_MARKET_INDICES = ["NDX", "SPX", "NBI", "TECH", "SPX_TECH", "CONS", "SPX_CONS", "SEMI", "SPX_100"]
         if (
             (item.get("index_code") in US_MARKET_INDICES or item.get("tag") in ["纳指100", "标普500", "生物科技", "信息科技", "消费精选", "半导体", "标普100"])
@@ -1335,6 +1391,8 @@ def get_qdii_passive_funds() -> Dict[str, Any]:
             and not any(k in asset_alloc for k in ["stock_hk_pct", "stock_cn_pct", "stock_other_pct"])
         ):
             asset_alloc["stock_us_pct"] = asset_alloc["stock_pct"]
+            allocation_source_type = "quarterly_direct"
+            allocation_source_desc = "纯美股指数基金契约 (股票资产100%美股)"
 
         fee_rate = fee_map.get(code) or item["fee_rate"]
         buy_status = status_map.get(code) or "开放申购"
@@ -1372,13 +1430,23 @@ def get_qdii_passive_funds() -> Dict[str, Any]:
             "inception_date": item["inception_date"],
             "nav": final_nav,
             "nav_date": final_date,
+            "official_nav": official_nav,
+            "official_nav_date": official_nav_date,
+            "estimated_nav": estimated_nav,
+            "estimated_time": estimated_time,
+            "estimated_change_pct": estimated_change_pct,
+            "estimated_date": estimated_date,
+            "is_estimated": is_estimated,
             "return_1y": final_r1y,
             "return_3y": final_r3y,
             "max_drawdown": mdd_val,
             "volatility": vol_val,
             "sharpe": shp_val,
             "asset_allocation": asset_alloc,
-            "allocation_estimated": item.get("allocation_estimated", False),
+            "allocation_source_type": allocation_source_type,
+            "allocation_source_desc": allocation_source_desc,
+            "allocation_report_date": alloc_report_date,
+            "allocation_estimated": (allocation_source_type == "stock_scaled_estimate"),
             "tag": fund_tag,
             "buy_status": buy_status,
             "buy_limit": buy_limit_str,
@@ -1397,6 +1465,7 @@ def get_qdii_passive_funds() -> Dict[str, Any]:
         "count": len(funds_list),
         "benchmarks": benchmarks,
         "funds": funds_list,
+        "update_time": get_beijing_time().strftime("%Y-%m-%d %H:%M:%S"),
         "update_strategy": "daily (24h cache)"
     }
 

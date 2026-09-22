@@ -48,6 +48,10 @@ class QDIIController {
                 this.benchmarks = data.benchmarks;
             }
 
+            if (data.update_time) {
+                this.updateTime = data.update_time;
+            }
+
             const urlParams = new URLSearchParams(window.location.search);
             const initialFilter = urlParams.get('filter') || urlParams.get('subtab');
             if (initialFilter && ['active', 'nasdaq100', 'sp500'].includes(initialFilter)) {
@@ -150,7 +154,18 @@ class QDIIController {
             s.rawStr = s.rawVal.toFixed(1);
         });
 
-        // 构造悬浮详情 Tooltip (展示归一化后的资产结构和官方季报原始净值口径)
+        // 构造悬浮详情 Tooltip (清晰区分季报原始数据 vs 地区等比推算)
+        const allocSourceType = item.allocation_source_type || 'quarterly_direct';
+        const allocSourceDesc = item.allocation_source_desc || '季报大类资产配置';
+        const allocDate = item.allocation_report_date || '最新已披露季报';
+
+        let allocTypeBadge = ' [季报披露原值]';
+        if (allocSourceType === 'stock_scaled_estimate') {
+            allocTypeBadge = ' [基于总仓位地区推算]';
+        } else if (allocSourceType === 'metadata_fallback') {
+            allocTypeBadge = ' [静态基准兜底]';
+        }
+
         const normSummary = segments.map(s => `${s.pctStr}% ${s.name}`).join(' · ');
         const rawSummary = segments.map(s => `${s.name} ${s.rawStr}%`).join(', ');
         const reportNotice = totalVal > 100.5
@@ -159,13 +174,14 @@ class QDIIController {
             ? `(季报占净比合计 ${totalVal.toFixed(1)}%，其余为存出保证金及应收清算款项)`
             : `(季报占净比合计 ${totalVal.toFixed(1)}%)`;
         
-        const tooltip = `资产配置结构: ${normSummary}\n官方季报口径: ${rawSummary} ${reportNotice}`;
+        const tooltip = `资产配置结构 (${allocDate}${allocTypeBadge}):\n${normSummary}\n细分构成: ${rawSummary}\n数据口径: ${allocSourceDesc}\n${reportNotice}`;
 
         return {
             segments,
             normSummary,
             tooltip,
-            totalVal
+            totalVal,
+            allocSourceType
         };
     }
 
@@ -263,6 +279,23 @@ class QDIIController {
                 statusTooltip = '场内交易型基金 (无场外申购限额)';
             }
 
+            const officialNav = item.official_nav || item.nav;
+            const officialNavDate = item.official_nav_date || item.nav_date;
+            const navDateStr = officialNavDate ? officialNavDate.slice(5) : '';
+            const isEst = item.is_estimated && item.estimated_nav != null;
+            const estChangeStr = item.estimated_change_pct != null ? `${item.estimated_change_pct > 0 ? '+' : ''}${item.estimated_change_pct}%` : '';
+
+            const navBadgeHtml = `
+                <div class="qdii-nav-subtext" style="font-size: 11px; color: var(--text-tertiary); margin-top: 3px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                    <span>官方净值 <strong class="font-mono" style="color: var(--text-primary); font-weight: 600;">${officialNav != null ? officialNav : '--'}</strong>${navDateStr ? ` <span style="font-size: 10px;">(${navDateStr})</span>` : ''}</span>
+                    ${isEst ? `
+                        <span class="font-mono" style="padding: 1px 5px; border-radius: 3px; font-size: 10px; font-weight: 600; background: rgba(59,130,246,0.08); color: var(--accent-blue); border: 1px solid rgba(59,130,246,0.25);" title="盘中参考估值基于底层资产动态变动推算 (时间: ${item.estimated_time || ''})">
+                            盘中估 ${item.estimated_nav} ${estChangeStr}
+                        </span>
+                    ` : ''}
+                </div>
+            `;
+
             return `
                 <tr>
                     <td class="col-rank"><span class="rank-badge ${rankBadgeClass}">${rank}</span></td>
@@ -273,6 +306,7 @@ class QDIIController {
                                 ${tagHtml}
                             </div>
                             <span class="qdii-name-text" style="color: var(--primary); font-weight: 600;">${item.name}</span>
+                            ${navBadgeHtml}
                         </div>
                     </td>
                     <td class="col-allocation qdii-clickable" data-code="${item.code}" data-name="${item.name}" title="点击查看 ${item.name} 前十大重仓股">${allocHtml}</td>
@@ -355,6 +389,9 @@ class QDIIController {
                 `;
             }
 
+            const officialNav = item.official_nav || item.nav;
+            const isEst = item.is_estimated && item.estimated_nav != null;
+
             return `
                 <div class="qdii-mobile-card qdii-clickable" data-code="${item.code}" data-name="${item.name}" title="点击查看 ${item.name} 前十大重仓股">
                     <div class="qdii-mcard-top">
@@ -365,9 +402,15 @@ class QDIIController {
                             <div class="qdii-mcard-title-line">
                                 <span class="qdii-mcard-name">${item.name}</span>
                             </div>
-                            <div class="qdii-mcard-meta-line">
-                                <span class="qdii-mcard-code font-mono">${item.code}</span>
-                                ${tagHtml}
+                            <div class="qdii-mcard-meta-line" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 4px;">
+                                <div style="display: flex; align-items: center; gap: 4px;">
+                                    <span class="qdii-mcard-code font-mono">${item.code}</span>
+                                    ${tagHtml}
+                                </div>
+                                <div style="font-size: 11px; color: var(--text-tertiary); display: flex; align-items: center; gap: 4px;">
+                                    <span>净值 ${officialNav != null ? officialNav : '--'}</span>
+                                    ${isEst ? `<span class="font-mono" style="color: var(--accent-blue); font-size: 10px; font-weight: 600;">估 ${item.estimated_nav}</span>` : ''}
+                                </div>
                             </div>
                         </div>
                         <div class="qdii-mcard-status-col">
@@ -397,10 +440,12 @@ class QDIIController {
             `;
         }).join('');
 
+        const updateTimeStr = this.updateTime ? `<span style="font-size: 0.72rem; color: var(--text-tertiary); margin-left: 6px;">(更新于 ${this.updateTime})</span>` : '';
         const benchmarkNotice = activeBenchmark != null ? `
             <div style="padding: 10px 14px; margin-bottom: 12px; border-radius: 6px; background: var(--bg-body); border: 1px solid var(--border-light); font-size: clamp(0.72rem, 2.5vw, 0.78rem); color: var(--text-secondary); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
                 <div>
-                    📌 <strong>【标的基准】${indexName} 原生指数近1年收益：<span class="text-up">+${utils.formatPercentage(activeBenchmark)}</span></strong>
+                    <div>📌 <strong>【美元原生指数参考】${indexName} 原生指数近1年收益：<span class="text-up">+${utils.formatPercentage(activeBenchmark)}</span></strong>${updateTimeStr}</div>
+                    <div style="font-size: 0.68rem; color: var(--text-tertiary); margin-top: 3px;">* 注：QDII 基金以人民币计价，受美元/人民币汇率波动、5%~10%现金/清算款缓冲及管理费率影响，与原生指数存在合理跟踪差异。</div>
                 </div>
                 <div class="qdii-legend-group">
                     <span class="qdii-legend-tag tag-us">美股</span>
@@ -414,7 +459,7 @@ class QDIIController {
         ` : (this.currentFilter === 'active' ? `
             <div style="padding: 10px 14px; margin-bottom: 12px; border-radius: 6px; background: var(--bg-body); border: 1px solid var(--border-light); font-size: clamp(0.72rem, 2.5vw, 0.78rem); color: var(--text-secondary); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
                 <div>
-                    📌 <strong>【精选主动 & 特色 QDII】全市场共 26 只精选标的 · 全球动态跨市场配置</strong>
+                    📌 <strong>【精选主动 & 特色 QDII】全市场精选标的 · 全球动态跨市场配置</strong>${updateTimeStr}
                 </div>
                 <div class="qdii-legend-group">
                     <span class="qdii-legend-tag tag-us">美股</span>
@@ -425,7 +470,19 @@ class QDIIController {
                     <span class="qdii-legend-tag tag-bond">债券</span>
                 </div>
             </div>
-        ` : '');
+        ` : (this.updateTime ? `
+            <div style="padding: 6px 14px; margin-bottom: 12px; border-radius: 6px; background: var(--bg-body); border: 1px solid var(--border-light); font-size: 0.72rem; color: var(--text-tertiary); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                <div>数据更新时间：${this.updateTime} (每日定时更新，官方净值以基金公司最新披露为准)</div>
+                <div class="qdii-legend-group">
+                    <span class="qdii-legend-tag tag-us">美股</span>
+                    <span class="qdii-legend-tag tag-hk">港股</span>
+                    <span class="qdii-legend-tag tag-cn">A股</span>
+                    <span class="qdii-legend-tag tag-other">日韩/台股</span>
+                    <span class="qdii-legend-tag tag-cash">现金</span>
+                    <span class="qdii-legend-tag tag-bond">债券</span>
+                </div>
+            </div>
+        ` : ''));
 
         container.innerHTML = `
             ${benchmarkNotice}
@@ -501,7 +558,7 @@ class QDIIController {
                     <button class="qdii-modal-close" aria-label="关闭">&times;</button>
                 </div>
                 <div class="qdii-modal-body" id="qdii-modal-body-content">
-                    <div class="loading"><i data-lucide="loader-2" class="spin"></i> 正在获取最新重仓持仓明细...</div>
+                    <div class="loading"><i data-lucide="loader-2" class="spin"></i> 正在读取最新已披露季报重仓明细...</div>
                 </div>
             </div>
         `;
@@ -658,6 +715,12 @@ class QDIIController {
             const top10Concentration = data.top10_concentration != null ? `${data.top10_concentration}%` : '--%';
 
             const fundItem = (this.rawFunds || []).find(f => f.code === code) || {};
+            const officialNav = fundItem.official_nav || fundItem.nav;
+            const officialNavDate = fundItem.official_nav_date || fundItem.nav_date;
+            const navDateStr = officialNavDate ? ` (${officialNavDate})` : '';
+            const isEst = fundItem.is_estimated && fundItem.estimated_nav != null;
+            const estChangeStr = fundItem.estimated_change_pct != null ? `${fundItem.estimated_change_pct > 0 ? '+' : ''}${fundItem.estimated_change_pct}%` : '';
+
             const mdd = fundItem.max_drawdown != null ? `${utils.formatPercentage(fundItem.max_drawdown)}` : '--';
             const vol = fundItem.volatility != null ? `${utils.formatPercentage(fundItem.volatility)}` : '--';
             const sharpe = fundItem.sharpe != null ? `${fundItem.sharpe.toFixed(2)}` : '--';
@@ -666,7 +729,9 @@ class QDIIController {
             bodyEl.innerHTML = `
                 ${penetrationHtml}
                 <div class="qdii-holding-meta" style="flex-wrap: wrap; gap: 8px 14px; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px dashed var(--border-light); font-size: 0.76rem;">
-                    <span>📅 截止日期：<strong>${reportDate}</strong></span>
+                    <span>📅 季报披露：<strong>${reportDate}</strong></span>
+                    <span>💵 官方净值：<strong>${officialNav != null ? officialNav : '--'}${navDateStr}</strong></span>
+                    ${isEst ? `<span>⚡ 盘中估算：<strong style="color: var(--accent-blue);">${fundItem.estimated_nav} (${estChangeStr})</strong></span>` : ''}
                     <span>📦 总持仓：<strong>${totalCount} 只</strong></span>
                     <span>🎯 前十占比：<strong>${top10Concentration}</strong></span>
                     <span>📈 近1年收益：<strong class="${fundItem.return_1y != null ? (typeof APP_CONFIG !== 'undefined' ? APP_CONFIG.getChangeClass(fundItem.return_1y) : (fundItem.return_1y > 0 ? 'text-up' : 'text-down')) : ''}">${r1y}</strong></span>
