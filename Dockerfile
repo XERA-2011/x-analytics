@@ -24,6 +24,10 @@ FROM python:3.9-slim
 
 WORKDIR /app
 
+# 版本跟踪 (Git Commit SHA)
+ARG GIT_COMMIT=dev
+ENV GIT_COMMIT=$GIT_COMMIT
+
 # 设置时区
 ENV TZ=Asia/Shanghai
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone

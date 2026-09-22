@@ -18,6 +18,7 @@ SERVER_USER="root"
 REMOTE_DIR="/opt/xera"
 CONTAINER_NAME="xanalytics"
 HEALTH_CHECK_URL="http://8.129.84.229:2012/?tab=qdii"
+API_HEALTH_URL="http://8.129.84.229:2012/api/health"
 REPO_NAME="xera-2011/x-analytics"
 
 # --- 颜色定义 ---
@@ -85,6 +86,7 @@ do_remote_deploy() {
 
 # 3. 健康检查
 do_health_check() {
+  local expected_commit="${1:-}"
   title "执行线上健康检查"
   info "请求地址: ${HEALTH_CHECK_URL}"
   
@@ -99,6 +101,21 @@ do_health_check() {
     
     if [ "$code" = "200" ]; then
       success "服务健康检查通过 (HTTP 200)！(耗时 $((retry_count * wait_seconds)) 秒)"
+
+      # 验证 Git Commit 版本号
+      local remote_commit
+      remote_commit=$(curl -s "${API_HEALTH_URL}" 2>/dev/null | python3 -c "import sys, json; print(json.load(sys.stdin).get('git_commit', ''))" 2>/dev/null || echo "")
+      if [ -n "$remote_commit" ]; then
+        if [ -n "$expected_commit" ]; then
+          if [ "${remote_commit:0:7}" = "${expected_commit:0:7}" ]; then
+            success "服务版本验证一致: git_commit=${remote_commit} (与本地发布版本一致)"
+          else
+            warn "服务版本不匹配: 远程 commit=${remote_commit}, 本地预期=${expected_commit}"
+          fi
+        else
+          info "服务当前运行版本: git_commit=${remote_commit}"
+        fi
+      fi
       return 0
     elif [ "$code" = "502" ] || [ "$code" = "000" ]; then
       echo -e "  ⏳ 等待应用启动中 (HTTP $code)... [$retry_count/$max_retries]"
@@ -139,7 +156,7 @@ case "$1" in
   -s|--skip-build)
     check_ssh
     do_remote_deploy
-    do_health_check
+    do_health_check "$(git rev-parse --short HEAD 2>/dev/null || echo '')"
     title "部署完成"
     success "🎉 发布成功！在线访问: ${HEALTH_CHECK_URL}"
     exit 0
@@ -212,7 +229,7 @@ if [ -z "$RUN_ID" ]; then
   echo ""
   if [[ ! $REPLY =~ ^[Nn]$ ]]; then
     do_remote_deploy
-    do_health_check
+    do_health_check "${SHORT_COMMIT}"
     exit 0
   else
     exit 1
@@ -232,8 +249,8 @@ success "GitHub 镜像构建并推送到阿里云 ACR 成功！"
 # 4. 本地直连 SSH 执行服务器拉取与更新
 do_remote_deploy
 
-# 5. 健康检查
-do_health_check
+# 5. 健康检查 (自动核验运行版本与当前 Git Commit 是否完全一致)
+do_health_check "${SHORT_COMMIT}"
 
 END_TIME=$(date +%s)
 DURATION=$((END_TIME - START_TIME))

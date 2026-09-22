@@ -160,6 +160,7 @@ def health_check():
         "status": "ok",
         "service": "X-Analytics",
         "version": settings.VERSION,
+        "git_commit": os.getenv("GIT_COMMIT", "dev")[:7],
         "cache": {
             "connected": cache.connected,
             "host": redis_host,

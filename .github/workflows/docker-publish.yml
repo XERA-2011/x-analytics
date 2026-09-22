@@ -62,7 +62,11 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ env.GHCR_REGISTRY }}/${{ env.GHCR_IMAGE }}:latest
+          tags: |
+            ${{ env.GHCR_REGISTRY }}/${{ env.GHCR_IMAGE }}:latest
+            ${{ env.GHCR_REGISTRY }}/${{ env.GHCR_IMAGE }}:${{ github.sha }}
+          build-args: |
+            GIT_COMMIT=${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           provenance: false
@@ -73,6 +77,10 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ env.ALIYUN_REGISTRY }}/${{ env.ALIYUN_IMAGE }}:latest
+          tags: |
+            ${{ env.ALIYUN_REGISTRY }}/${{ env.ALIYUN_IMAGE }}:latest
+            ${{ env.ALIYUN_REGISTRY }}/${{ env.ALIYUN_IMAGE }}:${{ github.sha }}
+          build-args: |
+            GIT_COMMIT=${{ github.sha }}
           cache-from: type=gha
           provenance: false
