@@ -3,6 +3,8 @@ AI 产业链火热度、周期评估与中美竞争分析终端 (机构级严谨
 """
 
 import requests
+from datetime import datetime
+from zoneinfo import ZoneInfo
 from typing import Dict, Any, List, Tuple
 from ...core.cache import cached
 from ...core.config import settings
@@ -35,40 +37,60 @@ class AIOverview:
         ("sz002230", "002230", "科大讯飞"),
     ]
 
+    # 2025~2026 美股常规法定闭市节假日 (美东日期)
+    US_MARKET_HOLIDAYS = {
+        # 2025
+        "2025-01-01", "2025-01-20", "2025-02-17", "2025-04-18", "2025-05-26",
+        "2025-06-19", "2025-07-04", "2025-09-01", "2025-11-27", "2025-12-25",
+        # 2026
+        "2026-01-01", "2026-01-19", "2026-02-16", "2026-04-03", "2026-05-25",
+        "2026-06-19", "2026-07-03", "2026-09-07", "2026-11-26", "2026-12-25",
+    }
+
     @staticmethod
     def get_market_statuses() -> Tuple[str, str, str]:
-        """计算当前中美市场的运营状态（基于北京时间）"""
-        now = get_beijing_time()
-        weekday = now.weekday()  # 0=Mon, ..., 6=Sun
-        hour = now.hour
-        minute = now.minute
-        time_val = hour * 100 + minute
+        """计算当前中美市场的运营状态（基于标准时区与日历，自动适配夏冬令时与节假日）"""
+        # 1. A股状态（北京时间）
+        now_bj = get_beijing_time()
+        bj_weekday = now_bj.weekday()  # 0=Mon, ..., 6=Sun
+        bj_time_val = now_bj.hour * 100 + now_bj.minute
 
-        # A股状态判定
-        if weekday in (5, 6):
-            cn_status = "休市"
-        elif time_val < 915:
+        if bj_weekday in (5, 6):
+            cn_status = "周末休市"
+        elif bj_time_val < 915:
             cn_status = "未开盘"
-        elif 915 <= time_val < 930:
+        elif 915 <= bj_time_val < 930:
             cn_status = "集合竞价"
-        elif (930 <= time_val <= 1130) or (1300 <= time_val <= 1500):
+        elif (930 <= bj_time_val <= 1130) or (1300 <= bj_time_val <= 1500):
             cn_status = "盘中"
-        elif 1130 < time_val < 1300:
+        elif 1130 < bj_time_val < 1300:
             cn_status = "午休"
         else:
             cn_status = "已收盘"
 
-        # 美股常规交易状态判定 (通常美东 09:30-16:00 对应北京时间 21:30-04:00)
-        if weekday == 5 and time_val >= 500:
+        # 2. 美股状态（基于纽约当地时间，自动处理夏冬令时 EDT/EST 与节假日）
+        try:
+            now_ny = datetime.now(ZoneInfo("America/New_York"))
+        except Exception:
+            from datetime import timezone, timedelta
+            now_ny = datetime.now(timezone(timedelta(hours=-4)))
+
+        ny_weekday = now_ny.weekday()
+        ny_date_str = now_ny.strftime("%Y-%m-%d")
+        ny_time_val = now_ny.hour * 100 + now_ny.minute
+
+        if ny_weekday in (5, 6):
             us_status = "周末休市"
-        elif weekday == 6:
-            us_status = "周末休市"
-        elif weekday == 0 and time_val < 2130:
-            us_status = "休市中"
-        elif (time_val >= 2130) or (time_val < 500):
+        elif ny_date_str in AIOverview.US_MARKET_HOLIDAYS:
+            us_status = "节日休市"
+        elif 930 <= ny_time_val < 1600:
             us_status = "盘中交易"
+        elif 400 <= ny_time_val < 930:
+            us_status = "盘前交易"
+        elif 1600 <= ny_time_val < 2000:
+            us_status = "盘后交易"
         else:
-            us_status = "昨夜收盘"
+            us_status = "夜间休市" if ny_time_val >= 2000 else "昨夜收盘"
 
         summary = f"A股{cn_status} · 美股{us_status}"
         return us_status, cn_status, summary
@@ -296,7 +318,7 @@ class AIOverview:
             )
             momentum_1d = round(min(100.0, max(0.0, 50.0 + weighted_pct_raw * 7.5)), 1)
 
-            # 3.5 行业层级均值平滑处理 (使用 Redis 存储滚动均值，过滤高频噪音)
+            # 3.5 行业层级均值平滑处理 (基于近5次采样窗口的一阶低通数字滤波阻尼，过滤高频报价噪音，非5日跨日MA)
             l0_avg, l1_avg, l2_avg = l0_raw, l1_raw, l2_raw
             l3_avg, l4_avg, l5_avg, l6_avg = l3_raw, l4_raw, l5_raw, l6_raw
             
@@ -310,7 +332,7 @@ class AIOverview:
                         "l3": l3_raw, "l4": l4_raw, "l5": l5_raw, "l6": l6_raw
                     }
                     cache.redis.lpush(history_key, json.dumps(current_averages))
-                    cache.redis.ltrim(history_key, 0, 4)  # 保留最近 5 次记录
+                    cache.redis.ltrim(history_key, 0, 4)  # 保留最近 5 次采样快照
 
                     history_items = cache.redis.lrange(history_key, 0, -1)
                     history_dicts = []
@@ -321,7 +343,7 @@ class AIOverview:
                             except Exception:
                                 pass
                     if history_dicts:
-                        # 40% 当期即时动能 + 60% 历史均值，既保证响应灵敏度又平滑剧烈跳动
+                        # 40% 当期即时动能 + 60% 采样阻尼滤波，既敏锐响应盘中冲击又平滑短线报价高频杂音
                         hist_l0 = sum(d["l0"] for d in history_dicts) / len(history_dicts)
                         hist_l1 = sum(d["l1"] for d in history_dicts) / len(history_dicts)
                         hist_l2 = sum(d["l2"] for d in history_dicts) / len(history_dicts)
@@ -588,8 +610,8 @@ class AIOverview:
             explanations = {
                 "cycle_score": {
                     "title": "AI 市场热度分（平滑七因子模型）",
-                    "formula": f"综合平滑分（40% 当期加权动能 + 60% 滚动平滑均值），单日即时动能分 = {momentum_1d} 分 (美股 {us_momentum_pct:+.2f}% · A股 {cn_momentum_pct:+.2f}%)。美股 AI 组合 PE = {us_ai_pe}x (市值加权调和平均)，美债 10Y 收益率 = {us_10y_yield:.2f}%。",
-                    "interpretation": "综合考虑 7 层产业链市值加权动能与滚动平滑因子，既保持对行情的敏锐响应，又有效过滤单日极端杂音。跨时区异步合成：美股交易时间（L0~L5，权重90%）与 A 股交易时间（L6，权重10%）交替驱动。70+ 分代表行情强劲；50~70 分代表稳健中性；<40 分代表周期降温。",
+                    "formula": f"综合平滑分（40% 当期即时动能 + 60% 滤波阻尼，基于近5次采样窗口滤波），单日即时动能分 = {momentum_1d} 分 (美股 {us_momentum_pct:+.2f}% · A股 {cn_momentum_pct:+.2f}%)。美股 AI 组合 PE = {us_ai_pe}x (总市值/总净利润 调和平均)，美债 10Y 收益率 = {us_10y_yield:.2f}%。",
+                    "interpretation": "综合考虑 7 层产业链市值加权动能与低通滤波阻尼，既保持对行情的敏锐响应，又有效过滤盘中高频报价噪音（注：阻尼滤波基于近5次采样窗口平滑，非跨日日线MA）。跨时区异步合成：美股交易时间（L0~L5，权重90%）与 A 股交易时间（L6，权重10%）交替驱动。70+ 分代表行情强劲；50~70 分代表稳健中性；<40 分代表周期降温。",
                     "weights": [
                         {"layer": "L0 能源电力", "weight": "10%", "targets": "GEV, CEG, VST, ETN"},
                         {"layer": "L1 算力芯片", "weight": "25%", "targets": "NVDA, AMD, AVGO, ARM, MRVL"},
@@ -606,13 +628,13 @@ class AIOverview:
                         {"name": "算力基础", "max": 20, "desc": f"考察 GPU 储备、制程与先进封装产能，动态联动 L1/L6 芯片板块盘中动能 (美 {us_compute} vs 中 {cn_compute})"},
                         {"name": "资本投入", "max": 20, "desc": f"基于北美四大云巨头年化 ${hyperscaler_capex['annual_run_rate_b']}B CapEx 财报底表 (宏观财报基准)"},
                         {"name": "商业化程度", "max": 20, "desc": f"综合考察企业级 AI Agent 渗透与 ARR 转化，动态联动 L5 SaaS 动能 (美 {us_commercial} vs 中 {cn_commercial})"},
-                        {"name": "估值安全性", "max": 30, "desc": f"基于真实市盈率 (美股 AI 加权 PE {us_ai_pe}x vs 国内 AI 加权 PE {cn_ai_pe}x) 与历史中枢偏离度实时计算"},
+                        {"name": "估值安全性", "max": 30, "desc": f"基于真实市盈率 (美股 AI 组合 PE {us_ai_pe}x vs 国内 AI 组合 PE {cn_ai_pe}x) 与历史中枢偏离度实时计算"},
                         {"name": "产业链完整度", "max": 10, "desc": "综合评估从电力、晶圆制造、光刻设备到应用的全栈自给率 (结构性宏观基准)"}
                     ]
                 },
                 "bubble_meter": {
                     "title": "AI 泡沫温度计与真实估值中枢",
-                    "desc": f"美股 AI 核心篮子加权 PE 为 {us_ai_pe}x (标杆中枢 28.0x)；国内 AI 龙头加权 PE 为 {cn_ai_pe}x (标杆中枢 45.0x)。当前美债 10Y 收益率 {us_10y_yield:.2f}%，提供真实折现率锚定。"
+                    "desc": f"美股 AI 核心组合 PE 为 {us_ai_pe}x (标杆中枢 28.0x，总市值/总净利润 调和平均)；国内 AI 龙头组合 PE 为 {cn_ai_pe}x (标杆中枢 45.0x)。当前美债 10Y 收益率 {us_10y_yield:.2f}%，提供真实折现率锚定。"
                 }
             }
 
@@ -697,7 +719,7 @@ class AIOverview:
                 "market_heat_score": heat_score,
                 "industry_cycle_score": None,
                 "score_scope": "market_heat",
-                "score_note": f"平滑七因子模型 (美股 AI 加权 PE {us_ai_pe}x | 年化 CapEx ${hyperscaler_capex['annual_run_rate_b']}B | 美债 10Y {us_10y_yield:.2f}%)",
+                "score_note": f"平滑七因子双轨模型 (40%即时动能 + 60%滤波阻尼 | 美股 AI 组合 PE {us_ai_pe}x | 年化 CapEx ${hyperscaler_capex['annual_run_rate_b']}B | 美债 10Y {us_10y_yield:.2f}%)",
                 "cycle_phase": cycle_phase,
                 "cycle_status": cycle_status,
                 "cycle_desc": cycle_desc,

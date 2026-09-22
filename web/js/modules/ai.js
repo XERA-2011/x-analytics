@@ -166,7 +166,7 @@ class AIMarketController {
                         <div class="ai-score-footer" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px;">
                             <span class="ai-footer-note" title="${data.momentum_note || '美股与A股时区错开异步合成'}">
                                 ${data.us_momentum_1d_pct != null ? `美股${data.us_market_status || '昨收'}: <strong style="color: ${data.us_momentum_1d_pct > 0 ? 'var(--color-up, #ef4444)' : (data.us_momentum_1d_pct < 0 ? 'var(--color-down, #22c55e)' : 'inherit')};">${data.us_momentum_1d_pct > 0 ? '+' : ''}${data.us_momentum_1d_pct}%</strong> · ` : ''}
-                                ${data.cn_momentum_1d_pct != null ? `A股${data.cn_market_status || '盘中'}: <strong style="color: ${data.cn_momentum_1d_pct > 0 ? 'var(--color-up, #ef4444)' : (data.cn_momentum_1d_pct < 0 ? 'var(--color-down, #22c55e)' : 'inherit')};">${data.cn_momentum_1d_pct > 0 ? '+' : ''}${data.cn_momentum_1d_pct}%</strong>` : '40%即时动能 + 60%历史平滑'}
+                                ${data.cn_momentum_1d_pct != null ? `A股${data.cn_market_status || '盘中'}: <strong style="color: ${data.cn_momentum_1d_pct > 0 ? 'var(--color-up, #ef4444)' : (data.cn_momentum_1d_pct < 0 ? 'var(--color-down, #22c55e)' : 'inherit')};">${data.cn_momentum_1d_pct > 0 ? '+' : ''}${data.cn_momentum_1d_pct}%</strong>` : '40%即时动能 + 60%滤波阻尼'}
                             </span>
                             ${data.us_ai_pe ? `<span class="ai-footer-pe">美股 AI 组合 PE: <strong>${data.us_ai_pe}x</strong> <span style="font-size: 9.5px; color: var(--text-tertiary);">(调和平均)</span></span>` : ''}
                         </div>
@@ -657,9 +657,9 @@ class AIMarketController {
                             <div style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 10.5px; background: rgba(0,0,0,0.3); padding: 6px 8px; border-radius: 4px; color: #e2e8f0; margin-bottom: 6px; line-height: 1.45; word-break: break-word;">
                                 <div><span style="color:#93c5fd;">weighted_pct_raw</span> = L0×10% + L1×25% + L2×20% + L3×15% + L4×10% + L5×10% + L6×10%</div>
                                 <div style="margin-top: 2px;"><span style="color:#fcd34d;">momentum_1d</span> = Min(100, Max(0, 50.0 + weighted_pct_raw × 7.5))</div>
-                                <div style="margin-top: 2px;"><span style="color:#86efac;">cycle_score (平滑热度)</span> = 40% × 当期即时动能 + 60% × 历史滚动均值</div>
+                                <div style="margin-top: 2px;"><span style="color:#86efac;">cycle_score (平滑热度)</span> = 40% × 当期即时动能 + 60% × 滤波阻尼 (近5次采样窗口)</div>
                             </div>
-                            <div style="font-size: 11px; color: var(--text-secondary); line-height: 1.4;">双轨模型：同时提供敏感反映今日盘中的【1D 即时动能】与过滤短线噪音的【平滑综合热度分】。</div>
+                            <div style="font-size: 11px; color: var(--text-secondary); line-height: 1.4;">双轨模型：同时提供敏感反映今日盘中的【1D 即时动能】与低通滤波平滑报价噪音的【平滑综合热度分】（阻尼滤波基于近5次采样窗口，非跨日日线MA）。</div>
                         </div>
 
                         ${weightsHtml}
