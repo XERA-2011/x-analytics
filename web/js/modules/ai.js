@@ -137,7 +137,7 @@ class AIMarketController {
                                 <span class="ai-trend-tag">${trendTag}</span>
                                 <span class="ai-risk-tag" ${riskClassAttr}>风险: ${riskTag}</span>
                                 ${data.momentum_1d_pct != null ? `
-                                    <span class="ai-momentum-tag" style="font-size: 11px; padding: 2px 7px; border-radius: 4px; font-weight: 600; ${data.momentum_1d_pct > 0 ? 'background: var(--color-up-light, rgba(239, 68, 68, 0.12)); color: var(--color-up-dark, #dc2626);' : (data.momentum_1d_pct < 0 ? 'background: var(--color-down-light, rgba(34, 197, 94, 0.12)); color: var(--color-down-dark, #16a34a);' : 'background: rgba(0,0,0,0.05); color: var(--text-secondary);')}">
+                                    <span class="ai-momentum-tag" title="${data.momentum_note || '跨时区异步加权动能'}" style="font-size: 11px; padding: 2px 7px; border-radius: 4px; font-weight: 600; ${data.momentum_1d_pct > 0 ? 'background: var(--color-up-light, rgba(239, 68, 68, 0.12)); color: var(--color-up-dark, #dc2626);' : (data.momentum_1d_pct < 0 ? 'background: var(--color-down-light, rgba(34, 197, 94, 0.12)); color: var(--color-down-dark, #16a34a);' : 'background: rgba(0,0,0,0.05); color: var(--text-secondary);')}">
                                         1D动能: ${data.momentum_1d_pct > 0 ? '+' : ''}${data.momentum_1d_pct.toFixed(2)}%
                                     </span>
                                 ` : (data.momentum_1d != null ? `<span class="ai-momentum-tag" style="font-size: 11px; padding: 2px 7px; border-radius: 4px; background: rgba(0,0,0,0.05); color: var(--text-secondary); font-weight: 500;">1D即时: ${data.momentum_1d}分</span>` : '')}
@@ -163,9 +163,12 @@ class AIMarketController {
                             </div>
                         </div>
 
-                        <div class="ai-score-footer">
-                            <span class="ai-footer-note">40%即时动能 + 60%历史滚动均值</span>
-                            ${data.us_ai_pe ? `<span class="ai-footer-pe">美股 AI PE: <strong>${data.us_ai_pe}x</strong></span>` : ''}
+                        <div class="ai-score-footer" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px;">
+                            <span class="ai-footer-note" title="${data.momentum_note || '美股与A股时区错开异步合成'}">
+                                ${data.us_momentum_1d_pct != null ? `美股${data.us_market_status || '昨收'}: <strong style="color: ${data.us_momentum_1d_pct > 0 ? 'var(--color-up, #ef4444)' : (data.us_momentum_1d_pct < 0 ? 'var(--color-down, #22c55e)' : 'inherit')};">${data.us_momentum_1d_pct > 0 ? '+' : ''}${data.us_momentum_1d_pct}%</strong> · ` : ''}
+                                ${data.cn_momentum_1d_pct != null ? `A股${data.cn_market_status || '盘中'}: <strong style="color: ${data.cn_momentum_1d_pct > 0 ? 'var(--color-up, #ef4444)' : (data.cn_momentum_1d_pct < 0 ? 'var(--color-down, #22c55e)' : 'inherit')};">${data.cn_momentum_1d_pct > 0 ? '+' : ''}${data.cn_momentum_1d_pct}%</strong>` : '40%即时动能 + 60%历史平滑'}
+                            </span>
+                            ${data.us_ai_pe ? `<span class="ai-footer-pe">美股 AI 组合 PE: <strong>${data.us_ai_pe}x</strong> <span style="font-size: 9.5px; color: var(--text-tertiary);">(调和平均)</span></span>` : ''}
                         </div>
                     </div>
 
@@ -203,9 +206,12 @@ class AIMarketController {
 
                     <!-- 右侧：四大核心验证信号 (2x2 微型卡片网格) -->
                     <div class="ai-signals-box">
-                        <div class="ai-badge-label" style="display: flex; justify-content: space-between; align-items: center;">
+                        <div class="ai-badge-label" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px;">
                             <span>四大核心验证信号</span>
-                            <span class="signal-status-pulse">● LIVE</span>
+                            <span class="ai-update-tag" style="font-size: 11px; font-weight: 500; color: var(--text-secondary); display: inline-flex; align-items: center; gap: 4px;">
+                                <span class="beacon-dot up" style="width: 6px; height: 6px; display: inline-block;"></span>
+                                更新于 ${data.update_time ? data.update_time.slice(11, 16) : '--:--'} · ${data.market_statuses_summary || '中美异步合成'}
+                            </span>
                         </div>
                         <div class="ai-signals-grid">
         `;
@@ -281,7 +287,10 @@ class AIMarketController {
                 <!-- 左卡：中美 AI 产业五维对比 -->
                 <div class="card ai-card-module">
                     <div class="card-header" style="margin-bottom: 4px;">
-                        <div class="card-title"><i data-lucide="git-compare" width="16" style="vertical-align: middle;"></i> 中美 AI 产业五维对比 (Radar Matrix)</div>
+                        <div class="card-title" style="display: flex; align-items: center; flex-wrap: wrap; gap: 6px;">
+                            <span><i data-lucide="git-compare" width="16" style="vertical-align: middle;"></i> 中美 AI 产业五维对比</span>
+                            <span style="font-size: 10px; font-weight: normal; color: var(--text-tertiary); background: rgba(0,0,0,0.04); padding: 1px 5px; border-radius: 4px;">动态动能+财报基准</span>
+                        </div>
                         <button class="info-btn" id="info-ai-matrix" title="模型说明"><i data-lucide="help-circle" width="14"></i></button>
                     </div>
                     <div class="card-body" style="padding: 2px 6px 4px 6px; justify-content: center; align-items: center;">
@@ -466,6 +475,7 @@ class AIMarketController {
                                     <i data-lucide="bar-chart-3" width="16" style="vertical-align: middle;"></i> 四大云巨头 CapEx 晴雨表
                                 </div>
                                 <div style="display: flex; align-items: center; gap: 4px; margin-left: auto;">
+                                    <span style="font-size: 10px; color: var(--text-tertiary); background: rgba(0,0,0,0.04); padding: 1px 5px; border-radius: 4px;">${capex.benchmark_period || '季度财报基准'}</span>
                                     <span style="font-size: 10.5px; color: #059669; font-weight: 700; background: rgba(16, 185, 129, 0.12); padding: 1px 6px; border-radius: 4px; white-space: nowrap;">
                                         ${capex.status}
                                     </span>

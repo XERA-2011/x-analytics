@@ -36,8 +36,46 @@ class AIOverview:
     ]
 
     @staticmethod
+    def get_market_statuses() -> Tuple[str, str, str]:
+        """计算当前中美市场的运营状态（基于北京时间）"""
+        now = get_beijing_time()
+        weekday = now.weekday()  # 0=Mon, ..., 6=Sun
+        hour = now.hour
+        minute = now.minute
+        time_val = hour * 100 + minute
+
+        # A股状态判定
+        if weekday in (5, 6):
+            cn_status = "休市"
+        elif time_val < 915:
+            cn_status = "未开盘"
+        elif 915 <= time_val < 930:
+            cn_status = "集合竞价"
+        elif (930 <= time_val <= 1130) or (1300 <= time_val <= 1500):
+            cn_status = "盘中"
+        elif 1130 < time_val < 1300:
+            cn_status = "午休"
+        else:
+            cn_status = "已收盘"
+
+        # 美股常规交易状态判定 (通常美东 09:30-16:00 对应北京时间 21:30-04:00)
+        if weekday == 5 and time_val >= 500:
+            us_status = "周末休市"
+        elif weekday == 6:
+            us_status = "周末休市"
+        elif weekday == 0 and time_val < 2130:
+            us_status = "休市中"
+        elif (time_val >= 2130) or (time_val < 500):
+            us_status = "盘中交易"
+        else:
+            us_status = "昨夜收盘"
+
+        summary = f"A股{cn_status} · 美股{us_status}"
+        return us_status, cn_status, summary
+
+    @staticmethod
     @cached(
-        "ai:overview_v14", 
+        "ai:overview_v15", 
         ttl=settings.CACHE_TTL["ai_overview"],
         stale_ttl=settings.CACHE_TTL["ai_overview"] * settings.STALE_TTL_RATIO,
         sync_on_cold=True
@@ -48,6 +86,7 @@ class AIOverview:
         """
         try:
             logger.info("🤖 开始计算 AI 产业周期终端真实严谨数据...")
+            us_market_status, cn_market_status, market_summary = AIOverview.get_market_statuses()
             
             # 1. 批量获取美股核心标的行情与真实估值 (PE / 市值 / 涨跌)
             spot_map = get_us_spot_direct(AIOverview.US_AI_SYMBOLS)
@@ -93,7 +132,7 @@ class AIOverview:
                 return sum(it["change_pct"] for it in valid_items) / len(valid_items)
 
             def cap_weighted_pe(items: List[Dict[str, Any]], fallback_pe: float = 30.0) -> float:
-                """按总市值加权计算真实动态 P/E 估值倍数。"""
+                """按总市值加权调和平均计算真实组合 P/E 估值倍数 (总市值 / 总净利润)。"""
                 valid_items = [
                     it for it in items 
                     if it.get("pe") is not None and it["pe"] > 0 and (it.get("market_cap") or 0) > 0
@@ -101,7 +140,10 @@ class AIOverview:
                 if not valid_items:
                     return fallback_pe
                 total_cap = sum(it["market_cap"] for it in valid_items)
-                return sum(it["pe"] * it["market_cap"] for it in valid_items) / total_cap
+                total_earnings = sum(it["market_cap"] / it["pe"] for it in valid_items)
+                if total_earnings <= 0:
+                    return fallback_pe
+                return round(total_cap / total_earnings, 1)
 
             def change_value(item: Dict[str, Any]) -> float:
                 value = item.get("change_pct")
@@ -234,7 +276,15 @@ class AIOverview:
             l6_raw = cap_weighted_change(l6_stocks)
             nvda_change = change_value(nvda)
 
-            # 单日未经平滑的即时加权动能
+            # 3.1 跨市场动能拆解 (美股昨收/盘中 vs A股盘中/收盘)
+            us_weight_sum = 0.10 + 0.25 + 0.20 + 0.15 + 0.10 + 0.10  # 0.90
+            us_momentum_pct = round(
+                (l0_raw * 0.10 + l1_raw * 0.25 + l2_raw * 0.20 + l3_raw * 0.15 + l4_raw * 0.10 + l5_raw * 0.10) / us_weight_sum,
+                2
+            )
+            cn_momentum_pct = round(l6_raw, 2)
+
+            # 全球跨时区综合即时加权动能 (异步合成)
             weighted_pct_raw = (
                 l0_raw * 0.10 + 
                 l1_raw * 0.25 + 
@@ -337,6 +387,8 @@ class AIOverview:
                 "yoy_growth_pct": 45.0,
                 "status": "高景气大扩张 (真实基本面支撑)",
                 "basis": "2025~2026 最新滚动季度财报基准",
+                "source_type": "quarterly_filings",
+                "benchmark_period": "2025Q4~2026Q1 财报基准",
                 "msft_quarterly_capex_b": 20.5,
                 "amzn_quarterly_capex_b": 18.5,
                 "googl_quarterly_capex_b": 13.5,
@@ -536,8 +588,8 @@ class AIOverview:
             explanations = {
                 "cycle_score": {
                     "title": "AI 市场热度分（平滑七因子模型）",
-                    "formula": f"综合平滑分（40% 当期加权动能 + 60% 滚动历史均值），单日即时动能分 = {momentum_1d} 分。美股 AI 加权 PE = {us_ai_pe}x，美债 10Y 收益率 = {us_10y_yield:.2f}%。",
-                    "interpretation": "综合考虑 7 层产业链市值加权动能与滚动平滑因子，既保持对行情的敏锐响应，又有效过滤单日极端杂音。70+ 分代表行情强劲；50~70 分代表稳健中性；<40 分代表周期降温。",
+                    "formula": f"综合平滑分（40% 当期加权动能 + 60% 滚动平滑均值），单日即时动能分 = {momentum_1d} 分 (美股 {us_momentum_pct:+.2f}% · A股 {cn_momentum_pct:+.2f}%)。美股 AI 组合 PE = {us_ai_pe}x (市值加权调和平均)，美债 10Y 收益率 = {us_10y_yield:.2f}%。",
+                    "interpretation": "综合考虑 7 层产业链市值加权动能与滚动平滑因子，既保持对行情的敏锐响应，又有效过滤单日极端杂音。跨时区异步合成：美股交易时间（L0~L5，权重90%）与 A 股交易时间（L6，权重10%）交替驱动。70+ 分代表行情强劲；50~70 分代表稳健中性；<40 分代表周期降温。",
                     "weights": [
                         {"layer": "L0 能源电力", "weight": "10%", "targets": "GEV, CEG, VST, ETN"},
                         {"layer": "L1 算力芯片", "weight": "25%", "targets": "NVDA, AMD, AVGO, ARM, MRVL"},
@@ -635,6 +687,13 @@ class AIOverview:
                 "heat_score": heat_score,
                 "momentum_1d": momentum_1d,
                 "momentum_1d_pct": round(weighted_pct_raw, 2),
+                "us_momentum_1d_pct": us_momentum_pct,
+                "cn_momentum_1d_pct": cn_momentum_pct,
+                "composite_momentum_1d_pct": round(weighted_pct_raw, 2),
+                "momentum_note": "跨时区异步合成 (美股昨收/盘中 + A股盘中/收盘)",
+                "us_market_status": us_market_status,
+                "cn_market_status": cn_market_status,
+                "market_statuses_summary": market_summary,
                 "market_heat_score": heat_score,
                 "industry_cycle_score": None,
                 "score_scope": "market_heat",
