@@ -257,7 +257,21 @@ class QDIIController {
                 `;
             }
 
-            const tagHtml = item.tag ? `<span class="fund-tag" style="background: rgba(115,115,115,0.08); color: var(--text-secondary); font-size: 10px; padding: 1px 4px; border-radius: 3px; font-weight: 600; margin-left: 6px; border: 1px solid rgba(115,115,115,0.25); display: inline-block; vertical-align: middle; transform: translateY(-1.5px);">${item.tag}</span>` : '';
+            let tagClass = 'fund-tag-default';
+            if (item.tag) {
+                if (item.tag.includes('半导体') || item.tag.includes('芯片')) {
+                    tagClass = 'fund-tag-chip';
+                } else if (item.tag.includes('科技') || item.tag.includes('互联') || item.tag.includes('智能') || item.tag.includes('数字')) {
+                    tagClass = 'fund-tag-tech';
+                } else if (item.tag.includes('配置') || item.tag.includes('成长') || item.tag.includes('精选') || item.tag.includes('多资产')) {
+                    tagClass = 'fund-tag-global';
+                } else if (item.tag.includes('车') || item.tag.includes('能源') || item.tag.includes('消费')) {
+                    tagClass = 'fund-tag-energy';
+                } else if (item.tag.includes('纳指') || item.tag.includes('标普') || item.tag.includes('美股')) {
+                    tagClass = 'fund-tag-us';
+                }
+            }
+            const tagHtml = item.tag ? `<span class="fund-tag ${tagClass}">${item.tag}</span>` : '';
 
             const buyStatus = item.buy_status || '开放申购';
             const buyLimit = item.buy_limit;
@@ -284,13 +298,16 @@ class QDIIController {
             const navDateStr = officialNavDate ? officialNavDate.slice(5) : '';
             const isEst = item.is_estimated && item.estimated_nav != null;
             const estChangeStr = item.estimated_change_pct != null ? `${item.estimated_change_pct > 0 ? '+' : ''}${item.estimated_change_pct}%` : '';
+            const estChangeClass = item.estimated_change_pct > 0 ? 'text-up' : item.estimated_change_pct < 0 ? 'text-down' : '';
 
             const navBadgeHtml = `
-                <div class="qdii-nav-subtext" style="font-size: 11px; color: var(--text-tertiary); margin-top: 3px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-                    <span>官方净值 <strong class="font-mono" style="color: var(--text-primary); font-weight: 600;">${officialNav != null ? officialNav : '--'}</strong>${navDateStr ? ` <span style="font-size: 10px;">(${navDateStr})</span>` : ''}</span>
+                <div class="qdii-nav-subtext">
+                    <span class="qdii-nav-item">
+                        官方净值 <strong class="font-mono" style="color: var(--text-primary); font-weight: 600;">${officialNav != null ? officialNav : '--'}</strong>${navDateStr ? ` <span class="qdii-nav-date">(${navDateStr})</span>` : ''}
+                    </span>
                     ${isEst ? `
-                        <span class="font-mono" style="padding: 1px 5px; border-radius: 3px; font-size: 10px; font-weight: 600; background: rgba(59,130,246,0.08); color: var(--accent-blue); border: 1px solid rgba(59,130,246,0.25);" title="盘中参考估值基于底层资产动态变动推算 (时间: ${item.estimated_time || ''})">
-                            盘中估 ${item.estimated_nav} ${estChangeStr}
+                        <span class="qdii-est-badge font-mono" title="盘中参考估值基于底层资产动态变动推算 (时间: ${item.estimated_time || ''})">
+                            盘中估 ${item.estimated_nav} <strong class="${estChangeClass}">${estChangeStr}</strong>
                         </span>
                     ` : ''}
                 </div>
@@ -301,11 +318,11 @@ class QDIIController {
                     <td class="col-rank"><span class="rank-badge ${rankBadgeClass}">${rank}</span></td>
                     <td class="col-name qdii-clickable" data-code="${item.code}" data-name="${item.name}" title="点击查看 ${item.name} 前十大重仓股">
                         <div class="qdii-name-wrapper">
-                            <div style="display: flex; align-items: center; gap: 4px; flex-wrap: wrap;">
-                                <span class="qdii-code-text">${item.code}</span>
+                            <div class="qdii-name-topline">
+                                <span class="qdii-code-text font-mono">${item.code}</span>
                                 ${tagHtml}
                             </div>
-                            <span class="qdii-name-text" style="color: var(--primary); font-weight: 600;">${item.name}</span>
+                            <span class="qdii-name-text">${item.name}</span>
                             ${navBadgeHtml}
                         </div>
                     </td>
@@ -322,12 +339,26 @@ class QDIIController {
                             </div>
                         </div>
                     </td>
-                    <td class="col-drawdown font-mono" style="color: var(--text-secondary);">${mddStr}</td>
-                    <td class="col-volatility font-mono" style="color: var(--text-secondary);">${volStr}</td>
-                    <td class="col-fee font-mono">${item.fee_rate}</td>
-                    <td class="col-scale font-mono" style="color: var(--text-secondary);">${item.scale || '--'}</td>
+                    <td class="col-risk">
+                        <div class="qdii-risk-cell">
+                            <div class="qdii-risk-row">
+                                <span class="qdii-risk-lbl">回撤</span>
+                                <span class="font-mono" style="color: var(--text-secondary);">${mddStr}</span>
+                            </div>
+                            <div class="qdii-risk-row">
+                                <span class="qdii-risk-lbl">波动</span>
+                                <span class="font-mono" style="color: var(--text-secondary);">${volStr}</span>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="col-fee font-mono" style="color: var(--text-secondary);">${item.fee_rate}</td>
+                    <td class="col-scale">
+                        <div class="qdii-scale-cell">
+                            <div class="qdii-scale-val font-mono">${item.scale || '--'}</div>
+                            <div class="qdii-scale-date">${item.inception_date ? item.inception_date.slice(0, 7) + ' 成立' : '--'}</div>
+                        </div>
+                    </td>
                     <td class="col-status"><span class="status-badge ${statusClass}" title="${statusTooltip}">${statusText}</span></td>
-                    <td class="col-date" style="color: var(--text-secondary);">${item.inception_date || '--'}</td>
                 </tr>
             `;
         }).join('');
@@ -369,7 +400,21 @@ class QDIIController {
                 statusTooltip = '场内交易型基金 (无场外申购限额)';
             }
 
-            const tagHtml = item.tag ? `<span class="qdii-mcard-tag">${item.tag}</span>` : '';
+            let tagClass = 'fund-tag-default';
+            if (item.tag) {
+                if (item.tag.includes('半导体') || item.tag.includes('芯片')) {
+                    tagClass = 'fund-tag-chip';
+                } else if (item.tag.includes('科技') || item.tag.includes('互联') || item.tag.includes('智能') || item.tag.includes('数字')) {
+                    tagClass = 'fund-tag-tech';
+                } else if (item.tag.includes('配置') || item.tag.includes('成长') || item.tag.includes('精选') || item.tag.includes('多资产')) {
+                    tagClass = 'fund-tag-global';
+                } else if (item.tag.includes('车') || item.tag.includes('能源') || item.tag.includes('消费')) {
+                    tagClass = 'fund-tag-energy';
+                } else if (item.tag.includes('纳指') || item.tag.includes('标普') || item.tag.includes('美股')) {
+                    tagClass = 'fund-tag-us';
+                }
+            }
+            const tagHtml = item.tag ? `<span class="fund-tag ${tagClass}">${item.tag}</span>` : '';
 
             // 资产配置
             const allocInfo = this._calcNormalizedAllocation(item);
@@ -494,13 +539,11 @@ class QDIIController {
                             <th class="col-rank">排名</th>
                             <th class="col-name">基金名称</th>
                             <th class="col-allocation">资产配置 / 仓位</th>
-                            <th class="col-return">收益</th>
-                            <th class="col-drawdown">近1年回撤</th>
-                            <th class="col-volatility">年化波动率</th>
+                            <th class="col-return">收益表现</th>
+                            <th class="col-risk">风险指标</th>
                             <th class="col-fee">综合费率</th>
-                            <th class="col-scale">资产规模</th>
+                            <th class="col-scale">规模 / 成立</th>
                             <th class="col-status">状态</th>
-                            <th class="col-date">成立时间</th>
                         </tr>
                     </thead>
                     <tbody>
