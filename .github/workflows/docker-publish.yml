@@ -56,8 +56,8 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # 1. 优先推送到 GitHub Container Registry (核心仓库)
-      - name: Build and push to GitHub Container Registry
+      # 统一构建镜像并并行推送到 GHCR 与 阿里云 ACR
+      - name: Build and push to Registries
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -65,22 +65,10 @@ jobs:
           tags: |
             ${{ env.GHCR_REGISTRY }}/${{ env.GHCR_IMAGE }}:latest
             ${{ env.GHCR_REGISTRY }}/${{ env.GHCR_IMAGE }}:${{ github.sha }}
-          build-args: |
-            GIT_COMMIT=${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          provenance: false
-
-      # 2. 推送到阿里云容器镜像服务 (生产服务器拉取源，必须成功)
-      - name: Push to Aliyun Container Registry
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          tags: |
             ${{ env.ALIYUN_REGISTRY }}/${{ env.ALIYUN_IMAGE }}:latest
             ${{ env.ALIYUN_REGISTRY }}/${{ env.ALIYUN_IMAGE }}:${{ github.sha }}
           build-args: |
             GIT_COMMIT=${{ github.sha }}
           cache-from: type=gha
+          cache-to: type=gha,mode=max
           provenance: false

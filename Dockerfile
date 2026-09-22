@@ -24,10 +24,6 @@ FROM python:3.9-slim
 
 WORKDIR /app
 
-# 版本跟踪 (Git Commit SHA)
-ARG GIT_COMMIT=dev
-ENV GIT_COMMIT=$GIT_COMMIT
-
 # 设置时区
 ENV TZ=Asia/Shanghai
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
@@ -38,6 +34,10 @@ ENV PATH=/root/.local/bin:$PATH
 
 # 复制应用代码
 COPY . .
+
+# 版本跟踪 (Git Commit SHA) - 置于末尾确保 700MB 依赖层永久复用缓存
+ARG GIT_COMMIT=dev
+ENV GIT_COMMIT=$GIT_COMMIT
 
 # 设置 Python 路径
 ENV PYTHONPATH=/app
