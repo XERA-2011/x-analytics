@@ -156,10 +156,10 @@ class AIMarketController {
                                 </div>
                             </div>
                             <div class="ai-spectrum-labels">
-                                <span class="${clampedScore < 35 ? 'active-zone' : ''}">降温 0~35</span>
-                                <span class="${clampedScore >= 35 && clampedScore < 65 ? 'active-zone' : ''}">探索 35~65</span>
-                                <span class="${clampedScore >= 65 && clampedScore < 85 ? 'active-zone' : ''}">爆发 65~85</span>
-                                <span class="${clampedScore >= 85 ? 'active-zone' : ''}">预警 85~100</span>
+                                <span class="spectrum-lbl color-cooling ${clampedScore < 35 ? 'active' : ''}">降温 0~35</span>
+                                <span class="spectrum-lbl color-neutral ${clampedScore >= 35 && clampedScore < 65 ? 'active' : ''}">探索 35~65</span>
+                                <span class="spectrum-lbl color-active ${clampedScore >= 65 && clampedScore < 85 ? 'active' : ''}">爆发 65~85</span>
+                                <span class="spectrum-lbl color-warning ${clampedScore >= 85 ? 'active' : ''}">预警 85~100</span>
                             </div>
                         </div>
 
@@ -429,20 +429,23 @@ class AIMarketController {
                                             <span>${peStr}</span>
                                             <span>泡沫风险: <strong style="font-family: var(--font-mono); font-weight: 700; color: ${dotColor};">${riskVal} / 100</strong></span>
                                         </div>
-                                        <!-- 100% 全宽自适应温度计颜色条 (与下方刻度严格对齐) -->
+                                        <!-- 100% 全宽全谱色阶轨道 (与顶部 AI MARKET HEAT 统一设计语言) -->
                                         <div class="thermo-bar-wrapper">
-                                            <div class="thermo-bar-liquid" style="width: ${clampedRisk}%;"></div>
+                                            <div class="thermo-zone zone-cooling" title="0-35 健康扩张"></div>
+                                            <div class="thermo-zone zone-neutral" title="35-65 相对平稳"></div>
+                                            <div class="thermo-zone zone-active" title="65-85 估值偏高"></div>
+                                            <div class="thermo-zone zone-warning" title="85-100 泡沫预警"></div>
                                             <div class="thermo-bar-tick" style="left: 35%;"></div>
                                             <div class="thermo-bar-tick" style="left: 65%;"></div>
                                             <div class="thermo-bar-tick" style="left: 85%;"></div>
                                             <div class="thermo-bar-cursor" style="left: ${clampedRisk}%; background: ${dotColor};"></div>
                                         </div>
-                                        <div style="position: relative; width: 100%; height: 14px; font-size: 8.5px; color: var(--text-tertiary, #94a3b8); margin-top: 4px;">
-                                            <span style="position: absolute; left: 0;" class="${riskNum < 35 ? 'active-thermo-zone' : ''}">0 健康</span>
-                                            <span style="position: absolute; left: 35%; transform: translateX(-50%); white-space: nowrap;" class="${riskNum >= 35 && riskNum < 65 ? 'active-thermo-zone' : ''}">35 平稳</span>
-                                            <span style="position: absolute; left: 65%; transform: translateX(-50%); white-space: nowrap;" class="${riskNum >= 65 && riskNum < 85 ? 'active-thermo-zone' : ''}">65 偏高</span>
-                                            <span style="position: absolute; left: 85%; transform: translateX(-50%); white-space: nowrap;" class="${riskNum >= 85 ? 'active-thermo-zone' : ''}">85 预警</span>
-                                            <span style="position: absolute; right: 0;">100</span>
+                                        <div class="thermo-scale-labels">
+                                            <span style="position: absolute; left: 0;" class="thermo-lbl color-cooling ${riskNum < 35 ? 'active' : ''}">0 健康</span>
+                                            <span style="position: absolute; left: 35%; transform: translateX(-50%); white-space: nowrap;" class="thermo-lbl color-neutral ${riskNum >= 35 && riskNum < 65 ? 'active' : ''}">35 平稳</span>
+                                            <span style="position: absolute; left: 65%; transform: translateX(-50%); white-space: nowrap;" class="thermo-lbl color-active ${riskNum >= 65 && riskNum < 85 ? 'active' : ''}">65 偏高</span>
+                                            <span style="position: absolute; left: 85%; transform: translateX(-50%); white-space: nowrap;" class="thermo-lbl color-warning ${riskNum >= 85 ? 'active' : ''}">85 预警</span>
+                                            <span style="position: absolute; right: 0;" class="thermo-lbl color-warning">100</span>
                                         </div>
                                     </div>
                                 `;

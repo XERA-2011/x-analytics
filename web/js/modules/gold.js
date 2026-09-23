@@ -319,11 +319,11 @@ class GoldController {
                         </div>
                     </div>
                     <div class="metal-scale-labels">
-                        <span class="scale-item scale-ext-oversold">极度超卖</span>
-                        <span class="scale-item scale-oversold">超卖</span>
-                        <span class="scale-item scale-neutral">中性</span>
-                        <span class="scale-item scale-overbought">超买</span>
-                        <span class="scale-item scale-ext-overbought">极度超买</span>
+                        <span class="scale-item scale-ext-oversold ${score < 25 ? 'active' : ''}">极度超卖</span>
+                        <span class="scale-item scale-oversold ${score >= 25 && score < 45 ? 'active' : ''}">超卖</span>
+                        <span class="scale-item scale-neutral ${score >= 45 && score <= 55 ? 'active' : ''}">中性</span>
+                        <span class="scale-item scale-overbought ${score > 55 && score <= 75 ? 'active' : ''}">超买</span>
+                        <span class="scale-item scale-ext-overbought ${score > 75 ? 'active' : ''}">极度超买</span>
                     </div>
                 </div>
 
