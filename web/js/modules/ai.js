@@ -384,27 +384,28 @@ class AIMarketController {
                                 // 项目统一四阶段色标与状态映射 (0~35健康绿, 35~65平稳黄, 65~85偏高橙, 85~100预警红)
                                 let dotColor = '#ca8a04';
                                 let badgeClass = 'neutral';
-                                let statusText = bm.status_text || '相对平稳';
+                                let statusText = '相对平稳';
 
                                 if (riskNum < 35) {
                                     dotColor = '#16a34a';
                                     badgeClass = 'healthy';
-                                    if (!bm.status_text) statusText = '健康资本扩张';
+                                    statusText = '健康扩张';
                                 } else if (riskNum < 65) {
                                     dotColor = '#ca8a04';
                                     badgeClass = 'neutral';
-                                    if (!bm.status_text) statusText = '相对平稳';
+                                    statusText = '相对平稳';
                                 } else if (riskNum < 85) {
                                     dotColor = '#ea580c';
-                                    badgeClass = 'warning';
-                                    if (!bm.status_text) statusText = '估值偏高';
+                                    badgeClass = 'elevated';
+                                    statusText = '估值偏高';
                                 } else {
                                     dotColor = '#dc2626';
                                     badgeClass = 'warning';
-                                    if (!bm.status_text) statusText = '泡沫预警';
+                                    statusText = '泡沫预警';
                                 }
-                                if (bm.status_class) {
-                                    badgeClass = bm.status_class === 'healthy' ? 'healthy' : (bm.status_class === 'neutral' ? 'neutral' : 'warning');
+
+                                if (bm.status_text) {
+                                    statusText = (riskNum >= 35 && riskNum < 65 && bm.status_text === '健康资本扩张') ? '相对平稳' : bm.status_text;
                                 }
 
                                 const peStr = bm.pe_ratio ? `真实加权 PE: <strong>${bm.pe_ratio}x</strong> (标杆 ${bm.pe_benchmark || '--'}x)` : `产业价值分: <strong>${bm.value_score}</strong>`;
@@ -414,7 +415,10 @@ class AIMarketController {
                                     <div class="svg-thermo-row" style="background: var(--bg-secondary, #f8fafc); border: 1px solid var(--border-light); border-radius: 6px; padding: 7px 10px; margin-bottom: 5px;">
                                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px; flex-wrap: wrap; gap: 4px;">
                                             <span style="font-size: 11.5px; font-weight: 700; color: var(--text-primary);">${country} AI</span>
-                                            <span class="svg-thermo-badge ${badgeClass}" style="font-size: 9.5px; padding: 1px 6px; border-radius: 4px;">${statusText}</span>
+                                            <span class="svg-thermo-badge ${badgeClass}">
+                                                <span style="width: 5px; height: 5px; border-radius: 50%; background: ${dotColor}; display: inline-block;"></span>
+                                                ${statusText}
+                                            </span>
                                         </div>
                                         <div style="display: flex; justify-content: space-between; align-items: center; font-size: 10.5px; color: var(--text-secondary); margin-bottom: 4px;">
                                             <span>${peStr}</span>
@@ -441,11 +445,12 @@ class AIMarketController {
                                             <!-- 游标圆点 (与顶部热度条设计语言统一) -->
                                             <circle cx="${pinX}" cy="6" r="4.5" fill="${dotColor}" stroke="#ffffff" stroke-width="2" style="filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));"/>
                                         </svg>
-                                        <div style="display: flex; justify-content: space-between; font-size: 8.5px; color: var(--text-tertiary, #94a3b8); margin-top: 3px; padding: 0 1px;">
-                                            <span>0 健康</span>
-                                            <span style="margin-left: 18px;">35 平稳</span>
-                                            <span style="margin-left: 20px;">65 偏高</span>
-                                            <span>85 预警 100</span>
+                                        <div style="position: relative; width: 100%; height: 13px; font-size: 8.5px; color: var(--text-tertiary, #94a3b8); margin-top: 3px;">
+                                            <span style="position: absolute; left: 0;" class="${riskNum < 35 ? 'active-thermo-zone' : ''}">0 健康</span>
+                                            <span style="position: absolute; left: 35%; transform: translateX(-50%); white-space: nowrap;" class="${riskNum >= 35 && riskNum < 65 ? 'active-thermo-zone' : ''}">35 平稳</span>
+                                            <span style="position: absolute; left: 65%; transform: translateX(-50%); white-space: nowrap;" class="${riskNum >= 65 && riskNum < 85 ? 'active-thermo-zone' : ''}">65 偏高</span>
+                                            <span style="position: absolute; left: 85%; transform: translateX(-50%); white-space: nowrap;" class="${riskNum >= 85 ? 'active-thermo-zone' : ''}">85 预警</span>
+                                            <span style="position: absolute; right: 0;">100</span>
                                         </div>
                                     </div>
                                 `;

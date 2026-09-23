@@ -523,22 +523,35 @@ class AIOverview:
             us_val_score = round(min(100.0, max(50.0, 78.0 + (100.0 - us_bubble_risk) * 0.15 + (l1_avg + l4_avg) * 0.5)), 1)
             cn_val_score = round(min(100.0, max(40.0, 60.0 + l6_avg * 0.6 + (100.0 - cn_bubble_risk) * 0.1)), 1)
 
+            def _get_bubble_status(risk_score):
+                if risk_score < 35.0:
+                    return "健康扩张", "healthy"
+                elif risk_score < 65.0:
+                    return "相对平稳", "neutral"
+                elif risk_score < 85.0:
+                    return "估值偏高", "elevated"
+                else:
+                    return "泡沫预警", "warning"
+
+            us_status_text, us_status_class = _get_bubble_status(us_bubble_risk)
+            cn_status_text, cn_status_class = _get_bubble_status(cn_bubble_risk)
+
             bubble_meter = {
                 "us": {
                     "value_score": us_val_score,
                     "bubble_risk": us_bubble_risk,
                     "pe_ratio": us_ai_pe,
                     "pe_benchmark": us_pe_benchmark,
-                    "status_text": "健康资本扩张" if us_bubble_risk < 60.0 else ("估值中性" if us_bubble_risk < 75.0 else "泡沫风险偏高"),
-                    "status_class": "healthy" if us_bubble_risk < 60.0 else ("neutral" if us_bubble_risk < 75.0 else "warning")
+                    "status_text": us_status_text,
+                    "status_class": us_status_class
                 },
                 "cn": {
                     "value_score": cn_val_score,
                     "bubble_risk": cn_bubble_risk,
                     "pe_ratio": cn_ai_pe,
                     "pe_benchmark": cn_pe_benchmark,
-                    "status_text": "主题情绪过热" if cn_bubble_risk >= 70.0 else ("估值溢价偏高" if cn_bubble_risk >= 55.0 else "相对平稳"),
-                    "status_class": "warning" if cn_bubble_risk >= 70.0 else ("neutral" if cn_bubble_risk >= 55.0 else "healthy")
+                    "status_text": cn_status_text,
+                    "status_class": cn_status_class
                 }
             }
 
