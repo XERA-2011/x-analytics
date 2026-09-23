@@ -295,6 +295,7 @@ class QDIIController {
 
             const officialNav = item.official_nav || item.nav;
             const officialNavDate = item.official_nav_date || item.nav_date;
+            const navDateStr = officialNavDate ? officialNavDate.slice(5) : '';
             const isEst = item.is_estimated && item.estimated_nav != null && (!item.estimated_date || !officialNavDate || officialNavDate === '最新披露' || item.estimated_date > officialNavDate);
             const estChangeStr = item.estimated_change_pct != null ? `${item.estimated_change_pct > 0 ? '+' : ''}${item.estimated_change_pct}%` : '';
             const estChangeClass = item.estimated_change_pct > 0 ? 'text-up' : item.estimated_change_pct < 0 ? 'text-down' : '';
@@ -761,6 +762,7 @@ class QDIIController {
             const fundItem = (this.rawFunds || []).find(f => f.code === code) || {};
             const officialNav = fundItem.official_nav || fundItem.nav;
             const officialNavDate = fundItem.official_nav_date || fundItem.nav_date;
+            const navDateStr = officialNavDate ? ` (${officialNavDate})` : '';
             const isEst = fundItem.is_estimated && fundItem.estimated_nav != null && (!fundItem.estimated_date || !officialNavDate || officialNavDate === '最新披露' || fundItem.estimated_date > officialNavDate);
             const estChangeStr = fundItem.estimated_change_pct != null ? `${fundItem.estimated_change_pct > 0 ? '+' : ''}${fundItem.estimated_change_pct}%` : '';
 
