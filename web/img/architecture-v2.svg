@@ -1,0 +1,136 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" width="1200" height="675" style="background: #ffffff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif;">
+  <defs>
+    <!-- Arrowhead markers -->
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#0284c7" />
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#16a34a" />
+    </marker>
+    <marker id="arrow-orange" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#ea580c" />
+    </marker>
+    <marker id="arrow-purple" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#9333ea" />
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#dc2626" />
+    </marker>
+  </defs>
+
+  <!-- Title Header -->
+  <g transform="translate(60, 42)">
+    <text x="0" y="0" fill="#0f172a" font-size="22" font-weight="700" letter-spacing="0.5">全球金融数据与产业量化分析平台</text>
+    <text x="0" y="24" fill="#64748b" font-size="13" font-weight="400">系统全局架构与双通道数据采集设计 (Redis-First 高性能架构)</text>
+  </g>
+
+  <!-- Node 1: User Client -->
+  <g transform="translate(60, 115)">
+    <rect width="220" height="85" rx="8" fill="#f8fafc" stroke="#0284c7" stroke-width="1.5" />
+    <text x="110" y="36" fill="#0284c7" font-size="14" font-weight="700" text-anchor="middle">📱 用户端</text>
+    <text x="110" y="56" fill="#475569" font-size="12" text-anchor="middle">Web 浏览器 / 移动终端</text>
+    <text x="110" y="73" fill="#0284c7" font-size="11" font-weight="600" text-anchor="middle">直接访问端口 :2012</text>
+  </g>
+
+  <!-- Subgraph Container: Core System -->
+  <g transform="translate(60, 255)">
+    <rect width="720" height="380" rx="12" fill="#f1f5f9" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4 4" />
+    <text x="20" y="30" fill="#0f172a" font-size="14" font-weight="700">⚡ 核心应用服务容器</text>
+
+    <!-- Node 2a: Web Dashboard -->
+    <g transform="translate(25, 55)">
+      <rect width="185" height="80" rx="8" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" />
+      <text x="92" y="36" fill="#0f172a" font-size="13" font-weight="700" text-anchor="middle">🖥️ Web 仪表盘</text>
+      <text x="92" y="56" fill="#64748b" font-size="11" text-anchor="middle">原生 JS / CSS / ECharts</text>
+    </g>
+
+    <!-- Node 2b: FastAPI Backend -->
+    <g transform="translate(245, 55)">
+      <rect width="220" height="80" rx="8" fill="#ffffff" stroke="#0284c7" stroke-width="1.5" />
+      <text x="110" y="36" fill="#0284c7" font-size="14" font-weight="700" text-anchor="middle">⚡ FastAPI 后端服务</text>
+      <text x="110" y="56" fill="#64748b" font-size="11" text-anchor="middle">RESTful API / 容器内 :8080</text>
+    </g>
+
+    <!-- Node 2c: Task Scheduler -->
+    <g transform="translate(495, 55)">
+      <rect width="200" height="80" rx="8" fill="#ffffff" stroke="#9333ea" stroke-width="1.5" />
+      <text x="100" y="36" fill="#9333ea" font-size="13" font-weight="700" text-anchor="middle">⏰ Task Scheduler</text>
+      <text x="100" y="56" fill="#64748b" font-size="11" text-anchor="middle">后台定时任务 / 缓存预热</text>
+    </g>
+
+    <!-- Node 2d: Redis Cache -->
+    <g transform="translate(95, 245)">
+      <rect width="235" height="95" rx="8" fill="#ffffff" stroke="#dc2626" stroke-width="1.5" />
+      <text x="117" y="42" fill="#dc2626" font-size="14" font-weight="700" text-anchor="middle">🔴 Redis 缓存层</text>
+      <text x="117" y="65" fill="#475569" font-size="11" text-anchor="middle">唯一热数据源 (&lt;500ms 快速响应)</text>
+    </g>
+
+    <!-- Node 2e: Postgres DB -->
+    <g transform="translate(415, 245)">
+      <rect width="235" height="95" rx="8" fill="#ffffff" stroke="#0284c7" stroke-width="1.5" />
+      <text x="117" y="42" fill="#0284c7" font-size="14" font-weight="700" text-anchor="middle">🐘 Postgres 数据库</text>
+      <text x="117" y="65" fill="#475569" font-size="11" text-anchor="middle">历史量化数据与归档存储</text>
+    </g>
+
+    <!-- Connections inside Core -->
+    <!-- Web UI -> Backend -->
+    <line x1="210" y1="95" x2="235" y2="95" stroke="#0284c7" stroke-width="1.5" marker-end="url(#arrow-blue)" />
+    
+    <!-- Backend -> Redis (读热数据) -->
+    <path d="M 285 135 L 285 160 L 212 160 L 212 235" fill="none" stroke="#dc2626" stroke-width="1.5" marker-end="url(#arrow-red)" />
+    <text x="248" y="155" fill="#dc2626" font-size="10" font-weight="600" text-anchor="middle">读热数据</text>
+
+    <!-- Backend -> Postgres (读历史记录) -->
+    <path d="M 415 135 L 415 160 L 485 160 L 485 235" fill="none" stroke="#0284c7" stroke-width="1.5" marker-end="url(#arrow-blue)" />
+    <text x="450" y="155" fill="#0284c7" font-size="10" font-weight="600" text-anchor="middle">读历史记录</text>
+
+    <!-- Scheduler -> Redis (定时缓存预热) -->
+    <path d="M 535 135 L 535 205 L 295 205 L 295 235" fill="none" stroke="#9333ea" stroke-width="1.5" marker-end="url(#arrow-purple)" />
+    <text x="410" y="200" fill="#9333ea" font-size="10" font-weight="600" text-anchor="middle">定时缓存预热</text>
+
+    <!-- Scheduler -> Postgres (归档历史) -->
+    <path d="M 625 135 L 625 235" fill="none" stroke="#9333ea" stroke-width="1.5" marker-end="url(#arrow-purple)" />
+    <text x="630" y="180" fill="#9333ea" font-size="10" font-weight="600">归档历史</text>
+  </g>
+
+  <!-- Connection: Client -> FastAPI Backend -->
+  <path d="M 170 200 L 170 230 L 415 230 L 415 300" fill="none" stroke="#0284c7" stroke-width="2" marker-end="url(#arrow-blue)" />
+  <text x="292" y="222" fill="#0284c7" font-size="11" font-weight="600" text-anchor="middle">HTTP :2012 直达</text>
+
+  <!-- Node 3: Domestic Market APIs (High Speed Direct) -->
+  <g transform="translate(840, 115)">
+    <rect width="300" height="95" rx="8" fill="#f8fafc" stroke="#16a34a" stroke-width="1.5" />
+    <text x="150" y="38" fill="#16a34a" font-size="14" font-weight="700" text-anchor="middle">🌐 公开市场行情数据源</text>
+    <text x="150" y="58" fill="#475569" font-size="12" text-anchor="middle">公开财经行情接口 / 指数走势</text>
+    <text x="150" y="76" fill="#16a34a" font-size="11" font-weight="600" text-anchor="middle">极速直连 (延迟 &lt;100ms)</text>
+  </g>
+
+  <!-- Connection: Scheduler -> Domestic APIs -->
+  <path d="M 755 330 L 795 330 L 795 162 L 830 162" fill="none" stroke="#16a34a" stroke-width="2" marker-end="url(#arrow-green)" />
+  <text x="795" y="245" fill="#16a34a" font-size="10" font-weight="600" text-anchor="middle">高频直连抓取</text>
+
+  <!-- Node 4: Edge Proxy Worker -->
+  <g transform="translate(840, 275)">
+    <rect width="300" height="110" rx="8" fill="#f8fafc" stroke="#ea580c" stroke-width="1.5" />
+    <text x="150" y="38" fill="#ea580c" font-size="14" font-weight="700" text-anchor="middle">⚡ 边缘中继代理 (Serverless Worker)</text>
+    <text x="150" y="60" fill="#475569" font-size="12" text-anchor="middle">通用 HTTP 代理 / 访问密钥鉴权</text>
+    <text x="150" y="80" fill="#ea580c" font-size="11" font-weight="600" text-anchor="middle">请求头清洗与源站 IP 安全防护</text>
+  </g>
+
+  <!-- Connection: Scheduler & App -> Worker -->
+  <path d="M 755 360 L 830 330" fill="none" stroke="#ea580c" stroke-width="2" marker-end="url(#arrow-orange)" />
+  <text x="792" y="375" fill="#ea580c" font-size="10" font-weight="600" text-anchor="middle">防封中继</text>
+
+  <!-- Node 5: Deep Financial Data (Holdings/Fees) -->
+  <g transform="translate(840, 480)">
+    <rect width="300" height="105" rx="8" fill="#f8fafc" stroke="#64748b" stroke-width="1.5" />
+    <text x="150" y="38" fill="#0f172a" font-size="14" font-weight="700" text-anchor="middle">📄 基金与财报深层数据源</text>
+    <text x="150" y="60" fill="#475569" font-size="12" text-anchor="middle">公开季报披露与基金持仓分析</text>
+    <text x="150" y="80" fill="#64748b" font-size="11" text-anchor="middle">重仓穿透、资产配置与综合费率</text>
+  </g>
+
+  <!-- Connection: Worker -> Deep Financial Data -->
+  <line x1="990" y1="385" x2="990" y2="470" stroke="#ea580c" stroke-width="2" marker-end="url(#arrow-orange)" />
+  <text x="1000" y="435" fill="#ea580c" font-size="11" font-weight="600">代理安全发包</text>
+
+</svg>

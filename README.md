@@ -6,7 +6,7 @@
 
 ## 🏗️ 全局项目架构
 
-![全局项目架构图](./web/img/architecture.svg?v=2)
+![全局项目架构图](./web/img/architecture-v2.svg)
 
 <details>
 <summary><b>📐 展开查看 Mermaid 流程图源码</b></summary>
