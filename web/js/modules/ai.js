@@ -379,39 +379,74 @@ class AIMarketController {
                             const cnRisk = typeof cnBM.bubble_risk === 'number' ? cnBM.bubble_risk.toFixed(1) : (cnBM.bubble_risk || 0);
 
                             const renderThermoRow = (country, bm, riskVal, isCn) => {
-                                const colorGrad = isCn ? 'url(#grad-cn-thermo)' : 'url(#grad-us-thermo)';
-                                const badgeClass = bm.status_class === 'healthy' ? 'healthy' : (bm.status_class === 'neutral' ? 'neutral' : 'warning');
-                                const peStr = bm.pe_ratio ? `真实加权 PE: <strong>${bm.pe_ratio}x</strong> (标杆 ${bm.pe_benchmark || '--'}x)` : `产业价值分: <strong>${bm.value_score}</strong>`;
                                 const riskNum = Number(riskVal) || 0;
-                                const riskValColor = riskNum >= 75 ? 'color: #dc2626;' : (riskNum >= 45 ? 'color: #d97706;' : 'color: #059669;');
+
+                                // 项目统一四阶段色标与状态映射 (0~35健康绿, 35~65平稳黄, 65~85偏高橙, 85~100预警红)
+                                let dotColor = '#ca8a04';
+                                let badgeClass = 'neutral';
+                                let statusText = bm.status_text || '相对平稳';
+
+                                if (riskNum < 35) {
+                                    dotColor = '#16a34a';
+                                    badgeClass = 'healthy';
+                                    if (!bm.status_text) statusText = '健康资本扩张';
+                                } else if (riskNum < 65) {
+                                    dotColor = '#ca8a04';
+                                    badgeClass = 'neutral';
+                                    if (!bm.status_text) statusText = '相对平稳';
+                                } else if (riskNum < 85) {
+                                    dotColor = '#ea580c';
+                                    badgeClass = 'warning';
+                                    if (!bm.status_text) statusText = '估值偏高';
+                                } else {
+                                    dotColor = '#dc2626';
+                                    badgeClass = 'warning';
+                                    if (!bm.status_text) statusText = '泡沫预警';
+                                }
+                                if (bm.status_class) {
+                                    badgeClass = bm.status_class === 'healthy' ? 'healthy' : (bm.status_class === 'neutral' ? 'neutral' : 'warning');
+                                }
+
+                                const peStr = bm.pe_ratio ? `真实加权 PE: <strong>${bm.pe_ratio}x</strong> (标杆 ${bm.pe_benchmark || '--'}x)` : `产业价值分: <strong>${bm.value_score}</strong>`;
+                                const pinX = Math.min(295, Math.max(5, riskNum * 3));
 
                                 return `
                                     <div class="svg-thermo-row" style="background: var(--bg-secondary, #f8fafc); border: 1px solid var(--border-light); border-radius: 6px; padding: 7px 10px; margin-bottom: 5px;">
                                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px; flex-wrap: wrap; gap: 4px;">
                                             <span style="font-size: 11.5px; font-weight: 700; color: var(--text-primary);">${country} AI 估值偏离与泡沫风险</span>
-                                            <span class="svg-thermo-badge ${badgeClass}" style="font-size: 9.5px; padding: 1px 6px; border-radius: 4px;">${bm.status_text}</span>
+                                            <span class="svg-thermo-badge ${badgeClass}" style="font-size: 9.5px; padding: 1px 6px; border-radius: 4px;">${statusText}</span>
                                         </div>
                                         <div style="display: flex; justify-content: space-between; align-items: center; font-size: 10.5px; color: var(--text-secondary); margin-bottom: 4px;">
                                             <span>${peStr}</span>
-                                            <span>泡沫风险: <strong style="font-family: var(--font-mono); font-weight: 700; ${riskValColor}">${riskVal} / 100</strong></span>
+                                            <span>泡沫风险: <strong style="font-family: var(--font-mono); font-weight: 700; color: ${dotColor};">${riskVal} / 100</strong></span>
                                         </div>
-                                        <svg class="svg-thermo-bar-svg" viewBox="0 0 300 12" style="width: 100%; height: 12px; display: block;">
+                                        <svg class="svg-thermo-bar-svg" viewBox="0 0 300 12" style="width: 100%; height: 12px; display: block; overflow: visible;">
                                             <defs>
-                                                <linearGradient id="grad-us-thermo" x1="0%" y1="0%" x2="100%" y2="0%">
-                                                    <stop offset="0%" stop-color="#3b82f6" />
-                                                    <stop offset="100%" stop-color="#10b981" />
-                                                </linearGradient>
-                                                <linearGradient id="grad-cn-thermo" x1="0%" y1="0%" x2="100%" y2="0%">
-                                                    <stop offset="0%" stop-color="#f59e0b" />
-                                                    <stop offset="100%" stop-color="#ef4444" />
+                                                <linearGradient id="grad-unified-bubble-risk" x1="0" y1="0" x2="300" y2="0" gradientUnits="userSpaceOnUse">
+                                                    <stop offset="0%" stop-color="#16a34a" />
+                                                    <stop offset="35%" stop-color="#22c55e" />
+                                                    <stop offset="65%" stop-color="#eab308" />
+                                                    <stop offset="85%" stop-color="#ea580c" />
+                                                    <stop offset="100%" stop-color="#dc2626" />
                                                 </linearGradient>
                                             </defs>
-                                            <rect x="0" y="0" width="300" height="12" rx="6" fill="rgba(226,232,240,0.6)"/>
-                                            <rect x="0" y="0" width="${Math.min(300, riskVal * 3)}" height="12" rx="6" fill="${colorGrad}" class="thermo-liquid"/>
-                                            <line x1="75" y1="0" x2="75" y2="12" stroke="rgba(255,255,255,0.5)" stroke-width="1"/>
-                                            <line x1="150" y1="0" x2="150" y2="12" stroke="rgba(255,255,255,0.7)" stroke-width="1.5"/>
-                                            <line x1="225" y1="0" x2="225" y2="12" stroke="rgba(255,255,255,0.5)" stroke-width="1"/>
+                                            <!-- 刻度底槽 -->
+                                            <rect x="0" y="2" width="300" height="8" rx="4" fill="rgba(226,232,240,0.6)" class="thermo-track-bg"/>
+                                            <!-- 统一风险色谱填充条 -->
+                                            <rect x="0" y="2" width="${pinX}" height="8" rx="4" fill="url(#grad-unified-bubble-risk)" class="thermo-liquid"/>
+                                            <!-- 阶段刻度线 (35% 探索, 65% 爆发, 85% 预警) -->
+                                            <line x1="105" y1="2" x2="105" y2="10" stroke="rgba(255,255,255,0.7)" stroke-width="1.5"/>
+                                            <line x1="195" y1="2" x2="195" y2="10" stroke="rgba(255,255,255,0.7)" stroke-width="1.5"/>
+                                            <line x1="255" y1="2" x2="255" y2="10" stroke="rgba(255,255,255,0.7)" stroke-width="1.5"/>
+                                            <!-- 游标圆点 (与顶部热度条设计语言统一) -->
+                                            <circle cx="${pinX}" cy="6" r="4.5" fill="${dotColor}" stroke="#ffffff" stroke-width="2" style="filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));"/>
                                         </svg>
+                                        <div style="display: flex; justify-content: space-between; font-size: 8.5px; color: var(--text-tertiary, #94a3b8); margin-top: 3px; padding: 0 1px;">
+                                            <span>0 健康</span>
+                                            <span style="margin-left: 18px;">35 平稳</span>
+                                            <span style="margin-left: 20px;">65 偏高</span>
+                                            <span>85 预警 100</span>
+                                        </div>
                                     </div>
                                 `;
                             };
