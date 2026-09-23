@@ -4,7 +4,7 @@
 
 ---
 
-## 🏗️ 全局项目架构与三库联动
+## 🏗️ 全局项目架构
 
 ![全局项目架构图](./web/img/architecture.svg)
 
@@ -13,45 +13,49 @@
 
 ```mermaid
 graph TD
-    Client["📱 用户浏览器 / 移动端"] -->|访问 /analytics| Nginx Gateway["🛡️ Nginx 网关 (x-actions)"]
-    Nginx Gateway -->|反向代理 :8080| App["⚡ FastAPI Backend (x-analytics)"]
+    Client["📱 用户端 (Web / 移动端)"] -->|端口访问 :2012| App["⚡ FastAPI 后端 & Web 服务 (:8080)"]
     
-    subgraph x-analytics ["核心应用 (x-analytics)"]
-        App -->|静态资源| WebUI["📱 Web 仪表盘 (Vanilla JS/CSS)"]
-        App -->|读请求 (500ms)| Redis["🔴 Redis Cache (Single Source of Truth)"]
-        App -->|历史存取| Postgres["🐘 Postgres DB"]
+    subgraph CoreApp ["核心系统 (x-analytics)"]
+        App -->|静态资源| WebUI["🖥️ Web 仪表盘 (原生 JS/CSS)"]
+        App -->|优先读取热数据 (<500ms)| Redis["🔴 Redis 缓存 (Single Source of Truth)"]
+        App -->|可选历史归档| Postgres["🐘 Postgres 数据库"]
         
-        Scheduler["⏰ Task Scheduler (Background)"] -->|定时抓取/预热| ExternalAPIs["🌐 外部 API (AkShare/Sina/EastMoney)"]
-        Scheduler -->|写缓存| Redis
-        Scheduler -->|写历史| Postgres
+        Scheduler["⏰ Task Scheduler (后台调度)"] -->|写缓存/刷新| Redis
+        Scheduler -->|归档历史| Postgres
+        
+        Scheduler -->|国内行情直连高速抓取| DomesticAPIs["🌐 国内主流财经数据源 (行情/净值/宏观)"]
+        Scheduler -.->|深层页面防封中继| ProxyWorker["⚡ 边缘中继代理 (Cloudflare Worker)"]
+        App -.->|穿透持仓按需中继| ProxyWorker
     end
 
-    ExternalAPIs -.->|代理防护中继| ProxyWorker["⚡ Cloudflare Worker (x-worker)"]
+    ProxyWorker -->|安全发包 (资产配置/费率/持仓)| DeepFinancialAPIs["📄 基金深层明细数据源"]
 ```
 
 </details>
 
-本系统架构设计包含如下协同组件：
-- **`x-analytics`**（本开源仓库）：核心应用服务，包含 FastAPI 后端、前端 Web 仪表盘、后台 Task Scheduler 数据抓取与 Redis 缓存管理。
-- **`x-actions`**（内部私有编排）：基础设施与部署编排中心，维护 Nginx 网关反向代理、生产 Docker Compose 容器编排与 CI/CD 自动化部署。
-- **`x-worker`**（边缘代理中继）：Cloudflare Worker 通用代理中继，防护海外金融数据抓取时的源站 IP 安全。
+系统核心架构包含如下关键模块：
+- **核心应用服务 (`x-analytics`)**：包含 FastAPI 后端服务、前端 Web 仪表盘、后台 Task Scheduler 数据抓取引擎与 Redis 缓存管理。
+- **边缘代理中继 (`Cloudflare Worker`)**：通用的 HTTP API 代理中继，配备请求密钥鉴权、请求头清洗与防盗链伪造，保障服务器源站 IP 安全。
+- **双通道数据采集**：
+  - **主流高频数据**：A股/港股/美股实时行情、官方净值、黄金价格等走国内直连网络，保障极低延迟（<100ms）；
+  - **深层低频数据**：持仓穿透、资产配置比例与综合费率等深层 HTML 页面，通过边缘中继代理防封抓取，杜绝源站 IP 风险。
 
 ---
 
 ## 📊 四大核心模块
 
-1. **全球市场**：亚洲市场（沪深/港股动能、估值水位）、美股及西方市场动能与对标。
-2. **AI 产业链**：全球 7 层产业链结构监测、中美竞争力对比、泡沫风险温度计。
-3. **有色金属**：黄金、白银、铜、铝等大宗商品价格趋势与数据监测。
-4. **QDII 基金**：纳斯达克100 & 标普500 场外 A类基金对标、季报真实资产配置/持仓与综合费率监测。
+1. **全球市场**：亚洲市场（沪深/港股动能、估值水位）、美股及西方市场动能与原生指数对标。
+2. **AI 产业链**：全球 7 层产业链结构监测、中美科技竞争力对比、泡沫风险温度计。
+3. **黄金分析**：国内实时金价、国际金价（伦敦金/COMEX）、溢价率监测、黄金 ETF 跟踪与套利计算模型。
+4. **QDII 基金**：主动型 QDII、纳斯达克100 & 标普500 基金对标、季报真实资产配置与重仓穿透、综合费率监测。
 
 ---
 
 ## 📡 API 接口
 
-完整 Swagger UI 接口文档：`/analytics/docs`
+完整 Swagger UI 接口文档：`/docs`
 
-> 生产环境通常配合网关项目部署，由 Nginx 将 `/analytics/` 反向代理到后台服务，并剥离 `/analytics` 前缀。本地运行直接访问根路径。
+服务启动后直接访问根路径或者对应端口即可查看 Swagger API 文档与仪表盘。
 
 ---
 
@@ -108,12 +112,12 @@ docker compose logs -f xanalytics
 
 ## 🌐 访问地址
 
-- 本地直接访问:
+- 本地开发直接访问:
   - Web 仪表盘: `http://localhost:8080/`
   - API 文档: `http://localhost:8080/docs`
-- 网关代理访问:
-  - Web 仪表盘: `http://localhost/analytics/`
-  - API 文档: `http://localhost/analytics/docs`
+- 生产环境部署访问 (映射端口):
+  - Web 仪表盘: `http://<服务器IP或域名>:2012/`
+  - API 文档: `http://<服务器IP或域名>:2012/docs`
 
 ---
 
