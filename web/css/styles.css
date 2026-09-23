@@ -2497,11 +2497,30 @@ footer {
     flex-wrap: wrap;
 }
 
+.rotation-flow-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
 .flow-step {
     background: #f1f5f9;
     padding: 2px 6px;
     border-radius: 4px;
     color: var(--text-primary);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.flow-arrow {
+    color: var(--text-tertiary);
+    font-size: 9px;
+    user-select: none;
+    flex-shrink: 0;
+}
+
+.flow-sub-indicator {
+    display: none;
 }
 
 /* 历史周期比对 */
@@ -2572,14 +2591,45 @@ footer {
         font-size: 14px;
     }
     .rotation-flow {
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-        flex-wrap: nowrap;
-        padding-bottom: 4px;
-        scrollbar-width: none;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        width: 100%;
+        overflow: visible;
+        padding-bottom: 0;
     }
-    .rotation-flow::-webkit-scrollbar {
+    .rotation-flow-group {
+        display: flex;
+        align-items: center;
+        width: 100%;
+    }
+    .rotation-flow-group.flow-group-upstream {
+        justify-content: space-between;
+    }
+    .rotation-flow-group.flow-group-downstream {
+        justify-content: flex-start;
+        gap: 8px;
+    }
+    .flow-step {
+        padding: 2.5px 5px;
+        font-size: 10px;
+        flex-shrink: 0;
+    }
+    .flow-arrow {
+        font-size: 8px;
+        flex-shrink: 0;
+    }
+    .flow-arrow-bridge {
         display: none;
+    }
+    .flow-sub-indicator {
+        display: inline-flex;
+        align-items: center;
+        color: var(--text-tertiary);
+        font-size: 10px;
+        margin-right: 2px;
+        flex-shrink: 0;
+        user-select: none;
     }
 }
 
