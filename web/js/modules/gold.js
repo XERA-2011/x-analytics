@@ -319,7 +319,7 @@ class GoldController {
                     <div class="metal-spectrum-bar">
                         <div class="metal-spectrum-pin" style="left: ${pinPos}%;">
                             <div class="metal-pin-tooltip">${score}分${percentile != null ? ` (${percentile}%分位)` : ''}</div>
-                            <div class="metal-spectrum-dot" style="background: ${themeColor};"></div>
+                            <div class="metal-spectrum-dot"></div>
                         </div>
                     </div>
                     <div class="metal-scale-labels">

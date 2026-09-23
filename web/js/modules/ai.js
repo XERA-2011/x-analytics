@@ -131,7 +131,7 @@ class AIMarketController {
                         <div class="ai-spectrum-wrapper">
                             <div class="ai-spectrum-track">
                                 <div class="ai-spectrum-pin" style="left: ${clampedScore}%;">
-                                    <div class="ai-spectrum-dot" style="background: ${activeColor};"></div>
+                                    <div class="ai-spectrum-dot"></div>
                                 </div>
                             </div>
                             <div class="ai-spectrum-labels">
@@ -442,7 +442,7 @@ class AIMarketController {
                                             <div class="thermo-bar-tick" style="left: 25%;"></div>
                                             <div class="thermo-bar-tick" style="left: 50%;"></div>
                                             <div class="thermo-bar-tick" style="left: 75%;"></div>
-                                            <div class="thermo-bar-cursor" style="left: ${clampedRisk}%; background: ${dotColor};"></div>
+                                            <div class="thermo-bar-cursor" style="left: ${clampedRisk}%;"></div>
                                         </div>
                                         <div class="thermo-scale-labels">
                                             <span style="position: absolute; left: 0;" class="thermo-lbl color-cooling ${riskNum < 25 ? 'active' : ''}">0 健康</span>
