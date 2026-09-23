@@ -413,7 +413,7 @@ class AIMarketController {
                                 return `
                                     <div class="svg-thermo-row" style="background: var(--bg-secondary, #f8fafc); border: 1px solid var(--border-light); border-radius: 6px; padding: 7px 10px; margin-bottom: 5px;">
                                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px; flex-wrap: wrap; gap: 4px;">
-                                            <span style="font-size: 11.5px; font-weight: 700; color: var(--text-primary);">${country} AI 估值偏离与泡沫风险</span>
+                                            <span style="font-size: 11.5px; font-weight: 700; color: var(--text-primary);">${country} AI</span>
                                             <span class="svg-thermo-badge ${badgeClass}" style="font-size: 9.5px; padding: 1px 6px; border-radius: 4px;">${statusText}</span>
                                         </div>
                                         <div style="display: flex; justify-content: space-between; align-items: center; font-size: 10.5px; color: var(--text-secondary); margin-bottom: 4px;">
@@ -553,7 +553,7 @@ class AIMarketController {
             <div class="card ai-card-module" style="margin-bottom: 16px;">
                 <div class="card-header" style="margin-bottom: 4px; flex-wrap: wrap; gap: 6px;">
                     <div class="card-title">
-                        <i data-lucide="layers" width="16" style="vertical-align: middle;"></i> AI 产业链 7 层全景拆解 (L0 - L6 代表成分股)
+                        <i data-lucide="layers" width="16" style="vertical-align: middle;"></i> AI 产业链 7 层全景拆解
                     </div>
                     <div style="display: flex; align-items: center; gap: 6px; margin-left: auto;">
                         <span style="font-size: 10.5px; color: var(--text-tertiary); white-space: nowrap;">${layers ? layers.length : 7} 大层级 · ${(layers && layers.length > 0) ? layers.reduce((acc, l) => acc + (l.items ? l.items.length : 0), 0) : 34} 只核心标的</span>

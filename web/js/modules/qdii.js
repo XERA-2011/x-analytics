@@ -504,7 +504,7 @@ class QDIIController {
         const benchmarkNotice = activeBenchmark != null ? `
             <div style="padding: 10px 14px; margin-bottom: 12px; border-radius: 6px; background: var(--bg-body); border: 1px solid var(--border-light); font-size: clamp(0.72rem, 2.5vw, 0.78rem); color: var(--text-secondary); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
                 <div>
-                    <div>📌 <strong>【美元原生指数参考】${indexName} 原生指数近1年收益：<span class="text-up">+${utils.formatPercentage(activeBenchmark)}</span></strong>${updateTimeStr}</div>
+                    <div>📌 <strong>【美元原生指数参考】${indexName} 近1年收益：<span class="text-up">+${utils.formatPercentage(activeBenchmark)}</span></strong>${updateTimeStr}</div>
                     <div style="font-size: 0.68rem; color: var(--text-tertiary); margin-top: 3px;">* 注：QDII 基金以人民币计价，受美元/人民币汇率波动、5%~10%现金/清算款缓冲及管理费率影响，与原生指数存在合理跟踪差异。</div>
                 </div>
                 <div class="qdii-legend-group">
