@@ -2702,14 +2702,52 @@ footer {
     fill: rgba(255, 255, 255, 0.1);
 }
 
-.svg-thermo-bar-svg {
+/* Full width thermo track (拉长自适应对齐刻度) */
+.thermo-bar-wrapper {
+    position: relative;
     width: 100%;
-    height: 14px;
+    height: 8px;
+    background: rgba(226, 232, 240, 0.7);
+    border-radius: 4px;
     overflow: visible;
+    margin-top: 4px;
 }
 
-.thermo-liquid {
-    transition: width 1.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+[data-theme="dark"] .thermo-bar-wrapper {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.thermo-bar-liquid {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    border-radius: 4px;
+    background: linear-gradient(90deg, #16a34a 0%, #22c55e 35%, #eab308 65%, #ea580c 85%, #dc2626 100%);
+    transition: width 0.8s ease;
+}
+
+.thermo-bar-tick {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 1.5px;
+    background: rgba(255, 255, 255, 0.85);
+    z-index: 1;
+    pointer-events: none;
+}
+
+.thermo-bar-cursor {
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    border: 2px solid #ffffff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    z-index: 2;
+    pointer-events: none;
 }
 
 .bubble-anim {

@@ -409,7 +409,7 @@ class AIMarketController {
                                 }
 
                                 const peStr = bm.pe_ratio ? `真实加权 PE: <strong>${bm.pe_ratio}x</strong> (标杆 ${bm.pe_benchmark || '--'}x)` : `产业价值分: <strong>${bm.value_score}</strong>`;
-                                const pinX = Math.min(295, Math.max(5, riskNum * 3));
+                                const clampedRisk = Math.max(0, Math.min(100, riskNum));
 
                                 return `
                                     <div class="svg-thermo-row" style="background: var(--bg-secondary, #f8fafc); border: 1px solid var(--border-light); border-radius: 6px; padding: 7px 10px; margin-bottom: 5px;">
@@ -424,28 +424,15 @@ class AIMarketController {
                                             <span>${peStr}</span>
                                             <span>泡沫风险: <strong style="font-family: var(--font-mono); font-weight: 700; color: ${dotColor};">${riskVal} / 100</strong></span>
                                         </div>
-                                        <svg class="svg-thermo-bar-svg" viewBox="0 0 300 12" style="width: 100%; height: 12px; display: block; overflow: visible;">
-                                            <defs>
-                                                <linearGradient id="grad-unified-bubble-risk" x1="0" y1="0" x2="300" y2="0" gradientUnits="userSpaceOnUse">
-                                                    <stop offset="0%" stop-color="#16a34a" />
-                                                    <stop offset="35%" stop-color="#22c55e" />
-                                                    <stop offset="65%" stop-color="#eab308" />
-                                                    <stop offset="85%" stop-color="#ea580c" />
-                                                    <stop offset="100%" stop-color="#dc2626" />
-                                                </linearGradient>
-                                            </defs>
-                                            <!-- 刻度底槽 -->
-                                            <rect x="0" y="2" width="300" height="8" rx="4" fill="rgba(226,232,240,0.6)" class="thermo-track-bg"/>
-                                            <!-- 统一风险色谱填充条 -->
-                                            <rect x="0" y="2" width="${pinX}" height="8" rx="4" fill="url(#grad-unified-bubble-risk)" class="thermo-liquid"/>
-                                            <!-- 阶段刻度线 (35% 探索, 65% 爆发, 85% 预警) -->
-                                            <line x1="105" y1="2" x2="105" y2="10" stroke="rgba(255,255,255,0.7)" stroke-width="1.5"/>
-                                            <line x1="195" y1="2" x2="195" y2="10" stroke="rgba(255,255,255,0.7)" stroke-width="1.5"/>
-                                            <line x1="255" y1="2" x2="255" y2="10" stroke="rgba(255,255,255,0.7)" stroke-width="1.5"/>
-                                            <!-- 游标圆点 (与顶部热度条设计语言统一) -->
-                                            <circle cx="${pinX}" cy="6" r="4.5" fill="${dotColor}" stroke="#ffffff" stroke-width="2" style="filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));"/>
-                                        </svg>
-                                        <div style="position: relative; width: 100%; height: 13px; font-size: 8.5px; color: var(--text-tertiary, #94a3b8); margin-top: 3px;">
+                                        <!-- 100% 全宽自适应温度计颜色条 (与下方刻度严格对齐) -->
+                                        <div class="thermo-bar-wrapper">
+                                            <div class="thermo-bar-liquid" style="width: ${clampedRisk}%;"></div>
+                                            <div class="thermo-bar-tick" style="left: 35%;"></div>
+                                            <div class="thermo-bar-tick" style="left: 65%;"></div>
+                                            <div class="thermo-bar-tick" style="left: 85%;"></div>
+                                            <div class="thermo-bar-cursor" style="left: ${clampedRisk}%; background: ${dotColor};"></div>
+                                        </div>
+                                        <div style="position: relative; width: 100%; height: 14px; font-size: 8.5px; color: var(--text-tertiary, #94a3b8); margin-top: 4px;">
                                             <span style="position: absolute; left: 0;" class="${riskNum < 35 ? 'active-thermo-zone' : ''}">0 健康</span>
                                             <span style="position: absolute; left: 35%; transform: translateX(-50%); white-space: nowrap;" class="${riskNum >= 35 && riskNum < 65 ? 'active-thermo-zone' : ''}">35 平稳</span>
                                             <span style="position: absolute; left: 65%; transform: translateX(-50%); white-space: nowrap;" class="${riskNum >= 65 && riskNum < 85 ? 'active-thermo-zone' : ''}">65 偏高</span>
