@@ -6,7 +6,7 @@
 
 ## 🏗️ 全局项目架构
 
-![全局项目架构图](./web/img/architecture.svg)
+![全局项目架构图](./web/img/architecture.svg?v=2)
 
 <details>
 <summary><b>📐 展开查看 Mermaid 流程图源码</b></summary>
@@ -15,7 +15,7 @@
 graph TD
     Client["📱 用户端 (Web / 移动端)"] -->|端口访问 :2012| App["⚡ FastAPI 后端 & Web 服务 (:8080)"]
     
-    subgraph CoreApp ["核心系统 (x-analytics)"]
+    subgraph CoreApp ["核心系统应用"]
         App -->|静态资源| WebUI["🖥️ Web 仪表盘 (原生 JS/CSS)"]
         App -->|优先读取热数据 (<500ms)| Redis["🔴 Redis 缓存 (Single Source of Truth)"]
         App -->|可选历史归档| Postgres["🐘 Postgres 数据库"]
@@ -23,19 +23,19 @@ graph TD
         Scheduler["⏰ Task Scheduler (后台调度)"] -->|写缓存/刷新| Redis
         Scheduler -->|归档历史| Postgres
         
-        Scheduler -->|国内行情直连高速抓取| DomesticAPIs["🌐 国内主流财经数据源 (行情/净值/宏观)"]
-        Scheduler -.->|深层页面防封中继| ProxyWorker["⚡ 边缘中继代理 (Cloudflare Worker)"]
+        Scheduler -->|公开行情直连高速抓取| DomesticAPIs["🌐 公开市场行情数据源 (行情/净值/宏观)"]
+        Scheduler -.->|深层页面防封中继| ProxyWorker["⚡ 边缘中继代理 (Serverless Worker)"]
         App -.->|穿透持仓按需中继| ProxyWorker
     end
 
-    ProxyWorker -->|安全发包 (资产配置/费率/持仓)| DeepFinancialAPIs["📄 基金深层明细数据源"]
+    ProxyWorker -->|安全发包 (资产配置/费率/持仓)| DeepFinancialAPIs["📄 基金与财报深层数据源"]
 ```
 
 </details>
 
 系统核心架构包含如下关键模块：
-- **核心应用服务 (`x-analytics`)**：包含 FastAPI 后端服务、前端 Web 仪表盘、后台 Task Scheduler 数据抓取引擎与 Redis 缓存管理。
-- **边缘代理中继 (`Cloudflare Worker`)**：通用的 HTTP API 代理中继，配备请求密钥鉴权、请求头清洗与防盗链伪造，保障服务器源站 IP 安全。
+- **核心应用服务**：包含 FastAPI 后端服务、前端 Web 仪表盘、后台 Task Scheduler 数据抓取引擎与 Redis 缓存管理。
+- **边缘代理中继 (Serverless Worker)**：通用的 HTTP API 代理中继，配备请求密钥鉴权、请求头清洗与防盗链伪造，保障服务器源站 IP 安全。
 - **双通道数据采集**：
   - **主流高频数据**：A股/港股/美股实时行情、官方净值、黄金价格等走国内直连网络，保障极低延迟（<100ms）；
   - **深层低频数据**：持仓穿透、资产配置比例与综合费率等深层 HTML 页面，通过边缘中继代理防封抓取，杜绝源站 IP 风险。
