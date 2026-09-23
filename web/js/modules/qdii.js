@@ -295,10 +295,11 @@ class QDIIController {
 
             const officialNav = item.official_nav || item.nav;
             const officialNavDate = item.official_nav_date || item.nav_date;
-            const navDateStr = officialNavDate ? officialNavDate.slice(5) : '';
-            const isEst = item.is_estimated && item.estimated_nav != null;
+            const isEst = item.is_estimated && item.estimated_nav != null && (!item.estimated_date || !officialNavDate || officialNavDate === '最新披露' || item.estimated_date > officialNavDate);
             const estChangeStr = item.estimated_change_pct != null ? `${item.estimated_change_pct > 0 ? '+' : ''}${item.estimated_change_pct}%` : '';
             const estChangeClass = item.estimated_change_pct > 0 ? 'text-up' : item.estimated_change_pct < 0 ? 'text-down' : '';
+
+            const estTooltip = `参考估值: ${item.estimated_date || ''} ${item.estimated_time || ''} (反映隔夜/盘中变动，基准官方净值: ${officialNav != null ? officialNav : '--'})`;
 
             const navBadgeHtml = `
                 <div class="qdii-nav-subtext">
@@ -306,7 +307,7 @@ class QDIIController {
                         官方净值 <strong class="font-mono" style="color: var(--text-primary); font-weight: 600;">${officialNav != null ? officialNav : '--'}</strong>${navDateStr ? ` <span class="qdii-nav-date">(${navDateStr})</span>` : ''}
                     </span>
                     ${isEst ? `
-                        <span class="qdii-est-badge font-mono" title="盘中参考估值基于底层资产动态变动推算 (时间: ${item.estimated_time || ''})">
+                        <span class="qdii-est-badge font-mono" title="${estTooltip}">
                             盘中估 ${item.estimated_nav} <strong class="${estChangeClass}">${estChangeStr}</strong>
                         </span>
                     ` : ''}
@@ -760,8 +761,7 @@ class QDIIController {
             const fundItem = (this.rawFunds || []).find(f => f.code === code) || {};
             const officialNav = fundItem.official_nav || fundItem.nav;
             const officialNavDate = fundItem.official_nav_date || fundItem.nav_date;
-            const navDateStr = officialNavDate ? ` (${officialNavDate})` : '';
-            const isEst = fundItem.is_estimated && fundItem.estimated_nav != null;
+            const isEst = fundItem.is_estimated && fundItem.estimated_nav != null && (!fundItem.estimated_date || !officialNavDate || officialNavDate === '最新披露' || fundItem.estimated_date > officialNavDate);
             const estChangeStr = fundItem.estimated_change_pct != null ? `${fundItem.estimated_change_pct > 0 ? '+' : ''}${fundItem.estimated_change_pct}%` : '';
 
             const mdd = fundItem.max_drawdown != null ? `${utils.formatPercentage(fundItem.max_drawdown)}` : '--';
@@ -774,7 +774,7 @@ class QDIIController {
                 <div class="qdii-holding-meta" style="flex-wrap: wrap; gap: 8px 14px; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px dashed var(--border-light); font-size: 0.76rem;">
                     <span>📅 季报披露：<strong>${reportDate}</strong></span>
                     <span>💵 官方净值：<strong>${officialNav != null ? officialNav : '--'}${navDateStr}</strong></span>
-                    ${isEst ? `<span>⚡ 盘中估算：<strong style="color: var(--accent-blue);">${fundItem.estimated_nav} (${estChangeStr})</strong></span>` : ''}
+                    ${isEst ? `<span>⚡ 盘中估算：<strong style="color: var(--accent-blue);">${fundItem.estimated_nav} (${estChangeStr})</strong> <small style="color: var(--text-secondary); font-size: 0.72rem;">(${fundItem.estimated_date || ''} ${fundItem.estimated_time || ''})</small></span>` : ''}
                     <span>📦 总持仓：<strong>${totalCount} 只</strong></span>
                     <span>🎯 前十占比：<strong>${top10Concentration}</strong></span>
                     <span>📈 近1年收益：<strong class="${fundItem.return_1y != null ? (typeof APP_CONFIG !== 'undefined' ? APP_CONFIG.getChangeClass(fundItem.return_1y) : (fundItem.return_1y > 0 ? 'text-up' : 'text-down')) : ''}">${r1y}</strong></span>

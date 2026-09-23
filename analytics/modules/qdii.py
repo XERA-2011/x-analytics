@@ -843,12 +843,23 @@ def fetch_sina_fund_navs(codes: List[str]) -> Dict[str, Dict[str, Any]]:
                                 res[code]["nav_date"] = "最新披露"
 
                             # 提取明确的盘中参考估值字段
-                            if est_val is not None and est_val > 0:
+                            # 严格金融口径：只有当估值日期晚于官方确认净值日期时，该估值才具备未披露前置参考价值
+                            # 若估值日期 <= 官方确认净值日期，说明当日官方正式净值已出，历史盘中估值已作废，不可再展示！
+                            official_date = res[code].get("official_nav_date")
+                            is_stale = bool(official_date and official_date != "最新披露" and est_date and est_date <= official_date)
+
+                            if est_val is not None and est_val > 0 and not is_stale:
                                 res[code]["estimated_nav"] = round(est_val, 4)
                                 res[code]["estimated_time"] = est_time
                                 res[code]["estimated_change_pct"] = round(est_change_pct, 2) if est_change_pct is not None else None
                                 res[code]["estimated_date"] = est_date
                                 res[code]["is_estimated"] = True
+                            else:
+                                res[code]["estimated_nav"] = None
+                                res[code]["estimated_time"] = None
+                                res[code]["estimated_change_pct"] = None
+                                res[code]["estimated_date"] = None
+                                res[code]["is_estimated"] = False
                         except (ValueError, IndexError):
                             pass
     except Exception as e:
@@ -1148,7 +1159,7 @@ def fetch_fund_scale(session: requests.Session, code: str) -> Optional[str]:
     return None
 
 
-@cached("qdii:passive_funds_v47", ttl=86400, stale_ttl=86400 * 7, sync_on_cold=True)
+@cached("qdii:passive_funds_v48", ttl=86400, stale_ttl=86400 * 7, sync_on_cold=True)
 def get_qdii_passive_funds() -> Dict[str, Any]:
     """获取国内纳斯达克100 & 标普500 场外被动 QDII A类基金数据列表
 
@@ -1329,12 +1340,22 @@ def get_qdii_passive_funds() -> Dict[str, Any]:
         official_nav = live_data.get("official_nav") or live_data.get("nav") or item["default_nav"]
         official_nav_date = live_data.get("official_nav_date") or live_data.get("nav_date") or item["default_nav_date"]
 
-        # 盘中参考估值 (若无则为 None)
-        estimated_nav = live_data.get("estimated_nav")
-        estimated_time = live_data.get("estimated_time")
-        estimated_change_pct = live_data.get("estimated_change_pct")
-        estimated_date = live_data.get("estimated_date")
-        is_estimated = bool(live_data.get("is_estimated") and estimated_nav is not None)
+        # 盘中参考估值 (仅当估值日期严格晚于官方确认日期时有效)
+        raw_est_date = live_data.get("estimated_date")
+        is_stale_est = bool(raw_est_date and official_nav_date and official_nav_date != "最新披露" and raw_est_date <= official_nav_date)
+
+        if not is_stale_est and live_data.get("is_estimated") and live_data.get("estimated_nav") is not None:
+            estimated_nav = live_data.get("estimated_nav")
+            estimated_time = live_data.get("estimated_time")
+            estimated_change_pct = live_data.get("estimated_change_pct")
+            estimated_date = live_data.get("estimated_date")
+            is_estimated = True
+        else:
+            estimated_nav = None
+            estimated_time = None
+            estimated_change_pct = None
+            estimated_date = None
+            is_estimated = False
 
         mdd_val = live_data.get("max_drawdown")
         vol_val = live_data.get("volatility")
