@@ -734,9 +734,11 @@ body {
 
 .scale-ext-oversold { color: #16a34a; }
 .scale-oversold { color: #22c55e; }
-.scale-neutral { color: var(--text-secondary, #64748b); }
+.scale-neutral { color: #ca8a04; }
 .scale-overbought { color: #f97316; }
 .scale-ext-overbought { color: #dc2626; }
+
+[data-theme="dark"] .scale-neutral { color: #facc15; }
 
 [data-color-mode="green-up-red-down"] .scale-ext-oversold { color: #dc2626; }
 [data-color-mode="green-up-red-down"] .scale-oversold { color: #ef4444; }
@@ -865,6 +867,14 @@ body {
 .text-down,
 .text-down-us {
     color: var(--color-down, #22c55e) !important;
+}
+
+.text-neutral {
+    color: #ca8a04 !important;
+}
+
+[data-theme="dark"] .text-neutral {
+    color: #facc15 !important;
 }
 
 .text-mono {
@@ -1474,63 +1484,19 @@ footer {
     padding: 4px 0 0 0;
 }
 
+/* AI 全谱连续渐变轨道 (与黄金 100% 保持完全一致的单条连续平滑过渡，50% 中性对称) */
 .ai-spectrum-track {
-    display: flex;
-    height: 7px;
-    border-radius: 4px;
-    overflow: visible;
     position: relative;
-    background: rgba(0, 0, 0, 0.06);
-    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.08);
+    width: 100%;
+    height: 8px;
+    border-radius: 4px;
+    background: linear-gradient(90deg, #16a34a 0%, #22c55e 25%, #eab308 50%, #f97316 75%, #dc2626 100%);
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.12);
+    overflow: visible;
 }
 
-[data-theme="dark"] .ai-spectrum-track {
-    background: rgba(255, 255, 255, 0.08);
-}
-
-.ai-spectrum-zone, .thermo-zone {
-    height: 100%;
-}
-
-.ai-spectrum-zone.zone-cooling, .thermo-zone.zone-cooling {
-    width: 35%;
-    background: linear-gradient(90deg, #16a34a, #22c55e);
-    border-top-left-radius: 4px;
-    border-bottom-left-radius: 4px;
-}
-
-.ai-spectrum-zone.zone-neutral, .thermo-zone.zone-neutral {
-    width: 30%;
-    background: linear-gradient(90deg, #22c55e, #eab308);
-}
-
-.ai-spectrum-zone.zone-active, .thermo-zone.zone-active {
-    width: 20%;
-    background: linear-gradient(90deg, #eab308, #ea580c);
-}
-
-.ai-spectrum-zone.zone-warning, .thermo-zone.zone-warning {
-    width: 15%;
-    background: linear-gradient(90deg, #ea580c, #dc2626);
-    border-top-right-radius: 4px;
-    border-bottom-right-radius: 4px;
-}
-
-[data-color-mode="green-up-red-down"] .ai-spectrum-zone.zone-cooling,
-[data-color-mode="green-up-red-down"] .thermo-zone.zone-cooling {
-    background: linear-gradient(90deg, #dc2626, #ef4444);
-}
-[data-color-mode="green-up-red-down"] .ai-spectrum-zone.zone-neutral,
-[data-color-mode="green-up-red-down"] .thermo-zone.zone-neutral {
-    background: linear-gradient(90deg, #ef4444, #eab308);
-}
-[data-color-mode="green-up-red-down"] .ai-spectrum-zone.zone-active,
-[data-color-mode="green-up-red-down"] .thermo-zone.zone-active {
-    background: linear-gradient(90deg, #eab308, #22c55e);
-}
-[data-color-mode="green-up-red-down"] .ai-spectrum-zone.zone-warning,
-[data-color-mode="green-up-red-down"] .thermo-zone.zone-warning {
-    background: linear-gradient(90deg, #22c55e, #16a34a);
+[data-color-mode="green-up-red-down"] .ai-spectrum-track {
+    background: linear-gradient(90deg, #dc2626 0%, #ef4444 25%, #eab308 50%, #22c55e 75%, #16a34a 100%);
 }
 
 .ai-spectrum-pin {
@@ -1573,13 +1539,16 @@ footer {
     font-weight: 800 !important;
 }
 
-.color-cooling { color: #16a34a; }
-.color-neutral { color: #ca8a04; }
-.color-active  { color: #ea580c; }
-.color-warning { color: #dc2626; }
+.color-cooling    { color: #16a34a; }
+.color-cool-light { color: #22c55e; }
+.color-neutral    { color: #ca8a04; }
+.color-active     { color: #ea580c; }
+.color-warning    { color: #dc2626; }
 
-[data-color-mode="green-up-red-down"] .color-cooling { color: #dc2626; }
-[data-color-mode="green-up-red-down"] .color-warning { color: #16a34a; }
+[data-color-mode="green-up-red-down"] .color-cooling    { color: #dc2626; }
+[data-color-mode="green-up-red-down"] .color-cool-light { color: #ef4444; }
+[data-color-mode="green-up-red-down"] .color-active     { color: #22c55e; }
+[data-color-mode="green-up-red-down"] .color-warning    { color: #16a34a; }
 
 .ai-score-footer {
     font-size: 10.5px;
@@ -2766,15 +2735,17 @@ footer {
     line-height: 1.2;
 }
 
-.svg-thermo-badge.healthy { background: #ecfdf5; color: #16a34a; border: 1px solid rgba(22,163,74,0.3); }
-.svg-thermo-badge.neutral { background: #fffbeb; color: #b45309; border: 1px solid rgba(202,138,4,0.35); }
-.svg-thermo-badge.elevated { background: #fff7ed; color: #ea580c; border: 1px solid rgba(234,88,12,0.35); }
-.svg-thermo-badge.warning { background: #fef2f2; color: #dc2626; border: 1px solid rgba(220,38,38,0.35); }
+.svg-thermo-badge.healthy    { background: #ecfdf5; color: #16a34a; border: 1px solid rgba(22,163,74,0.3); }
+.svg-thermo-badge.cool-light { background: #f0fdf4; color: #15803d; border: 1px solid rgba(34,197,94,0.3); }
+.svg-thermo-badge.neutral    { background: #fffbeb; color: #b45309; border: 1px solid rgba(202,138,4,0.35); }
+.svg-thermo-badge.elevated   { background: #fff7ed; color: #ea580c; border: 1px solid rgba(234,88,12,0.35); }
+.svg-thermo-badge.warning    { background: #fef2f2; color: #dc2626; border: 1px solid rgba(220,38,38,0.35); }
 
-[data-theme="dark"] .svg-thermo-badge.healthy { background: rgba(22, 163, 74, 0.15); color: #4ade80; border-color: rgba(22, 163, 74, 0.3); }
-[data-theme="dark"] .svg-thermo-badge.neutral { background: rgba(202, 138, 4, 0.15); color: #facc15; border-color: rgba(202, 138, 4, 0.3); }
-[data-theme="dark"] .svg-thermo-badge.elevated { background: rgba(234, 88, 12, 0.15); color: #fb923c; border-color: rgba(234, 88, 12, 0.3); }
-[data-theme="dark"] .svg-thermo-badge.warning { background: rgba(220, 38, 38, 0.15); color: #f87171; border-color: rgba(220, 38, 38, 0.3); }
+[data-theme="dark"] .svg-thermo-badge.healthy    { background: rgba(22, 163, 74, 0.15); color: #4ade80; border-color: rgba(22, 163, 74, 0.3); }
+[data-theme="dark"] .svg-thermo-badge.cool-light { background: rgba(34, 197, 94, 0.15); color: #86efac; border-color: rgba(34, 197, 94, 0.3); }
+[data-theme="dark"] .svg-thermo-badge.neutral    { background: rgba(202, 138, 4, 0.15); color: #facc15; border-color: rgba(202, 138, 4, 0.3); }
+[data-theme="dark"] .svg-thermo-badge.elevated   { background: rgba(234, 88, 12, 0.15); color: #fb923c; border-color: rgba(234, 88, 12, 0.3); }
+[data-theme="dark"] .svg-thermo-badge.warning    { background: rgba(220, 38, 38, 0.15); color: #f87171; border-color: rgba(220, 38, 38, 0.3); }
 
 .active-thermo-zone {
     color: var(--text-primary);
@@ -2789,21 +2760,20 @@ footer {
     fill: rgba(255, 255, 255, 0.1);
 }
 
-/* Full width thermo track (全宽自适应全谱轨道，与 AI MARKET HEAT 统一设计语言) */
+/* Full width thermo track (全宽自适应全谱连续平滑渐变轨道，50% 中性对称) */
 .thermo-bar-wrapper {
     position: relative;
     width: 100%;
     height: 7px;
-    display: flex;
-    background: rgba(0, 0, 0, 0.06);
-    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.08);
+    background: linear-gradient(90deg, #16a34a 0%, #22c55e 25%, #eab308 50%, #f97316 75%, #dc2626 100%);
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.12);
     border-radius: 4px;
     overflow: visible;
     margin-top: 4px;
 }
 
-[data-theme="dark"] .thermo-bar-wrapper {
-    background: rgba(255, 255, 255, 0.08);
+[data-color-mode="green-up-red-down"] .thermo-bar-wrapper {
+    background: linear-gradient(90deg, #dc2626 0%, #ef4444 25%, #eab308 50%, #22c55e 75%, #16a34a 100%);
 }
 
 .thermo-scale-labels {

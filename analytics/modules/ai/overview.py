@@ -524,11 +524,13 @@ class AIOverview:
             cn_val_score = round(min(100.0, max(40.0, 60.0 + l6_avg * 0.6 + (100.0 - cn_bubble_risk) * 0.1)), 1)
 
             def _get_bubble_status(risk_score):
-                if risk_score < 35.0:
+                if risk_score < 25.0:
                     return "健康扩张", "healthy"
-                elif risk_score < 65.0:
-                    return "相对平稳", "neutral"
-                elif risk_score < 85.0:
+                elif risk_score < 45.0:
+                    return "相对平稳", "cool-light"
+                elif risk_score <= 55.0:
+                    return "中性平衡", "neutral"
+                elif risk_score <= 75.0:
                     return "估值偏高", "elevated"
                 else:
                     return "泡沫预警", "warning"

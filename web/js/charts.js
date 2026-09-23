@@ -72,20 +72,20 @@ class Charts {
         const isUS = containerId.includes('western') || data?.meta?.market === 'US' || data?.market === 'US';
         const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
 
-        // 红涨绿跌色谱 (左端绿 ➔ 绿 ➔ 中性灰 ➔ 橙红 ➔ 右端红，完全与项目统一)
+        // 红涨绿跌色谱 (左端绿 ➔ 绿 ➔ 中性金黄 ➔ 橙红 ➔ 右端红，完全与全站 Gold & AI 统一)
         const STOPS_CN = [
-            { pct: 0.0, color: '#16a34a' }, // 极度恐慌 (项目统一深绿文字色)
-            { pct: 0.25, color: '#22c55e' }, // 恐慌 (项目统一主跌绿)
-            { pct: 0.50, color: '#64748b' }, // 中性 灰
+            { pct: 0.0, color: '#16a34a' }, // 极度恐慌 (深绿)
+            { pct: 0.25, color: '#22c55e' }, // 恐慌 (明绿)
+            { pct: 0.50, color: '#eab308' }, // 中性 金黄 (全站统一琥珀金)
             { pct: 0.75, color: '#f97316' }, // 贪婪 橙红
-            { pct: 1.0, color: '#dc2626' }   // 极度贪婪 (项目统一深红文字色)
+            { pct: 1.0, color: '#dc2626' }   // 极度贪婪 (深红)
         ];
 
-        // 绿涨红跌色谱 (左端红 ➔ 红 ➔ 中性灰 ➔ 绿 ➔ 右端绿)
+        // 绿涨红跌色谱 (左端红 ➔ 红 ➔ 中性金黄 ➔ 绿 ➔ 右端绿)
         const STOPS_US = [
             { pct: 0.0, color: '#dc2626' }, // 极度恐慌 (红)
             { pct: 0.25, color: '#ef4444' }, // 恐慌 (明红)
-            { pct: 0.50, color: '#64748b' }, // 中性 灰
+            { pct: 0.50, color: '#eab308' }, // 中性 金黄 (全站统一琥珀金)
             { pct: 0.75, color: '#22c55e' }, // 贪婪 (明绿)
             { pct: 1.0, color: '#16a34a' }   // 极度贪婪 (深绿)
         ];
@@ -141,10 +141,17 @@ class Charts {
             ticksHtml += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${c}" stroke-width="${strokeWidth}" stroke-linecap="round" opacity="${isMajor ? 1 : 0.85}" />`;
         }
 
-        // 外围等级文本颜色 (统一根据配置的红涨绿跌/绿涨红跌区分，与项目芯片文字色完全统一)
+        // 外围等级文本颜色 (统一根据配置的红涨绿跌/绿涨红跌区分，中性使用全站统一金黄色系，同时高亮当前激活状态)
+        const neutralLabelColor = isDark ? '#facc15' : '#ca8a04';
         const labelColors = isGreenUp 
-            ? ['#dc2626', '#ef4444', isDark ? '#94a3b8' : '#64748b', '#22c55e', '#16a34a']
-            : ['#16a34a', '#22c55e', isDark ? '#94a3b8' : '#64748b', '#f97316', '#dc2626'];
+            ? ['#dc2626', '#ef4444', neutralLabelColor, '#22c55e', '#16a34a']
+            : ['#16a34a', '#22c55e', neutralLabelColor, '#f97316', '#dc2626'];
+
+        const activeIdx = pct < 0.25 ? 0 : (pct < 0.45 ? 1 : (pct <= 0.55 ? 2 : (pct <= 0.75 ? 3 : 4)));
+        const getLblStyle = (idx) => {
+            const isActive = activeIdx === idx;
+            return `fill="${labelColors[idx]}" font-weight="${isActive ? '800' : '600'}" opacity="${isActive ? '1' : '0.65'}"`;
+        };
 
         const gradStops = stops.map(s => `<stop offset="${(s.pct * 100).toFixed(0)}%" stop-color="${s.color}" />`).join('');
 
@@ -162,12 +169,12 @@ class Charts {
                 <path d="M 65 175 A 125 125 0 0 1 315 175" fill="none" stroke="url(#${gradId})" stroke-width="4.5" stroke-linecap="round" />
                 <!-- 内层放射刻度 -->
                 <g>${ticksHtml}</g>
-                <!-- 外围等级标注 -->
-                <text x="54" y="180" font-size="10" font-weight="600" fill="${labelColors[0]}" text-anchor="end">极度恐慌</text>
-                <text x="86" y="76" font-size="10" font-weight="600" fill="${labelColors[1]}" text-anchor="middle">恐慌</text>
-                <text x="190" y="32" font-size="10.5" font-weight="600" fill="${labelColors[2]}" text-anchor="middle">中性</text>
-                <text x="294" y="76" font-size="10" font-weight="600" fill="${labelColors[3]}" text-anchor="middle">贪婪</text>
-                <text x="326" y="180" font-size="10" font-weight="600" fill="${labelColors[4]}" text-anchor="start">极度贪婪</text>
+                <!-- 外围等级标注 (高亮当前状态) -->
+                <text x="54" y="180" font-size="10" ${getLblStyle(0)} text-anchor="end">极度恐慌</text>
+                <text x="86" y="76" font-size="10" ${getLblStyle(1)} text-anchor="middle">恐慌</text>
+                <text x="190" y="32" font-size="10.5" ${getLblStyle(2)} text-anchor="middle">中性</text>
+                <text x="294" y="76" font-size="10" ${getLblStyle(3)} text-anchor="middle">贪婪</text>
+                <text x="326" y="180" font-size="10" ${getLblStyle(4)} text-anchor="start">极度贪婪</text>
                 <!-- 三角指示游标 -->
                 <polygon points="${tipX},${tipY} ${b1X},${b1Y} ${b2X},${b2Y}" fill="${currentColor}" filter="url(#${shadowId})" />
                 <!-- 中心数值 -->

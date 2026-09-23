@@ -43,58 +43,41 @@ class AIMarketController {
             historical_match, signals, layers 
         } = data;
 
-        const scoreClass = cycleScore >= 65 ? 'text-up' : cycleScore <= 45 ? 'text-down' : 'text-neutral';
-
         // 计算 SVG Gauge 指针角度 (0~100 映射至 -80° ~ +80° 连续弧度区间)
         const clampedScore = Math.max(0, Math.min(100, Number(cycleScore) || 50));
         const gaugeDegree = -80 + (clampedScore / 100) * 160;
 
         const isGreenUp = typeof APP_CONFIG !== 'undefined' && APP_CONFIG.colorMode === 'green-up-red-down';
-        let activeColor = '#ca8a04';
-        let shortStageLabel = '探索期';
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        const neutralColor = isDark ? '#facc15' : '#ca8a04';
+
+        // 统一 5 阶热度评分与游标颜色 (0~25 降温, 25~45 探索, 45~55 中性, 55~75 爆发, 75~100 预警)
+        let activeColor = neutralColor;
+        let shortStageLabel = '中性期';
 
         if (isGreenUp) {
-            if (cycle_status === 'active') {
-                activeColor = '#22c55e';
-                shortStageLabel = '爆发期';
-            } else if (cycle_status === 'neutral') {
-                activeColor = '#ca8a04';
-                shortStageLabel = '探索期';
-            } else if (cycle_status === 'warning') {
-                activeColor = '#16a34a';
-                shortStageLabel = '预警期';
-            } else if (cycle_status === 'cooling') {
-                activeColor = '#dc2626';
-                shortStageLabel = '降温期';
-            }
+            if (clampedScore < 25) { activeColor = '#dc2626'; shortStageLabel = '降温期'; }
+            else if (clampedScore < 45) { activeColor = '#ef4444'; shortStageLabel = '探索期'; }
+            else if (clampedScore <= 55) { activeColor = neutralColor; shortStageLabel = '中性期'; }
+            else if (clampedScore <= 75) { activeColor = '#22c55e'; shortStageLabel = '爆发期'; }
+            else { activeColor = '#16a34a'; shortStageLabel = '预警期'; }
         } else {
-            // 红涨绿跌惯例：降温绿(#16a34a)，探索黄(#ca8a04)，爆发橙红(#ea580c)，预警红(#dc2626)，完全与项目统一
-            if (cycle_status === 'active') {
-                activeColor = '#ea580c';
-                shortStageLabel = '爆发期';
-            } else if (cycle_status === 'neutral') {
-                activeColor = '#ca8a04';
-                shortStageLabel = '探索期';
-            } else if (cycle_status === 'warning') {
-                activeColor = '#dc2626';
-                shortStageLabel = '预警期';
-            } else if (cycle_status === 'cooling') {
-                activeColor = '#16a34a';
-                shortStageLabel = '降温期';
-            }
+            if (clampedScore < 25) { activeColor = '#16a34a'; shortStageLabel = '降温期'; }
+            else if (clampedScore < 45) { activeColor = '#22c55e'; shortStageLabel = '探索期'; }
+            else if (clampedScore <= 55) { activeColor = neutralColor; shortStageLabel = '中性期'; }
+            else if (clampedScore <= 75) { activeColor = '#ea580c'; shortStageLabel = '爆发期'; }
+            else { activeColor = '#dc2626'; shortStageLabel = '预警期'; }
         }
 
-        if (!cycle_status) {
-            if (isGreenUp) {
-                if (clampedScore < 35) { activeColor = '#dc2626'; shortStageLabel = '降温期'; }
-                else if (clampedScore < 65) { activeColor = '#ca8a04'; shortStageLabel = '探索期'; }
-                else if (clampedScore < 85) { activeColor = '#22c55e'; shortStageLabel = '爆发期'; }
-                else { activeColor = '#16a34a'; shortStageLabel = '预警期'; }
-            } else {
-                if (clampedScore < 35) { activeColor = '#16a34a'; shortStageLabel = '降温期'; }
-                else if (clampedScore < 65) { activeColor = '#ca8a04'; shortStageLabel = '探索期'; }
-                else if (clampedScore < 85) { activeColor = '#ea580c'; shortStageLabel = '爆发期'; }
-                else { activeColor = '#dc2626'; shortStageLabel = '预警期'; }
+        if (cycle_status) {
+            if (cycle_status === 'active') {
+                shortStageLabel = '爆发期';
+            } else if (cycle_status === 'neutral') {
+                shortStageLabel = '探索期';
+            } else if (cycle_status === 'warning') {
+                shortStageLabel = '预警期';
+            } else if (cycle_status === 'cooling') {
+                shortStageLabel = '降温期';
             }
         }
 
@@ -130,7 +113,7 @@ class AIMarketController {
 
                         <div class="ai-score-main-row">
                             <div class="ai-score-num-group">
-                                <span class="ai-score-num ${scoreClass}">${cycleScore}</span>
+                                <span class="ai-score-num" style="color: ${activeColor};">${cycleScore}</span>
                                 <span class="ai-score-max">/ 100</span>
                             </div>
                             <div class="ai-score-status-group">
@@ -144,22 +127,19 @@ class AIMarketController {
                             </div>
                         </div>
 
-                        <!-- 动态温度刻度带 (0~100 连续游标指示) -->
+                        <!-- 动态温度刻度带 (0~100 单条连续平滑轨道，50% 中性对称) -->
                         <div class="ai-spectrum-wrapper">
                             <div class="ai-spectrum-track">
-                                <div class="ai-spectrum-zone zone-cooling" title="0-35 降温收缩"></div>
-                                <div class="ai-spectrum-zone zone-neutral" title="35-65 探索整理"></div>
-                                <div class="ai-spectrum-zone zone-active" title="65-85 爆发扩张"></div>
-                                <div class="ai-spectrum-zone zone-warning" title="85-100 过热预警"></div>
                                 <div class="ai-spectrum-pin" style="left: ${clampedScore}%;">
                                     <div class="ai-spectrum-dot" style="background: ${activeColor};"></div>
                                 </div>
                             </div>
                             <div class="ai-spectrum-labels">
-                                <span class="spectrum-lbl color-cooling ${clampedScore < 35 ? 'active' : ''}">降温 0~35</span>
-                                <span class="spectrum-lbl color-neutral ${clampedScore >= 35 && clampedScore < 65 ? 'active' : ''}">探索 35~65</span>
-                                <span class="spectrum-lbl color-active ${clampedScore >= 65 && clampedScore < 85 ? 'active' : ''}">爆发 65~85</span>
-                                <span class="spectrum-lbl color-warning ${clampedScore >= 85 ? 'active' : ''}">预警 85~100</span>
+                                <span class="spectrum-lbl color-cooling ${clampedScore < 25 ? 'active' : ''}">降温 0~25</span>
+                                <span class="spectrum-lbl color-cool-light ${clampedScore >= 25 && clampedScore < 45 ? 'active' : ''}">探索 25~45</span>
+                                <span class="spectrum-lbl color-neutral ${clampedScore >= 45 && clampedScore <= 55 ? 'active' : ''}">中性 45~55</span>
+                                <span class="spectrum-lbl color-active ${clampedScore > 55 && clampedScore <= 75 ? 'active' : ''}">爆发 55~75</span>
+                                <span class="spectrum-lbl color-warning ${clampedScore > 75 ? 'active' : ''}">预警 75~100</span>
                             </div>
                         </div>
 
@@ -386,31 +366,59 @@ class AIMarketController {
                             const renderThermoRow = (country, bm, riskVal, isCn) => {
                                 const riskNum = Number(riskVal) || 0;
 
-                                // 项目统一四阶段色标与状态映射 (0~35健康绿, 35~65平稳黄, 65~85偏高橙, 85~100预警红)
+                                // 项目统一五阶段对称色标与状态映射 (0~25健康绿, 25~45平稳浅绿, 45~55中性金黄, 55~75偏高橙, 75~100预警红)
                                 let dotColor = '#ca8a04';
                                 let badgeClass = 'neutral';
-                                let statusText = '相对平稳';
+                                let statusText = '中性平衡';
 
-                                if (riskNum < 35) {
-                                    dotColor = '#16a34a';
-                                    badgeClass = 'healthy';
-                                    statusText = '健康扩张';
-                                } else if (riskNum < 65) {
-                                    dotColor = '#ca8a04';
-                                    badgeClass = 'neutral';
-                                    statusText = '相对平稳';
-                                } else if (riskNum < 85) {
-                                    dotColor = '#ea580c';
-                                    badgeClass = 'elevated';
-                                    statusText = '估值偏高';
+                                if (isGreenUp) {
+                                    if (riskNum < 25) {
+                                        dotColor = '#dc2626';
+                                        badgeClass = 'warning';
+                                        statusText = '健康扩张';
+                                    } else if (riskNum < 45) {
+                                        dotColor = '#ef4444';
+                                        badgeClass = 'cool-light';
+                                        statusText = '相对平稳';
+                                    } else if (riskNum <= 55) {
+                                        dotColor = '#ca8a04';
+                                        badgeClass = 'neutral';
+                                        statusText = '中性平衡';
+                                    } else if (riskNum <= 75) {
+                                        dotColor = '#22c55e';
+                                        badgeClass = 'elevated';
+                                        statusText = '估值偏高';
+                                    } else {
+                                        dotColor = '#16a34a';
+                                        badgeClass = 'healthy';
+                                        statusText = '泡沫预警';
+                                    }
                                 } else {
-                                    dotColor = '#dc2626';
-                                    badgeClass = 'warning';
-                                    statusText = '泡沫预警';
+                                    if (riskNum < 25) {
+                                        dotColor = '#16a34a';
+                                        badgeClass = 'healthy';
+                                        statusText = '健康扩张';
+                                    } else if (riskNum < 45) {
+                                        dotColor = '#22c55e';
+                                        badgeClass = 'cool-light';
+                                        statusText = '相对平稳';
+                                    } else if (riskNum <= 55) {
+                                        dotColor = '#ca8a04';
+                                        badgeClass = 'neutral';
+                                        statusText = '中性平衡';
+                                    } else if (riskNum <= 75) {
+                                        dotColor = '#ea580c';
+                                        badgeClass = 'elevated';
+                                        statusText = '估值偏高';
+                                    } else {
+                                        dotColor = '#dc2626';
+                                        badgeClass = 'warning';
+                                        statusText = '泡沫预警';
+                                    }
                                 }
 
                                 if (bm.status_text) {
-                                    statusText = (riskNum >= 35 && riskNum < 65 && bm.status_text === '健康资本扩张') ? '相对平稳' : bm.status_text;
+                                    statusText = bm.status_text;
                                 }
 
                                 const peStr = bm.pe_ratio ? `真实加权 PE: <strong>${bm.pe_ratio}x</strong> (标杆 ${bm.pe_benchmark || '--'}x)` : `产业价值分: <strong>${bm.value_score}</strong>`;
@@ -429,23 +437,19 @@ class AIMarketController {
                                             <span>${peStr}</span>
                                             <span>泡沫风险: <strong style="font-family: var(--font-mono); font-weight: 700; color: ${dotColor};">${riskVal} / 100</strong></span>
                                         </div>
-                                        <!-- 100% 全宽全谱色阶轨道 (与顶部 AI MARKET HEAT 统一设计语言) -->
+                                        <!-- 100% 全宽全谱连续平滑渐变色带 (50% 中性对称，刻度线 25%/50%/75%) -->
                                         <div class="thermo-bar-wrapper">
-                                            <div class="thermo-zone zone-cooling" title="0-35 健康扩张"></div>
-                                            <div class="thermo-zone zone-neutral" title="35-65 相对平稳"></div>
-                                            <div class="thermo-zone zone-active" title="65-85 估值偏高"></div>
-                                            <div class="thermo-zone zone-warning" title="85-100 泡沫预警"></div>
-                                            <div class="thermo-bar-tick" style="left: 35%;"></div>
-                                            <div class="thermo-bar-tick" style="left: 65%;"></div>
-                                            <div class="thermo-bar-tick" style="left: 85%;"></div>
+                                            <div class="thermo-bar-tick" style="left: 25%;"></div>
+                                            <div class="thermo-bar-tick" style="left: 50%;"></div>
+                                            <div class="thermo-bar-tick" style="left: 75%;"></div>
                                             <div class="thermo-bar-cursor" style="left: ${clampedRisk}%; background: ${dotColor};"></div>
                                         </div>
                                         <div class="thermo-scale-labels">
-                                            <span style="position: absolute; left: 0;" class="thermo-lbl color-cooling ${riskNum < 35 ? 'active' : ''}">0 健康</span>
-                                            <span style="position: absolute; left: 35%; transform: translateX(-50%); white-space: nowrap;" class="thermo-lbl color-neutral ${riskNum >= 35 && riskNum < 65 ? 'active' : ''}">35 平稳</span>
-                                            <span style="position: absolute; left: 65%; transform: translateX(-50%); white-space: nowrap;" class="thermo-lbl color-active ${riskNum >= 65 && riskNum < 85 ? 'active' : ''}">65 偏高</span>
-                                            <span style="position: absolute; left: 85%; transform: translateX(-50%); white-space: nowrap;" class="thermo-lbl color-warning ${riskNum >= 85 ? 'active' : ''}">85 预警</span>
-                                            <span style="position: absolute; right: 0;" class="thermo-lbl color-warning">100</span>
+                                            <span style="position: absolute; left: 0;" class="thermo-lbl color-cooling ${riskNum < 25 ? 'active' : ''}">0 健康</span>
+                                            <span style="position: absolute; left: 25%; transform: translateX(-50%); white-space: nowrap;" class="thermo-lbl color-cool-light ${riskNum >= 25 && riskNum < 45 ? 'active' : ''}">25 平稳</span>
+                                            <span style="position: absolute; left: 50%; transform: translateX(-50%); white-space: nowrap;" class="thermo-lbl color-neutral ${riskNum >= 45 && riskNum <= 55 ? 'active' : ''}">50 中性</span>
+                                            <span style="position: absolute; left: 75%; transform: translateX(-50%); white-space: nowrap;" class="thermo-lbl color-active ${riskNum > 55 && riskNum <= 75 ? 'active' : ''}">75 偏高</span>
+                                            <span style="position: absolute; right: 0;" class="thermo-lbl color-warning ${riskNum > 75 ? 'active' : ''}">100 预警</span>
                                         </div>
                                     </div>
                                 `;

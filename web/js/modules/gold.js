@@ -236,8 +236,12 @@ class GoldController {
 
         // 色彩阶梯判断（超卖/恐慌 ➔ 中性 ➔ 超买/贪婪，完全与项目红绿统一）
         const isGreenUp = typeof APP_CONFIG !== 'undefined' && APP_CONFIG.colorMode === 'green-up-red-down';
-        let themeColor = '#64748b';
-        let bgTint = 'rgba(100, 116, 139, 0.12)';
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        const neutralColor = isDark ? '#facc15' : '#ca8a04';
+        const neutralBg = isDark ? 'rgba(202, 138, 4, 0.22)' : 'rgba(202, 138, 4, 0.12)';
+
+        let themeColor = neutralColor;
+        let bgTint = neutralBg;
 
         if (isGreenUp) {
             if (score < 25) {
@@ -247,8 +251,8 @@ class GoldController {
                 themeColor = '#ef4444';
                 bgTint = 'rgba(239, 68, 68, 0.12)';
             } else if (score <= 55) {
-                themeColor = '#64748b';
-                bgTint = 'rgba(100, 116, 139, 0.12)';
+                themeColor = neutralColor;
+                bgTint = neutralBg;
             } else if (score <= 75) {
                 themeColor = '#22c55e';
                 bgTint = 'rgba(34, 197, 94, 0.12)';
@@ -264,8 +268,8 @@ class GoldController {
                 themeColor = '#22c55e';
                 bgTint = 'rgba(34, 197, 94, 0.12)';
             } else if (score <= 55) {
-                themeColor = '#64748b';
-                bgTint = 'rgba(100, 116, 139, 0.12)';
+                themeColor = neutralColor;
+                bgTint = neutralBg;
             } else if (score <= 75) {
                 themeColor = '#ea580c';
                 bgTint = 'rgba(234, 88, 12, 0.12)';
