@@ -3,13 +3,24 @@
 
 class QDIIController {
     constructor() {
-        this.currentFilter = 'active';
+        this.currentFilter = this._resolveInitialFilter();
         this.rawFunds = [];
         this.benchmarks = {
             'NDX': { name: '纳斯达克100 原生指数', return_1y: 21.14 },
             'SPX': { name: '标普500 原生指数', return_1y: 16.48 }
         };
         window.qdiiController = this;
+    }
+
+    _resolveInitialFilter() {
+        try {
+            const urlParams = new URLSearchParams(window.location.search);
+            const filter = urlParams.get('filter') || urlParams.get('subtab');
+            if (filter && ['active', 'nasdaq100', 'sp500'].includes(filter)) {
+                return filter;
+            }
+        } catch (e) {}
+        return 'active';
     }
 
     async loadData() {
@@ -74,6 +85,7 @@ class QDIIController {
     bindFilterButtons() {
         const buttons = document.querySelectorAll('.qdii-filter-btn');
         buttons.forEach(btn => {
+            btn.classList.toggle('active', (btn.dataset.filter || 'active') === this.currentFilter);
             btn.onclick = () => {
                 buttons.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
@@ -85,6 +97,7 @@ class QDIIController {
                 } else {
                     url.searchParams.set('filter', this.currentFilter);
                 }
+                url.searchParams.delete('subtab');
                 window.history.replaceState({}, '', url.toString());
                 this.renderTable();
             };

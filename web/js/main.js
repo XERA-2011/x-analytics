@@ -130,8 +130,20 @@ class App {
             url.searchParams.delete('filter');
             url.searchParams.delete('subtab');
         } else {
-            if (window.qdiiController && window.qdiiController.currentFilter && window.qdiiController.currentFilter !== 'active') {
-                url.searchParams.set('filter', window.qdiiController.currentFilter);
+            const urlFilter = url.searchParams.get('filter') || url.searchParams.get('subtab');
+            const validFilters = ['active', 'nasdaq100', 'sp500'];
+            if (window.qdiiController) {
+                if (urlFilter && validFilters.includes(urlFilter)) {
+                    window.qdiiController.currentFilter = urlFilter;
+                }
+                if (window.qdiiController.currentFilter && window.qdiiController.currentFilter !== 'active') {
+                    url.searchParams.set('filter', window.qdiiController.currentFilter);
+                } else {
+                    url.searchParams.delete('filter');
+                    url.searchParams.delete('subtab');
+                }
+            } else if (urlFilter && validFilters.includes(urlFilter) && urlFilter !== 'active') {
+                url.searchParams.set('filter', urlFilter);
             } else {
                 url.searchParams.delete('filter');
                 url.searchParams.delete('subtab');
