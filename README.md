@@ -8,11 +8,11 @@
 
 ```mermaid
 graph TD
-    Client["📱 用户端 (Web / 移动端)"] -->|端口访问 :2012| App["⚡ FastAPI 后端 & Web 服务 (:8080)"]
+    Client["📱 用户端 (Web / 移动端)"] -->|"端口访问 :2012"| App["⚡ FastAPI 后端 & Web 服务 (:8080)"]
     
     subgraph CoreApp ["核心系统应用"]
         App -->|静态资源| WebUI["🖥️ Web 仪表盘 (原生 JS/CSS)"]
-        App -->|优先读取热数据 (<500ms)| Redis["🔴 Redis 缓存 (Single Source of Truth)"]
+        App -->|"优先读取热数据 (500ms以内)"| Redis["🔴 Redis 缓存 (Single Source of Truth)"]
         App -->|可选历史归档| Postgres["🐘 Postgres 数据库"]
         
         Scheduler["⏰ Task Scheduler (后台调度)"] -->|写缓存/刷新| Redis
@@ -23,7 +23,7 @@ graph TD
         App -.->|穿透持仓按需中继| ProxyWorker
     end
 
-    ProxyWorker -->|安全发包 (资产配置/费率/持仓)| DeepFinancialAPIs["📄 基金与财报深层数据源"]
+    ProxyWorker -->|"安全发包 (资产配置/费率/持仓)"| DeepFinancialAPIs["📄 基金与财报深层数据源"]
 ```
 
 系统核心架构包含如下关键模块：
