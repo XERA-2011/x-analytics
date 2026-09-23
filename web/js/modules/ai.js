@@ -265,22 +265,22 @@ class AIMarketController {
                         <div class="rotation-desc" style="margin-top: 6px;">${rotation_desc || '--'}</div>
                         <div class="rotation-flow" style="margin-top: 10px;">
                             <div class="rotation-flow-group flow-group-upstream">
-                                <span class="flow-step" style="background: rgba(16, 185, 129, 0.12); color: #059669; font-weight: 700;">L0 能源电力</span>
+                                <span class="flow-step" style="background: rgba(16, 185, 129, 0.12); color: #059669; font-weight: 700;">L0 能源<span class="flow-step-ext">电力</span></span>
                                 <span class="flow-arrow">➔</span>
-                                <span class="flow-step" style="background: rgba(59, 130, 246, 0.12); color: #2563eb; font-weight: 700;">L1 算力芯片</span>
+                                <span class="flow-step" style="background: rgba(59, 130, 246, 0.12); color: #2563eb; font-weight: 700;">L1 <span class="flow-step-ext">算力</span>芯片</span>
                                 <span class="flow-arrow">➔</span>
-                                <span class="flow-step" style="background: rgba(59, 130, 246, 0.08); color: var(--text-primary);">L2 存储代工</span>
+                                <span class="flow-step" style="background: rgba(59, 130, 246, 0.08); color: var(--text-primary);">L2 存储<span class="flow-step-ext">代工</span></span>
                                 <span class="flow-arrow">➔</span>
-                                <span class="flow-step" style="background: rgba(59, 130, 246, 0.08); color: var(--text-primary);">L3 服务器液冷</span>
+                                <span class="flow-step" style="background: rgba(59, 130, 246, 0.08); color: var(--text-primary);">L3 <span class="flow-step-ext">服务器</span>液冷</span>
                             </div>
                             <span class="flow-arrow flow-arrow-bridge">➔</span>
                             <div class="rotation-flow-group flow-group-downstream">
                                 <span class="flow-sub-indicator">↳</span>
-                                <span class="flow-step" style="background: rgba(59, 130, 246, 0.08); color: var(--text-primary);">L4 云计算巨头</span>
+                                <span class="flow-step" style="background: rgba(59, 130, 246, 0.08); color: var(--text-primary);">L4 云计算<span class="flow-step-ext">巨头</span></span>
                                 <span class="flow-arrow">➔</span>
-                                <span class="flow-step" style="background: rgba(168, 85, 247, 0.1); color: #9333ea;">L5 软件Agent</span>
+                                <span class="flow-step" style="background: rgba(168, 85, 247, 0.1); color: #9333ea;">L5 软件<span class="flow-step-ext">Agent</span></span>
                                 <span class="flow-arrow">➔</span>
-                                <span class="flow-step" style="background: rgba(239, 68, 68, 0.1); color: #dc2626;">L6 A股核心</span>
+                                <span class="flow-step" style="background: rgba(239, 68, 68, 0.1); color: #dc2626;">L6 A股<span class="flow-step-ext">核心</span></span>
                             </div>
                         </div>
                     </div>

@@ -2512,6 +2512,10 @@ footer {
     flex-shrink: 0;
 }
 
+.flow-step-ext {
+    display: inline;
+}
+
 .flow-arrow {
     color: var(--text-tertiary);
     font-size: 9px;
@@ -2602,18 +2606,24 @@ footer {
         display: flex;
         align-items: center;
         width: 100%;
+        justify-content: flex-start;
+        gap: 5px;
     }
     .rotation-flow-group.flow-group-upstream {
-        justify-content: space-between;
+        justify-content: flex-start;
+        gap: 5px;
     }
     .rotation-flow-group.flow-group-downstream {
         justify-content: flex-start;
-        gap: 8px;
+        gap: 5px;
     }
     .flow-step {
-        padding: 2.5px 5px;
-        font-size: 10px;
+        padding: 2.5px 5.5px;
+        font-size: 10.5px;
         flex-shrink: 0;
+    }
+    .flow-step-ext {
+        display: none;
     }
     .flow-arrow {
         font-size: 8px;
@@ -2627,7 +2637,7 @@ footer {
         align-items: center;
         color: var(--text-tertiary);
         font-size: 10px;
-        margin-right: 2px;
+        margin-right: 1px;
         flex-shrink: 0;
         user-select: none;
     }
