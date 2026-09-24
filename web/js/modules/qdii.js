@@ -313,7 +313,13 @@ class QDIIController {
             const estChangeStr = item.estimated_change_pct != null ? `${item.estimated_change_pct > 0 ? '+' : ''}${item.estimated_change_pct}%` : '';
             const estChangeClass = item.estimated_change_pct > 0 ? 'text-up' : item.estimated_change_pct < 0 ? 'text-down' : '';
 
-            const estTooltip = `参考估值: ${item.estimated_date || ''} ${item.estimated_time || ''} (反映隔夜/盘中变动，基准官方净值: ${officialNav != null ? officialNav : '--'})`;
+            let estBadgeLabel = '盘中估';
+            let estTooltip = `参考估值: ${item.estimated_date || ''} ${item.estimated_time || ''} (数据源原始估值，基准官方净值: ${officialNav != null ? officialNav : '--'})`;
+            if (item.is_calibrated) {
+                estBadgeLabel = '校准估';
+                const srcPct = item.source_estimated_change_pct != null ? `${item.source_estimated_change_pct > 0 ? '+' : ''}${item.source_estimated_change_pct}%` : '--';
+                estTooltip = `模型校准估值: ${item.estimated_date || ''} ${item.estimated_time || ''}\n【校准说明】${item.calibration_reason || '已根据原生指数基准与直投共识校准'}\n【原始源站估值】${srcPct} (受境内场内交易折溢价或日间噪声扰动)\n【模型校准结果】${estChangeStr} (基准官方净值: ${officialNav != null ? officialNav : '--'})`;
+            }
 
             const navBadgeHtml = `
                 <div class="qdii-nav-subtext">
@@ -322,7 +328,7 @@ class QDIIController {
                     </span>
                     ${isEst ? `
                         <span class="qdii-est-badge font-mono" title="${estTooltip}">
-                            盘中估 ${item.estimated_nav} <strong class="${estChangeClass}">${estChangeStr}</strong>
+                            ${estBadgeLabel} ${item.estimated_nav} <strong class="${estChangeClass}">${estChangeStr}</strong>${item.is_calibrated ? `<span style="font-size: 9px; opacity: 0.8; margin-left: 2px;">(校)</span>` : ''}
                         </span>
                     ` : ''}
                 </div>
@@ -450,7 +456,18 @@ class QDIIController {
             }
 
             const officialNav = item.official_nav || item.nav;
-            const isEst = item.is_estimated && item.estimated_nav != null;
+            const officialNavDate = item.official_nav_date || item.nav_date;
+            const navDateStr = officialNavDate ? officialNavDate.slice(5) : '';
+            const isEst = item.is_estimated && item.estimated_nav != null && (!item.estimated_date || !officialNavDate || officialNavDate === '最新披露' || item.estimated_date > officialNavDate);
+            const estChangeStr = item.estimated_change_pct != null ? `${item.estimated_change_pct > 0 ? '+' : ''}${item.estimated_change_pct}%` : '';
+            const estChangeClass = item.estimated_change_pct > 0 ? 'text-up' : item.estimated_change_pct < 0 ? 'text-down' : '';
+
+            const estPrefix = item.is_calibrated ? '校准估' : '估';
+            let estMobileTooltip = `参考估值: ${item.estimated_date || ''} ${item.estimated_time || ''}`;
+            if (item.is_calibrated) {
+                const srcPct = item.source_estimated_change_pct != null ? `${item.source_estimated_change_pct > 0 ? '+' : ''}${item.source_estimated_change_pct}%` : '--';
+                estMobileTooltip = `模型校准估值: ${item.estimated_date || ''} ${item.estimated_time || ''}\n【校准说明】${item.calibration_reason || '已根据原生指数基准与直投共识校准'}\n【原始源站估值】${srcPct}\n【模型校准结果】${estChangeStr}`;
+            }
 
             return `
                 <div class="qdii-mobile-card qdii-clickable" data-code="${item.code}" data-name="${item.name}" title="点击查看 ${item.name} 前十大重仓股">
@@ -467,9 +484,9 @@ class QDIIController {
                                     <span class="qdii-mcard-code font-mono">${item.code}</span>
                                     ${tagHtml}
                                 </div>
-                                <div style="font-size: 11px; color: var(--text-tertiary); display: flex; align-items: center; gap: 4px;">
+                                <div style="font-size: 11px; color: var(--text-tertiary); display: flex; align-items: center; gap: 6px;">
                                     <span>净值 ${officialNav != null ? officialNav : '--'}</span>
-                                    ${isEst ? `<span class="font-mono" style="color: var(--accent-blue); font-size: 10px; font-weight: 600;">估 ${item.estimated_nav}</span>` : ''}
+                                    ${isEst ? `<span class="font-mono ${estChangeClass}" style="font-size: 10.5px; font-weight: 600;" title="${estMobileTooltip}">${estPrefix} ${estChangeStr}</span>` : ''}
                                 </div>
                             </div>
                         </div>
