@@ -1422,7 +1422,7 @@ def get_cn_holiday_info(target_date: Optional[date] = None) -> Dict[str, Any]:
         if cur.strftime("%Y-%m-%d") in trade_days:
             break
         cur += timedelta(days=1)
-    next_trading_day = cur.strftime("%Y-%m-%d")
+    next_trading_day = f"{cur.month}月{cur.day}日"
 
     m, d = target_date.month, target_date.day
     w = target_date.weekday()
@@ -1430,7 +1430,7 @@ def get_cn_holiday_info(target_date: Optional[date] = None) -> Dict[str, Any]:
     if is_open:
         holiday_name = None
     elif w >= 5:
-        holiday_name = "周末休市"
+        holiday_name = "周末"
     elif m == 9 and 24 <= d <= 27:
         holiday_name = "中秋节"
     elif m == 10 and 1 <= d <= 7:
@@ -1449,11 +1449,7 @@ def get_cn_holiday_info(target_date: Optional[date] = None) -> Dict[str, Any]:
     is_holiday = not is_open
     notice = None
     if is_holiday:
-        notice = (
-            f"今日（{target_date.strftime('%m月%d日')}，{holiday_name}）国内公募基金市场休市。"
-            f"美股QDII基金官方净值暂未披露9月24日确认值，预计于节后首个交易日（{next_trading_day}）集中更新；"
-            f"当前展示的官方净值为节前最新已确认净值，盘中参考估值基于隔夜美股走势对齐推算，仅供参考。"
-        )
+        notice = f"美股QDII官方净值将于节后首个交易日（{next_trading_day}）更新，当前展示节前最新确认值。"
 
     return {
         "date": target_date.strftime("%Y-%m-%d"),
@@ -1464,7 +1460,7 @@ def get_cn_holiday_info(target_date: Optional[date] = None) -> Dict[str, Any]:
     }
 
 
-@cached("qdii:passive_funds_v55", ttl=86400, stale_ttl=86400 * 7, sync_on_cold=True)
+@cached("qdii:passive_funds_v56", ttl=86400, stale_ttl=86400 * 7, sync_on_cold=True)
 def get_qdii_passive_funds() -> Dict[str, Any]:
     """获取国内纳斯达克100 & 标普500 场外被动 QDII A类基金数据列表
 
