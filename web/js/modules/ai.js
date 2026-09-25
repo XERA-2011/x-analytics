@@ -81,7 +81,7 @@ class AIMarketController {
             }
         }
 
-        const trendTag = trend_str || (cycle_status === 'warning' ? '⚠️ 预警' : cycle_status === 'cooling' ? '↓ 回调' : cycle_status === 'active' ? '↑ 强劲' : '→ 震荡');
+        const trendTag = trend_str || (cycle_status === 'warning' ? '预警' : cycle_status === 'cooling' ? '↓ 回调' : cycle_status === 'active' ? '↑ 强劲' : '→ 震荡');
         const riskTag = risk_level || (cycle_status === 'warning' || cycle_status === 'cooling' ? '偏高' : '中等');
         const riskCls = risk_class || '';
         const riskClassAttr = (riskCls === 'high' || cycle_status === 'warning' || cycle_status === 'cooling') ? 'style="color: var(--color-danger); border-color: rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.1);"' : '';
@@ -666,7 +666,7 @@ class AIMarketController {
                 const weightsHtml = `
                     <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); border-radius: 6px; padding: 6px 8px; margin: 8px 0;">
                         <div style="font-weight: 600; font-size: 11.5px; margin-bottom: 6px; color: var(--text-primary); display: flex; align-items: center; gap: 4px;">
-                            <span>📊</span> 各层级因子算法权重分配
+                            各层级因子算法权重分配
                         </div>
                         <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
                             <thead>
@@ -692,7 +692,7 @@ class AIMarketController {
                 const bodyHtml = `
                     <div class="ai-info-modal" style="white-space: normal; font-size: 12px; color: var(--text-primary);">
                         <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-color); border-radius: 6px; padding: 8px 10px; margin-bottom: 8px;">
-                            <div style="font-weight: 600; font-size: 12px; color: var(--color-primary, #3b82f6); margin-bottom: 4px;">🧮 平滑七因子双轨算法公式</div>
+                            <div style="font-weight: 600; font-size: 12px; color: var(--color-primary, #3b82f6); margin-bottom: 4px;">平滑七因子双轨算法公式</div>
                             <div style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 10.5px; background: rgba(0,0,0,0.3); padding: 6px 8px; border-radius: 4px; color: #e2e8f0; margin-bottom: 6px; line-height: 1.45; word-break: break-word;">
                                 <div><span style="color:#93c5fd;">weighted_pct_raw</span> = L0×10% + L1×25% + L2×20% + L3×15% + L4×10% + L5×10% + L6×10%</div>
                                 <div style="margin-top: 2px;"><span style="color:#fcd34d;">momentum_1d</span> = Min(100, Max(0, 50.0 + weighted_pct_raw × 7.5))</div>
@@ -704,8 +704,8 @@ class AIMarketController {
                         ${weightsHtml}
 
                         <div style="background: rgba(255, 255, 255, 0.02); border-left: 3px solid var(--color-primary, #3b82f6); border-radius: 0 4px 4px 0; padding: 6px 10px; font-size: 11px; color: var(--text-secondary); margin-top: 8px; line-height: 1.45;">
-                            <div><strong>💡 得分区间：</strong><span style="color: #4ade80;">70+</span> 爆发 | <span style="color: #38bdf8;">50~70</span> 稳健 | <span style="color: #f87171;">&lt;40</span> 回调</div>
-                            <div style="margin-top: 3px; color: var(--text-muted, #94a3b8); font-size: 10.5px;">⚡ 数据抓取：直连美股与A股盘中实时行情，后台每 10 分钟自动更新。</div>
+                            <div><strong>得分区间：</strong><span style="color: #4ade80;">70+</span> 爆发 | <span style="color: #38bdf8;">50~70</span> 稳健 | <span style="color: #f87171;">&lt;40</span> 回调</div>
+                            <div style="margin-top: 3px; color: var(--text-muted, #94a3b8); font-size: 10.5px;">数据抓取：直连美股与A股盘中实时行情，后台每 10 分钟自动更新。</div>
                         </div>
                     </div>
                 `;
@@ -754,17 +754,17 @@ class AIMarketController {
                 const bodyHtml = `
                     <div class="ai-info-modal" style="white-space: normal; font-size: 12px; color: var(--text-primary); line-height: 1.4;">
                         <div style="background: rgba(255,255,255,0.03); border-radius: 4px; padding: 8px 10px; margin-bottom: 8px;">
-                            <div style="font-weight: 600; color: var(--color-primary, #3b82f6); margin-bottom: 2px;">🌡️ 双维度剥离判定法则</div>
+                            <div style="font-weight: 600; color: var(--color-primary, #3b82f6); margin-bottom: 2px;">双维度剥离判定法则</div>
                             <div style="color: var(--text-secondary); font-size: 11px;">
                                 系统将“产业真实价值分”与“二级市场估值泡沫风险分”分离计算：
                             </div>
                         </div>
                         <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px;">
                             <div style="padding: 6px 8px; background: rgba(34, 197, 94, 0.1); border-radius: 4px; color: #4ade80;">
-                                ✅ <strong>健康资本扩张期：</strong> 芯片需求饱满 + 云巨头 CapEx 资本开支激增，股价有强劲业绩支撑。
+                                <strong>健康资本扩张期：</strong> 芯片需求饱满 + 云巨头 CapEx 资本开支激增，股价有强劲业绩支撑。
                             </div>
                             <div style="padding: 6px 8px; background: rgba(239, 68, 68, 0.1); border-radius: 4px; color: #f87171;">
-                                ⚠️ <strong>泡沫风险预警期：</strong> 算力龙头滞涨，资金转向无业绩的边缘题材炒作，估值情绪过热。
+                                <strong>泡沫风险预警期：</strong> 算力龙头滞涨，资金转向无业绩的边缘题材炒作，估值情绪过热。
                             </div>
                         </div>
                     </div>
@@ -782,7 +782,7 @@ class AIMarketController {
                 const bodyHtml = `
                     <div class="ai-info-modal" style="white-space: normal; font-size: 12px; color: var(--text-primary); line-height: 1.5;">
                         <div style="background: var(--bg-tertiary, rgba(0,0,0,0.03)); border-radius: 6px; padding: 10px 12px; margin-bottom: 10px;">
-                            <div style="font-weight: 600; color: var(--color-primary, #3b82f6); margin-bottom: 4px;">🔄 资金轮动监测与动态判定原则</div>
+                            <div style="font-weight: 600; color: var(--color-primary, #3b82f6); margin-bottom: 4px;">资金轮动监测与动态判定原则</div>
                             <div style="color: var(--text-secondary); font-size: 12px;">
                                 基于 L0 (能源电力)、L1 (算力芯片)、L5 (应用) 和 L6 (边缘题材) 的盘中实时动能对比动态推演。
                             </div>

@@ -187,7 +187,7 @@ class GoldController {
                 ${advice ? `
                 <div style="text-align: center; margin-bottom: 24px; padding: 0 16px;">
                     <div style="font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 2px;">
-                        💡 ${advice.strategy}
+                        ${advice.strategy}
                     </div>
                     <div style="font-size: 11px; color: var(--text-secondary);">
                         ${advice.reasoning}
@@ -420,7 +420,7 @@ class GoldController {
 
                 <div style="text-align: center; margin-bottom: 16px; padding: 0 12px;">
                     <div style="font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 2px;">
-                        💡 当月净增持：${netChangeText}
+                        当月净增持：${netChangeText}
                     </div>
                     <div style="font-size: 11px; color: var(--text-secondary);">
                         近 5 年增持速度超越 ${data.percentile}% 的月份 · 数据截至 ${data.date}
@@ -487,7 +487,7 @@ class GoldController {
 
                 <div style="text-align: center; margin-bottom: 16px; padding: 0 12px;">
                     <div style="font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 2px;">
-                        💡 今日净增仓：${netChangeText}
+                        今日净增仓：${netChangeText}
                     </div>
                     <div style="font-size: 11px; color: var(--text-secondary);">
                         持仓总量处于近 5 年 ${data.percentile}% 水位 · 数据截至 ${data.date}

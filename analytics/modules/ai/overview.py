@@ -450,14 +450,14 @@ class AIOverview:
                     cycle_phase = "结构性过热与概念扩散市场"
                     cycle_status = "warning"
                     cycle_desc = "核心算力高位震荡。机会聚焦：★★☆☆☆ 概念题材投机 | 风险警示：估值安全性承压，警惕短线情绪退潮。"
-                    trend_str = "⚠️ 结构分化"
+                    trend_str = "结构分化"
                     risk_level = "中等"
                     risk_class = "medium"
                 else:
                     cycle_phase = "估值过热 / 泡沫预警市场"
                     cycle_status = "warning"
                     cycle_desc = "算力龙头滞涨。机会聚焦：★☆☆☆☆ 观望或轻仓防御 | 风险警示：题材疯狂炒作，警惕高位见顶回调。"
-                    trend_str = "⚠️ 泡沫预警"
+                    trend_str = "泡沫预警"
                     risk_level = "偏高"
                     risk_class = "high"
             elif nvda_change < -2.0 and l4_avg < -1.5:

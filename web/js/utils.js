@@ -550,7 +550,7 @@ class Utils {
                     btn.innerHTML = originalHtml;
                     if (window.lucide) lucide.createIcons();
                     const reason = !window.isSecureContext ? '非 HTTPS 环境限制' : '浏览器不支持';
-                    alert(`受${reason}，无法一键复制图像到剪贴板。\n\n💡 替代方案：请直接在上方图片处【点击右键】（手机端请【长按】）并选择“复制图像”。`);
+                    alert(`受${reason}，无法一键复制图像到剪贴板。\n\n替代方案：请直接在上方图片处【点击右键】（手机端请【长按】）并选择“复制图像”。`);
                 }
             } catch (err) {
                 console.error('复制失败', err);
@@ -561,7 +561,7 @@ class Utils {
                 setTimeout(() => {
                     btn.innerHTML = originalHtml;
                     if (window.lucide) lucide.createIcons();
-                    alert(`剪贴板权限被拒绝。\n\n💡 请直接在上方图片处【点击右键】（手机端【长按】）并选择“复制图像”。`);
+                    alert(`剪贴板权限被拒绝。\n\n请直接在上方图片处【点击右键】（手机端【长按】）并选择“复制图像”。`);
                 }, 1500);
             }
         };
