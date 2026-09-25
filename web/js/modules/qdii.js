@@ -63,6 +63,10 @@ class QDIIController {
                 this.updateTime = data.update_time;
             }
 
+            if (data.holiday_info) {
+                this.holidayInfo = data.holiday_info;
+            }
+
             const urlParams = new URLSearchParams(window.location.search);
             const initialFilter = urlParams.get('filter') || urlParams.get('subtab');
             if (initialFilter && ['active', 'nasdaq100', 'sp500'].includes(initialFilter)) {
@@ -561,7 +565,22 @@ class QDIIController {
             </div>
         ` : ''));
 
+        const holidayNotice = (this.holidayInfo && this.holidayInfo.is_holiday) ? `
+            <div class="qdii-holiday-banner" style="padding: 10px 14px; margin-bottom: 12px; border-radius: 6px; background: rgba(234, 179, 8, 0.08); border: 1px solid rgba(234, 179, 8, 0.25); color: var(--text-primary); font-size: clamp(0.72rem, 2.5vw, 0.78rem); display: flex; align-items: flex-start; gap: 10px; line-height: 1.5;">
+                <span style="font-size: 1.1rem; line-height: 1; flex-shrink: 0; margin-top: 2px;">🌙</span>
+                <div style="flex: 1;">
+                    <div style="font-weight: 600; color: #eab308; margin-bottom: 2px;">
+                        【${this.holidayInfo.holiday_name || '节假日'}休市提示】国内公募基金确认净值披露延迟说明
+                    </div>
+                    <div style="color: var(--text-secondary); font-size: 0.73rem;">
+                        ${this.holidayInfo.notice || '法定节假日期间国内公募基金市场休市，官方确认净值暂停披露，预计于节后首个交易日恢复。'}
+                    </div>
+                </div>
+            </div>
+        ` : '';
+
         container.innerHTML = `
+            ${holidayNotice}
             ${benchmarkNotice}
             <!-- 桌面端宽屏大表格 -->
             <div class="table-wrapper qdii-desktop-only">

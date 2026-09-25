@@ -11,7 +11,7 @@ import requests
 import re
 import bs4
 import time
-from datetime import datetime
+from datetime import datetime, date, timedelta
 import pandas as pd
 import akshare as ak
 from ..core.cache import cached, cache
@@ -30,8 +30,8 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "tracking_error": "0.35%",
         "inception_date": "2013-08-02",
         "default_return_1y": 15.79,
-        "default_nav": 8.4859,
-        "default_nav_date": "2026-09-22",
+        "default_nav": 8.4183,
+        "default_nav_date": "2026-09-23",
         "default_asset_allocation": {"stock_pct": 91.18, "cash_pct": 8.82, "bond_pct": 0.0},
     },
     {
@@ -43,8 +43,8 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "tracking_error": "0.30%",
         "inception_date": "2023-09-06",
         "default_return_1y": 15.76,
-        "default_nav": 1.813,
-        "default_nav_date": "2026-09-22",
+        "default_nav": 1.7987,
+        "default_nav_date": "2026-09-23",
         "default_asset_allocation": {"stock_pct": 90.03, "cash_pct": 9.29, "bond_pct": 0.0},
     },
     {
@@ -56,8 +56,8 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "tracking_error": "0.28%",
         "inception_date": "2023-11-15",
         "default_return_1y": 15.35,
-        "default_nav": 1.6279,
-        "default_nav_date": "2026-09-22",
+        "default_nav": 1.6157,
+        "default_nav_date": "2026-09-23",
         "default_asset_allocation": {"stock_pct": 93.39, "cash_pct": 6.50, "bond_pct": 0.11},
     },
     {
@@ -69,8 +69,8 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "tracking_error": "0.33%",
         "inception_date": "2021-09-29",
         "default_return_1y": 15.33,
-        "default_nav": 3.566,
-        "default_nav_date": "2026-09-22",
+        "default_nav": 3.54,
+        "default_nav_date": "2026-09-23",
         "default_asset_allocation": {"stock_pct": 89.10, "cash_pct": 8.86, "bond_pct": 0.0},
     },
     {
@@ -82,8 +82,8 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "tracking_error": "0.32%",
         "inception_date": "2012-08-15",
         "default_return_1y": 15.27,
-        "default_nav": 8.4599,
-        "default_nav_date": "2026-09-22",
+        "default_nav": 8.388,
+        "default_nav_date": "2026-09-23",
         "default_asset_allocation": {"stock_pct": 90.96, "cash_pct": 9.04, "bond_pct": 0.0},
     },
     {
@@ -95,8 +95,8 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "tracking_error": "0.29%",
         "inception_date": "2023-10-25",
         "default_return_1y": 15.23,
-        "default_nav": 1.7477,
-        "default_nav_date": "2026-09-22",
+        "default_nav": 1.7339,
+        "default_nav_date": "2026-09-23",
         "default_asset_allocation": {"stock_pct": 92.56, "cash_pct": 5.37, "bond_pct": 0.0},
     },
     {
@@ -108,8 +108,8 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "tracking_error": "0.31%",
         "inception_date": "2023-11-28",
         "default_return_1y": 15.19,
-        "default_nav": 1.5404,
-        "default_nav_date": "2026-09-22",
+        "default_nav": 1.5294,
+        "default_nav_date": "2026-09-23",
         "default_asset_allocation": {"stock_pct": 93.15, "cash_pct": 7.26, "bond_pct": 0.0},
     },
     {
@@ -121,8 +121,8 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "tracking_error": "0.38%",
         "inception_date": "2014-11-13",
         "default_return_1y": 15.15,
-        "default_nav": 6.5167,
-        "default_nav_date": "2026-09-22",
+        "default_nav": 6.4621,
+        "default_nav_date": "2026-09-23",
         "default_asset_allocation": {"stock_pct": 90.09, "cash_pct": 9.91, "bond_pct": 0.0},
     },
     {
@@ -134,8 +134,8 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "tracking_error": "0.27%",
         "inception_date": "2023-03-08",
         "default_return_1y": 15.01,
-        "default_nav": 2.3703,
-        "default_nav_date": "2026-09-22",
+        "default_nav": 2.3512,
+        "default_nav_date": "2026-09-23",
         "default_asset_allocation": {"stock_pct": 87.41, "cash_pct": 7.99, "bond_pct": 0.0},
     },
     {
@@ -147,8 +147,8 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "tracking_error": "0.26%",
         "inception_date": "2023-12-19",
         "default_return_1y": 14.82,
-        "default_nav": 1.7066,
-        "default_nav_date": "2026-09-22",
+        "default_nav": 1.693,
+        "default_nav_date": "2026-09-23",
         "default_asset_allocation": {"stock_pct": 90.89, "cash_pct": 9.11, "bond_pct": 0.0},
     },
     {
@@ -160,8 +160,8 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "tracking_error": "0.35%",
         "inception_date": "2010-04-29",
         "default_return_1y": 15.50,
-        "default_nav": 4.639,
-        "default_nav_date": "2026-09-22",
+        "default_nav": 4.602,
+        "default_nav_date": "2026-09-23",
         "default_asset_allocation": {"stock_pct": 79.63, "cash_pct": 18.10, "bond_pct": 0.0},
     },
     {
@@ -173,8 +173,8 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "tracking_error": "0.32%",
         "inception_date": "2017-06-21",
         "default_return_1y": 15.45,
-        "default_nav": 4.6034,
-        "default_nav_date": "2026-09-22",
+        "default_nav": 4.5671,
+        "default_nav_date": "2026-09-23",
         "default_asset_allocation": {"stock_pct": 93.25, "cash_pct": 3.69, "bond_pct": 3.06},
     },
     {
@@ -186,8 +186,8 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "tracking_error": "0.30%",
         "inception_date": "2023-08-22",
         "default_return_1y": 13.72,
-        "default_nav": 1.6801,
-        "default_nav_date": "2026-09-22",
+        "default_nav": 1.6652,
+        "default_nav_date": "2026-09-23",
         "default_asset_allocation": {"stock_pct": 89.44, "cash_pct": 9.92, "bond_pct": 0.64},
     },
 
@@ -201,8 +201,8 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "tracking_error": "0.30%",
         "inception_date": "2016-12-02",
         "default_return_1y": 11.10,
-        "default_nav": 3.1718,
-        "default_nav_date": "2026-09-22",
+        "default_nav": 3.1494,
+        "default_nav_date": "2026-09-23",
         "default_asset_allocation": {"stock_pct": 89.10, "cash_pct": 1.28, "bond_pct": 7.93},
     },
     {
@@ -214,8 +214,8 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "tracking_error": "0.30%",
         "inception_date": "2016-12-13",
         "default_return_1y": 25.50,
-        "default_nav": 7.0415,
-        "default_nav_date": "2026-09-22",
+        "default_nav": 6.9979,
+        "default_nav_date": "2026-09-23",
         "default_asset_allocation": {"stock_pct": 91.31, "stock_us_pct": 91.31, "cash_pct": 1.42, "bond_pct": 7.15},
         "tag": "信息科技",
     },
@@ -228,8 +228,8 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "tracking_error": "0.30%",
         "inception_date": "2012-04-25",
         "default_return_1y": 11.20,
-        "default_nav": 5.632,
-        "default_nav_date": "2026-09-22",
+        "default_nav": 5.5919,
+        "default_nav_date": "2026-09-23",
         "default_asset_allocation": {"stock_pct": 92.49, "cash_pct": 7.51, "bond_pct": 0.0},
     },
     {
@@ -241,8 +241,8 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "tracking_error": "0.28%",
         "inception_date": "2023-01-18",
         "default_return_1y": 10.70,
-        "default_nav": 1.7179,
-        "default_nav_date": "2026-09-22",
+        "default_nav": 1.7059,
+        "default_nav_date": "2026-09-23",
         "default_asset_allocation": {"stock_pct": 94.03, "cash_pct": 6.90, "bond_pct": 0.0},
     },
 
@@ -255,8 +255,8 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "tracking_error": "0.25%",
         "inception_date": "2023-04-18",
         "default_return_1y": 15.40,
-        "default_nav": 2.1066,
-        "default_nav_date": "2026-09-22",
+        "default_nav": 2.0897,
+        "default_nav_date": "2026-09-23",
         "default_asset_allocation": {"stock_pct": 88.96, "cash_pct": 4.21, "bond_pct": 2.77},
     },
     {
@@ -268,8 +268,8 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "tracking_error": "0.26%",
         "inception_date": "2022-08-17",
         "default_return_1y": 15.20,
-        "default_nav": 2.1941,
-        "default_nav_date": "2026-09-22",
+        "default_nav": 2.1767,
+        "default_nav_date": "2026-09-23",
         "default_asset_allocation": {"stock_pct": 93.24, "cash_pct": 6.76, "bond_pct": 0.0},
     },
     {
@@ -281,8 +281,8 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "tracking_error": "0.24%",
         "inception_date": "2023-09-08",
         "default_return_1y": 11.40,
-        "default_nav": 1.7178,
-        "default_nav_date": "2026-09-22",
+        "default_nav": 1.7074,
+        "default_nav_date": "2026-09-23",
         "default_asset_allocation": {"stock_pct": 94.20, "cash_pct": 5.80, "bond_pct": 0.0},
     },    {
         "code": "016532",
@@ -293,8 +293,8 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "tracking_error": "0.32%",
         "inception_date": "2022-11-18",
         "default_return_1y": 18.44,
-        "default_nav": 2.2518,
-        "default_nav_date": "2026-09-22",
+        "default_nav": 2.2343,
+        "default_nav_date": "2026-09-23",
         "default_asset_allocation": {"stock_pct": 91.04, "cash_pct": 8.96, "bond_pct": 0.0},
     },
     {
@@ -306,8 +306,8 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "tracking_error": "0.29%",
         "inception_date": "2022-09-20",
         "default_return_1y": 18.10,
-        "default_nav": 2.1026,
-        "default_nav_date": "2026-09-22",
+        "default_nav": 2.0886,
+        "default_nav_date": "2026-09-23",
         "default_asset_allocation": {"stock_pct": 96.02, "cash_pct": 3.98, "bond_pct": 0.0},
     },
     {
@@ -319,8 +319,8 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "tracking_error": "--",
         "inception_date": "2023-08-31",
         "default_return_1y": 31.28,
-        "default_nav": 3.019,
-        "default_nav_date": "2026-09-22",
+        "default_nav": 2.9937,
+        "default_nav_date": "2026-09-23",
         "default_asset_allocation": {"stock_pct": 93.46, "cash_pct": 6.54, "bond_pct": 0.0},
         "tag": "纳指科技",
     },
@@ -333,8 +333,8 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "tracking_error": "0.28%",
         "inception_date": "2019-09-24",
         "default_return_1y": 14.51,
-        "default_nav": 2.2715,
-        "default_nav_date": "2026-09-22",
+        "default_nav": 2.257,
+        "default_nav_date": "2026-09-23",
         "default_asset_allocation": {"stock_pct": 96.18, "cash_pct": 3.82, "bond_pct": 0.0},
     },
     {
@@ -346,8 +346,8 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "tracking_error": "0.27%",
         "inception_date": "2023-03-01",
         "default_return_1y": 14.94,
-        "default_nav": 1.7373,
-        "default_nav_date": "2026-09-22",
+        "default_nav": 1.725,
+        "default_nav_date": "2026-09-23",
         "default_asset_allocation": {"stock_pct": 95.89, "cash_pct": 4.11, "bond_pct": 0.0},
     },
     {
@@ -359,8 +359,8 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "tracking_error": "0.35%",
         "inception_date": "2011-03-23",
         "default_return_1y": 12.50,
-        "default_nav": 2.767,
-        "default_nav_date": "2026-09-22",
+        "default_nav": 2.7507,
+        "default_nav_date": "2026-09-23",
         "default_asset_allocation": {"stock_pct": 94.50, "cash_pct": 5.50, "bond_pct": 0.0},
         "tag": "等权重",
     },
@@ -373,8 +373,8 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "tracking_error": "0.20%",
         "inception_date": "2024-01-24",
         "default_return_1y": 14.20,
-        "default_nav": 1.2392,
-        "default_nav_date": "2026-09-22",
+        "default_nav": 1.228,
+        "default_nav_date": "2026-09-23",
         "default_asset_allocation": {"stock_pct": 99.17, "stock_us_pct": 99.17, "cash_pct": 0.76, "bond_pct": 0.0},
         "tag": "消费精选",
     },
@@ -387,8 +387,8 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "tracking_error": "0.35%",
         "inception_date": "2011-03-30",
         "default_return_1y": 12.22,
-        "default_nav": 2.586,
-        "default_nav_date": "2026-09-22",
+        "default_nav": 2.576,
+        "default_nav_date": "2026-09-23",
         "default_asset_allocation": {"stock_pct": 85.54, "stock_us_pct": 85.54, "cash_pct": 3.38, "bond_pct": 13.19},
         "tag": "标普100",
     },
@@ -404,8 +404,8 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "tracking_error": "--",
         "inception_date": "2023-09-05",
         "default_return_1y": 38.50,
-        "default_nav": 3.7828,
-        "default_nav_date": "2026-09-23",
+        "default_nav": 3.7302,
+        "default_nav_date": "2026-09-24",
         "default_asset_allocation": {"stock_pct": 94.49, "stock_cn_pct": 52.5, "stock_other_pct": 42.0, "cash_pct": 5.46, "bond_pct": 0.05},
         "tag": "中韩半导体",
     },
@@ -419,8 +419,8 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "tracking_error": "--",
         "inception_date": "2010-08-18",
         "default_return_1y": 45.95,
-        "default_nav": 6.5499,
-        "default_nav_date": "2026-09-22",
+        "default_nav": 6.4928,
+        "default_nav_date": "2026-09-23",
         "default_asset_allocation": {"stock_pct": 87.53, "stock_us_pct": 46.65, "stock_hk_pct": 12.81, "stock_cn_pct": 17.43, "stock_other_pct": 10.64, "cash_pct": 12.28, "bond_pct": 0.0},
     },
     {
@@ -433,8 +433,8 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "tracking_error": "--",
         "inception_date": "2013-06-14",
         "default_return_1y": 15.62,
-        "default_nav": 6.412,
-        "default_nav_date": "2026-09-22",
+        "default_nav": 6.352,
+        "default_nav_date": "2026-09-23",
         "default_asset_allocation": {"stock_pct": 91.66, "stock_us_pct": 91.66, "stock_hk_pct": 0.0, "cash_pct": 8.34, "bond_pct": 0.0},
     },
     {
@@ -447,8 +447,8 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "tracking_error": "--",
         "inception_date": "2023-03-02",
         "default_return_1y": 6.4,
-        "default_nav": 2.4835,
-        "default_nav_date": "2026-09-22",
+        "default_nav": 2.4609,
+        "default_nav_date": "2026-09-23",
         "default_asset_allocation": {"stock_pct": 88.42, "stock_us_pct": 88.42, "cash_pct": 11.72, "bond_pct": 0.0},
         "tag": "风味纳指",
     },
@@ -462,8 +462,8 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "tracking_error": "--",
         "inception_date": "2022-01-11",
         "default_return_1y": 34.2,
-        "default_nav": 3.9072,
-        "default_nav_date": "2026-09-22",
+        "default_nav": 3.8834,
+        "default_nav_date": "2026-09-23",
         "default_asset_allocation": {"stock_pct": 91.74, "stock_us_pct": 42.76, "stock_hk_pct": 8.03, "stock_cn_pct": 28.54, "stock_other_pct": 12.41, "cash_pct": 8.90, "bond_pct": 0.0},
     },
     {
@@ -476,8 +476,8 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "tracking_error": "--",
         "inception_date": "2018-04-17",
         "default_return_1y": 43.83,
-        "default_nav": 2.8505,
-        "default_nav_date": "2026-09-22",
+        "default_nav": 2.8398,
+        "default_nav_date": "2026-09-23",
         "default_asset_allocation": {"stock_pct": 76.43, "stock_cn_pct": 36.61, "stock_hk_pct": 23.17, "stock_us_pct": 16.66, "cash_pct": 14.61, "bond_pct": 0.01},
     },
     {
@@ -490,8 +490,8 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "tracking_error": "--",
         "inception_date": "2018-11-20",
         "default_return_1y": 72.5,
-        "default_nav": 7.1726,
-        "default_nav_date": "2026-09-22",
+        "default_nav": 7.1061,
+        "default_nav_date": "2026-09-23",
         "default_asset_allocation": {"stock_pct": 85.30, "stock_us_pct": 71.95, "stock_hk_pct": 3.47, "stock_cn_pct": 1.14, "stock_other_pct": 8.74, "cash_pct": 11.39, "bond_pct": 0.0},
     },
     {
@@ -504,8 +504,8 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "tracking_error": "--",
         "inception_date": "2017-01-25",
         "default_return_1y": 20.45,
-        "default_nav": 5.5108,
-        "default_nav_date": "2026-09-22",
+        "default_nav": 5.4683,
+        "default_nav_date": "2026-09-23",
         "default_asset_allocation": {"stock_pct": 94.54, "stock_us_pct": 92.77, "stock_hk_pct": 1.77, "cash_pct": 6.22, "bond_pct": 0.0},
     },
 
@@ -519,8 +519,8 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "tracking_error": "--",
         "inception_date": "2011-06-21",
         "default_return_1y": 96.26,
-        "default_nav": 2.538,
-        "default_nav_date": "2026-09-22",
+        "default_nav": 2.518,
+        "default_nav_date": "2026-09-23",
         "default_asset_allocation": {"stock_pct": 81.60, "stock_us_pct": 59.65, "stock_other_pct": 21.95, "cash_pct": 19.76, "bond_pct": 0.0},
         "allocation_estimated": True,
     },
@@ -535,8 +535,8 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "tracking_error": "--",
         "inception_date": "2023-05-18",
         "default_return_1y": 55.42,
-        "default_nav": 2.7654,
-        "default_nav_date": "2026-09-22",
+        "default_nav": 2.7403,
+        "default_nav_date": "2026-09-23",
         "default_asset_allocation": {"stock_pct": 88.27, "stock_us_pct": 74.62, "stock_cn_pct": 8.47, "stock_other_pct": 5.17, "cash_pct": 12.27, "bond_pct": 0.0},
     },
     {
@@ -549,8 +549,8 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "tracking_error": "--",
         "inception_date": "2023-02-14",
         "default_return_1y": 113.55,
-        "default_nav": 4.3123,
-        "default_nav_date": "2026-09-22",
+        "default_nav": 4.3022,
+        "default_nav_date": "2026-09-23",
         "default_asset_allocation": {"stock_pct": 85.21, "stock_cn_pct": 42.56, "stock_us_pct": 32.63, "stock_hk_pct": 8.42, "stock_other_pct": 1.59, "cash_pct": 10.34, "bond_pct": 0.0},
     },
     {
@@ -563,8 +563,8 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "tracking_error": "--",
         "inception_date": "2018-07-25",
         "default_return_1y": 68.04,
-        "default_nav": 5.2113,
-        "default_nav_date": "2026-09-22",
+        "default_nav": 5.2006,
+        "default_nav_date": "2026-09-23",
         "default_asset_allocation": {"stock_pct": 92.25, "stock_hk_pct": 50.31, "stock_us_pct": 17.85, "stock_cn_pct": 10.31, "stock_other_pct": 13.78, "cash_pct": 10.82, "bond_pct": 0.0},
     },
     {
@@ -577,8 +577,8 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "tracking_error": "--",
         "inception_date": "2023-04-11",
         "default_return_1y": 16.7,
-        "default_nav": 2.5259,
-        "default_nav_date": "2026-09-22",
+        "default_nav": 2.4819,
+        "default_nav_date": "2026-09-23",
         "default_asset_allocation": {"stock_pct": 85.06, "stock_us_pct": 85.06, "cash_pct": 14.94, "bond_pct": 0.0},
         "allocation_estimated": True,
     },
@@ -592,8 +592,8 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "tracking_error": "--",
         "inception_date": "2016-12-14",
         "default_return_1y": 89.09,
-        "default_nav": 2.883,
-        "default_nav_date": "2026-09-22",
+        "default_nav": 2.858,
+        "default_nav_date": "2026-09-23",
         "default_asset_allocation": {"stock_pct": 87.61, "stock_us_pct": 63.23, "stock_cn_pct": 13.48, "stock_other_pct": 9.04, "stock_hk_pct": 1.86, "cash_pct": 8.42, "bond_pct": 0.0},
         "allocation_estimated": True,
     },
@@ -607,8 +607,8 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "tracking_error": "--",
         "inception_date": "2012-02-01",
         "default_return_1y": 89.9,
-        "default_nav": 2.9783,
-        "default_nav_date": "2026-09-22",
+        "default_nav": 2.9837,
+        "default_nav_date": "2026-09-23",
         "default_asset_allocation": {"stock_pct": 84.40, "stock_other_pct": 48.74, "stock_hk_pct": 19.72, "stock_us_pct": 15.94, "cash_pct": 12.82, "bond_pct": 5.16},
     },
     {
@@ -621,8 +621,8 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "tracking_error": "--",
         "inception_date": "2022-11-29",
         "default_return_1y": 107.84,
-        "default_nav": 2.922,
-        "default_nav_date": "2026-09-22",
+        "default_nav": 2.9231,
+        "default_nav_date": "2026-09-23",
         "default_asset_allocation": {"stock_pct": 81.03, "stock_cn_pct": 38.93, "stock_us_pct": 24.23, "stock_hk_pct": 8.59, "stock_other_pct": 9.29, "cash_pct": 8.33, "bond_pct": 0.0},
     },
     {
@@ -635,8 +635,8 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "tracking_error": "--",
         "inception_date": "2019-12-25",
         "default_return_1y": 52.33,
-        "default_nav": 1.8195,
-        "default_nav_date": "2026-09-22",
+        "default_nav": 1.797,
+        "default_nav_date": "2026-09-23",
         "default_asset_allocation": {"stock_pct": 81.30, "stock_us_pct": 78.73, "stock_other_pct": 2.57, "cash_pct": 26.8, "bond_pct": 0.0},
         "allocation_estimated": True,
     },
@@ -650,8 +650,8 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "tracking_error": "--",
         "inception_date": "2023-06-30",
         "default_return_1y": -9.56,
-        "default_nav": 1.6086,
-        "default_nav_date": "2026-09-22",
+        "default_nav": 1.593,
+        "default_nav_date": "2026-09-23",
         "default_asset_allocation": {"stock_pct": 94.18, "stock_us_pct": 88.57, "stock_hk_pct": 5.61, "cash_pct": 9.5, "bond_pct": 0.0},
         "allocation_estimated": True,
     },
@@ -665,8 +665,8 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "tracking_error": "--",
         "inception_date": "2023-04-12",
         "default_return_1y": 64.18,
-        "default_nav": 2.0283,
-        "default_nav_date": "2026-09-22",
+        "default_nav": 2.0284,
+        "default_nav_date": "2026-09-23",
         "default_asset_allocation": {"stock_pct": 76.21, "stock_cn_pct": 42.87, "stock_us_pct": 21.06, "stock_other_pct": 10.73, "stock_hk_pct": 1.55, "cash_pct": 25.45, "bond_pct": 0.0},
         "allocation_estimated": True,
     },
@@ -680,8 +680,8 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "tracking_error": "--",
         "inception_date": "2008-06-19",
         "default_return_1y": 10.13,
-        "default_nav": 3.0313,
-        "default_nav_date": "2026-09-22",
+        "default_nav": 3.0167,
+        "default_nav_date": "2026-09-23",
         "default_asset_allocation": {"stock_pct": 85.68, "stock_us_pct": 83.0, "stock_other_pct": 2.68, "cash_pct": 15.66, "bond_pct": 0.0},
     },
 
@@ -696,8 +696,8 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "tracking_error": "--",
         "inception_date": "2022-11-23",
         "default_return_1y": 48.6,
-        "default_nav": 2.2543,
-        "default_nav_date": "2026-09-22",
+        "default_nav": 2.234,
+        "default_nav_date": "2026-09-23",
         "default_asset_allocation": {"stock_pct": 90.45, "stock_us_pct": 87.90, "stock_hk_pct": 2.55, "cash_pct": 15.19, "bond_pct": 0.0},
         "tag": "数字经济",
     },
@@ -711,8 +711,8 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "tracking_error": "--",
         "inception_date": "2019-01-29",
         "default_return_1y": 68.2,
-        "default_nav": 3.7513,
-        "default_nav_date": "2026-09-22",
+        "default_nav": 3.7371,
+        "default_nav_date": "2026-09-23",
         "default_asset_allocation": {"stock_pct": 90.51, "stock_us_pct": 73.31, "stock_other_pct": 17.20, "cash_pct": 11.52, "bond_pct": 0.28},
         "tag": "智能科技",
     },
@@ -726,8 +726,8 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "tracking_error": "--",
         "inception_date": "2023-03-09",
         "default_return_1y": 78.4,
-        "default_nav": 2.3391,
-        "default_nav_date": "2026-09-22",
+        "default_nav": 2.3204,
+        "default_nav_date": "2026-09-23",
         "default_asset_allocation": {"stock_pct": 88.24, "stock_us_pct": 62.25, "stock_cn_pct": 25.64, "stock_other_pct": 0.35, "cash_pct": 5.42, "bond_pct": 3.44},
         "tag": "全球芯片",
     },
@@ -741,8 +741,8 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "tracking_error": "--",
         "inception_date": "2023-04-20",
         "default_return_1y": 28.5,
-        "default_nav": 1.9743,
-        "default_nav_date": "2026-09-22",
+        "default_nav": 1.957,
+        "default_nav_date": "2026-09-23",
         "default_asset_allocation": {"stock_pct": 86.07, "stock_us_pct": 44.19, "stock_cn_pct": 35.81, "stock_hk_pct": 6.07, "cash_pct": 6.73, "bond_pct": 0.05},
         "tag": "全球新能源",
     },
@@ -756,8 +756,8 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "tracking_error": "--",
         "inception_date": "2023-09-05",
         "default_return_1y": 18.2,
-        "default_nav": 1.6943,
-        "default_nav_date": "2026-09-22",
+        "default_nav": 1.6785,
+        "default_nav_date": "2026-09-23",
         "default_asset_allocation": {"stock_pct": 79.96, "stock_us_pct": 40.10, "stock_cn_pct": 23.88, "stock_hk_pct": 15.39, "stock_other_pct": 0.59, "cash_pct": 2.75, "bond_pct": 21.67},
         "tag": "多资产配置",
     },
@@ -771,8 +771,8 @@ QDII_FUND_METADATA: List[Dict[str, Any]] = [
         "tracking_error": "--",
         "inception_date": "2019-07-31",
         "default_return_1y": 18.04,
-        "default_nav": 2.2208,
-        "default_nav_date": "2026-09-23",
+        "default_nav": 2.1982,
+        "default_nav_date": "2026-09-24",
         "default_scale": "23.94亿元",
         "default_asset_allocation": {"stock_pct": 93.00, "stock_other_pct": 93.00, "cash_pct": 9.30, "bond_pct": 0.0},
         "tag": "日本精选",
@@ -857,6 +857,9 @@ def fetch_sina_fund_navs(codes: List[str]) -> Dict[str, Dict[str, Any]]:
                             if code not in res:
                                 res[code] = {}
                             
+                            # 记录源站估值使用的基准确认净值 (昨日官方确认净值)
+                            res[code]["source_base_nav"] = prev_confirmed_val
+
                             # 若 f_ 未返回有效净值，用 fu_ 中的上期确认净值保底
                             if "official_nav" not in res[code] and prev_confirmed_val is not None:
                                 res[code]["official_nav"] = prev_confirmed_val
@@ -865,10 +868,15 @@ def fetch_sina_fund_navs(codes: List[str]) -> Dict[str, Dict[str, Any]]:
                                 res[code]["nav_date"] = "最新披露"
 
                             # 提取明确的盘中参考估值字段
-                            # 严格金融口径：只有当估值日期晚于官方确认净值日期时，该估值才具备未披露前置参考价值
-                            # 若估值日期 <= 官方确认净值日期，说明当日官方正式净值已出，历史盘中估值已作废，不可再展示！
+                            # 严格金融口径：
+                            # 1) 估值日期必须晚于官方确认净值日期；若估值日期 <= 官方确认净值日期，说明当日官方正式净值已出，盘中估值作废！
+                            # 2) 估值基准净值 (prev_confirmed_val) 与官方确认净值 (official_nav) 偏差不能超 0.0005；
+                            #    若偏差过大，说明估值源基准未更新（如节假日亚洲基金），属于严重失真的滞后假估值，必须抑制作废！
                             official_date = res[code].get("official_nav_date")
-                            is_stale = bool(official_date and official_date != "最新披露" and est_date and est_date <= official_date)
+                            official_nav_val = res[code].get("official_nav")
+                            is_date_stale = bool(official_date and official_date != "最新披露" and est_date and est_date <= official_date)
+                            is_base_lagged = bool(prev_confirmed_val and official_nav_val and abs(prev_confirmed_val - official_nav_val) > 0.0005)
+                            is_stale = is_date_stale or is_base_lagged
 
                             # 保留数据源原始估值血缘 (无论后续是否校准，原始数值永不丢失)
                             res[code]["source_estimated_nav"] = round(est_val, 4) if est_val is not None and est_val > 0 else None
@@ -1012,17 +1020,23 @@ def calibrate_qdii_valuations(rank_map: Dict[str, Dict[str, Any]], fund_metadata
                 off_date = info["official_nav_date"]
 
             # B. 盘中估值过期校验：
-            # 若官方确认净值日期已是最新交易日（如 2026-09-23 及之后），说明当日正式净值已出，
-            # 若估值日期早于或等于净值日期，必须清理作废，不可展示历史盘中估值！
+            # 1) 若估值日期早于或等于已确认官方净值日期，盘中估值作废；
+            # 2) 若源站估值基准净值 (source_base_nav) 与当前已确认官方净值 (off_nav) 偏差 > 0.0005，
+            #    说明源站估值依据了过期的历史净值（如节假日亚洲基金 019454, 007280），必须抑制作废！
             raw_est_date = info.get("estimated_date")
-            if off_date and off_date != "最新披露":
-                if raw_est_date and raw_est_date <= off_date:
-                    info["estimated_nav"] = None
-                    info["estimated_change_pct"] = None
-                    info["estimated_time"] = None
-                    info["estimated_date"] = None
-                    info["is_estimated"] = False
-                    continue
+            source_base_nav = info.get("source_base_nav")
+            is_date_stale = bool(off_date and off_date != "最新披露" and raw_est_date and raw_est_date <= off_date)
+            is_base_lagged = bool(source_base_nav and off_nav and abs(source_base_nav - off_nav) > 0.0005)
+
+            if is_date_stale or is_base_lagged:
+                info["estimated_nav"] = None
+                info["estimated_change_pct"] = None
+                info["estimated_time"] = None
+                info["estimated_date"] = None
+                info["is_estimated"] = False
+                info["is_calibrated"] = False
+                info["estimate_source"] = None
+                continue
 
             if not off_nav or off_nav <= 0:
                 continue
@@ -1039,7 +1053,7 @@ def calibrate_qdii_valuations(rank_map: Dict[str, Dict[str, Any]], fund_metadata
                     needs_calibration = True
                 elif raw_est_pct * ndx_consensus < 0:  # 严重倒挂！一正一负！
                     needs_calibration = True
-                elif abs(raw_est_pct - ndx_consensus) > 0.45:
+                elif abs(raw_est_pct - ndx_consensus) > 0.25:
                     needs_calibration = True
 
                 if needs_calibration:
@@ -1057,27 +1071,30 @@ def calibrate_qdii_valuations(rank_map: Dict[str, Dict[str, Any]], fund_metadata
 
             # D. 标普500 被动指数基金校准
             elif idx_code == "SPX" and fund_type != "active" and spx_consensus is not None:
-                target_pct = round(spx_consensus * (stock_pct / 93.0), 2)
-                needs_calibration = False
-                if raw_est_pct is None:
-                    needs_calibration = True
-                elif raw_est_pct * spx_consensus < 0:
-                    needs_calibration = True
-                elif abs(raw_est_pct - spx_consensus) > 0.35:
-                    needs_calibration = True
+                # 标普500等权指数基金 (096001) 与消费精选 (159529) 是细分策略/等权，不能被强行拉平为市值加权
+                is_equal_weight_or_sector = code in ["096001", "159529"]
+                if not is_equal_weight_or_sector:
+                    target_pct = round(spx_consensus * (stock_pct / 93.0), 2)
+                    needs_calibration = False
+                    if raw_est_pct is None:
+                        needs_calibration = True
+                    elif raw_est_pct * spx_consensus < 0:
+                        needs_calibration = True
+                    elif abs(raw_est_pct - spx_consensus) > 0.25:
+                        needs_calibration = True
 
-                if needs_calibration:
-                    model_est_nav = round(off_nav * (1.0 + target_pct / 100.0), 4)
-                    info["model_estimated_nav"] = model_est_nav
-                    info["model_estimated_change_pct"] = target_pct
-                    info["estimate_source"] = "model_calibrated"
-                    info["is_calibrated"] = True
-                    info["calibration_reason"] = "已根据标普500原生指数与直投共识校准"
-                    info["estimated_change_pct"] = target_pct
-                    info["estimated_nav"] = model_est_nav
-                    info["is_estimated"] = True
-                    if not info.get("estimated_date"):
-                        info["estimated_date"] = latest_date_str
+                    if needs_calibration:
+                        model_est_nav = round(off_nav * (1.0 + target_pct / 100.0), 4)
+                        info["model_estimated_nav"] = model_est_nav
+                        info["model_estimated_change_pct"] = target_pct
+                        info["estimate_source"] = "model_calibrated"
+                        info["is_calibrated"] = True
+                        info["calibration_reason"] = "已根据标普500原生指数与直投共识校准"
+                        info["estimated_change_pct"] = target_pct
+                        info["estimated_nav"] = model_est_nav
+                        info["is_estimated"] = True
+                        if not info.get("estimated_date"):
+                            info["estimated_date"] = latest_date_str
 
             # E. 主动型基金中个别受国内场内交易折溢价干扰的标的 (如 501312 华宝海外科技LOF)
             elif code == "501312" and tech_consensus is not None:
@@ -1390,7 +1407,64 @@ def fetch_fund_scale(session: requests.Session, code: str) -> Optional[str]:
     return None
 
 
-@cached("qdii:passive_funds_v52", ttl=86400, stale_ttl=86400 * 7, sync_on_cold=True)
+def get_cn_holiday_info(target_date: Optional[date] = None) -> Dict[str, Any]:
+    """获取中国公募基金/A股市场的法定节假日状态与休市说明"""
+    from ..core.scheduler import is_trading_day, _get_trading_days_cache
+
+    if target_date is None:
+        target_date = get_beijing_time().date()
+
+    trade_days = _get_trading_days_cache(target_date.year)
+    is_open = is_trading_day(target_date)
+
+    cur = target_date + timedelta(days=1)
+    for _ in range(30):
+        if cur.strftime("%Y-%m-%d") in trade_days:
+            break
+        cur += timedelta(days=1)
+    next_trading_day = cur.strftime("%Y-%m-%d")
+
+    m, d = target_date.month, target_date.day
+    w = target_date.weekday()
+
+    if is_open:
+        holiday_name = None
+    elif w >= 5:
+        holiday_name = "周末休市"
+    elif m == 9 and 24 <= d <= 27:
+        holiday_name = "中秋节"
+    elif m == 10 and 1 <= d <= 7:
+        holiday_name = "国庆节"
+    elif m == 1 and 1 <= d <= 3:
+        holiday_name = "元旦"
+    elif m == 5 and 1 <= d <= 5:
+        holiday_name = "劳动节"
+    elif m == 4 and 3 <= d <= 6:
+        holiday_name = "清明节"
+    elif m == 6 and 15 <= d <= 25:
+        holiday_name = "端午节"
+    else:
+        holiday_name = "法定节假日"
+
+    is_holiday = not is_open
+    notice = None
+    if is_holiday:
+        notice = (
+            f"今日（{target_date.strftime('%m月%d日')}，{holiday_name}）国内公募基金市场休市。"
+            f"美股QDII基金官方净值暂未披露9月24日确认值，预计于节后首个交易日（{next_trading_day}）集中更新；"
+            f"当前展示的官方净值为节前最新已确认净值，盘中参考估值基于隔夜美股走势对齐推算，仅供参考。"
+        )
+
+    return {
+        "date": target_date.strftime("%Y-%m-%d"),
+        "is_holiday": is_holiday,
+        "holiday_name": holiday_name,
+        "next_trading_day": next_trading_day,
+        "notice": notice,
+    }
+
+
+@cached("qdii:passive_funds_v55", ttl=86400, stale_ttl=86400 * 7, sync_on_cold=True)
 def get_qdii_passive_funds() -> Dict[str, Any]:
     """获取国内纳斯达克100 & 标普500 场外被动 QDII A类基金数据列表
 
@@ -1414,6 +1488,7 @@ def get_qdii_passive_funds() -> Dict[str, Any]:
             "estimated_change_pct": info.get("estimated_change_pct"),
             "estimated_date": info.get("estimated_date"),
             "is_estimated": info.get("is_estimated", False),
+            "source_base_nav": info.get("source_base_nav"),
             "source_estimated_nav": info.get("source_estimated_nav"),
             "source_estimated_change_pct": info.get("source_estimated_change_pct"),
             "source_estimated_time": info.get("source_estimated_time"),
@@ -1584,9 +1659,12 @@ def get_qdii_passive_funds() -> Dict[str, Any]:
         official_nav = live_data.get("official_nav") or live_data.get("nav") or item["default_nav"]
         official_nav_date = live_data.get("official_nav_date") or live_data.get("nav_date") or item["default_nav_date"]
 
-        # 盘中参考估值 (仅当估值日期严格晚于官方确认日期时有效)
+        # 盘中参考估值 (仅当估值日期严格晚于官方确认日期且基准净值未落后时有效)
         raw_est_date = live_data.get("estimated_date")
-        is_stale_est = bool(raw_est_date and official_nav_date and official_nav_date != "最新披露" and raw_est_date <= official_nav_date)
+        source_base_nav = live_data.get("source_base_nav")
+        is_date_stale = bool(raw_est_date and official_nav_date and official_nav_date != "最新披露" and raw_est_date <= official_nav_date)
+        is_base_lagged = bool(source_base_nav and official_nav and abs(source_base_nav - official_nav) > 0.0005)
+        is_stale_est = is_date_stale or is_base_lagged
 
         if not is_stale_est and live_data.get("is_estimated") and live_data.get("estimated_nav") is not None:
             estimated_nav = live_data.get("estimated_nav")
@@ -1734,11 +1812,14 @@ def get_qdii_passive_funds() -> Dict[str, Any]:
     for rank_idx, fund in enumerate(funds_list, start=1):
         fund["rank"] = rank_idx
 
+    holiday_info = get_cn_holiday_info()
+
     return {
         "status": "ok",
         "count": len(funds_list),
         "benchmarks": benchmarks,
         "funds": funds_list,
+        "holiday_info": holiday_info,
         "update_time": get_beijing_time().strftime("%Y-%m-%d %H:%M:%S"),
         "update_strategy": "daily (24h cache)"
     }
