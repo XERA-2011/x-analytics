@@ -2872,13 +2872,13 @@ footer {
     background: var(--bg-body);
     color: var(--text-secondary);
     font-weight: 600;
-    padding: clamp(6px, 1.8vw, 12px) clamp(6px, 2vw, 12px);
+    padding: 10px 8px;
     border-bottom: 1px solid var(--border-light);
     white-space: nowrap;
 }
 
 .qdii-table td {
-    padding: clamp(6px, 1.8vw, 12px) clamp(6px, 2vw, 12px);
+    padding: 10px 8px;
     border-bottom: 1px solid var(--border-light);
     color: var(--text-primary);
 }
@@ -2930,10 +2930,9 @@ footer {
     margin-top: 3px;
     display: flex;
     align-items: center;
-    gap: 8px;
-    flex-wrap: nowrap;
-    white-space: nowrap;
-    line-height: 1.2;
+    gap: 4px 6px;
+    flex-wrap: wrap;
+    line-height: 1.25;
 }
 
 .qdii-nav-item {
@@ -3015,14 +3014,14 @@ footer {
 }
 
 .col-name {
-    min-width: 250px;
-    width: 28%;
+    min-width: 200px;
+    width: 25%;
     text-align: left;
 }
 
 .col-allocation {
-    min-width: 240px;
-    width: 25%;
+    min-width: 180px;
+    width: 23%;
     text-align: left;
 }
 
@@ -3038,11 +3037,11 @@ footer {
     font-size: 0.72rem;
     color: var(--text-secondary);
     font-weight: 500;
-    white-space: nowrap;
     display: flex;
     align-items: center;
-    flex-wrap: nowrap;
-    gap: 4px;
+    flex-wrap: wrap;
+    gap: 3px 4px;
+    line-height: 1.35;
 }
 
 .alloc-text-item {
@@ -3118,14 +3117,14 @@ footer {
 }
 
 .col-fee {
-    width: 65px;
+    width: 60px;
     text-align: right;
     white-space: nowrap;
 }
 
 .col-scale {
-    width: 95px;
-    min-width: 85px;
+    width: 88px;
+    min-width: 80px;
     text-align: right;
     white-space: nowrap;
 }
@@ -3152,8 +3151,8 @@ footer {
 }
 
 .col-risk {
-    width: 110px;
-    min-width: 100px;
+    width: 100px;
+    min-width: 92px;
     text-align: right;
     white-space: nowrap;
 }
@@ -3164,7 +3163,7 @@ footer {
     gap: 3px;
     vertical-align: middle;
     text-align: right;
-    min-width: 90px;
+    min-width: 86px;
 }
 
 .qdii-risk-row {
@@ -3195,8 +3194,8 @@ footer {
 }
 
 .col-return {
-    width: 132px;
-    min-width: 124px;
+    width: 120px;
+    min-width: 110px;
     text-align: right;
     white-space: nowrap;
 }
@@ -3207,7 +3206,7 @@ footer {
     gap: 3px;
     vertical-align: middle;
     text-align: right;
-    min-width: 110px;
+    min-width: 102px;
 }
 
 .qdii-return-row {
@@ -3244,8 +3243,8 @@ footer {
 }
 
 .col-status {
-    width: 75px;
-    min-width: 68px;
+    width: 68px;
+    min-width: 60px;
     text-align: center;
     white-space: nowrap;
 }
