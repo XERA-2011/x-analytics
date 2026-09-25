@@ -737,9 +737,9 @@ class QDIIController {
                 if (h.change_status === 'new') {
                     changeHtml = `<span style="font-size: 0.68rem; padding: 2px 6px; border-radius: 4px; font-weight: bold; background: rgba(59, 130, 246, 0.1); color: var(--accent-blue); border: 1px solid rgba(59, 130, 246, 0.25); display: inline-flex; align-items: center;">新进</span>`;
                 } else if (h.change_status === 'up') {
-                    changeHtml = `<span style="color: var(--color-up, #ef4444); font-weight: 700; font-family: monospace; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 2px;">▲ ${h.change_pct}</span>`;
+                    changeHtml = `<span style="color: var(--color-up, #ef4444); font-weight: 700; font-family: monospace; font-size: 0.8rem;">${h.change_pct}</span>`;
                 } else if (h.change_status === 'down') {
-                    changeHtml = `<span style="color: var(--color-down, #22c55e); font-weight: 700; font-family: monospace; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 2px;">▼ ${h.change_pct}</span>`;
+                    changeHtml = `<span style="color: var(--color-down, #22c55e); font-weight: 700; font-family: monospace; font-size: 0.8rem;">${h.change_pct}</span>`;
                 } else {
                     changeHtml = `<span style="color: var(--text-tertiary); font-family: monospace; font-size: 0.8rem;">0.00%</span>`;
                 }
