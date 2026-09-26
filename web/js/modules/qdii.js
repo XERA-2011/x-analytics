@@ -565,16 +565,7 @@ class QDIIController {
             </div>
         ` : ''));
 
-        const holidayNotice = (this.holidayInfo && this.holidayInfo.is_holiday) ? `
-            <div class="qdii-holiday-banner" style="padding: 7px 12px; margin-bottom: 10px; border-radius: 6px; background: rgba(234, 179, 8, 0.08); border: 1px solid rgba(234, 179, 8, 0.22); color: var(--text-secondary); font-size: clamp(0.72rem, 2.5vw, 0.76rem); display: flex; align-items: center; gap: 8px; line-height: 1.4;">
-                <div style="flex: 1;">
-                    <strong style="color: #eab308; font-weight: 600;">【${this.holidayInfo.holiday_name || '节假日'}休市】</strong>${this.holidayInfo.notice || `美股QDII官方净值将于节后首个交易日（${this.holidayInfo.next_trading_day || '9月28日'}）更新，当前展示节前最新确认值。`}
-                </div>
-            </div>
-        ` : '';
-
         container.innerHTML = `
-            ${holidayNotice}
             ${benchmarkNotice}
             <!-- 桌面端宽屏大表格 -->
             <div class="table-wrapper qdii-desktop-only">
