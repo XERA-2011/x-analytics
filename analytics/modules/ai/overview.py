@@ -97,7 +97,7 @@ class AIOverview:
 
     @staticmethod
     @cached(
-        "ai:overview_v15", 
+        "ai:overview_v16", 
         ttl=settings.CACHE_TTL["ai_overview"],
         stale_ttl=settings.CACHE_TTL["ai_overview"] * settings.STALE_TTL_RATIO,
         sync_on_cold=True
@@ -318,6 +318,55 @@ class AIOverview:
             )
             momentum_1d = round(min(100.0, max(0.0, 50.0 + weighted_pct_raw * 7.5)), 1)
 
+            # 3.2 动态交易时段与跨市场背离感知
+            cn_is_active = cn_market_status in ("盘中", "集合竞价")
+            us_is_active = us_market_status in ("盘中交易", "盘前交易", "盘后交易")
+
+            divergence_spread = round(cn_momentum_pct - us_momentum_pct, 2)
+            # 背离判断：单边大跌(<= -2.0%)且与另一侧利差超 2.5%，或一方为正而另一方跌幅显著
+            is_cross_market_divergence = (
+                (cn_momentum_pct <= -2.0 and us_momentum_pct >= -0.2 and divergence_spread <= -2.5) or
+                (us_momentum_pct <= -2.0 and cn_momentum_pct >= -0.2 and divergence_spread >= 2.5) or
+                abs(divergence_spread) >= 3.5
+            )
+
+            if cn_is_active and not us_is_active:
+                active_market_name = "A股"
+                active_market_status = cn_market_status
+                active_momentum_pct = cn_momentum_pct
+                if is_cross_market_divergence and cn_momentum_pct <= -2.0:
+                    divergence_note = f"A股盘中下挫 ({cn_momentum_pct:+.2f}%)，与美股昨收走势背离"
+                else:
+                    divergence_note = f"A股交易中，美股休市 (以A股盘中即时动能为主)"
+            elif us_is_active and not cn_is_active:
+                active_market_name = "美股"
+                active_market_status = us_market_status
+                active_momentum_pct = us_momentum_pct
+                if is_cross_market_divergence and us_momentum_pct <= -2.0:
+                    divergence_note = f"美股盘中承压 ({us_momentum_pct:+.2f}%)，与A股走势分化"
+                else:
+                    divergence_note = f"美股交易中，A股休市 (以美股即时动能为主)"
+            elif cn_is_active and us_is_active:
+                active_market_name = "中美双边"
+                active_market_status = "盘中共振"
+                active_momentum_pct = round(weighted_pct_raw, 2)
+                divergence_note = "中美市场同时开市交易中"
+            else:
+                active_market_name = "全球休市"
+                active_market_status = "休市结算"
+                active_momentum_pct = round(weighted_pct_raw, 2)
+                divergence_note = "双边市场均处于休市/结算时段"
+
+            active_market = {
+                "name": active_market_name,
+                "status": active_market_status,
+                "is_active": cn_is_active or us_is_active,
+                "momentum_pct": active_momentum_pct,
+                "is_divergent": is_cross_market_divergence,
+                "divergence_spread": divergence_spread,
+                "divergence_note": divergence_note
+            }
+
             # 3.5 行业层级均值平滑处理 (基于近5次采样窗口的一阶低通数字滤波阻尼，过滤高频报价噪音，非5日跨日MA)
             l0_avg, l1_avg, l2_avg = l0_raw, l1_raw, l2_raw
             l3_avg, l4_avg, l5_avg, l6_avg = l3_raw, l4_raw, l5_raw, l6_raw
@@ -431,7 +480,15 @@ class AIOverview:
             heat_score = round(heat_score, 1)
 
             # 8. AI 资金轮动健康度判定
-            if l0_avg > 0 and l1_avg >= l5_avg and l1_avg >= l6_avg:
+            if is_cross_market_divergence and (cn_momentum_pct <= -2.0 or l6_avg <= -2.0):
+                rotation_mode = "中美背离 (美股稳健·A股回调)"
+                rotation_class = "warning"
+                rotation_desc = f"跨市场流动性分化：美股核心硬件保持基本面韧性，但国内 A 股出现较强情绪退潮 ({cn_momentum_pct:+.2f}%)，警惕流动性折价与情绪扩散。"
+            elif is_cross_market_divergence and (us_momentum_pct <= -2.0 or l1_avg <= -2.0):
+                rotation_mode = "中美背离 (A股韧性·美股承压)"
+                rotation_class = "warning"
+                rotation_desc = f"跨市场分化：美股算力板块盘中承压回调 ({us_momentum_pct:+.2f}%)，国内 A 股相对抗跌，需关注外盘外溢传导。"
+            elif l0_avg > 0 and l1_avg >= l5_avg and l1_avg >= l6_avg:
                 rotation_mode = "健康轮动 (能源与算力双驱动)"
                 rotation_class = "healthy"
                 rotation_desc = f"资金优先集中于电力基础设施 (L0) 与核心芯片 (L1)，美股 AI 加权 PE 为 {us_ai_pe}x，基本面订单支撑强劲。"
@@ -564,22 +621,26 @@ class AIOverview:
                 similarity_pct = round(70.0 + min(20.0, (avg_bubble_risk - 75.0) * 0.4), 1)
                 bubble_distance = "高估值特征明显，警惕题材退潮"
                 summary_desc = "当前行情风险特征接近互联网泡沫晚期的高估值阶段；基于真实加权 PE 与动能的规则类比。"
+                historical_insight = "对标 1999 年互联网泡沫晚期，概念题材炒作泛滥，资本开支与应用变现脱节，需防范估值透支后的剧烈均值回归风险。"
             elif avg_bubble_risk >= 50.0:
                 matched_era = "1997年 互联网大建设中期 (基础设施红利期)"
                 similarity_pct = round(min(90.0, 70.0 + (65.0 - abs(avg_bubble_risk - 55.0)) * 0.3), 1)
                 bubble_distance = "基础设施扩张特征较明显"
                 summary_desc = f"全球云巨头年化 CapEx (${hyperscaler_capex['annual_run_rate_b']}B) 与芯片出货持续印证，行情更接近互联网基础设施大扩容红利阶段。"
+                historical_insight = "对标 1997 年思科与微软基建大扩容期，资本开支与硬件订单处于兑现高潮，应用层变现与盈利模式仍在加速探索阶段。"
             else:
                 matched_era = "1996年 互联网商用早期 (基建建设起点)"
                 similarity_pct = round(80.0 + (50.0 - avg_bubble_risk) * 0.4, 1)
                 bubble_distance = "短线泡沫特征相对有限"
                 summary_desc = "当前估值与动能特征处于早期基础设施建设阶段；该结论仅用于历史类比。"
+                historical_insight = "对标 1996 年互联网商用早期破晓阶段，底层软硬件与基础设施先行，估值泡沫化程度有限，主导资产以硬科技与核心基建为主。"
 
             historical_match = {
                 "matched_era": matched_era,
                 "similarity_pct": similarity_pct,
                 "bubble_distance": bubble_distance,
-                "summary": summary_desc
+                "summary": summary_desc,
+                "historical_insight": historical_insight
             }
 
             # 13. 四大核心验证信号
@@ -587,16 +648,21 @@ class AIOverview:
             sig1_cls = "up" if l0_avg >= 0 else "down"
             sig1_desc = f"GEV ({format_change(gev)}) / CEG ({format_change(ceg)}) / VST ({format_change(vst)})"
 
-            l1_positive_cnt = sum(1 for s in [nvda, amd, avgo, arm, mrvl] if s.get("change_pct") is not None and change_value(s) >= 0)
-            if l1_avg >= 0.5 and nvda_change >= 0:
-                sig2_status = "看多"
+            # 信号 2: 算力芯片动向 (平滑多梯级判定，杜绝全红误报分化)
+            chip_basket = [nvda, amd, avgo, arm, mrvl]
+            valid_chips = [s for s in chip_basket if s.get("change_pct") is not None]
+            total_chips = len(valid_chips) or 5
+            l1_positive_cnt = sum(1 for s in valid_chips if change_value(s) >= 0)
+
+            if (l1_positive_cnt >= total_chips - 1 and nvda_change >= 0 and l1_avg >= 0.1) or (l1_avg >= 0.4 and nvda_change >= 0):
+                sig2_status = "看多" if l1_avg >= 0.5 else "偏强"
                 sig2_cls = "up"
-            elif nvda_change >= 0 or l1_positive_cnt >= 3:
-                sig2_status = "分化"
-                sig2_cls = "up"
-            else:
+            elif l1_positive_cnt <= 1 and (nvda_change < 0 or l1_avg < -0.3):
                 sig2_status = "走弱"
                 sig2_cls = "down"
+            else:
+                sig2_status = "分化"
+                sig2_cls = "up" if nvda_change >= 0 or l1_avg >= 0 else "down"
             sig2_desc = f"英伟达 ({format_change(nvda)}) · 博通 ({format_change(avgo)}) · ARM ({format_change(arm)})"
 
             if l2_avg >= 0.8:
@@ -727,7 +793,8 @@ class AIOverview:
                 "us_momentum_1d_pct": us_momentum_pct,
                 "cn_momentum_1d_pct": cn_momentum_pct,
                 "composite_momentum_1d_pct": round(weighted_pct_raw, 2),
-                "momentum_note": "跨时区异步合成 (美股昨收/盘中 + A股盘中/收盘)",
+                "active_market": active_market,
+                "momentum_note": f"跨时区异步合成 · {active_market.get('divergence_note', '')}",
                 "us_market_status": us_market_status,
                 "cn_market_status": cn_market_status,
                 "market_statuses_summary": market_summary,

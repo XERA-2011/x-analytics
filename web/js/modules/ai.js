@@ -119,6 +119,11 @@ class AIMarketController {
                             <div class="ai-score-status-group">
                                 <span class="ai-trend-tag">${trendTag}</span>
                                 <span class="ai-risk-tag" ${riskClassAttr}>风险: ${riskTag}</span>
+                                ${data.active_market && data.active_market.is_active && data.active_market.is_divergent ? `
+                                    <span class="ai-divergence-pill" title="${data.active_market.divergence_note || '跨市场走势背离'}" style="font-size: 11px; padding: 2px 7px; border-radius: 4px; font-weight: 700; background: rgba(245, 158, 11, 0.14); color: #d97706; border: 1px solid rgba(245, 158, 11, 0.35);">
+                                        ${data.active_market.name}${data.active_market.status}: ${data.active_market.momentum_pct > 0 ? '+' : ''}${data.active_market.momentum_pct}% ⚠️ 跨市背离
+                                    </span>
+                                ` : ''}
                                 ${data.momentum_1d_pct != null ? `
                                     <span class="ai-momentum-tag" title="${data.momentum_note || '跨时区异步加权动能'}" style="font-size: 11px; padding: 2px 7px; border-radius: 4px; font-weight: 600; ${data.momentum_1d_pct > 0 ? 'background: var(--color-up-light, rgba(239, 68, 68, 0.12)); color: var(--color-up-dark, #dc2626);' : (data.momentum_1d_pct < 0 ? 'background: var(--color-down-light, rgba(34, 197, 94, 0.12)); color: var(--color-down-dark, #16a34a);' : 'background: rgba(0,0,0,0.05); color: var(--text-secondary);')}">
                                         1D动能: ${data.momentum_1d_pct > 0 ? '+' : ''}${data.momentum_1d_pct.toFixed(2)}%
@@ -495,7 +500,7 @@ class AIMarketController {
                                     </div>
                                     <div style="font-size: 10.5px; color: var(--text-tertiary); background: var(--bg-subtle, #f8fafc); border-left: 3px solid var(--color-primary, #3b82f6); padding: 5px 8px; border-radius: 0 4px 4px 0; line-height: 1.35; display: flex; align-items: flex-start; gap: 4px;">
                                         <i data-lucide="lightbulb" width="14" style="color: #f59e0b; flex-shrink: 0; margin-top: 2px;"></i>
-                                        <div><strong>历史启示：</strong> 对标 1997 年思科与微软基建大扩容期，资本开支与硬件订单处于兑现高潮，应用层变现与盈利模式仍在加速探索阶段。</div>
+                                        <div><strong>历史启示：</strong> ${hm.historical_insight || '对标 1997 年思科与微软基建大扩容期，资本开支与硬件订单处于兑现高潮，应用层变现与盈利模式仍在加速探索阶段。'}</div>
                                     </div>
                                 </div>
                             `;
