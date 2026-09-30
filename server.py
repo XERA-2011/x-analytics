@@ -16,8 +16,76 @@ from analytics.core import scheduler, settings
 from analytics.core.scheduler import setup_default_jobs, initial_warmup
 from analytics.api import market_asia, gold, market_western, market_hk, ai, qdii, index_valuation
 from analytics.core.patch import apply_patches
-from analytics.core.security import SecurityMiddleware
 from analytics.core.logger import logger
+from analytics.core.security import SecurityMiddleware
+
+_tunnel_proc = None
+
+def ensure_local_tunnel():
+    """本地开发时，若配置了 127.0.0.1 且端口未通，自动打通生命周期绑定的 SSH 数据库安全隧道"""
+    global _tunnel_proc
+    if os.path.exists("/.dockerenv"):
+        return
+    import socket, subprocess, time, atexit
+    server_host = os.getenv("DEPLOY_SERVER_HOST") or os.getenv("ALIYUN_HOST")
+    server_user = os.getenv("DEPLOY_SERVER_USER") or os.getenv("ALIYUN_USER") or "root"
+    if not server_host:
+        return
+    
+    def _is_open(port):
+        s = socket.socket()
+        s.settimeout(0.2)
+        try:
+            s.connect(("127.0.0.1", port))
+            s.close()
+            return True
+        except Exception:
+            return False
+
+    if not _is_open(5432) or not _is_open(6379):
+        try:
+            logger.info("🔌 检测到本地 5432/6379 尚未连通，正在自动建立 SSH 数据库安全隧道...")
+            _tunnel_proc = subprocess.Popen([
+                "ssh", "-o", "ExitOnForwardFailure=yes",
+                "-o", "StrictHostKeyChecking=no",
+                "-N",
+                "-L", "5432:127.0.0.1:5432",
+                "-L", "6379:127.0.0.1:6379",
+                f"{server_user}@{server_host}"
+            ])
+            t0 = time.time()
+            is_ready = False
+            # 动态轮询等待 SSH 远程网络握手就绪（通常 0.5~0.9 秒，最长容忍 4 秒）
+            while time.time() - t0 < 4.0:
+                time.sleep(0.15)
+                if _tunnel_proc.poll() is not None:
+                    break
+                if _is_open(5432) and _is_open(6379):
+                    is_ready = True
+                    break
+
+            if is_ready:
+                elapsed = time.time() - t0
+                logger.info(f"✅ SSH 数据库安全隧道已连通 (耗时 {elapsed:.2f}s，随本进程启停自动管理)！")
+                
+                @atexit.register
+                def _close_tunnel():
+                    global _tunnel_proc
+                    if _tunnel_proc and _tunnel_proc.poll() is None:
+                        logger.info("🛑 正在随服务退出自动关闭 SSH 数据库安全隧道...")
+                        _tunnel_proc.terminate()
+                        try:
+                            _tunnel_proc.wait(timeout=2)
+                        except Exception:
+                            _tunnel_proc.kill()
+                        _tunnel_proc = None
+            else:
+                logger.warning("⚠️ SSH 隧道创建超时或未能建立连通")
+        except Exception as e:
+            logger.warning(f"⚠️ 自动建立 SSH 隧道跳过: {e}")
+
+# 本地调试自动建立安全隧道
+ensure_local_tunnel()
 
 # 应用 API 伪装补丁 (在最早的时机)
 apply_patches()

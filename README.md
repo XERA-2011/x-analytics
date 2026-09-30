@@ -74,8 +74,13 @@ pip install -r requirements.txt
 在项目根目录新建 `.env.local` 文件，填入配置：
 
 ```env
-REDIS_URL="redis://:Redis密码@<YourServerIP>:6379/0"
-DATABASE_URL="postgres://postgres:数据库密码@<YourServerIP>:5432/xanalytics"
+# 本地通过自动 SSH 隧道直接连通云端数据库与缓存 (安全免公网暴露端口)
+REDIS_URL="redis://:Redis密码@127.0.0.1:6379/0"
+DATABASE_URL="postgres://postgres:数据库密码@127.0.0.1:5432/xanalytics"
+
+# 本地直连云端数据库安全隧道配置 (启动 server.py 时自动建立)
+DEPLOY_SERVER_HOST="your-server-ip"
+DEPLOY_SERVER_USER="root"
 
 # Cloudflare Worker 中继代理配置 (用于数据抓取防封)
 CF_WORKER_PROXY_URL="https://your-worker-proxy.domain"
@@ -84,9 +89,13 @@ CF_WORKER_SECRET_KEY="your-secret-key"
 
 #### 3. 启动服务
 ```bash
+# 启动本地服务 (自动建立数据库 SSH 安全隧道，进程退出时自动销毁)
 python server.py
-# 或
-uvicorn server:app --reload
+
+# 亦可使用独立脚本随时手动管理安全隧道
+./tunnel.sh status   # 查看隧道状态
+./tunnel.sh start    # 手动启动隧道
+./tunnel.sh stop     # 手动关闭隧道
 ```
 
 ---
