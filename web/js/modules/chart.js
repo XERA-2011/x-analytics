@@ -127,7 +127,7 @@ class ChartController {
             };
         });
 
-        // 2. 工具栏快捷按钮 (默认核心6、全选14、重置)
+        // 2. 工具栏快捷按钮 (默认、全选)
         const btnDefault = document.getElementById('btn-select-default-indices');
         if (btnDefault) {
             btnDefault.onclick = () => {
@@ -150,19 +150,6 @@ class ChartController {
                     this.updateComparisonChart();
                     this.renderPerformanceMatrix();
                 }
-            };
-        }
-
-        const btnClear = document.getElementById('btn-clear-indices');
-        if (btnClear) {
-            btnClear.onclick = () => {
-                const defaults = this.indicesRawData
-                    ? this.indicesRawData.filter(i => i.default_selected).map(i => i.code)
-                    : ['NDX', 'SP500', 'SH000300', 'HSI', 'N225', 'KOSPI'];
-                this.selectedIndices = new Set(defaults.length > 0 ? defaults : ['NDX', 'SP500', 'SH000300', 'HSI', 'N225', 'KOSPI']);
-                this.renderIndexChips();
-                this.updateComparisonChart();
-                this.renderPerformanceMatrix();
             };
         }
 
