@@ -219,6 +219,8 @@ def fetch_single_index(cfg: Dict[str, Any], cutoff_date: str) -> Optional[Dict[s
         df["date_str"] = df["date"].astype(str).str[:10]
         df["close_val"] = pd.to_numeric(df["close"], errors="coerce")
         df = df.dropna(subset=["date_str", "close_val"])
+        # 核心清洗：指数点位必须为有效正数，剔除节假日休市或接口同步异常导致的 0 或负值点位
+        df = df[df["close_val"] > 0]
         df = df.sort_values("date_str").reset_index(drop=True)
 
         if df.empty:

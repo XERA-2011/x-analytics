@@ -299,19 +299,22 @@ class ChartController {
             const hist = item.history || [];
             const dateToClose = new Map();
             hist.forEach(h => {
-                dateToClose.set(h[0], h[1]);
+                if (h[1] != null && h[1] > 0) {
+                    dateToClose.set(h[0], h[1]);
+                }
             });
 
-            // 确定起点基准价格 (在 startDate 当天或之前的最近一个有效收盘价)
+            // 确定起点基准价格 (在 startDate 当天或之前的最近一个有效正收盘价)
             let basePrice = null;
             for (let i = hist.length - 1; i >= 0; i--) {
-                if (hist[i][0] <= startDate) {
+                if (hist[i][0] <= startDate && hist[i][1] != null && hist[i][1] > 0) {
                     basePrice = hist[i][1];
                     break;
                 }
             }
             if (basePrice == null && hist.length > 0) {
-                basePrice = hist[0][1];
+                const validFirst = hist.find(h => h[1] != null && h[1] > 0);
+                basePrice = validFirst ? validFirst[1] : null;
             }
 
             let lastClose = basePrice;
@@ -319,10 +322,13 @@ class ChartController {
 
             unifiedDates.forEach(date => {
                 if (dateToClose.has(date)) {
-                    lastClose = dateToClose.get(date);
+                    const c = dateToClose.get(date);
+                    if (c != null && c > 0) {
+                        lastClose = c;
+                    }
                 }
                 // 计算相对于基准价格的累计收益率
-                if (basePrice && basePrice > 0 && lastClose != null) {
+                if (basePrice && basePrice > 0 && lastClose != null && lastClose > 0) {
                     const ret = ((lastClose - basePrice) / basePrice) * 100;
                     returns.push(Number(ret.toFixed(2)));
                 } else {

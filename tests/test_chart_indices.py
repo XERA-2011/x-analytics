@@ -74,6 +74,32 @@ def test_fetch_single_index_mock(mock_akshare):
     assert len(res["history"]) == 10
 
 
+@patch("analytics.modules.chart.indices_comparison.akshare_call_with_retry")
+def test_fetch_single_index_filters_zero_prices(mock_akshare):
+    """测试自动过滤收盘价为 0 或负数的异常/未收盘数据 (如 KOSPI/SENSEX 异常 0 值)"""
+    dates = [
+        "2024-09-28", "2024-09-29", "2024-09-30", "2024-10-01", "2024-10-02"
+    ]
+    # 最后一天 close 为 0.0，中间存在 0.0
+    closes = [6889.74, 6870.81, 0.0, 6971.35, 0.0]
+    df = pd.DataFrame({"date": dates, "close": closes})
+    mock_akshare.return_value = df
+
+    cfg = [c for c in INDEX_CONFIGS if c["code"] == "KOSPI"][0]
+    res = fetch_single_index(cfg, cutoff_date="2024-01-01")
+
+    assert res is not None
+    # 0.0 被过滤，最新有效收盘应为 2024-10-01 的 6971.35
+    assert res["latest_date"] == "2024-10-01"
+    assert res["latest_close"] == 6971.35
+    assert res["returns"]["1D"] is not None
+    assert res["returns"]["1D"] != -100.0
+    # 历史记录中不能包含任何 <= 0 的点位
+    for h in res["history"]:
+        assert h[1] > 0
+
+
+
 from analytics.api.chart import get_global_indices_comparison
 
 
