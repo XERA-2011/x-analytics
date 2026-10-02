@@ -49,6 +49,27 @@ class Charts {
         return stops[stops.length - 1].color;
     }
 
+    /**
+     * 解决 ECharts dataZoom(inside) 劫持滚轮导致网页无法上下滚动的痛点：
+     * 利用 capture 阶段先于 ECharts canvas 捕获 wheel 事件。
+     * - 普通滑动滚轮：通过 stopPropagation 阻止向下传递给 canvas，避免 ECharts 内部无条件调用 preventDefault()，
+     *   让浏览器原生页面滚动畅通无阻、丝滑顺畅；
+     * - 按住 Ctrl 或 Cmd 键滑动滚轮：放行给 ECharts，支持精准快捷局部缩放。
+     */
+    enableWheelPassthrough(container) {
+        if (!container || container.__wheelPassthroughBound) return;
+        container.__wheelPassthroughBound = true;
+
+        container.addEventListener('wheel', (e) => {
+            if (e.ctrlKey || e.metaKey) {
+                // 用户显式按住 Ctrl/Cmd 键，属于明确意图的图表局部缩放，放行给 ECharts
+                return;
+            }
+            // 普通滚轮操作：阻止传递给 ECharts canvas，让原生页面正常顺畅滚动
+            e.stopPropagation();
+        }, { capture: true, passive: true });
+    }
+
     // 创建恐慌贪婪指数仪表盘 (风格 1: 外圈渐变弧线 + 内圈渐变刻度 + 箭头游标 + 居中分值)
     createFearGreedGauge(containerId, data) {
         const container = document.getElementById(containerId);
@@ -687,6 +708,8 @@ class Charts {
         const container = document.getElementById(containerId);
         if (!container) return null;
 
+        this.enableWheelPassthrough(container);
+
         // 清理旧实例
         if (this.charts.has(containerId)) {
             this.charts.get(containerId).dispose();
@@ -830,10 +853,11 @@ class Charts {
             dataZoom: [
                 {
                     type: 'inside',
-                    zoomOnMouseWheel: false,  // 禁用鼠标滚轮缩放，解决网页滚动时的误触问题
+                    zoomOnMouseWheel: true,   // 允许缩放，但通过外层 wheelCapture 仅在按住 Ctrl/Cmd 时放行
                     zoomOnMouseButton: false, // 禁用鼠标按键缩放
                     moveOnMouseMove: true,    // 允许鼠标拖拽平移
                     moveOnMouseWheel: false,  // 禁用鼠标滚轮平移
+                    preventDefaultMouseMove: false,
                     startValue: startDate,
                     endValue: latestDate
                 },
@@ -1128,6 +1152,8 @@ class Charts {
         const container = document.getElementById(containerId);
         if (!container) return null;
 
+        this.enableWheelPassthrough(container);
+
         if (this.charts.has(containerId)) {
             const old = this.charts.get(containerId);
             if (old && typeof old.dispose === 'function') {
@@ -1302,7 +1328,7 @@ class Charts {
                 {
                     type: 'inside',
                     xAxisIndex: 0,
-                    zoomOnMouseWheel: false,  // 禁用鼠标滚轮缩放，彻底解决网页上下滚动时的误触问题
+                    zoomOnMouseWheel: true,   // 允许缩放，但通过外层 wheelCapture 仅在按住 Ctrl/Cmd 时放行
                     zoomOnMouseButton: false, // 禁用鼠标按键缩放
                     moveOnMouseMove: true,    // 允许鼠标拖拽平移
                     moveOnMouseWheel: false,  // 禁用鼠标滚轮平移

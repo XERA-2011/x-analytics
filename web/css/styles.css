@@ -4643,3 +4643,9 @@ footer {
     }
 }
 
+/* 确保移动端触控在图表区域垂直滑动时优先触发原生页面滚动 */
+#indices-comparison-chart,
+#valuation-chart {
+    touch-action: pan-y;
+}
+
