@@ -82,6 +82,19 @@ class ChartController {
 
             this.indicesRawData = indices;
 
+            // 更新顶部最新数据日期角标
+            let latestDateStr = '';
+            indices.forEach(idx => {
+                if (idx.latest_date && idx.latest_date > latestDateStr) {
+                    latestDateStr = idx.latest_date;
+                }
+            });
+            const dateBadge = document.getElementById('indices-latest-date');
+            if (dateBadge && latestDateStr) {
+                dateBadge.textContent = `最新收盘: ${latestDateStr}`;
+                dateBadge.style.display = 'inline-block';
+            }
+
             // 渲染筛选标签
             this.renderIndexChips();
 
@@ -178,8 +191,11 @@ class ChartController {
 
         container.innerHTML = this.indicesRawData.map(item => {
             const isSelected = this.selectedIndices.has(item.code);
+            const activeStyle = isSelected
+                ? `border-color: ${item.color}; background-color: ${item.color}14; color: var(--text-primary); font-weight: 600; box-shadow: 0 1px 3px ${item.color}20;`
+                : '';
             return `
-                <button class="index-chip ${isSelected ? 'active' : ''}" data-code="${item.code}">
+                <button class="index-chip ${isSelected ? 'active' : ''}" data-code="${item.code}" style="${activeStyle}">
                     <span class="chip-color-dot" style="background-color: ${item.color};"></span>
                     <span class="chip-flag">${item.flag || ''}</span>
                     <span class="chip-name">${item.name}</span>
@@ -196,12 +212,11 @@ class ChartController {
                 if (this.selectedIndices.has(code)) {
                     if (this.selectedIndices.size <= 1) return; // 至少保留 1 个
                     this.selectedIndices.delete(code);
-                    btn.classList.remove('active');
                 } else {
                     this.selectedIndices.add(code);
-                    btn.classList.add('active');
                 }
 
+                this.renderIndexChips();
                 this.updateComparisonChart();
                 this.renderPerformanceMatrix();
             };
@@ -386,7 +401,9 @@ class ChartController {
             tableHtml += `
                 <tr class="matrix-row ${isSelected ? 'row-selected' : ''}" data-code="${item.code}" title="点击在走势图中开启/关闭该指数">
                     <td class="col-checkbox">
-                        <span class="matrix-check-dot ${isSelected ? 'checked' : ''}" style="background-color: ${isSelected ? item.color : 'transparent'}; border-color: ${item.color};"></span>
+                        <span class="matrix-check-dot ${isSelected ? 'checked' : ''}" style="${isSelected ? `background-color: ${item.color}; border-color: ${item.color}; color: #ffffff;` : ''}">
+                            ${isSelected ? '✓' : ''}
+                        </span>
                     </td>
                     <td class="col-index">
                         <div class="matrix-index-cell">

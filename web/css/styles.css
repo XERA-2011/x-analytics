@@ -4180,15 +4180,38 @@ footer {
     border-color: rgba(59, 130, 246, 0.4);
 }
 
+.comparison-date-badge {
+    background: rgba(107, 114, 128, 0.08);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-light);
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    font-family: var(--font-mono, monospace);
+}
+
+[data-theme="dark"] .comparison-date-badge {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
 /* 周期切换药丸组 */
 .period-pills {
     display: flex;
     gap: 4px;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
     background: #f3f4f6;
     padding: 3px;
     border-radius: 8px;
     border: 1px solid var(--border-light);
+}
+
+.period-pills::-webkit-scrollbar {
+    display: none;
 }
 
 [data-theme="dark"] .period-pills {
@@ -4207,6 +4230,7 @@ footer {
     cursor: pointer;
     transition: all 0.15s ease;
     white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .period-pill:hover {
@@ -4316,18 +4340,7 @@ footer {
 }
 
 .index-chip.active {
-    background: rgba(59, 130, 246, 0.08);
-    border-color: #3b82f6;
-    color: var(--text-primary);
     font-weight: 600;
-    box-shadow: 0 1px 3px rgba(59, 130, 246, 0.15);
-}
-
-[data-theme="dark"] .index-chip.active {
-    background: rgba(59, 130, 246, 0.22);
-    border-color: #60a5fa;
-    color: #ffffff;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 .chip-color-dot {
@@ -4387,6 +4400,7 @@ footer {
     border-radius: 8px;
     background: #ffffff;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+    -webkit-overflow-scrolling: touch;
 }
 
 [data-theme="dark"] .matrix-table-wrap {
@@ -4461,16 +4475,83 @@ footer {
     background: rgba(59, 130, 246, 0.07);
 }
 
+/* 固定左侧首列与指数名称列，移动端横向滑动时不迷路 */
+.matrix-table th.col-checkbox,
+.matrix-table td.col-checkbox {
+    position: sticky;
+    left: 0;
+    background: #ffffff;
+    z-index: 2;
+    width: 34px;
+    min-width: 34px;
+    padding-left: 10px;
+    padding-right: 4px;
+}
+
+.matrix-table th.col-index,
+.matrix-table td.col-index {
+    position: sticky;
+    left: 34px;
+    background: #ffffff;
+    z-index: 2;
+    min-width: 140px;
+    box-shadow: 2px 0 6px -2px rgba(0, 0, 0, 0.06);
+}
+
+.matrix-table th.col-checkbox,
+.matrix-table th.col-index {
+    background: #f9fafb;
+    z-index: 4;
+}
+
+[data-theme="dark"] .matrix-table th.col-checkbox,
+[data-theme="dark"] .matrix-table th.col-index {
+    background: #1e293b;
+}
+
+[data-theme="dark"] .matrix-table td.col-checkbox,
+[data-theme="dark"] .matrix-table td.col-index {
+    background: #0f172a;
+}
+
+.matrix-row:hover td.col-checkbox,
+.matrix-row:hover td.col-index {
+    background: #f3f4f6;
+}
+
+[data-theme="dark"] .matrix-row:hover td.col-checkbox,
+[data-theme="dark"] .matrix-row:hover td.col-index {
+    background: #1e293b;
+}
+
+.matrix-row.row-selected td.col-checkbox,
+.matrix-row.row-selected td.col-index {
+    background: rgba(59, 130, 246, 0.04);
+}
+
+[data-theme="dark"] .matrix-row.row-selected td.col-checkbox,
+[data-theme="dark"] .matrix-row.row-selected td.col-index {
+    background: rgba(59, 130, 246, 0.1);
+}
+
 .matrix-check-dot {
-    display: inline-block;
-    width: 10px;
-    height: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 15px;
+    height: 15px;
     border-radius: 50%;
-    border: 2px solid #d1d5db;
+    border: 1.5px solid #d1d5db;
     transition: all 0.15s ease;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1;
+    color: transparent;
+    user-select: none;
 }
 
 .matrix-check-dot.checked {
+    color: #ffffff;
     box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
 }
 
@@ -4496,19 +4577,27 @@ footer {
     margin-left: 2px;
 }
 
-/* 收益率红涨绿跌颜色规范 */
+/* 收益率红涨绿跌权威高对比颜色规范 */
 .val-up {
-    color: #ef4444;
+    color: #dc2626;
     font-weight: 600;
 }
 
 .val-down {
-    color: #10b981;
+    color: #16a34a;
     font-weight: 600;
 }
 
 .val-flat {
     color: #9ca3af;
+}
+
+[data-theme="dark"] .val-up {
+    color: #f87171;
+}
+
+[data-theme="dark"] .val-down {
+    color: #4ade80;
 }
 
 .current-period-cell {
@@ -4520,31 +4609,37 @@ footer {
     background: rgba(59, 130, 246, 0.12);
 }
 
-/* 响应式适配 */
-@media (max-width: 640px) {
+/* 移动端与窄屏响应式适配 */
+@media (max-width: 768px) {
     .comparison-header {
         flex-direction: column;
         align-items: flex-start;
         gap: 10px;
     }
 
+    .comparison-header-info {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
     .period-pills {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .index-chips-toolbar {
         width: 100%;
         justify-content: space-between;
     }
 
-    .period-pill {
-        padding: 5px 8px;
-        font-size: 0.75rem;
-        flex: 1;
-        text-align: center;
-    }
-
-    .index-chips-wrap {
-        padding: 10px 12px;
+    .matrix-title-wrap {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
     }
 
     #indices-comparison-chart {
         height: 380px !important;
     }
 }
+

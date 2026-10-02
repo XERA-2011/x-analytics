@@ -1193,6 +1193,7 @@ class Charts {
             animationDuration: 400,
             tooltip: {
                 trigger: 'axis',
+                confine: true,
                 axisPointer: {
                     type: 'cross',
                     lineStyle: {
@@ -1204,7 +1205,7 @@ class Charts {
                 borderColor: '#e5e7eb',
                 borderWidth: 1,
                 padding: [10, 14],
-                extraCssText: 'box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1); border-radius: 8px; max-height: 400px; overflow-y: auto;',
+                extraCssText: 'box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1); border-radius: 8px; max-height: 380px; overflow-y: auto;',
                 formatter: function (params) {
                     if (!params || params.length === 0) return '';
                     const dateStr = params[0].axisValue;
@@ -1226,7 +1227,7 @@ class Charts {
                         let valColor = '#6b7280';
                         if (val != null && !isNaN(val)) {
                             valStr = (val >= 0 ? '+' : '') + Number(val).toFixed(2) + '%';
-                            valColor = val >= 0 ? '#ef4444' : '#10b981'; // 统一国内红涨绿跌
+                            valColor = val >= 0 ? '#dc2626' : '#16a34a'; // 权威红涨绿跌高对比色
                         }
 
                         html += `
@@ -1249,10 +1250,10 @@ class Charts {
                 show: false
             },
             grid: {
-                left: '2%',
-                right: '4%',
-                top: '6%',
-                bottom: '12%',
+                left: 15,
+                right: 25,
+                top: 25,
+                bottom: 45,
                 containLabel: true
             },
             xAxis: {
@@ -1262,10 +1263,20 @@ class Charts {
                 axisLine: { lineStyle: { color: '#e5e7eb' } },
                 axisLabel: {
                     color: '#6b7280',
-                    fontSize: 11,
+                    fontSize: 10,
+                    interval: 'auto',
+                    hideOverlap: true,
                     formatter: function(value) {
-                        return value ? value.substring(5) : '';
+                        if (!value) return '';
+                        if (dates.length > 500) {
+                            return value.substring(0, 7);
+                        }
+                        return value.substring(5);
                     }
+                },
+                splitLine: {
+                    show: true,
+                    lineStyle: { color: '#f9fafb', type: 'dashed' }
                 },
                 axisTick: { show: false }
             },
@@ -1290,16 +1301,23 @@ class Charts {
             dataZoom: [
                 {
                     type: 'inside',
-                    xAxisIndex: 0
+                    xAxisIndex: 0,
+                    zoomOnMouseWheel: false,  // 禁用鼠标滚轮缩放，彻底解决网页上下滚动时的误触问题
+                    zoomOnMouseButton: false, // 禁用鼠标按键缩放
+                    moveOnMouseMove: true,    // 允许鼠标拖拽平移
+                    moveOnMouseWheel: false,  // 禁用鼠标滚轮平移
+                    preventDefaultMouseMove: false
                 },
                 {
                     type: 'slider',
                     xAxisIndex: 0,
-                    bottom: 6,
+                    show: true,
+                    bottom: 4,
                     height: 18,
                     borderColor: 'transparent',
-                    backgroundColor: 'rgba(243, 244, 246, 0.6)',
+                    backgroundColor: 'rgba(243, 244, 246, 0.8)',
                     fillerColor: 'rgba(59, 130, 246, 0.15)',
+                    handleSize: '100%',
                     handleStyle: {
                         color: '#3b82f6',
                         borderColor: '#2563eb'
