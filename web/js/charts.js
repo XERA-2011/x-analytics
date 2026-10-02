@@ -1168,7 +1168,7 @@ class Charts {
 
         // 构建 ECharts series 列表
         const series = seriesItems.map(s => ({
-            name: `${s.flag || ''} ${s.name}`,
+            name: s.name,
             code: s.code,
             type: 'line',
             data: s.data,
@@ -1243,12 +1243,14 @@ class Charts {
                         return valB - valA;
                     });
 
-                    let html = `<div style="font-weight: 600; font-size: 13px; margin-bottom: 8px; color: #111827; border-bottom: 1px solid #f3f4f6; padding-bottom: 4px;">📅 ${dateStr} 累计收益率</div>`;
+                    let html = `<div style="font-weight: 600; font-size: 13px; margin-bottom: 8px; color: #111827; border-bottom: 1px solid #f3f4f6; padding-bottom: 4px;">${dateStr} 累计收益率</div>`;
                     html += '<div style="display: flex; flex-direction: column; gap: 5px; min-width: 220px;">';
 
                     sorted.forEach((p, idx) => {
                         const val = p.value;
-                        const medal = idx === 0 ? '🥇' : (idx === 1 ? '🥈' : (idx === 2 ? '🥉' : `<span style="display:inline-block;width:14px;text-align:center;color:#9ca3af;font-size:11px;">${idx+1}</span>`));
+                        const rankBg = idx === 0 ? '#f59e0b' : (idx === 1 ? '#94a3b8' : (idx === 2 ? '#b45309' : '#f1f5f9'));
+                        const rankColor = idx <= 2 ? '#ffffff' : '#64748b';
+                        const medal = `<span style="display:inline-block;width:15px;height:15px;line-height:15px;text-align:center;border-radius:50%;font-size:10px;font-weight:700;background:${rankBg};color:${rankColor};">${idx+1}</span>`;
                         let valStr = '--';
                         let valColor = '#6b7280';
                         if (val != null && !isNaN(val)) {

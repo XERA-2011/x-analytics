@@ -4317,46 +4317,51 @@ footer {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 5px 12px;
+    padding: 3px 10px;
     border: 1px solid var(--border-light);
-    border-radius: 20px;
-    background: #ffffff;
-    font-size: 0.8rem;
+    border-radius: 12px;
+    background: var(--bg-subtle, #f3f4f6);
+    font-size: 0.76rem;
     font-weight: 500;
+    line-height: 1.35;
     color: var(--text-secondary);
     cursor: pointer;
     transition: all 0.15s ease;
     user-select: none;
+    white-space: nowrap;
 }
 
 [data-theme="dark"] .index-chip {
-    background: rgba(255, 255, 255, 0.04);
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
 }
 
 .index-chip:hover {
-    border-color: #d1d5db;
-    color: var(--text-primary);
     transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
 }
 
 .index-chip.active {
     font-weight: 600;
+    color: #ffffff !important;
 }
 
 .chip-color-dot {
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
     border-radius: 50%;
     flex-shrink: 0;
+    transition: all 0.15s ease;
 }
 
-.chip-flag {
-    font-size: 0.95rem;
-    line-height: 1;
+.index-chip.active .chip-color-dot {
+    background-color: #ffffff !important;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1);
 }
 
 .chip-name {
-    font-size: 0.8rem;
+    font-size: 0.76rem;
+    letter-spacing: 0.01em;
 }
 
 /* 多周期收益率速览看板 */
@@ -4559,10 +4564,6 @@ footer {
     display: flex;
     align-items: center;
     gap: 7px;
-}
-
-.matrix-flag {
-    font-size: 1rem;
 }
 
 .matrix-name {

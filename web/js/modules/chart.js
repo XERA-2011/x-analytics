@@ -202,12 +202,14 @@ class ChartController {
         container.innerHTML = this.indicesRawData.map(item => {
             const isSelected = this.selectedIndices.has(item.code);
             const activeStyle = isSelected
-                ? `border-color: ${item.color}; background-color: ${item.color}14; color: var(--text-primary); font-weight: 600; box-shadow: 0 1px 3px ${item.color}20;`
-                : '';
+                ? `background-color: ${item.color}; border-color: ${item.color}; color: #ffffff; font-weight: 600; box-shadow: 0 2px 6px ${item.color}45;`
+                : `background-color: var(--bg-subtle, #f3f4f6); border-color: var(--border-light, #e5e7eb); color: var(--text-secondary, #4b5563);`;
+            const dotStyle = isSelected
+                ? `background-color: #ffffff;`
+                : `background-color: ${item.color};`;
             return `
                 <button class="index-chip ${isSelected ? 'active' : ''}" data-code="${item.code}" style="${activeStyle}">
-                    <span class="chip-color-dot" style="background-color: ${item.color};"></span>
-                    <span class="chip-flag">${item.flag || ''}</span>
+                    <span class="chip-color-dot" style="${dotStyle}"></span>
                     <span class="chip-name">${item.name}</span>
                 </button>
             `;
@@ -423,7 +425,7 @@ class ChartController {
                     </td>
                     <td class="col-index">
                         <div class="matrix-index-cell">
-                            <span class="matrix-flag">${item.flag || ''}</span>
+                            <span class="chip-color-dot" style="background-color: ${item.color};"></span>
                             <span class="matrix-name">${item.name}</span>
                             <span class="matrix-code">${item.code}</span>
                         </div>

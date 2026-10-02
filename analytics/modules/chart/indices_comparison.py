@@ -21,8 +21,8 @@ INDEX_CONFIGS = [
         "name": "纳指100",
         "full_name": "纳斯达克100",
         "region": "US",
-        "flag": "🇺🇸",
-        "color": "#3B82F6",  # 科技蓝
+        "flag": "",
+        "color": "#2563EB",  # 美股-科技蓝 (QDII tag-us 蓝)
         "default_selected": True,
         "type": "us",
         "symbol": ".NDX",
@@ -32,8 +32,8 @@ INDEX_CONFIGS = [
         "name": "标普500",
         "full_name": "标普500",
         "region": "US",
-        "flag": "🇺🇸",
-        "color": "#6366F1",  # 靛青紫
+        "flag": "",
+        "color": "#3B82F6",  # 美股-明蓝
         "default_selected": True,
         "type": "us",
         "symbol": ".INX",
@@ -43,8 +43,8 @@ INDEX_CONFIGS = [
         "name": "道琼斯",
         "full_name": "道琼斯工业平均指数",
         "region": "US",
-        "flag": "🇺🇸",
-        "color": "#8B5CF6",  # 紫色
+        "flag": "",
+        "color": "#6366F1",  # 美股-靛青蓝
         "default_selected": False,
         "type": "us",
         "symbol": ".DJI",
@@ -54,8 +54,8 @@ INDEX_CONFIGS = [
         "name": "沪深300",
         "full_name": "沪深300指数",
         "region": "CN",
-        "flag": "🇨🇳",
-        "color": "#EF4444",  # 中国红
+        "flag": "",
+        "color": "#DE2910",  # A股-中国红 (QDII tag-cn 红)
         "default_selected": True,
         "type": "cn",
         "symbol": "sh000300",
@@ -65,8 +65,8 @@ INDEX_CONFIGS = [
         "name": "上证指数",
         "full_name": "上证综合指数",
         "region": "CN",
-        "flag": "🇨🇳",
-        "color": "#F97316",  # 橙红
+        "flag": "",
+        "color": "#EF4444",  # A股-朱红
         "default_selected": False,
         "type": "cn",
         "symbol": "sh000001",
@@ -76,8 +76,8 @@ INDEX_CONFIGS = [
         "name": "科创50",
         "full_name": "科创50指数",
         "region": "CN",
-        "flag": "🇨🇳",
-        "color": "#EC4899",  # 洋红
+        "flag": "",
+        "color": "#F43F5E",  # A股-玫瑰红
         "default_selected": False,
         "type": "cn",
         "symbol": "sh000688",
@@ -87,8 +87,8 @@ INDEX_CONFIGS = [
         "name": "恒生指数",
         "full_name": "香港恒生指数",
         "region": "HK",
-        "flag": "🇭🇰",
-        "color": "#10B981",  # 翡翠绿
+        "flag": "",
+        "color": "#9333EA",  # 港股-经典紫 (QDII tag-hk 紫)
         "default_selected": True,
         "type": "hk",
         "symbol": "HSI",
@@ -98,8 +98,8 @@ INDEX_CONFIGS = [
         "name": "恒生科技",
         "full_name": "恒生科技指数",
         "region": "HK",
-        "flag": "🇭🇰",
-        "color": "#14B8A6",  # 青绿
+        "flag": "",
+        "color": "#A855F7",  # 港股-科技亮紫
         "default_selected": False,
         "type": "hk",
         "symbol": "HSTECH",
@@ -109,8 +109,8 @@ INDEX_CONFIGS = [
         "name": "日经225",
         "full_name": "日经225指数",
         "region": "JP",
-        "flag": "🇯🇵",
-        "color": "#F59E0B",  # 琥珀黄
+        "flag": "",
+        "color": "#F97316",  # 亚太-暖橙 (QDII tag-other 橙)
         "default_selected": True,
         "type": "global",
         "symbol": "日经225指数",
@@ -120,8 +120,8 @@ INDEX_CONFIGS = [
         "name": "韩国综合",
         "full_name": "首尔综合指数",
         "region": "KR",
-        "flag": "🇰🇷",
-        "color": "#84CC16",  # 酸橙绿
+        "flag": "",
+        "color": "#EA580C",  # 亚太-深橙红 (日韩系高对比度)
         "default_selected": True,
         "type": "global",
         "symbol": "首尔综合指数",
@@ -131,8 +131,8 @@ INDEX_CONFIGS = [
         "name": "德国DAX",
         "full_name": "德国DAX30指数",
         "region": "DE",
-        "flag": "🇩🇪",
-        "color": "#06B6D4",  # 青蓝
+        "flag": "",
+        "color": "#0284C7",  # 欧洲-天青蓝
         "default_selected": False,
         "type": "global",
         "symbol": "德国DAX 30种股价指数",
@@ -142,8 +142,8 @@ INDEX_CONFIGS = [
         "name": "英国富时",
         "full_name": "英国富时100指数",
         "region": "UK",
-        "flag": "🇬🇧",
-        "color": "#64748B",  # 蓝灰
+        "flag": "",
+        "color": "#0D9488",  # 欧洲-松石青
         "default_selected": False,
         "type": "global",
         "symbol": "英国富时100指数",
@@ -153,8 +153,8 @@ INDEX_CONFIGS = [
         "name": "法国CAC",
         "full_name": "法国CAC40指数",
         "region": "FR",
-        "flag": "🇫🇷",
-        "color": "#A855F7",  # 紫罗兰
+        "flag": "",
+        "color": "#0891B2",  # 欧洲-海青
         "default_selected": False,
         "type": "global",
         "symbol": "法CAC40指数",
@@ -164,8 +164,8 @@ INDEX_CONFIGS = [
         "name": "印度SENSEX",
         "full_name": "印度孟买SENSEX指数",
         "region": "IN",
-        "flag": "🇮🇳",
-        "color": "#D97706",  # 铜黄
+        "flag": "",
+        "color": "#D97706",  # 新兴-琥珀金
         "default_selected": False,
         "type": "global",
         "symbol": "印度孟买SENSEX指数",
