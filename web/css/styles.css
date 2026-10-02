@@ -102,6 +102,10 @@ body {
     width: 100%;
 }
 
+.market-section + .market-section {
+    margin-top: 36px;
+}
+
 .card-subtitle {
     margin-top: 2px;
     font-size: 12px;
@@ -4480,84 +4484,46 @@ footer {
     background: rgba(59, 130, 246, 0.07);
 }
 
-/* 固定左侧首列与指数名称列，移动端横向滑动时不迷路 */
-.matrix-table th.col-checkbox,
-.matrix-table td.col-checkbox {
-    position: sticky;
-    left: 0;
-    background: #ffffff;
-    z-index: 2;
-    width: 34px;
-    min-width: 34px;
-    padding-left: 10px;
-    padding-right: 4px;
-}
-
+/* 固定左侧指数名称列，移动端横向滑动时不迷路 */
 .matrix-table th.col-index,
 .matrix-table td.col-index {
     position: sticky;
-    left: 34px;
+    left: 0;
     background: #ffffff;
     z-index: 2;
     min-width: 140px;
     box-shadow: 2px 0 6px -2px rgba(0, 0, 0, 0.06);
 }
 
-.matrix-table th.col-checkbox,
 .matrix-table th.col-index {
     background: #f9fafb;
     z-index: 4;
 }
 
-[data-theme="dark"] .matrix-table th.col-checkbox,
 [data-theme="dark"] .matrix-table th.col-index {
     background: #1e293b;
+    box-shadow: 2px 0 8px -2px rgba(0, 0, 0, 0.4);
 }
 
-[data-theme="dark"] .matrix-table td.col-checkbox,
 [data-theme="dark"] .matrix-table td.col-index {
     background: #0f172a;
+    box-shadow: 2px 0 8px -2px rgba(0, 0, 0, 0.4);
 }
 
-.matrix-row:hover td.col-checkbox,
 .matrix-row:hover td.col-index {
     background: #f3f4f6;
 }
 
-[data-theme="dark"] .matrix-row:hover td.col-checkbox,
 [data-theme="dark"] .matrix-row:hover td.col-index {
     background: #1e293b;
 }
 
-.matrix-row.row-selected td.col-checkbox,
 .matrix-row.row-selected td.col-index {
     background: rgba(59, 130, 246, 0.04);
 }
 
-[data-theme="dark"] .matrix-row.row-selected td.col-checkbox,
 [data-theme="dark"] .matrix-row.row-selected td.col-index {
     background: rgba(59, 130, 246, 0.1);
-}
-
-.matrix-check-dot {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 15px;
-    height: 15px;
-    border-radius: 50%;
-    border: 1.5px solid #d1d5db;
-    transition: all 0.15s ease;
-    font-size: 10px;
-    font-weight: 700;
-    line-height: 1;
-    color: transparent;
-    user-select: none;
-}
-
-.matrix-check-dot.checked {
-    color: #ffffff;
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
 }
 
 .matrix-index-cell {

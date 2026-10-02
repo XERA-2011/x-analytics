@@ -385,7 +385,6 @@ class ChartController {
                 <table class="matrix-table">
                     <thead>
                         <tr>
-                            <th class="col-checkbox"></th>
                             <th class="col-index sortable" data-sort="name">指数名称</th>
                             <th class="col-close sortable text-right" data-sort="latest_close">最新收盘</th>
                             ${periods.map(p => {
@@ -405,11 +404,6 @@ class ChartController {
 
             tableHtml += `
                 <tr class="matrix-row ${isSelected ? 'row-selected' : ''}" data-code="${item.code}" title="点击在走势图中开启/关闭该指数">
-                    <td class="col-checkbox">
-                        <span class="matrix-check-dot ${isSelected ? 'checked' : ''}" style="${isSelected ? `background-color: ${item.color}; border-color: ${item.color}; color: #ffffff;` : ''}">
-                            ${isSelected ? '✓' : ''}
-                        </span>
-                    </td>
                     <td class="col-index">
                         <div class="matrix-index-cell">
                             <span class="chip-color-dot" style="background-color: ${item.color};"></span>
