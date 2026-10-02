@@ -9,7 +9,7 @@ class ChartController {
         // 全球指数对比模块状态
         this.indicesRawData = null;
         this.currentPeriod = 'ytd';
-        this.selectedIndices = new Set(['NDX', 'SP500', 'SH000300', 'HSI', 'N225']);
+        this.selectedIndices = new Set(['NDX', 'SP500', 'SH000300', 'HSI', 'N225', 'KOSPI']);
         this.comparisonEventsBound = false;
         this.matrixSortCol = 'YTD';
         this.matrixSortDesc = true;
@@ -127,11 +127,14 @@ class ChartController {
             };
         });
 
-        // 2. 工具栏快捷按钮 (默认核心5、全选14、重置)
+        // 2. 工具栏快捷按钮 (默认核心6、全选14、重置)
         const btnDefault = document.getElementById('btn-select-default-indices');
         if (btnDefault) {
             btnDefault.onclick = () => {
-                this.selectedIndices = new Set(['NDX', 'SP500', 'SH000300', 'HSI', 'N225']);
+                const defaults = this.indicesRawData
+                    ? this.indicesRawData.filter(i => i.default_selected).map(i => i.code)
+                    : ['NDX', 'SP500', 'SH000300', 'HSI', 'N225', 'KOSPI'];
+                this.selectedIndices = new Set(defaults.length > 0 ? defaults : ['NDX', 'SP500', 'SH000300', 'HSI', 'N225', 'KOSPI']);
                 this.renderIndexChips();
                 this.updateComparisonChart();
                 this.renderPerformanceMatrix();
@@ -153,7 +156,10 @@ class ChartController {
         const btnClear = document.getElementById('btn-clear-indices');
         if (btnClear) {
             btnClear.onclick = () => {
-                this.selectedIndices = new Set(['NDX', 'SP500', 'SH000300', 'HSI', 'N225']);
+                const defaults = this.indicesRawData
+                    ? this.indicesRawData.filter(i => i.default_selected).map(i => i.code)
+                    : ['NDX', 'SP500', 'SH000300', 'HSI', 'N225', 'KOSPI'];
+                this.selectedIndices = new Set(defaults.length > 0 ? defaults : ['NDX', 'SP500', 'SH000300', 'HSI', 'N225', 'KOSPI']);
                 this.renderIndexChips();
                 this.updateComparisonChart();
                 this.renderPerformanceMatrix();

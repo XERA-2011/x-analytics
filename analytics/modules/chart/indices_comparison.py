@@ -122,7 +122,7 @@ INDEX_CONFIGS = [
         "region": "KR",
         "flag": "🇰🇷",
         "color": "#84CC16",  # 酸橙绿
-        "default_selected": False,
+        "default_selected": True,
         "type": "global",
         "symbol": "首尔综合指数",
     },

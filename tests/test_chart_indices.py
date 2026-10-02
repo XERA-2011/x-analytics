@@ -30,13 +30,14 @@ def test_index_configs_structure():
             default_selected_count += 1
 
     assert len(codes) == 14
-    # 默认选中 5 大基准 (NDX, SP500, SH000300, HSI, N225)
-    assert default_selected_count == 5
+    # 默认选中 6 大基准 (NDX, SP500, SH000300, HSI, N225, KOSPI)
+    assert default_selected_count == 6
     assert "NDX" in codes
     assert "SP500" in codes
     assert "SH000300" in codes
     assert "HSI" in codes
     assert "N225" in codes
+    assert "KOSPI" in codes
 
 
 def test_calc_return_pct():
