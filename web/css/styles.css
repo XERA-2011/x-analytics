@@ -4131,3 +4131,420 @@ footer {
     }
 }
 
+
+
+/* ==========================================================================
+   全球主要指数走势对比 (Global Indices Comparison)
+   ========================================================================== */
+
+.comparison-card {
+    display: flex;
+    flex-direction: column;
+}
+
+.comparison-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+}
+
+.comparison-header-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.comparison-header-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.baseline-badge {
+    background: rgba(59, 130, 246, 0.1);
+    color: #2563eb;
+    border: 1px solid rgba(59, 130, 246, 0.25);
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+[data-theme="dark"] .baseline-badge {
+    background: rgba(59, 130, 246, 0.2);
+    color: #60a5fa;
+    border-color: rgba(59, 130, 246, 0.4);
+}
+
+/* 周期切换药丸组 */
+.period-pills {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+    background: #f3f4f6;
+    padding: 3px;
+    border-radius: 8px;
+    border: 1px solid var(--border-light);
+}
+
+[data-theme="dark"] .period-pills {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.period-pill {
+    padding: 5px 13px;
+    border: none;
+    background: transparent;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+}
+
+.period-pill:hover {
+    color: var(--text-primary);
+}
+
+.period-pill.active {
+    background: #ffffff;
+    color: var(--text-primary);
+    font-weight: 600;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="dark"] .period-pill.active {
+    background: rgba(255, 255, 255, 0.18);
+    color: #ffffff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* 指数多选标签工具栏 */
+.index-chips-wrap {
+    padding: 12px 14px;
+    border-top: 1px solid var(--border-light);
+    border-bottom: 1px solid var(--border-light);
+    margin-bottom: 14px;
+    background: rgba(249, 250, 251, 0.6);
+    border-radius: 8px;
+}
+
+[data-theme="dark"] .index-chips-wrap {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.index-chips-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.index-chips-label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.index-chips-actions {
+    display: flex;
+    gap: 6px;
+}
+
+.chip-action-btn {
+    font-size: 0.75rem;
+    padding: 2px 9px;
+    border: 1px solid var(--border-light);
+    border-radius: 4px;
+    background: #ffffff;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+[data-theme="dark"] .chip-action-btn {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.chip-action-btn:hover {
+    color: var(--text-primary);
+    border-color: #9ca3af;
+}
+
+.index-chips-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+}
+
+.index-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border: 1px solid var(--border-light);
+    border-radius: 20px;
+    background: #ffffff;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    user-select: none;
+}
+
+[data-theme="dark"] .index-chip {
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.index-chip:hover {
+    border-color: #d1d5db;
+    color: var(--text-primary);
+    transform: translateY(-1px);
+}
+
+.index-chip.active {
+    background: rgba(59, 130, 246, 0.08);
+    border-color: #3b82f6;
+    color: var(--text-primary);
+    font-weight: 600;
+    box-shadow: 0 1px 3px rgba(59, 130, 246, 0.15);
+}
+
+[data-theme="dark"] .index-chip.active {
+    background: rgba(59, 130, 246, 0.22);
+    border-color: #60a5fa;
+    color: #ffffff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.chip-color-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.chip-flag {
+    font-size: 0.95rem;
+    line-height: 1;
+}
+
+.chip-name {
+    font-size: 0.8rem;
+}
+
+/* 多周期收益率速览看板 */
+.matrix-section {
+    margin-top: 20px;
+    border-top: 1px dashed var(--border-light);
+    padding-top: 16px;
+}
+
+.matrix-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.matrix-title-wrap {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.matrix-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.matrix-subtitle {
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+}
+
+.matrix-table-wrap {
+    width: 100%;
+    overflow-x: auto;
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    background: #ffffff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+[data-theme="dark"] .matrix-table-wrap {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.matrix-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+    text-align: left;
+}
+
+.matrix-table th,
+.matrix-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border-light);
+    white-space: nowrap;
+}
+
+.matrix-table th {
+    background: #f9fafb;
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    user-select: none;
+    letter-spacing: 0.3px;
+}
+
+[data-theme="dark"] .matrix-table th {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.matrix-table th.sortable {
+    cursor: pointer;
+    transition: color 0.15s ease;
+}
+
+.matrix-table th.sortable:hover {
+    color: var(--text-primary);
+}
+
+.matrix-table th.current-period-header {
+    background: rgba(59, 130, 246, 0.08);
+    color: #2563eb;
+    font-weight: 700;
+}
+
+[data-theme="dark"] .matrix-table th.current-period-header {
+    background: rgba(59, 130, 246, 0.18);
+    color: #60a5fa;
+}
+
+.matrix-row {
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.matrix-row:hover {
+    background: #f9fafb;
+}
+
+[data-theme="dark"] .matrix-row:hover {
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.matrix-row.row-selected {
+    background: rgba(59, 130, 246, 0.03);
+}
+
+[data-theme="dark"] .matrix-row.row-selected {
+    background: rgba(59, 130, 246, 0.07);
+}
+
+.matrix-check-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 2px solid #d1d5db;
+    transition: all 0.15s ease;
+}
+
+.matrix-check-dot.checked {
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+}
+
+.matrix-index-cell {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.matrix-flag {
+    font-size: 1rem;
+}
+
+.matrix-name {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.matrix-code {
+    font-size: 0.72rem;
+    color: var(--text-tertiary);
+    font-family: var(--font-mono, monospace);
+    margin-left: 2px;
+}
+
+/* 收益率红涨绿跌颜色规范 */
+.val-up {
+    color: #ef4444;
+    font-weight: 600;
+}
+
+.val-down {
+    color: #10b981;
+    font-weight: 600;
+}
+
+.val-flat {
+    color: #9ca3af;
+}
+
+.current-period-cell {
+    background: rgba(59, 130, 246, 0.04);
+    font-weight: 700;
+}
+
+[data-theme="dark"] .current-period-cell {
+    background: rgba(59, 130, 246, 0.12);
+}
+
+/* 响应式适配 */
+@media (max-width: 640px) {
+    .comparison-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .period-pills {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .period-pill {
+        padding: 5px 8px;
+        font-size: 0.75rem;
+        flex: 1;
+        text-align: center;
+    }
+
+    .index-chips-wrap {
+        padding: 10px 12px;
+    }
+
+    #indices-comparison-chart {
+        height: 380px !important;
+    }
+}

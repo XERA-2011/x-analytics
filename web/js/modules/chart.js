@@ -1,14 +1,22 @@
-// 指数估值与走势图表模块控制器
+// 指数估值与全球主要指数对比模块控制器
 // 依赖: utils.js, api.js, charts.js
 
 class ChartController {
     constructor() {
         this.currentValuationIndex = 'NDX';
         this.valuationTabsBound = false;
+
+        // 全球指数对比模块状态
+        this.indicesRawData = null;
+        this.currentPeriod = 'ytd';
+        this.selectedIndices = new Set(['NDX', 'SP500', 'SH000300', 'HSI', 'N225']);
+        this.comparisonEventsBound = false;
+        this.matrixSortCol = 'YTD';
+        this.matrixSortDesc = true;
     }
 
     async loadData() {
-        console.log('📈 加载指数估值温度计数据...');
+        console.log('📈 加载图表中心数据...');
 
         // 检查 URL 是否指定了特定指数 (如 ?tab=chart&index=SP500)
         const urlCode = utils.getUrlParam('index') || utils.getUrlParam('code') || utils.getUrlParam('symbol');
@@ -21,12 +29,435 @@ class ChartController {
             this.bindValuationTabs();
             this.valuationTabsBound = true;
         } else {
-            // 同步当前激活的按钮样式
             this.syncActiveTabButton();
         }
 
-        await this.loadValuation(this.currentValuationIndex);
+        // 绑定指数对比事件
+        if (!this.comparisonEventsBound) {
+            this.bindComparisonEvents();
+            this.comparisonEventsBound = true;
+        }
+
+        // 并行加载全球指数对比与估值温度计
+        await Promise.allSettled([
+            this.loadIndicesComparison(),
+            this.loadValuation(this.currentValuationIndex)
+        ]);
     }
+
+    // =========================================================================
+    // 全球主要多国指数对比逻辑
+    // =========================================================================
+
+    async loadIndicesComparison() {
+        const chartContainer = document.getElementById('indices-comparison-chart');
+        const matrixContainer = document.getElementById('indices-matrix-container');
+        if (!chartContainer) return;
+
+        // 呈现加载态
+        chartContainer.innerHTML = '<div class="loading">Loading...</div>';
+        if (matrixContainer) {
+            matrixContainer.innerHTML = '<div class="loading">Loading...</div>';
+        }
+
+        try {
+            const res = await api.getIndicesComparison();
+            if (res && res._warming_up) {
+                chartContainer.innerHTML = `<div class="loading">${res.message || '全球指数数据预热中，请稍后刷新'}</div>`;
+                if (matrixContainer) matrixContainer.innerHTML = `<div class="loading">${res.message || '数据预热中...'}</div>`;
+                return;
+            }
+            if (res && res._error) {
+                chartContainer.innerHTML = `<div class="loading error">${res.message || '全球指数数据获取失败'}</div>`;
+                if (matrixContainer) matrixContainer.innerHTML = '';
+                return;
+            }
+
+            const indices = res && res.data ? res.data.indices : (res && res.indices ? res.indices : []);
+            if (!indices || indices.length === 0) {
+                chartContainer.innerHTML = '<div class="loading error">全球指数数据不可用</div>';
+                if (matrixContainer) matrixContainer.innerHTML = '';
+                return;
+            }
+
+            this.indicesRawData = indices;
+
+            // 渲染筛选标签
+            this.renderIndexChips();
+
+            // 绘制归一化对比折线图
+            this.updateComparisonChart();
+
+            // 绘制多周期收益率看板
+            this.renderPerformanceMatrix();
+
+        } catch (error) {
+            console.error('加载全球指数走势对比失败:', error);
+            if (chartContainer) {
+                chartContainer.innerHTML = `<div class="loading error">全球指数对比加载失败: ${error.message || error}</div>`;
+            }
+            if (matrixContainer) matrixContainer.innerHTML = '';
+        }
+    }
+
+    bindComparisonEvents() {
+        // 1. 周期切换 Pills
+        const pills = document.querySelectorAll('#indices-period-pills .period-pill');
+        pills.forEach(pill => {
+            pill.onclick = () => {
+                pills.forEach(p => p.classList.remove('active'));
+                pill.classList.add('active');
+                this.currentPeriod = pill.dataset.period || 'ytd';
+                this.matrixSortCol = this.currentPeriod.toUpperCase();
+                this.updateComparisonChart();
+                this.renderPerformanceMatrix();
+            };
+        });
+
+        // 2. 工具栏快捷按钮 (默认核心5、全选14、重置)
+        const btnDefault = document.getElementById('btn-select-default-indices');
+        if (btnDefault) {
+            btnDefault.onclick = () => {
+                this.selectedIndices = new Set(['NDX', 'SP500', 'SH000300', 'HSI', 'N225']);
+                this.renderIndexChips();
+                this.updateComparisonChart();
+                this.renderPerformanceMatrix();
+            };
+        }
+
+        const btnAll = document.getElementById('btn-select-all-indices');
+        if (btnAll) {
+            btnAll.onclick = () => {
+                if (this.indicesRawData) {
+                    this.selectedIndices = new Set(this.indicesRawData.map(i => i.code));
+                    this.renderIndexChips();
+                    this.updateComparisonChart();
+                    this.renderPerformanceMatrix();
+                }
+            };
+        }
+
+        const btnClear = document.getElementById('btn-clear-indices');
+        if (btnClear) {
+            btnClear.onclick = () => {
+                this.selectedIndices = new Set(['NDX', 'SP500', 'SH000300', 'HSI', 'N225']);
+                this.renderIndexChips();
+                this.updateComparisonChart();
+                this.renderPerformanceMatrix();
+            };
+        }
+
+        // 3. 说明问号弹窗
+        const infoBtn = document.getElementById('info-indices-comparison');
+        if (infoBtn) {
+            infoBtn.style.display = 'flex';
+            infoBtn.onclick = () => utils.showInfoModal('全球主要指数对比说明',
+`本模块用于直观对比全球各核心股票市场在不同时间跨度下的相对涨跌强弱与联动节奏。
+
+1. 基准归一化累计走势（Normalized % Return）
+· 以所选周期起点日（Base Date）为基准设为 0.00%，后续每日取收盘价计算相对于起点的累计涨跌幅百分比：(收盘价 - 基准价) / 基准价 × 100%。
+· 消除由于纳指(30,000+)、日经(68,000+)、沪深300(4,000+)等点位基数悬殊带来的不可比性。
+
+2. 多国交易日历自适应对齐（Calendar Alignment）
+· 自动汇总中、美、港、欧、日、韩、印各交易所的全部有效交易日。
+· 针对各国不同法定节假日休市，采用前向填充（Forward Fill）算法沿用最新收盘价，确保跨国走势曲线平滑连贯无断点。
+
+3. 智能动态排行榜 Tooltip
+· 鼠标悬浮查看任意交易日时，列表自动按照当日累计收益率从高到低倒序排序，前三名带有金银铜奖牌标示。
+
+4. 颜色与涨跌规则
+· 严格遵循国内金融规范：红涨绿跌。
+
+免责声明：本数据仅供参考，不构成任何投资买卖建议。`);
+        }
+    }
+
+    renderIndexChips() {
+        const container = document.getElementById('index-chips-container');
+        if (!container || !this.indicesRawData) return;
+
+        container.innerHTML = this.indicesRawData.map(item => {
+            const isSelected = this.selectedIndices.has(item.code);
+            return `
+                <button class="index-chip ${isSelected ? 'active' : ''}" data-code="${item.code}">
+                    <span class="chip-color-dot" style="background-color: ${item.color};"></span>
+                    <span class="chip-flag">${item.flag || ''}</span>
+                    <span class="chip-name">${item.name}</span>
+                </button>
+            `;
+        }).join('');
+
+        // 绑定点击事件
+        container.querySelectorAll('.index-chip').forEach(btn => {
+            btn.onclick = () => {
+                const code = btn.dataset.code;
+                if (!code) return;
+
+                if (this.selectedIndices.has(code)) {
+                    if (this.selectedIndices.size <= 1) return; // 至少保留 1 个
+                    this.selectedIndices.delete(code);
+                    btn.classList.remove('active');
+                } else {
+                    this.selectedIndices.add(code);
+                    btn.classList.add('active');
+                }
+
+                this.updateComparisonChart();
+                this.renderPerformanceMatrix();
+            };
+        });
+    }
+
+    getStartDateForPeriod(period, latestDateStr) {
+        const refDate = latestDateStr ? new Date(latestDateStr) : new Date();
+        const d = new Date(refDate.getTime());
+        switch ((period || 'ytd').toLowerCase()) {
+            case '1m':
+                d.setDate(d.getDate() - 30);
+                break;
+            case '3m':
+                d.setDate(d.getDate() - 90);
+                break;
+            case '6m':
+                d.setDate(d.getDate() - 180);
+                break;
+            case 'ytd':
+                return `${refDate.getFullYear() - 1}-12-31`;
+            case '1y':
+                d.setFullYear(d.getFullYear() - 1);
+                break;
+            case '3y':
+                d.setFullYear(d.getFullYear() - 3);
+                break;
+            default:
+                return `${refDate.getFullYear() - 1}-12-31`;
+        }
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    updateComparisonChart() {
+        if (!this.indicesRawData || this.indicesRawData.length === 0) return;
+
+        // 找出所有选中指数的数据
+        const selectedItems = this.indicesRawData.filter(i => this.selectedIndices.has(i.code));
+        if (selectedItems.length === 0) return;
+
+        // 找到最新日期作为周期参考点
+        let globalLatestDate = '';
+        selectedItems.forEach(item => {
+            if (item.latest_date && item.latest_date > globalLatestDate) {
+                globalLatestDate = item.latest_date;
+            }
+        });
+
+        const startDate = this.getStartDateForPeriod(this.currentPeriod, globalLatestDate);
+
+        // 收集所有选中指数在 startDate 之后的交易日并集
+        const dateSet = new Set();
+        selectedItems.forEach(item => {
+            (item.history || []).forEach(h => {
+                const d = h[0];
+                if (d >= startDate) {
+                    dateSet.add(d);
+                }
+            });
+        });
+
+        const unifiedDates = Array.from(dateSet).sort();
+        if (unifiedDates.length === 0) return;
+
+        // 对每个选中指数计算归一化累计涨跌幅，并使用 ffill 填充休市日
+        const series = selectedItems.map(item => {
+            const hist = item.history || [];
+            const dateToClose = new Map();
+            hist.forEach(h => {
+                dateToClose.set(h[0], h[1]);
+            });
+
+            // 确定起点基准价格 (在 startDate 当天或之前的最近一个有效收盘价)
+            let basePrice = null;
+            for (let i = hist.length - 1; i >= 0; i--) {
+                if (hist[i][0] <= startDate) {
+                    basePrice = hist[i][1];
+                    break;
+                }
+            }
+            if (basePrice == null && hist.length > 0) {
+                basePrice = hist[0][1];
+            }
+
+            let lastClose = basePrice;
+            const returns = [];
+
+            unifiedDates.forEach(date => {
+                if (dateToClose.has(date)) {
+                    lastClose = dateToClose.get(date);
+                }
+                // 计算相对于基准价格的累计收益率
+                if (basePrice && basePrice > 0 && lastClose != null) {
+                    const ret = ((lastClose - basePrice) / basePrice) * 100;
+                    returns.push(Number(ret.toFixed(2)));
+                } else {
+                    returns.push(0);
+                }
+            });
+
+            return {
+                code: item.code,
+                name: item.name,
+                fullName: item.full_name,
+                flag: item.flag,
+                color: item.color,
+                data: returns
+            };
+        });
+
+        // 调用 ECharts 渲染
+        charts.createMultiIndexComparisonChart('indices-comparison-chart', {
+            dates: unifiedDates,
+            series: series
+        });
+    }
+
+    renderPerformanceMatrix() {
+        const container = document.getElementById('indices-matrix-container');
+        if (!container || !this.indicesRawData) return;
+
+        // 复制数据用于排序
+        let list = [...this.indicesRawData];
+
+        const sortCol = this.matrixSortCol || 'YTD';
+        const isDesc = this.matrixSortDesc !== false;
+
+        list.sort((a, b) => {
+            let valA, valB;
+            if (sortCol === 'latest_close') {
+                valA = a.latest_close || 0;
+                valB = b.latest_close || 0;
+            } else if (sortCol === 'name') {
+                return isDesc ? b.name.localeCompare(a.name) : a.name.localeCompare(b.name);
+            } else {
+                valA = a.returns && a.returns[sortCol] != null ? a.returns[sortCol] : -99999;
+                valB = b.returns && b.returns[sortCol] != null ? b.returns[sortCol] : -99999;
+            }
+            return isDesc ? valB - valA : valA - valB;
+        });
+
+        const periods = ['1D', '1W', '1M', '3M', '6M', 'YTD', '1Y', '3Y'];
+        const periodLabels = {
+            '1D': '日涨跌',
+            '1W': '近1周',
+            '1M': '近1月',
+            '3M': '近3月',
+            '6M': '近6月',
+            'YTD': '今年以来',
+            '1Y': '近1年',
+            '3Y': '近3年'
+        };
+
+        const activePeriodKey = this.currentPeriod.toUpperCase();
+
+        let tableHtml = `
+            <div class="matrix-table-wrap">
+                <table class="matrix-table">
+                    <thead>
+                        <tr>
+                            <th class="col-checkbox"></th>
+                            <th class="col-index sortable" data-sort="name">指数名称</th>
+                            <th class="col-close sortable text-right" data-sort="latest_close">最新收盘</th>
+                            ${periods.map(p => {
+                                const isSort = sortCol === p;
+                                const sortIcon = isSort ? (isDesc ? ' ▼' : ' ▲') : '';
+                                const isCurrent = activePeriodKey === p ? 'current-period-header' : '';
+                                return `<th class="col-ret sortable text-right ${isCurrent}" data-sort="${p}">${periodLabels[p]}${sortIcon}</th>`;
+                            }).join('')}
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
+
+        list.forEach(item => {
+            const isSelected = this.selectedIndices.has(item.code);
+            const closeFormatted = item.latest_close != null ? Number(item.latest_close).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '--';
+
+            tableHtml += `
+                <tr class="matrix-row ${isSelected ? 'row-selected' : ''}" data-code="${item.code}" title="点击在走势图中开启/关闭该指数">
+                    <td class="col-checkbox">
+                        <span class="matrix-check-dot ${isSelected ? 'checked' : ''}" style="background-color: ${isSelected ? item.color : 'transparent'}; border-color: ${item.color};"></span>
+                    </td>
+                    <td class="col-index">
+                        <div class="matrix-index-cell">
+                            <span class="matrix-flag">${item.flag || ''}</span>
+                            <span class="matrix-name">${item.name}</span>
+                            <span class="matrix-code">${item.code}</span>
+                        </div>
+                    </td>
+                    <td class="col-close text-right font-mono">${closeFormatted}</td>
+                    ${periods.map(p => {
+                        const val = item.returns ? item.returns[p] : null;
+                        let valStr = '--';
+                        let cls = 'val-flat';
+                        if (val != null) {
+                            valStr = (val > 0 ? '+' : '') + Number(val).toFixed(2) + '%';
+                            cls = val > 0 ? 'val-up' : (val < 0 ? 'val-down' : 'val-flat');
+                        }
+                        const isCurrentCol = activePeriodKey === p ? 'current-period-cell' : '';
+                        return `<td class="col-ret text-right font-mono ${cls} ${isCurrentCol}">${valStr}</td>`;
+                    }).join('')}
+                </tr>
+            `;
+        });
+
+        tableHtml += `
+                    </tbody>
+                </table>
+            </div>
+        `;
+
+        container.innerHTML = tableHtml;
+
+        // 绑定表头排序
+        container.querySelectorAll('th.sortable').forEach(th => {
+            th.onclick = (e) => {
+                e.stopPropagation();
+                const col = th.dataset.sort;
+                if (!col) return;
+                if (this.matrixSortCol === col) {
+                    this.matrixSortDesc = !this.matrixSortDesc;
+                } else {
+                    this.matrixSortCol = col;
+                    this.matrixSortDesc = true;
+                }
+                this.renderPerformanceMatrix();
+            };
+        });
+
+        // 绑定行点击联动开关
+        container.querySelectorAll('tr.matrix-row').forEach(row => {
+            row.onclick = () => {
+                const code = row.dataset.code;
+                if (!code) return;
+
+                if (this.selectedIndices.has(code)) {
+                    if (this.selectedIndices.size <= 1) return;
+                    this.selectedIndices.delete(code);
+                } else {
+                    this.selectedIndices.add(code);
+                }
+
+                this.renderIndexChips();
+                this.updateComparisonChart();
+                this.renderPerformanceMatrix();
+            };
+        });
+    }
+
+    // =========================================================================
+    // 原有指数估值温度计逻辑 (保持完全兼容与稳定)
+    // =========================================================================
 
     syncActiveTabButton() {
         const tabs = document.querySelectorAll('#chart .val-tab, .valuation-tabs .val-tab');

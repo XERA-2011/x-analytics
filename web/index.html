@@ -16,7 +16,7 @@
 
     <link rel="icon" href="favicon.ico" type="image/x-icon">
     <script src="js/lucide.min.js?v=33"></script>
-    <link rel="stylesheet" href="css/styles.css?v=70">
+    <link rel="stylesheet" href="css/styles.css?v=71">
 </head>
 
 <body>
@@ -171,6 +171,63 @@
                 <h2 class="section-title">Chart</h2>
                 <button class="refresh-btn" onclick="window.app.refreshCurrentTab()" title="点击刷新"><i
                         data-lucide="refresh-cw" width="14"></i> 刷新</button>
+            </div>
+
+            <!-- 全球主要指数走势对比 -->
+            <div class="market-section">
+                <h3 class="subsection-title">全球主要指数对比</h3>
+                <div class="grid">
+                    <div class="card comparison-card" style="grid-column: 1 / -1;">
+                        <div class="card-header comparison-header">
+                            <div class="comparison-header-info">
+                                <span class="comparison-header-title">全球主要指数走势对比</span>
+                                <span class="baseline-badge">基准 0.00%</span>
+                                <button class="info-btn" id="info-indices-comparison" title="说明"><i data-lucide="help-circle" width="14"></i></button>
+                            </div>
+                            <div class="period-pills" id="indices-period-pills">
+                                <button class="period-pill" data-period="1m">近1月</button>
+                                <button class="period-pill" data-period="3m">近3月</button>
+                                <button class="period-pill" data-period="6m">近6月</button>
+                                <button class="period-pill active" data-period="ytd">今年以来</button>
+                                <button class="period-pill" data-period="1y">近1年</button>
+                                <button class="period-pill" data-period="3y">近3年</button>
+                            </div>
+                        </div>
+
+                        <!-- 指数选择切换 Chips -->
+                        <div class="index-chips-wrap">
+                            <div class="index-chips-toolbar">
+                                <span class="index-chips-label">对比指数:</span>
+                                <div class="index-chips-actions">
+                                    <button class="chip-action-btn" id="btn-select-default-indices">默认核心 (5)</button>
+                                    <button class="chip-action-btn" id="btn-select-all-indices">全选 (14)</button>
+                                    <button class="chip-action-btn" id="btn-clear-indices">重置</button>
+                                </div>
+                            </div>
+                            <div class="index-chips-list" id="index-chips-container">
+                                <!-- 动态渲染 14 大指数多选标签 -->
+                            </div>
+                        </div>
+
+                        <!-- 图表容器 -->
+                        <div id="indices-comparison-chart" style="width: 100%; height: 460px;">
+                            <div class="loading">Loading...</div>
+                        </div>
+
+                        <!-- 多周期收益率速览看板 -->
+                        <div class="matrix-section">
+                            <div class="matrix-header">
+                                <div class="matrix-title-wrap">
+                                    <span class="matrix-title">📊 多周期收益率对比矩阵</span>
+                                    <span class="matrix-subtitle">点击表格行可联动在上方走势图中高亮或切换</span>
+                                </div>
+                            </div>
+                            <div id="indices-matrix-container" class="matrix-container">
+                                <div class="loading">Loading...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- 指数估值温度计 -->
@@ -359,11 +416,11 @@
 
     <script src="js/config.js?v=1"></script>
     <script src="js/echarts.min.js?v=33"></script>
-    <script src="js/api.js?v=36"></script>
-    <script src="js/charts.js?v=46"></script>
+    <script src="js/api.js?v=37"></script>
+    <script src="js/charts.js?v=47"></script>
     <script src="js/utils.js?v=36"></script>
     <script src="js/modules/market.js?v=38"></script>
-    <script src="js/modules/chart.js?v=1"></script>
+    <script src="js/modules/chart.js?v=2"></script>
     <script src="js/modules/ai.js?v=63"></script>
     <script src="js/modules/gold.js?v=48"></script>
     <script src="js/modules/qdii.js?v=82"></script>

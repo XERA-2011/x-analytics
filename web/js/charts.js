@@ -1122,6 +1122,206 @@ class Charts {
 
         return chart;
     }
+
+    // 创建全球多国主要指数百分比归一化对比走势图
+    createMultiIndexComparisonChart(containerId, data, options = {}) {
+        const container = document.getElementById(containerId);
+        if (!container) return null;
+
+        if (this.charts.has(containerId)) {
+            const old = this.charts.get(containerId);
+            if (old && typeof old.dispose === 'function') {
+                try { old.dispose(); } catch (e) {}
+            }
+            this.charts.delete(containerId);
+        }
+
+        const chart = echarts.init(container);
+        const dates = data.dates || [];
+        const seriesItems = data.series || [];
+
+        // 构建 ECharts series 列表
+        const series = seriesItems.map(s => ({
+            name: `${s.flag || ''} ${s.name}`,
+            code: s.code,
+            type: 'line',
+            data: s.data,
+            smooth: 0.15,
+            showSymbol: false,
+            symbol: 'circle',
+            symbolSize: 6,
+            lineStyle: {
+                width: 2.2,
+                color: s.color
+            },
+            itemStyle: {
+                color: s.color
+            },
+            emphasis: {
+                focus: 'series',
+                lineStyle: {
+                    width: 3.5
+                }
+            }
+        }));
+
+        // 为首个 series 附加 0% 基准虚线
+        if (series.length > 0) {
+            series[0].markLine = {
+                silent: true,
+                symbol: 'none',
+                label: {
+                    show: true,
+                    position: 'end',
+                    formatter: ' 0.00% 基准线',
+                    color: '#9ca3af',
+                    fontSize: 10
+                },
+                lineStyle: {
+                    color: '#9ca3af',
+                    type: 'dashed',
+                    width: 1.2
+                },
+                data: [
+                    { yAxis: 0 }
+                ]
+            };
+        }
+
+        const option = {
+            backgroundColor: 'transparent',
+            animationDuration: 400,
+            tooltip: {
+                trigger: 'axis',
+                axisPointer: {
+                    type: 'cross',
+                    lineStyle: {
+                        color: '#9ca3af',
+                        type: 'dashed'
+                    }
+                },
+                backgroundColor: 'rgba(255, 255, 255, 0.98)',
+                borderColor: '#e5e7eb',
+                borderWidth: 1,
+                padding: [10, 14],
+                extraCssText: 'box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1); border-radius: 8px; max-height: 400px; overflow-y: auto;',
+                formatter: function (params) {
+                    if (!params || params.length === 0) return '';
+                    const dateStr = params[0].axisValue;
+
+                    // 按照累计收益率从高到低倒序排序
+                    const sorted = [...params].sort((a, b) => {
+                        const valA = (a.value != null && !isNaN(a.value)) ? a.value : -99999;
+                        const valB = (b.value != null && !isNaN(b.value)) ? b.value : -99999;
+                        return valB - valA;
+                    });
+
+                    let html = `<div style="font-weight: 600; font-size: 13px; margin-bottom: 8px; color: #111827; border-bottom: 1px solid #f3f4f6; padding-bottom: 4px;">📅 ${dateStr} 累计收益率</div>`;
+                    html += '<div style="display: flex; flex-direction: column; gap: 5px; min-width: 220px;">';
+
+                    sorted.forEach((p, idx) => {
+                        const val = p.value;
+                        const medal = idx === 0 ? '🥇' : (idx === 1 ? '🥈' : (idx === 2 ? '🥉' : `<span style="display:inline-block;width:14px;text-align:center;color:#9ca3af;font-size:11px;">${idx+1}</span>`));
+                        let valStr = '--';
+                        let valColor = '#6b7280';
+                        if (val != null && !isNaN(val)) {
+                            valStr = (val >= 0 ? '+' : '') + Number(val).toFixed(2) + '%';
+                            valColor = val >= 0 ? '#ef4444' : '#10b981'; // 统一国内红涨绿跌
+                        }
+
+                        html += `
+                            <div style="display: flex; align-items: center; justify-content: space-between; font-size: 12px;">
+                                <div style="display: flex; align-items: center; gap: 6px;">
+                                    <span style="font-size: 13px; width: 16px; text-align: center;">${medal}</span>
+                                    <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background-color:${p.color};"></span>
+                                    <span style="color: #374151; font-weight: 500;">${p.seriesName}</span>
+                                </div>
+                                <span style="font-family: monospace; font-weight: 700; color: ${valColor}; margin-left: 14px;">${valStr}</span>
+                            </div>
+                        `;
+                    });
+
+                    html += '</div>';
+                    return html;
+                }
+            },
+            legend: {
+                show: false
+            },
+            grid: {
+                left: '2%',
+                right: '4%',
+                top: '6%',
+                bottom: '12%',
+                containLabel: true
+            },
+            xAxis: {
+                type: 'category',
+                data: dates,
+                boundaryGap: false,
+                axisLine: { lineStyle: { color: '#e5e7eb' } },
+                axisLabel: {
+                    color: '#6b7280',
+                    fontSize: 11,
+                    formatter: function(value) {
+                        return value ? value.substring(5) : '';
+                    }
+                },
+                axisTick: { show: false }
+            },
+            yAxis: {
+                type: 'value',
+                axisLine: { show: false },
+                axisTick: { show: false },
+                splitLine: {
+                    lineStyle: {
+                        color: '#f3f4f6',
+                        type: 'solid'
+                    }
+                },
+                axisLabel: {
+                    color: '#6b7280',
+                    fontSize: 11,
+                    formatter: function(val) {
+                        return (val > 0 ? '+' : '') + val.toFixed(1) + '%';
+                    }
+                }
+            },
+            dataZoom: [
+                {
+                    type: 'inside',
+                    xAxisIndex: 0
+                },
+                {
+                    type: 'slider',
+                    xAxisIndex: 0,
+                    bottom: 6,
+                    height: 18,
+                    borderColor: 'transparent',
+                    backgroundColor: 'rgba(243, 244, 246, 0.6)',
+                    fillerColor: 'rgba(59, 130, 246, 0.15)',
+                    handleStyle: {
+                        color: '#3b82f6',
+                        borderColor: '#2563eb'
+                    },
+                    textStyle: {
+                        color: '#9ca3af',
+                        fontSize: 10
+                    }
+                }
+            ],
+            series: series
+        };
+
+        chart.setOption(option);
+        this.charts.set(containerId, chart);
+
+        window.addEventListener('resize', () => {
+            chart.resize();
+        });
+
+        return chart;
+    }
 }
 
 // 创建全局图表实例
