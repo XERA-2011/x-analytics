@@ -15,6 +15,7 @@ class App {
         // Controllers
         this.modules = {
             'global': new MarketController(),
+            'chart': new ChartController(),
             'ai': new AIMarketController(),
             'gold': new GoldController(),
             'qdii': new QDIIController()
@@ -26,6 +27,7 @@ class App {
     getPageTitle(tabId) {
         const titles = {
             'global': 'Global',
+            'chart': 'Chart',
             'ai': 'AI',
             'gold': 'Gold',
             'qdii': 'QDII',
@@ -84,13 +86,17 @@ class App {
                         break;
                     case '2':
                         event.preventDefault();
-                        this.switchTab('ai');
+                        this.switchTab('chart');
                         break;
                     case '3':
                         event.preventDefault();
-                        this.switchTab('gold');
+                        this.switchTab('ai');
                         break;
                     case '4':
+                        event.preventDefault();
+                        this.switchTab('gold');
+                        break;
+                    case '5':
                         event.preventDefault();
                         this.switchTab('qdii');
                         break;
@@ -149,11 +155,22 @@ class App {
                 url.searchParams.delete('subtab');
             }
         }
+        if (tabId !== 'chart') {
+            url.searchParams.delete('index');
+            url.searchParams.delete('code');
+        }
         window.history.replaceState({}, '', url.toString());
 
         // 懒加载：仅首次切换到该 Tab 时加载数据
         if (!this.loadedTabs.has(tabId)) {
             this.refreshCurrentTab();
+        } else {
+            // 已加载过的 Tab，切换时触发图表重绘适配尺寸
+            requestAnimationFrame(() => {
+                if (window.charts && typeof window.charts.resize === 'function') {
+                    window.charts.resize();
+                }
+            });
         }
     }
 
@@ -236,9 +253,12 @@ class App {
             'us': 'global',
             'market': 'global',
             'metals': 'gold',
-            'etf': 'global'
+            'etf': 'global',
+            'valuation': 'chart',
+            'index-valuation': 'chart',
+            'charts': 'chart'
         };
-        const validTabs = ['global', 'ai', 'gold', 'qdii'];
+        const validTabs = ['global', 'chart', 'ai', 'gold', 'qdii'];
         const targetTab = legacyMap[urlTab] || urlTab;
 
         if (targetTab && validTabs.includes(targetTab)) {
