@@ -13,54 +13,31 @@ This document defines standard operating procedures for deployment, server opera
 
 ### 1.1 Two-Stage Pipeline
 1. **Image Build (`x-analytics`)**:
-   - Pushing code to `main` branch triggers GitHub Actions (`docker-publish.yml`) to build the Docker image and push it to Aliyun Container Registry (`${{ vars.ALIYUN_REGISTRY }}/${{ vars.ALIYUN_IMAGE }}:latest`).
-   - *Security Note*: The build runs entirely on GitHub compute and pushes via Aliyun ACR HTTPS API. It **never** connects to the ECS server and will **never** trigger security alerts.
-2. **Local Direct Deploy (`deploy.sh`)**:
-   - Deployment to the production ECS server is executed directly from the local developer machine via domestic SSH using credentials configured in `.env.local`.
-
-### 1.2 ⚠️ Zero Foreign SSH Login Rule
-> [!IMPORTANT]
-> **NEVER trigger remote SSH actions from GitHub Actions (`deploy-aliyun.yml`) or overseas runner IPs.**
-> GitHub Actions runners operate in Microsoft Azure foreign data centers (US/Europe). Logging into ECS `root` from foreign IPs triggers Aliyun Cloud Shield high-severity security email alerts (`【ECS在非常用地登录】服务器异常登录提醒`).
-> All production SSH triggers MUST originate from the local machine's trusted domestic IP via `./deploy.sh`.
+   - Pushing code to `main` branch triggers GitHub Actions (`docker-publish.yml`) to build multi-arch Docker images (`linux/amd64,linux/arm64`) and push to GHCR and Aliyun Container Registry.
+   - *Security Note*: The build runs entirely on GitHub compute and pushes via Registry HTTPS APIs. It never connects directly to servers and contains zero server credentials.
+2. **Unified Deployment (`x-actions/deploy.sh`)**:
+   - Production deployment is executed exclusively from the private repository `/Users/xera/GitHub/x-actions` via `./deploy.sh`.
+   - The deployment script connects directly to target servers (`a1`, `aliyun`, or `--target all`) via trusted domestic SSH connections configured in `~/.ssh/config`.
 
 ---
 
-## 2. Deploying `x-analytics` (Application Code)
+## 2. Deploying Applications & Infrastructure
 
-The root directory contains an automated deployment script: [`./deploy.sh`](file:///Users/xera/GitHub/x-analytics/deploy.sh).
+All production deployments are centrally managed in `x-actions`:
 
-### 2.1 Standard One-Click Release
-Run without arguments to execute the full end-to-end pipeline:
 ```bash
+cd /Users/xera/GitHub/x-actions
+
+# Deploy to primary server (a1)
 ./deploy.sh
-```
-This automated workflow:
-1. Checks for uncommitted changes (prompts to commit if dirty).
-2. Pushes commits to `origin main`.
-3. Discovers and tracks the GitHub Actions build run (`gh run watch`).
-4. Once the ACR image is ready, establishes local SSH to the configured host (`${SERVER_USER}@${SERVER_HOST}`):
-   - `docker compose pull xanalytics`
-   - `docker compose up -d --force-recreate --remove-orphans xanalytics`
-   - `docker image prune -f`
-5. Performs multi-round health check (`HTTP 200` verification) and reports duration.
 
-### 2.2 Fast Deploy (Image Already Built)
-If the Docker image is already built on ACR (or re-deploying after an earlier build):
-```bash
-./deploy.sh --skip-build   # or -s (completes in ~10 seconds)
-```
+# Deploy to specific target or all targets
+./deploy.sh --target aliyun
+./deploy.sh --target all
 
-### 2.3 Container Management & Troubleshooting
-```bash
-# View live application logs (streaming tail)
-./deploy.sh --logs         # or -l
-
-# Restart xanalytics container without pulling image
-./deploy.sh --restart      # or -r
-
-# Inspect status of all containers on production server
+# View status or logs
 ./deploy.sh --status
+./deploy.sh --logs
 ```
 
 ---

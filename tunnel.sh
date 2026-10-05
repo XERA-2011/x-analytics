@@ -14,8 +14,7 @@ if [ -f "${SCRIPT_DIR}/.env.local" ]; then
   set +a
 fi
 
-SERVER_HOST="${DEPLOY_SERVER_HOST:-${ALIYUN_HOST}}"
-SERVER_USER="${DEPLOY_SERVER_USER:-${ALIYUN_USER:-root}}"
+SSH_TARGET="${DEPLOY_SSH_ALIAS:-a1}"
 
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -23,13 +22,13 @@ CYAN='\033[0;36m'
 RED='\033[0;31m'
 NC='\033[0m'
 
-if [ -z "$SERVER_HOST" ]; then
-  echo -e "${RED}❌ 未检测到远程服务器地址，请在 .env.local 中配置 DEPLOY_SERVER_HOST=\"your-server-ip\"${NC}"
+if [ -z "$SSH_TARGET" ]; then
+  echo -e "${RED}❌ 未检测到 SSH 目标别名，请在 .env.local 中配置 DEPLOY_SSH_ALIAS=\"a1\"${NC}"
   exit 1
 fi
 
 get_tunnel_pids() {
-  pgrep -f "ssh.*-L 5432:127.0.0.1:5432.*${SERVER_HOST}" || true
+  pgrep -f "ssh.*-L 5432:127.0.0.1:5432.*${SSH_TARGET}" || true
 }
 
 check_status() {
@@ -37,8 +36,8 @@ check_status() {
   pids=$(get_tunnel_pids)
   if [ -n "$pids" ]; then
     echo -e "${GREEN}✅ SSH 数据库安全隧道正在运行 (PID: ${pids})${NC}"
-    echo -e "   - PostgreSQL: 127.0.0.1:5432 -> ${SERVER_HOST}:5432"
-    echo -e "   - Redis:      127.0.0.1:6379 -> ${SERVER_HOST}:6379"
+    echo -e "   - PostgreSQL: 127.0.0.1:5432 -> ${SSH_TARGET}:5432"
+    echo -e "   - Redis:      127.0.0.1:6379 -> ${SSH_TARGET}:6379"
     return 0
   else
     echo -e "${YELLOW}⚪ SSH 数据库安全隧道未运行${NC}"
@@ -53,11 +52,11 @@ start_tunnel() {
     return 0
   fi
 
-  echo -e "${CYAN}🚀 正在建立到 ${SERVER_USER}@${SERVER_HOST} 的 SSH 安全隧道...${NC}"
+  echo -e "${CYAN}🚀 正在建立到 ${SSH_TARGET} 的 SSH 安全隧道...${NC}"
   if ssh -o ExitOnForwardFailure=yes -o StrictHostKeyChecking=no -f -N \
          -L 5432:127.0.0.1:5432 \
          -L 6379:127.0.0.1:6379 \
-         "${SERVER_USER}@${SERVER_HOST}"; then
+         "${SSH_TARGET}"; then
     sleep 0.5
     echo -e "${GREEN}✅ 隧道已成功在后台启动！${NC}"
     check_status

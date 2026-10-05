@@ -78,9 +78,8 @@ pip install -r requirements.txt
 REDIS_URL="redis://:Redis密码@127.0.0.1:6379/0"
 DATABASE_URL="postgres://postgres:数据库密码@127.0.0.1:5432/xanalytics"
 
-# 本地直连云端数据库安全隧道配置 (启动 server.py 时自动建立)
-DEPLOY_SERVER_HOST="your-server-ip"
-DEPLOY_SERVER_USER="root"
+# 本地直连云端数据库安全隧道别名 (对应 ~/.ssh/config 中的 Host，如 a1)
+DEPLOY_SSH_ALIAS="a1"
 
 # Cloudflare Worker 中继代理配置 (用于数据抓取防封)
 CF_WORKER_PROXY_URL="https://your-worker-proxy.domain"
@@ -147,21 +146,11 @@ python scripts/reset_sentiment_history.py
 
 ---
 
-## 🚀 生产部署 (本地一键发布)
+## 🚀 持续集成与生产部署
 
-为彻底避免 GitHub Actions 境外节点执行 SSH 导致阿里云安全中心触发【ECS在非常用地登录】告警邮件，项目提供了全自动本地发布脚本：
+本项目专注于核心量化业务逻辑与 Docker 镜像构建，不直接存放任何服务器基础设施配置或部署密钥：
 
-```bash
-# 1. 全自动发布 (自动检查代码 -> git push -> 监听镜像构建 -> 远程更新容器 -> 自动健康检查)
-./deploy.sh
+1. **多架构镜像构建**：代码推送至 `main` 分支后，GitHub Actions 自动构建跨架构 Docker 镜像（同时支持 `linux/amd64` 与 `linux/arm64`），并发布至 GHCR 与阿里云 ACR。
+2. **生产部署入口**：线上生产部署统一在独立私有运维仓库 `x-actions` 中执行（通过本地免密直连进行多目标滚动发布与健康检查）。
 
-# 2. 镜像已构建完成，直接在服务器拉取并重启 (10秒生效)
-./deploy.sh --skip-build
-
-# 3. 查看线上容器实时日志
-./deploy.sh --logs
-
-# 4. 查看服务器全部容器状态
-./deploy.sh --status
-```
 

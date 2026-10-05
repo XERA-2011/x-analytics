@@ -27,9 +27,8 @@ def ensure_local_tunnel():
     if os.path.exists("/.dockerenv"):
         return
     import socket, subprocess, time, atexit
-    server_host = os.getenv("DEPLOY_SERVER_HOST") or os.getenv("ALIYUN_HOST")
-    server_user = os.getenv("DEPLOY_SERVER_USER") or os.getenv("ALIYUN_USER") or "root"
-    if not server_host:
+    ssh_alias = os.getenv("DEPLOY_SSH_ALIAS")
+    if not ssh_alias:
         return
     
     def _is_open(port):
@@ -44,14 +43,14 @@ def ensure_local_tunnel():
 
     if not _is_open(5432) or not _is_open(6379):
         try:
-            logger.info("🔌 检测到本地 5432/6379 尚未连通，正在自动建立 SSH 数据库安全隧道...")
+            logger.info(f"🔌 检测到本地 5432/6379 尚未连通，正在通过 SSH 别名 [{ssh_alias}] 自动建立安全隧道...")
             _tunnel_proc = subprocess.Popen([
                 "ssh", "-o", "ExitOnForwardFailure=yes",
                 "-o", "StrictHostKeyChecking=no",
                 "-N",
                 "-L", "5432:127.0.0.1:5432",
                 "-L", "6379:127.0.0.1:6379",
-                f"{server_user}@{server_host}"
+                ssh_alias
             ])
             t0 = time.time()
             is_ready = False

@@ -199,7 +199,7 @@ For 24/7 markets (Crypto, Metals) or high-volatility assets:
 - [ ] Verified warming up → loaded → error states work
 - [ ] No console errors in browser
 - [ ] Responsive design checked on 3 breakpoints
-- [ ] Deploy via local trusted script (`./deploy.sh`) to eliminate foreign SSH security alerts
+- [ ] Deploy via local trusted script (`x-actions/deploy.sh`) to eliminate foreign SSH security alerts
 
 ---
 

@@ -39,7 +39,7 @@ The reviewer verifies pull requests and new features against the authoritative s
    - Redis-First data flow: user requests never trigger blocking external scrapes.
 
 4. **Production Operations**: Enforce [Deployment & Operations](../skills/deployment-and-ops/SKILL.md)
-   - Zero Foreign SSH: Deployments must be executed via local `./deploy.sh` to prevent Aliyun alerts.
+   - Zero Foreign SSH: Deployments must be executed via local `x-actions/deploy.sh` to prevent Aliyun alerts.
 
 5. **General Code Quality**:
    - Complexity: Max indent level 3. No deeply nested blocks.

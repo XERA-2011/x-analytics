@@ -50,8 +50,8 @@ Before finishing, you **MUST** perform these final actions:
     -   "Are error messages centered?"
 
 4.  **Deployment Check**:
-    -   When deploying changes to production, **ALWAYS use `./deploy.sh` (or `./deploy.sh --skip-build`)**.
-    -   **NEVER trigger `deploy-aliyun.yml` via GitHub Actions** (to prevent Aliyun foreign IP login alerts).
+    -   When deploying changes to production, **ALWAYS use `x-actions/deploy.sh`** from local domestic SSH connection.
+    -   `x-analytics` repository strictly handles code and multi-arch Docker image builds.
 
 5.  **Self-Correction**: If any check fails, fix it immediately.
 

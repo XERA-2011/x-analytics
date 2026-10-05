@@ -7,14 +7,13 @@ on:
       - '**.md'
       - 'LICENSE'
       - '.gitignore'
-      - 'deploy.sh'
   workflow_dispatch:
 
 env:
   # GitHub Container Registry
   GHCR_REGISTRY: ghcr.io
   GHCR_IMAGE: ${{ github.repository }}
-  # 阿里云容器镜像服务 (通过 GitHub 仓库变量注入，杜绝在公开 workflow 中暴露个人专有实例编号)
+  # 阿里云容器镜像服务 (通过 GitHub 仓库变量注入)
   ALIYUN_REGISTRY: ${{ vars.ALIYUN_REGISTRY }}
   ALIYUN_IMAGE: ${{ vars.ALIYUN_IMAGE }}
 
@@ -29,10 +28,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 转换镜像名称为小写
-      - name: Lowercase Image Name
+      # 转换镜像名称为小写并提取 Short SHA
+      - name: Set Environment Variables
         run: |
           echo "GHCR_IMAGE=${GHCR_IMAGE,,}" >> ${GITHUB_ENV}
+          echo "SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)" >> ${GITHUB_ENV}
         env:
           GHCR_IMAGE: '${{ env.GHCR_IMAGE }}'
 
@@ -52,27 +52,26 @@ jobs:
           username: ${{ secrets.ALIYUN_CR_USERNAME }}
           password: ${{ secrets.ALIYUN_CR_PASSWORD }}
 
-      # 设置 Docker Buildx 缓存
+      # 设置 QEMU 跨架构模拟器
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      # 设置 Docker Buildx 多架构构建器
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # 1. 优先推送到 GitHub Container Registry (核心仓库)
-      - name: Build and push to GitHub Container Registry
+      # 构建并推送到 GHCR 和 阿里云 ACR (同时支持 linux/amd64 和 linux/arm64)
+      - name: Build and push Multi-Arch Docker Image
         uses: docker/build-push-action@v5
         with:
           context: .
+          platforms: linux/amd64,linux/arm64
           push: true
-          tags: ${{ env.GHCR_REGISTRY }}/${{ env.GHCR_IMAGE }}:latest
+          tags: |
+            ${{ env.GHCR_REGISTRY }}/${{ env.GHCR_IMAGE }}:latest
+            ${{ env.GHCR_REGISTRY }}/${{ env.GHCR_IMAGE }}:sha-${{ env.SHORT_SHA }}
+            ${{ env.ALIYUN_REGISTRY }}/${{ env.ALIYUN_IMAGE }}:latest
+            ${{ env.ALIYUN_REGISTRY }}/${{ env.ALIYUN_IMAGE }}:sha-${{ env.SHORT_SHA }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          provenance: false
-
-      # 2. 推送到阿里云容器镜像服务 (生产服务器拉取源，必须成功)
-      - name: Push to Aliyun Container Registry
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          tags: ${{ env.ALIYUN_REGISTRY }}/${{ env.ALIYUN_IMAGE }}:latest
-          cache-from: type=gha
           provenance: false
