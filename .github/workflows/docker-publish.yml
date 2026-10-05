@@ -1,12 +1,8 @@
 name: Build and Push Docker Image
 
+# 生产已改用本地至服务器原生双机极速构建 (x-actions/deploy.sh)
+# 此 Actions 构建仅保留作为手动兜底方案，避免日常提交浪费 Actions 资源
 on:
-  push:
-    branches: [ "main", "master" ]
-    paths-ignore:
-      - '**.md'
-      - 'LICENSE'
-      - '.gitignore'
   workflow_dispatch:
 
 env:

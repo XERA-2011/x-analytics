@@ -11,11 +11,15 @@ COPY requirements.txt .
 # 升级 pip 并安装依赖 (抑制警告)
 ENV PATH=/root/.local/bin:$PATH
 ENV PIP_ROOT_USER_ACTION=ignore
-RUN pip install --no-cache-dir --upgrade pip -i https://mirrors.aliyun.com/pypi/simple/ && \
+# 可配置镜像源：海外默认官方源，国内可传入阿里云源
+ARG PIP_INDEX_URL=https://pypi.org/simple
+ARG PIP_TRUSTED_HOST=pypi.org
+
+RUN pip install --no-cache-dir --upgrade pip -i ${PIP_INDEX_URL} --trusted-host ${PIP_TRUSTED_HOST} && \
     pip install --no-cache-dir --user -r requirements.txt \
     --no-warn-script-location \
-    -i https://mirrors.aliyun.com/pypi/simple/ \
-    --trusted-host mirrors.aliyun.com
+    -i ${PIP_INDEX_URL} \
+    --trusted-host ${PIP_TRUSTED_HOST}
 
 # ========================================
 # 阶段2: 最终运行镜像 (Runtime)
