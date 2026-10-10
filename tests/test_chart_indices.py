@@ -12,8 +12,8 @@ from analytics.modules.chart.indices_comparison import (
 
 
 def test_index_configs_structure():
-    """验证 14 大核心指数的配置项完整性"""
-    assert len(INDEX_CONFIGS) == 14
+    """验证 15 大核心指数的配置项完整性"""
+    assert len(INDEX_CONFIGS) == 15
     codes = set()
     default_selected_count = 0
     for cfg in INDEX_CONFIGS:
@@ -29,7 +29,7 @@ def test_index_configs_structure():
         if cfg["default_selected"]:
             default_selected_count += 1
 
-    assert len(codes) == 14
+    assert len(codes) == 15
     # 默认选中 6 大基准 (NDX, SP500, SH000300, HSI, N225, KOSPI)
     assert default_selected_count == 6
     assert "NDX" in codes
@@ -38,6 +38,13 @@ def test_index_configs_structure():
     assert "HSI" in codes
     assert "N225" in codes
     assert "KOSPI" in codes
+    assert "TWII" in codes
+
+    # 验证中国台湾指数必须以前缀「中国台湾」命名，且为红色系
+    tw_cfg = [c for c in INDEX_CONFIGS if c["code"] == "TWII"][0]
+    assert tw_cfg["name"].startswith("中国台湾")
+    assert tw_cfg["full_name"].startswith("中国台湾")
+    assert tw_cfg["color"].upper() in ["#E11D48", "#DE2910", "#EF4444", "#F43F5E", "#DC2626", "#B91C1C", "#BE123C"]
 
 
 def test_calc_return_pct():
@@ -98,6 +105,23 @@ def test_fetch_single_index_filters_zero_prices(mock_akshare):
     for h in res["history"]:
         assert h[1] > 0
 
+
+@patch("analytics.modules.chart.indices_comparison.akshare_call_with_retry")
+def test_fetch_taiwan_index(mock_akshare):
+    """测试中国台湾加权指数的数据抓取与结构"""
+    dates = ["2024-09-28", "2024-09-29", "2024-09-30", "2024-10-01", "2024-10-02"]
+    closes = [48000.0, 48100.0, 48200.0, 48300.0, 48400.0]
+    df = pd.DataFrame({"date": dates, "close": closes})
+    mock_akshare.return_value = df
+
+    cfg = [c for c in INDEX_CONFIGS if c["code"] == "TWII"][0]
+    assert cfg["name"].startswith("中国台湾")
+    res = fetch_single_index(cfg, cutoff_date="2024-01-01")
+    assert res is not None
+    assert res["code"] == "TWII"
+    assert res["name"] == "中国台湾加权"
+    assert res["latest_close"] == 48400.0
+    assert res["latest_date"] == "2024-10-02"
 
 
 from analytics.api.chart import get_global_indices_comparison

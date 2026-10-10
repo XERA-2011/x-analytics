@@ -14,7 +14,7 @@ from ...core.cache import cached
 from ...core.utils import safe_float, akshare_call_with_retry
 from ...core.logger import logger
 
-# 14 大核心指数元数据配置
+# 15 大核心指数元数据配置
 INDEX_CONFIGS = [
     {
         "code": "NDX",
@@ -103,6 +103,17 @@ INDEX_CONFIGS = [
         "default_selected": False,
         "type": "hk",
         "symbol": "HSTECH",
+    },
+    {
+        "code": "TWII",
+        "name": "中国台湾加权",
+        "full_name": "中国台湾加权指数",
+        "region": "TW",
+        "flag": "",
+        "color": "#E11D48",  # 台湾-宝石红 (红色系高对比度)
+        "default_selected": False,
+        "type": "global",
+        "symbol": "中国台湾加权指数",
     },
     {
         "code": "N225",
@@ -306,10 +317,10 @@ def fetch_single_index(cfg: Dict[str, Any], cutoff_date: str) -> Optional[Dict[s
         return None
 
 
-@cached("chart:indices_comparison:v1", ttl=1800, stale_ttl=86400, sync_on_cold=True)
+@cached("chart:indices_comparison:v2", ttl=1800, stale_ttl=86400, sync_on_cold=True)
 def get_indices_comparison() -> Dict[str, Any]:
     """
-    并发抓取全球 14 大核心指数历史数据，并返回归一化比对所需数据源
+    并发抓取全球 15 大核心指数历史数据，并返回归一化比对所需数据源
     """
     # 截取近 3 年多一点 (3年 + 1个月缓冲)
     cutoff_date = (datetime.now() - timedelta(days=365 * 3 + 35)).strftime("%Y-%m-%d")
