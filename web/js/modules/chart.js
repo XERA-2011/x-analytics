@@ -399,11 +399,10 @@ class ChartController {
         `;
 
         list.forEach(item => {
-            const isSelected = this.selectedIndices.has(item.code);
             const closeFormatted = item.latest_close != null ? Number(item.latest_close).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '--';
 
             tableHtml += `
-                <tr class="matrix-row ${isSelected ? 'row-selected' : ''}" data-code="${item.code}" title="点击在走势图中开启/关闭该指数">
+                <tr class="matrix-row">
                     <td class="col-index">
                         <div class="matrix-index-cell">
                             <span class="chip-color-dot" style="background-color: ${item.color};"></span>
@@ -447,25 +446,6 @@ class ChartController {
                     this.matrixSortCol = col;
                     this.matrixSortDesc = true;
                 }
-                this.renderPerformanceMatrix();
-            };
-        });
-
-        // 绑定行点击联动开关
-        container.querySelectorAll('tr.matrix-row').forEach(row => {
-            row.onclick = () => {
-                const code = row.dataset.code;
-                if (!code) return;
-
-                if (this.selectedIndices.has(code)) {
-                    if (this.selectedIndices.size <= 1) return;
-                    this.selectedIndices.delete(code);
-                } else {
-                    this.selectedIndices.add(code);
-                }
-
-                this.renderIndexChips();
-                this.updateComparisonChart();
                 this.renderPerformanceMatrix();
             };
         });

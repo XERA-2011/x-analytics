@@ -4464,7 +4464,6 @@ footer {
 }
 
 .matrix-row {
-    cursor: pointer;
     transition: background 0.15s ease;
 }
 
@@ -4474,14 +4473,6 @@ footer {
 
 [data-theme="dark"] .matrix-row:hover {
     background: rgba(255, 255, 255, 0.04);
-}
-
-.matrix-row.row-selected {
-    background: rgba(59, 130, 246, 0.03);
-}
-
-[data-theme="dark"] .matrix-row.row-selected {
-    background: rgba(59, 130, 246, 0.07);
 }
 
 /* 固定左侧指数名称列，移动端横向滑动时不迷路 */
@@ -4516,14 +4507,6 @@ footer {
 
 [data-theme="dark"] .matrix-row:hover td.col-index {
     background: #1e293b;
-}
-
-.matrix-row.row-selected td.col-index {
-    background: rgba(59, 130, 246, 0.04);
-}
-
-[data-theme="dark"] .matrix-row.row-selected td.col-index {
-    background: rgba(59, 130, 246, 0.1);
 }
 
 .matrix-index-cell {
