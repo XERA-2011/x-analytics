@@ -83,6 +83,17 @@ INDEX_CONFIGS = [
         "symbol": "sh000688",
     },
     {
+        "code": "TWII",
+        "name": "中国台湾加权",
+        "full_name": "中国台湾加权指数",
+        "region": "TW",
+        "flag": "",
+        "color": "#E11D48",  # 台湾-宝石红 (红色系高对比度)
+        "default_selected": True,
+        "type": "global",
+        "symbol": "中国台湾加权指数",
+    },
+    {
         "code": "HSI",
         "name": "恒生指数",
         "full_name": "香港恒生指数",
@@ -103,17 +114,6 @@ INDEX_CONFIGS = [
         "default_selected": True,
         "type": "hk",
         "symbol": "HSTECH",
-    },
-    {
-        "code": "TWII",
-        "name": "中国台湾加权",
-        "full_name": "中国台湾加权指数",
-        "region": "TW",
-        "flag": "",
-        "color": "#E11D48",  # 台湾-宝石红 (红色系高对比度)
-        "default_selected": True,
-        "type": "global",
-        "symbol": "中国台湾加权指数",
     },
     {
         "code": "N225",
@@ -317,7 +317,7 @@ def fetch_single_index(cfg: Dict[str, Any], cutoff_date: str) -> Optional[Dict[s
         return None
 
 
-@cached("chart:indices_comparison:v3", ttl=1800, stale_ttl=86400, sync_on_cold=True)
+@cached("chart:indices_comparison:v4", ttl=1800, stale_ttl=86400, sync_on_cold=True)
 def get_indices_comparison() -> Dict[str, Any]:
     """
     并发抓取全球 15 大核心指数历史数据，并返回归一化比对所需数据源

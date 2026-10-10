@@ -8,10 +8,10 @@ class ChartController {
 
         // 全球指数对比模块状态
         this.indicesRawData = null;
-        this.currentPeriod = 'ytd';
+        this.currentPeriod = '1y';
         this.selectedIndices = new Set(['NDX', 'SH000300', 'HSTECH', 'TWII', 'N225', 'KOSPI']);
         this.comparisonEventsBound = false;
-        this.matrixSortCol = 'YTD';
+        this.matrixSortCol = '1Y';
         this.matrixSortDesc = true;
     }
 
@@ -126,7 +126,7 @@ class ChartController {
             pill.onclick = () => {
                 pills.forEach(p => p.classList.remove('active'));
                 pill.classList.add('active');
-                this.currentPeriod = pill.dataset.period || 'ytd';
+                this.currentPeriod = pill.dataset.period || '1y';
                 this.matrixSortCol = this.currentPeriod.toUpperCase();
                 this.updateComparisonChart();
                 this.renderPerformanceMatrix();
@@ -355,7 +355,7 @@ class ChartController {
         // 复制数据用于排序
         let list = [...this.indicesRawData];
 
-        const sortCol = this.matrixSortCol || 'YTD';
+        const sortCol = this.matrixSortCol || '1Y';
         const isDesc = this.matrixSortDesc !== false;
 
         list.sort((a, b) => {

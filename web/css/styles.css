@@ -4168,22 +4168,6 @@ footer {
     color: var(--text-primary);
 }
 
-.baseline-badge {
-    background: rgba(59, 130, 246, 0.1);
-    color: #2563eb;
-    border: 1px solid rgba(59, 130, 246, 0.25);
-    border-radius: 4px;
-    padding: 2px 8px;
-    font-size: 0.75rem;
-    font-weight: 600;
-}
-
-[data-theme="dark"] .baseline-badge {
-    background: rgba(59, 130, 246, 0.2);
-    color: #60a5fa;
-    border-color: rgba(59, 130, 246, 0.4);
-}
-
 .comparison-date-badge {
     background: rgba(107, 114, 128, 0.08);
     color: var(--text-secondary);
