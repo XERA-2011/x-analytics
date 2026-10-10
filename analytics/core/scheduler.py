@@ -523,7 +523,7 @@ def setup_default_jobs():
         period="daily",
     )
 
-    # 全球多国指数对比预热 (每 30 分钟)
+    # 全球主要指数对比预热 (每 30 分钟)
     from ..modules.chart import get_indices_comparison
     scheduler.add_simple_job(
         job_id="warmup:chart:indices_comparison",
@@ -645,7 +645,7 @@ def initial_warmup():
         warmup_cache(LPRAnalysis.get_lpr_rates)
         warmup_cache(USTreasury.get_us_bond_yields)
 
-        # 全球多国主要指数走势对比预热
+        # 全球主要指数走势对比预热
         from ..modules.chart import get_indices_comparison
         warmup_cache(get_indices_comparison)
 

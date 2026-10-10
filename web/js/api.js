@@ -340,7 +340,7 @@ class API {
         return this.request(`/index-valuation/valuation/${indexCode}`);
     }
 
-    // 全球主要多国指数对比 API
+    // 全球主要指数对比 API
     async getIndicesComparison() {
         return this.request('/chart/indices-comparison');
     }

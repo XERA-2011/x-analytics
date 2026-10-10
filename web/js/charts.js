@@ -1147,7 +1147,7 @@ class Charts {
         return chart;
     }
 
-    // 创建全球多国主要指数百分比归一化对比走势图
+    // 创建全球主要指数百分比归一化对比走势图
     createMultiIndexComparisonChart(containerId, data, options = {}) {
         const container = document.getElementById(containerId);
         if (!container) return null;
