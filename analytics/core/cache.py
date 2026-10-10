@@ -341,10 +341,17 @@ def cached(key_prefix: str, ttl: int = 60, stale_ttl: Optional[int] = None, sync
                             )
                         return wrap_response(status="ok", data=cached_data)
             else:
-                # 无缓存
-                should_refresh = True
-                return_stale = False
-                stale_data = None  # 无陈旧数据可用
+                # 无缓存：优先尝试从持久化快照 (PostgreSQL / 本地容灾备份) 恢复兜底
+                from .snapshot import load_snapshot
+                snapshot_data = load_snapshot(cache_key)
+                if snapshot_data is not None:
+                    should_refresh = True
+                    return_stale = True
+                    stale_data = snapshot_data
+                else:
+                    should_refresh = True
+                    return_stale = False
+                    stale_data = None  # 无陈旧数据可用
 
             # 3. 需要刷新数据
             if should_refresh:
@@ -380,6 +387,11 @@ def cached(key_prefix: str, ttl: int = 60, stale_ttl: Optional[int] = None, sync
                                             "data": result
                                         }
                                         cache.set(cache_key, val, p_ttl)
+                                        try:
+                                            from .snapshot import save_snapshot
+                                            save_snapshot(cache_key, result)
+                                        except Exception as snap_err:
+                                            logger.debug(f"快照存储跳过: {snap_err}")
                                         logger.info(f"[Sync] 冷启动缓存写入完成: {key_prefix}")
                                         return wrap_response(
                                             status="ok",
@@ -447,6 +459,11 @@ def cached(key_prefix: str, ttl: int = 60, stale_ttl: Optional[int] = None, sync
                                                 "data": result
                                             }
                                             cache.set(cache_key, val, p_ttl)
+                                            try:
+                                                from .snapshot import save_snapshot
+                                                save_snapshot(cache_key, result)
+                                            except Exception as snap_err:
+                                                logger.debug(f"快照存储跳过: {snap_err}")
                                             logger.info(f"[Async] 缓存更新完成: {key_prefix}")
                                         else:
                                             logger.warning(f"[Async] 计算结果无效，忽略: {key_prefix}")
@@ -532,6 +549,11 @@ def warmup_cache(func: Callable, *args, **kwargs) -> bool:
 
             val = {"_meta": {"expire_at": now + ttl, "cached_at": now, "ttl": ttl}, "data": result}
             cache.set(key, val, ttl + stale)
+            try:
+                from .snapshot import save_snapshot
+                save_snapshot(key, result)
+            except Exception as snap_err:
+                logger.debug(f"快照存储跳过: {snap_err}")
             logger.info(f"缓存预热成功: {prefix}")
             return True
     except Exception as e:

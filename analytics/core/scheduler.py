@@ -531,6 +531,22 @@ def setup_default_jobs():
         interval_minutes=30
     )
 
+    # 指数估值温度计定时保鲜 (每 60 分钟)
+    def warmup_index_valuations():
+        from ..modules.index_valuation import get_index_valuation, INDEX_MAPPING
+        for code in INDEX_MAPPING:
+            try:
+                warmup_cache(get_index_valuation, index_code=code)
+            except Exception as e:
+                logger.warning(f"指数估值定时预热失败 [{code}]: {e}")
+            time_module.sleep(2)
+
+    scheduler.add_simple_job(
+        job_id="warmup:chart:index_valuation",
+        func=warmup_index_valuations,
+        interval_minutes=60,
+    )
+
     # =========================================================================
     # 固定时间任务
     # =========================================================================

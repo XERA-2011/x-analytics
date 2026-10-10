@@ -7,6 +7,7 @@ class App {
         this.lastUpdateTime = null;
         this.isRefreshing = false;
         this.loadedTabs = new Set();
+        this.tabLoadedAt = new Map();
         this.refreshResetTimer = null;
         this.currentCycleTimes = [];
         this.currentCycleStale = false;
@@ -161,9 +162,12 @@ class App {
         }
         window.history.replaceState({}, '', url.toString());
 
-        // 懒加载：仅首次切换到该 Tab 时加载数据
-        if (!this.loadedTabs.has(tabId)) {
-            this.refreshCurrentTab();
+        // 懒加载：仅首次切换到该 Tab 或数据超过 30 分钟时加载数据
+        const lastLoaded = this.tabLoadedAt.get(tabId) || 0;
+        const isStale = (Date.now() - lastLoaded) > 30 * 60 * 1000;
+
+        if (!this.loadedTabs.has(tabId) || isStale) {
+            this.refreshCurrentTab(false);
         } else {
             // 已加载过的 Tab，切换时触发图表重绘适配尺寸
             requestAnimationFrame(() => {
@@ -264,7 +268,7 @@ class App {
         if (targetTab && validTabs.includes(targetTab)) {
             this.switchTab(targetTab);
         } else {
-            await this.refreshCurrentTab();
+            await this.refreshCurrentTab(false);
         }
     }
 
@@ -315,7 +319,7 @@ class App {
         }
     }
 
-    async refreshCurrentTab(forceBackend = true) {
+    async refreshCurrentTab(forceBackend = false) {
         if (!navigator.onLine) {
             console.log('离线状态，跳过数据刷新');
             return;
@@ -341,13 +345,21 @@ class App {
         try {
             // Delegate to Module
             const controller = this.modules[this.currentTab];
+            let isLoadedOk = true;
             if (controller) {
-                await controller.loadData();
+                const res = await controller.loadData();
+                if (res === false) {
+                    isLoadedOk = false;
+                }
             } else {
                 console.error('No controller found for tab:', this.currentTab);
+                isLoadedOk = false;
             }
 
-            this.loadedTabs.add(this.currentTab);
+            if (isLoadedOk) {
+                this.loadedTabs.add(this.currentTab);
+                this.tabLoadedAt.set(this.currentTab, Date.now());
+            }
             this.updateGlobalTime();
 
             if (this.currentCycleStale) {

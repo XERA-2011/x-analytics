@@ -22,6 +22,9 @@ ADMIN_API_PATHS = [
 # 公开 API 路径前缀（需要限流但不需要认证）
 PUBLIC_API_PATHS = [
     "/api/",
+    "/chart/",
+    "/index-valuation/",
+    "/gold/",
     "/market-asia/",
     "/market-hk/",
     "/market-western/",
@@ -29,6 +32,9 @@ PUBLIC_API_PATHS = [
     "/ai/",
     "/qdii/",
     "/analytics/api/",
+    "/analytics/chart/",
+    "/analytics/index-valuation/",
+    "/analytics/gold/",
     "/analytics/market-asia/",
     "/analytics/market-hk/",
     "/analytics/market-western/",

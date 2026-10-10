@@ -13,6 +13,12 @@ class ChartController {
         this.comparisonEventsBound = false;
         this.matrixSortCol = '1Y';
         this.matrixSortDesc = true;
+
+        // 自动重试轮询状态 (解决冷启动 warming_up 假死)
+        this._comparisonRetryTimer = null;
+        this._comparisonRetryCount = 0;
+        this._valuationRetryTimer = null;
+        this._valuationRetryCount = 0;
     }
 
     async loadData() {
@@ -39,10 +45,14 @@ class ChartController {
         }
 
         // 并行加载全球指数对比与估值温度计
-        await Promise.allSettled([
+        const results = await Promise.allSettled([
             this.loadIndicesComparison(),
             this.loadValuation(this.currentValuationIndex)
         ]);
+
+        const compOk = results[0].status === 'fulfilled' && results[0].value !== false;
+        const valOk = results[1].status === 'fulfilled' && results[1].value !== false;
+        return compOk && valOk;
     }
 
     // =========================================================================
@@ -63,21 +73,29 @@ class ChartController {
         try {
             const res = await api.getIndicesComparison();
             if (res && res._warming_up) {
-                chartContainer.innerHTML = `<div class="loading">${res.message || '全球指数数据预热中，请稍后刷新'}</div>`;
-                if (matrixContainer) matrixContainer.innerHTML = `<div class="loading">${res.message || '数据预热中...'}</div>`;
-                return;
+                chartContainer.innerHTML = `<div class="loading">${res.message || '全球指数数据后台准备中，正在自动获取...'}</div>`;
+                if (matrixContainer) matrixContainer.innerHTML = `<div class="loading">${res.message || '数据预热中，正在自动获取...'}</div>`;
+                this._comparisonRetryCount = (this._comparisonRetryCount || 0) + 1;
+                if (this._comparisonRetryCount <= 12 && !this._comparisonRetryTimer) {
+                    this._comparisonRetryTimer = setTimeout(() => {
+                        this._comparisonRetryTimer = null;
+                        this.loadIndicesComparison();
+                    }, 3000);
+                }
+                return false;
             }
+            this._comparisonRetryCount = 0;
             if (res && res._error) {
                 chartContainer.innerHTML = `<div class="loading error">${res.message || '全球指数数据获取失败'}</div>`;
                 if (matrixContainer) matrixContainer.innerHTML = '';
-                return;
+                return false;
             }
 
             const indices = res && res.data ? res.data.indices : (res && res.indices ? res.indices : []);
             if (!indices || indices.length === 0) {
                 chartContainer.innerHTML = '<div class="loading error">全球指数数据不可用</div>';
                 if (matrixContainer) matrixContainer.innerHTML = '';
-                return;
+                return false;
             }
 
             this.indicesRawData = indices;
@@ -109,13 +127,16 @@ class ChartController {
 
             // 绘制多周期收益率看板
             this.renderPerformanceMatrix();
+            return true;
 
         } catch (error) {
+            this._comparisonRetryCount = 0;
             console.error('加载全球指数走势对比失败:', error);
             if (chartContainer) {
                 chartContainer.innerHTML = `<div class="loading error">全球指数对比加载失败: ${error.message || error}</div>`;
             }
             if (matrixContainer) matrixContainer.innerHTML = '';
+            return false;
         }
     }
 
@@ -553,21 +574,29 @@ class ChartController {
         try {
             const res = await api.getIndexValuation(indexCode);
             if (res._warming_up) {
-                container.innerHTML = `<div class="loading">${res.message || '数据预热中，请稍后刷新'}</div>`;
+                container.innerHTML = `<div class="loading">${res.message || '指数估值数据后台准备中，正在自动获取...'}</div>`;
                 if (summaryContainer) {
-                    summaryContainer.innerHTML = `<span style="color: var(--text-secondary);">${res.message || '数据预热中...'}</span>`;
+                    summaryContainer.innerHTML = `<span style="color: var(--text-secondary);">${res.message || '数据预热中，正在自动获取...'}</span>`;
                 }
-                return;
+                this._valuationRetryCount = (this._valuationRetryCount || 0) + 1;
+                if (this._valuationRetryCount <= 12 && !this._valuationRetryTimer) {
+                    this._valuationRetryTimer = setTimeout(() => {
+                        this._valuationRetryTimer = null;
+                        this.loadValuation(indexCode);
+                    }, 3000);
+                }
+                return false;
             }
+            this._valuationRetryCount = 0;
             if (res._error) {
                 container.innerHTML = `<div class="loading error">${res.message || '数据获取失败'}</div>`;
                 if (summaryContainer) summaryContainer.innerHTML = '';
-                return;
+                return false;
             }
             if (!res.pe_series || res.pe_series.length === 0) {
                 container.innerHTML = '<div class="loading error">数据不可用</div>';
                 if (summaryContainer) summaryContainer.innerHTML = '';
-                return;
+                return false;
             }
 
             // 上报时间
@@ -641,11 +670,14 @@ class ChartController {
 
             // 渲染折线图
             charts.createValuationChart('valuation-chart', res);
+            return true;
 
         } catch (error) {
+            this._valuationRetryCount = 0;
             console.error('加载指数估值失败:', error);
             container.innerHTML = `<div class="loading error">指数估值数据加载失败: ${error.message || error}</div>`;
             if (summaryContainer) summaryContainer.innerHTML = '';
+            return false;
         }
     }
 }

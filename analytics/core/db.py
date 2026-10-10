@@ -14,6 +14,7 @@ TORTOISE_ORM = {
             "models": [
                 "analytics.models.sentiment",
                 "analytics.models.signal_history",
+                "analytics.models.snapshot",
             ],
             "default_connection": "default",
         }
