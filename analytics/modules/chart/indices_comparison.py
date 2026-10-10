@@ -34,7 +34,7 @@ INDEX_CONFIGS = [
         "region": "US",
         "flag": "",
         "color": "#3B82F6",  # 美股-明蓝
-        "default_selected": True,
+        "default_selected": False,
         "type": "us",
         "symbol": ".INX",
     },
@@ -89,7 +89,7 @@ INDEX_CONFIGS = [
         "region": "HK",
         "flag": "",
         "color": "#9333EA",  # 港股-经典紫 (QDII tag-hk 紫)
-        "default_selected": True,
+        "default_selected": False,
         "type": "hk",
         "symbol": "HSI",
     },
@@ -100,7 +100,7 @@ INDEX_CONFIGS = [
         "region": "HK",
         "flag": "",
         "color": "#A855F7",  # 港股-科技亮紫
-        "default_selected": False,
+        "default_selected": True,
         "type": "hk",
         "symbol": "HSTECH",
     },
@@ -111,7 +111,7 @@ INDEX_CONFIGS = [
         "region": "TW",
         "flag": "",
         "color": "#E11D48",  # 台湾-宝石红 (红色系高对比度)
-        "default_selected": False,
+        "default_selected": True,
         "type": "global",
         "symbol": "中国台湾加权指数",
     },
@@ -317,7 +317,7 @@ def fetch_single_index(cfg: Dict[str, Any], cutoff_date: str) -> Optional[Dict[s
         return None
 
 
-@cached("chart:indices_comparison:v2", ttl=1800, stale_ttl=86400, sync_on_cold=True)
+@cached("chart:indices_comparison:v3", ttl=1800, stale_ttl=86400, sync_on_cold=True)
 def get_indices_comparison() -> Dict[str, Any]:
     """
     并发抓取全球 15 大核心指数历史数据，并返回归一化比对所需数据源

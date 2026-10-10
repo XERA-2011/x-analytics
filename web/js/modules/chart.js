@@ -9,7 +9,7 @@ class ChartController {
         // 全球指数对比模块状态
         this.indicesRawData = null;
         this.currentPeriod = 'ytd';
-        this.selectedIndices = new Set(['NDX', 'SP500', 'SH000300', 'HSI', 'N225', 'KOSPI']);
+        this.selectedIndices = new Set(['NDX', 'SH000300', 'HSTECH', 'TWII', 'N225', 'KOSPI']);
         this.comparisonEventsBound = false;
         this.matrixSortCol = 'YTD';
         this.matrixSortDesc = true;
@@ -82,6 +82,12 @@ class ChartController {
 
             this.indicesRawData = indices;
 
+            // 优先根据数据源中的 default_selected 标识初始化默认对比项
+            const apiDefaults = indices.filter(i => i.default_selected).map(i => i.code);
+            if (apiDefaults.length > 0) {
+                this.selectedIndices = new Set(apiDefaults);
+            }
+
             // 更新顶部最新数据日期角标
             let latestDateStr = '';
             indices.forEach(idx => {
@@ -133,8 +139,8 @@ class ChartController {
             btnDefault.onclick = () => {
                 const defaults = this.indicesRawData
                     ? this.indicesRawData.filter(i => i.default_selected).map(i => i.code)
-                    : ['NDX', 'SP500', 'SH000300', 'HSI', 'N225', 'KOSPI'];
-                this.selectedIndices = new Set(defaults.length > 0 ? defaults : ['NDX', 'SP500', 'SH000300', 'HSI', 'N225', 'KOSPI']);
+                    : ['NDX', 'SH000300', 'HSTECH', 'TWII', 'N225', 'KOSPI'];
+                this.selectedIndices = new Set(defaults.length > 0 ? defaults : ['NDX', 'SH000300', 'HSTECH', 'TWII', 'N225', 'KOSPI']);
                 this.renderIndexChips();
                 this.updateComparisonChart();
                 this.renderPerformanceMatrix();

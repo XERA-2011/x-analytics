@@ -30,15 +30,17 @@ def test_index_configs_structure():
             default_selected_count += 1
 
     assert len(codes) == 15
-    # 默认选中 6 大基准 (NDX, SP500, SH000300, HSI, N225, KOSPI)
+    # 默认选中 6 大基准 (NDX, SH000300, HSTECH, TWII, N225, KOSPI)
     assert default_selected_count == 6
     assert "NDX" in codes
-    assert "SP500" in codes
     assert "SH000300" in codes
-    assert "HSI" in codes
+    assert "HSTECH" in codes
+    assert "TWII" in codes
     assert "N225" in codes
     assert "KOSPI" in codes
-    assert "TWII" in codes
+
+    default_codes = {c["code"] for c in INDEX_CONFIGS if c["default_selected"]}
+    assert default_codes == {"NDX", "SH000300", "HSTECH", "TWII", "N225", "KOSPI"}
 
     # 验证中国台湾指数必须以前缀「中国台湾」命名，且为红色系
     tw_cfg = [c for c in INDEX_CONFIGS if c["code"] == "TWII"][0]
