@@ -13,11 +13,19 @@ def _sanitize_filename(key: str) -> str:
     return key.replace(":", "_").replace("/", "_").replace("\\", "_")
 
 
+def _clean_payload(payload: Any) -> Any:
+    """确保 payload 中的 date/datetime/numpy 等对象能完全兼容 JSON 序列化"""
+    try:
+        return json.loads(json.dumps(payload, ensure_ascii=False, default=str))
+    except Exception:
+        return payload
+
+
 def _save_local_file(key: str, payload: Dict[str, Any]) -> None:
     try:
         filepath = os.path.join(SNAPSHOT_DIR, f"{_sanitize_filename(key)}.json")
         with open(filepath, "w", encoding="utf-8") as f:
-            json.dump(payload, f, ensure_ascii=False)
+            json.dump(payload, f, ensure_ascii=False, default=str)
     except Exception as e:
         logger.warning(f"[Snapshot] 本地快照文件写入失败 [{key}]: {e}")
 
@@ -35,7 +43,8 @@ def _load_local_file(key: str) -> Optional[Dict[str, Any]]:
 
 async def save_snapshot_async(key: str, payload: Dict[str, Any]) -> bool:
     """异步保存快照至 PostgreSQL 及本地备份文件"""
-    _save_local_file(key, payload)
+    cleaned = _clean_payload(payload)
+    _save_local_file(key, cleaned)
     
     from .db import DB_AVAILABLE
     if not DB_AVAILABLE:
@@ -45,7 +54,7 @@ async def save_snapshot_async(key: str, payload: Dict[str, Any]) -> bool:
         from ..models.snapshot import DataSnapshot
         await DataSnapshot.update_or_create(
             key=key,
-            defaults={"payload": payload}
+            defaults={"payload": cleaned}
         )
         return True
     except Exception as e:
@@ -70,8 +79,6 @@ async def load_snapshot_async(key: str) -> Optional[Dict[str, Any]]:
 
 def save_snapshot(key: str, payload: Dict[str, Any]) -> bool:
     """同步保存快照（支持从后台线程、定时任务或同步函数中调用）"""
-    _save_local_file(key, payload)
-
     from .db import DB_AVAILABLE
     if not DB_AVAILABLE:
         return True
