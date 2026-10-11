@@ -92,6 +92,10 @@ For 24/7 markets (Crypto, Metals) or high-volatility assets:
 - **Requirement**: You MUST inject the latest real-time price (via minute-level API) into the historical dataset before calculating indicators (RSI, Fear & Greed).
 - **Failure to do this** results in "Misleading Data" (e.g., showing "Greed" based on yesterday's high, while market crashed 10% today).
 
+### 1.5 Regulatory & Compliance Terminology (STRICT MANDATE)
+- **Countries and Regions**: When describing international indices, multi-market comparisons, or regional benchmarks (especially when Hong Kong and Taiwan markets are present), you MUST strictly use **"国家/地区"** (Countries/Regions). Never use **"多国"** or **"各国"**.
+- **Taiwan Index Naming**: The Taiwan stock market index must strictly be labeled as **"中国台湾加权"** (TWII / Taiwan, China Weighted Index). Never omit "中国".
+
 ---
 
 ## 2. User Experience Principles
@@ -203,37 +207,39 @@ For 24/7 markets (Crypto, Metals) or high-volatility assets:
 
 ---
 
-## 5. Redis-First Architecture
+## 5. Dual-Layer Persistence Architecture (Redis Hot Cache + PostgreSQL Snapshot)
 
-> **Core Principle**: Redis is the single source of truth for all user-facing data.
+> **Core Principle**: Hot data is served from Redis in milliseconds; durable snapshots in PostgreSQL ensure 0ms cold-start fallback and survive container rebuilds.
 
 ### 5.1 Data Flow Model
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│                        BACKGROUND                                │
+│                        BACKGROUND / WARMUP                       │
 │  ┌──────────────┐      ┌─────────┐      ┌─────────────────────────┐
-│  │  Scheduler   │ ───► │ AkShare │ ───► │  Redis Cache / Postgres │
-│  │  (Periodic)  │      │  APIs   │      │  (Persist & Cache)      │
+│  │  Scheduler   │ ───► │ AkShare │ ───► │  1. Redis Hot Cache     │
+│  │  (Periodic)  │      │  APIs   │      │  2. PostgreSQL Snapshot │
 │  └──────────────┘      └─────────┘      └────────────┬────────────┘
 └──────────────────────────────────────────────────────┼─────────────┘
                                                        │
 ┌──────────────────────────────────────────────────────┼─────────────┐
 │                        USER REQUEST                  ▼             │
 │  ┌──────────────┐      ┌─────────┐      ┌────────────────────────┐ │
-│  │   Browser    │ ───► │   API   │ ───► │  Redis (Hot)           │ │
-│  │   Request    │ ◄─── │ Endpoint│ ◄─── │  Postgres (History)    │ │
+│  │   Browser    │ ───► │   API   │ ───► │ ① Hit Redis? (<5ms)    │ │
+│  │   Request    │ ◄─── │ Endpoint│ ◄─── │ ② Fallback: Postgres   │ │
+│  │              │      │         │      │    DataSnapshot (0ms)  │ │
 │  └──────────────┘      └─────────┘      └────────────────────────┘ │
 └────────────────────────────────────────────────────────────────────┘
 ```
 
-### 5.2 User Request Policy
+### 5.2 User Request & Cache Fallback Policy
 
 | Rule | Description |
 |:-----|:------------|
-| **Read-Only from Redis** | User API requests ONLY read from Redis cache. |
-| **No Direct Fetching** | User requests NEVER trigger external API calls (AkShare, etc.). |
-| **Instant Response** | API must return within 500ms. No blocking on data availability. |
-| **Passive Mode** | If cache is empty/expired, return "warming_up" status, don't fetch. |
+| **Redis Hot Cache First** | Fast memory response (<5ms) for active sessions. |
+| **Durable Snapshot Fallback** | If Redis key is evicted or cold, immediately load from PostgreSQL `DataSnapshot` (or local file fallback) as valid stale data (`status: ok`) while background async task quietly refreshes both Redis and DB. User never suffers a blank screen. |
+| **No Force-Bypass on Tab Switch** | Tab switching must NOT append `_refresh` or invalidate cache (`forceBackend = false`). Only manual user click on the refresh button forces cache bypass. |
+| **Passive Mode** | Only return `warming_up` if BOTH Redis and PostgreSQL snapshot are completely empty (rare absolute cold boot). |
+| **Polling Retry Mandatory** | When `warming_up` is returned, the frontend MUST trigger automatic polling retry (every 3s, max 10-12 retries) and NEVER mark the tab as fully loaded until successful. |
 
 ### 5.3 Response State Machine
 

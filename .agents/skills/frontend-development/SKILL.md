@@ -54,6 +54,9 @@ Acts as the central application shell:
 - Manages tab switching, URL hash/query sync, and window resize listeners.
 - Instantiates and orchestrates module controllers in `this.modules`.
 - Routes refresh events to the currently active controller.
+- **Tab State Machine**: Only add a tab to `this.loadedTabs` when controller `loadData()` succeeds (returns truthy, not `false`). Never mark a tab as loaded if it returned `_warming_up` or encountered an unhandled error.
+- **Cache-Bypass Policy**: Regular tab navigation must NEVER force backend cache invalidation (`forceBackend = false`). Only manual clicks on the refresh button or keyboard shortcuts (`Cmd+R` / `Ctrl+R`) pass `forceBackend = true`.
+- **Auto-Staleness Refresh**: Each tab tracks its last loaded timestamp in `this.tabLoadedAt`. If a user navigates back to a tab loaded more than 30 minutes ago, `main.js` automatically triggers a silent background refresh.
 
 ### 4.2 Shared Services
 - **`web/js/api.js`**: Centralized HTTP client. Automatically handles `status: "ok" | "warming_up" | "error"`.
@@ -63,7 +66,9 @@ Acts as the central application shell:
 ### 4.3 Domain Controllers (`web/js/modules/*.js`)
 Each business tab/view has a dedicated Controller class in `web/js/modules/`:
 - **Single Responsibility**: Encapsulates data fetching (`loadData`) and DOM rendering for its specific view.
+- **Warming Up Polling Mandate**: If an API endpoint returns `_warming_up: true`, the controller MUST set an automatic retry polling timer (every 3000ms, max 10-12 retries) to fetch and render fresh data as soon as background calculation completes, and return `false` from `loadData()`.
 - **Scoped Events**: Controllers must never bind loose event listeners to `window` or `document`. All UI event handling must be scoped within their container element.
+- **Compliance Wording**: All multi-market UI text must use "国家/地区", never "多国". The Taiwan index must strictly be labeled as "中国台湾加权" with a red hue palette (matching Chinese market convention).
 - **Extensible**: New views are added simply by creating a new `*Controller` in `web/js/modules/` and registering it in `main.js`. No changes to documentation required.
 
 ---
@@ -71,5 +76,5 @@ Each business tab/view has a dedicated Controller class in `web/js/modules/`:
 ## 5. Resilience & Error Handling
 
 - **Unified Error Display**: ALWAYS use `utils.renderError(containerId, msg)` instead of manual `innerHTML`. This guarantees consistent styling, centering, and icon layout.
-- **Zero Infinite Spinners**: Every asynchronous operation MUST have an error branch. Never leave containers stuck in loading states.
+- **Zero Infinite Spinners**: Every asynchronous operation MUST have an error branch or automatic retry timeout. Never leave containers stuck in loading states.
 - **Partial Failure Isolation**: When fetching multiple independent datasets, use `Promise.allSettled` or individual `.catch()` handlers so that one failing endpoint never breaks the entire dashboard.

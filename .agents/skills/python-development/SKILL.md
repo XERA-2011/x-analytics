@@ -16,7 +16,8 @@ Houses shared platform capabilities:
 - **Data Provider & Anti-Scraping**: `data_provider.py`, `throttler.py`, and `patch.py` encapsulate AkShare wrappers, request rate-limiting, and client impersonation.
 - **Background Scheduler**: `scheduler.py` manages background tasks for periodic cache warmup and index calculations.
 - **Shared Utilities**: `utils.py` contains defensive helpers like `safe_float`, `akshare_call_with_retry`, and Beijing timezone helpers.
-- **Persistence Bootstrap**: `db.py` initializes Tortoise ORM.
+- **Persistence Bootstrap**: `db.py` initializes Tortoise ORM (`TORTOISE_ORM`).
+- **Persistent Snapshot Engine**: `snapshot.py` manages durable key-value payloads via PostgreSQL `DataSnapshot` model with local JSON file disaster-recovery fallback.
 
 ### 1.2 Domain Business Layer (`analytics/modules/`)
 Contains domain-specific calculations, financial metrics, and indicator logic organized by asset class or market.
@@ -29,6 +30,7 @@ Contains domain-specific calculations, financial metrics, and indicator logic or
 Tortoise ORM models for long-term historical records and analytics snapshots.
 - **Async-Only**: All database interactions must be `await`ed.
 - **Multi-DB Compatibility**: Must support both SQLite (local dev) and PostgreSQL (production) via `settings.DATABASE_URL`.
+- **Snapshots & History**: Includes `DataSnapshot` (`data_snapshots` table for 0ms cold-start fallback) alongside `SentimentHistory` and `SignalHistory`.
 
 ---
 
@@ -48,15 +50,17 @@ df = akshare_call_with_retry(ak.fund_purchase_em, max_retries=3)
 
 ---
 
-## 3. Caching Strategy & Redis-First Policy
-
+## 3. Caching Strategy & Snapshot Persistence
+ 
 - **Decorator Usage**:
   ```python
   @cached("namespace:key", ttl=settings.CACHE_TTL["category"])
   async def get_market_data(): ...
   ```
-- **Passive Serving**: During rate-limiting or cold start, endpoints return structured `"warming_up"` status instead of blocking user requests.
-- **Cache Key Versioning**: When data structure or calculation logic changes significantly, increment the cache key version (e.g. `qdii:passive_funds_v46`) to safely invalidate legacy cache without flushing entire Redis databases in production.
+- **Write-Through Snapshot**: When `@cached` completes a calculation, it automatically calls `save_snapshot(cache_key, result)` to persist the JSON payload into PostgreSQL (`DataSnapshot`) and local disk backup.
+- **Safe JSON Serialization**: Financial payloads frequently contain `datetime.date`, `datetime.datetime`, `Decimal`, or `numpy` scalars. Always sanitize payloads with `_clean_payload(payload)` (or `json.dumps(..., default=str)`) before database saving to prevent `Object of type date is not JSON serializable` crashes.
+- **Cold-Start Fallback**: If Redis cache is empty or evicted, `@cached` automatically attempts `load_snapshot(cache_key)`. If found, it returns the snapshot immediately as stale data (`status: "ok"`) and schedules an asynchronous refresh in the background, preventing user wait times.
+- **Cache Key Versioning**: When data structure or calculation logic changes significantly, increment the cache key version (e.g. `chart:indices_comparison:v4`) to safely invalidate legacy cache without flushing entire Redis databases in production.
 
 ---
 

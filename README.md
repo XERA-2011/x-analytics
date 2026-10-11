@@ -12,11 +12,12 @@ graph TD
     
     subgraph CoreApp ["核心系统应用"]
         App -->|静态资源| WebUI["🖥️ Web 仪表盘 (原生 JS/CSS)"]
-        App -->|"优先读取热数据 (500ms以内)"| Redis["🔴 Redis 缓存 (Single Source of Truth)"]
-        App -->|可选历史归档| Postgres["🐘 Postgres 数据库"]
+        App -->|"① 优先读取热缓存 (<5ms)"| Redis["🔴 Redis 缓存 (内存热数据)"]
+        App -->|"② 冷启动/缓存失效 0ms 兜底"| Postgres["🐘 Postgres (DataSnapshot 快照持久化)"]
+        App -->|历史趋势归档| PostgresHist["🐘 Postgres (Sentiment/Signal 历史表)"]
         
-        Scheduler["⏰ Task Scheduler (后台调度)"] -->|写缓存/刷新| Redis
-        Scheduler -->|归档历史| Postgres
+        Scheduler["⏰ Task Scheduler (后台调度 & 定时保鲜)"] -->|双写缓存与快照| Redis
+        Scheduler -->|双写缓存与快照| Postgres
         
         Scheduler -->|公开行情直连高速抓取| DomesticAPIs["🌐 公开市场行情数据源 (行情/净值/宏观)"]
         Scheduler -.->|深层页面防封中继| ProxyWorker["⚡ 边缘中继代理 (Serverless Worker)"]
@@ -27,7 +28,11 @@ graph TD
 ```
 
 系统核心架构包含如下关键模块：
-- **核心应用服务**：包含 FastAPI 后端服务、前端 Web 仪表盘、后台 Task Scheduler 数据抓取引擎与 Redis 缓存管理。
+- **双层高可用持久化体系**：
+  - **一级 Redis 热缓存**：高频行情与指标秒级/分钟级在内存极速响应；
+  - **二级 PostgreSQL 数据快照 (`DataSnapshot`)**：所有日线指标、全球大盘对比与估值数据持久化落盘。即使 Redis 冷启动、容器销毁重建，依然实现 0ms 瞬间秒开兜底，并由后台异步静默刷新，彻底消除前端卡死；
+  - **三级本地 JSON 备份**：容器本地文件系统快照双写，保障极端无数据库场景下的平滑降级。
+- **核心应用服务**：包含 FastAPI 后端服务、前端 Web 仪表盘、后台 Task Scheduler 智能调度器。
 - **边缘代理中继 (Serverless Worker)**：通用的 HTTP API 代理中继，配备请求密钥鉴权、请求头清洗与防盗链伪造，保障服务器源站 IP 安全。
 - **双通道数据采集**：
   - **主流高频数据**：A股/港股/美股实时行情、官方净值、黄金价格等走国内直连网络，保障极低延迟（<100ms）；
@@ -35,18 +40,35 @@ graph TD
 
 ---
 
-## 📊 四大核心模块
+## 📊 五大核心模块
 
-1. **全球市场**：亚洲市场（沪深/港股动能、估值水位）、美股及西方市场动能与原生指数对标。
-2. **AI 产业链**：全球 7 层产业链结构监测、中美科技竞争力对比、泡沫风险温度计。
-3. **黄金分析**：国内实时金价、国际金价（伦敦金/COMEX）、溢价率监测、黄金 ETF 跟踪与套利计算模型。
-4. **QDII 基金**：主动型 QDII、纳斯达克100 & 标普500 基金对标、季报真实资产配置与重仓穿透、综合费率监测。
+1. **全球市场 (Global)**：亚洲市场（沪深/港股动能、估值水位）、美股及西方市场动能与原生指数对标、国债收益率与利差监控。
+2. **图表中心 (Chart)**：全球主要国家/地区主要指数多周期走势对比（支持中国台湾加权、纳指100、沪深300等）、多周期收益率看板、核心指数估值温度计（PE-TTM 历史百分位）。
+3. **AI 产业链 (AI)**：全球 7 层产业链结构监测、中美科技竞争力对比、泡沫风险温度计。
+4. **黄金分析 (Gold)**：国内实时金价、国际金价（伦敦金/COMEX）、溢价率监测、黄金 ETF 跟踪与套利计算模型。
+5. **QDII 基金 (QDII)**：主动型 QDII、纳斯达克100 & 标普500 基金对标、季报真实资产配置与重仓穿透、综合费率监测。
+
+---
+
+## ⚖️ 合规与术语规范 (Compliance & Terminology)
+
+- **国家与地区表述**：涉跨国、跨市场及包含中国港澳台地区指数对比时，页面文案及说明中**严格统一使用「国家/地区」**，严禁使用「多国/各国」；
+- **台湾地区命名**：指数清单与对比图表中，台湾指数**严格统一命名为「中国台湾加权」**（TWII）。
 
 ---
 
 ## 📡 API 接口
 
 完整 Swagger UI 接口文档：`/docs`
+
+公开核心接口：
+- 全球市场行情: `/market-asia/` / `/market-western/`
+- 全球主要指数走势对比: `/chart/indices-comparison`
+- 指数估值温度计: `/index-valuation/valuation/{index_code}`
+- AI 产业周期分析: `/ai/overview`
+- 黄金与贵金属数据: `/metals/` / `/gold/`
+- QDII 基金持仓穿透: `/qdii/funds` / `/qdii/holdings/{code}`
+- 宏观利率与基准: `/market-asia/lpr`
 
 服务启动后直接访问根路径或者对应端口即可查看 Swagger API 文档与仪表盘。
 
