@@ -140,16 +140,16 @@ async def lifespan(app: FastAPI):
     await close_db()
 
 
-# 创建 FastAPI 应用
+# 创建 FastAPI 应用 (生产环境默认隐藏 OpenAPI 文档，杜绝资产探测)
 app = FastAPI(
     title="X-Analytics API",
     description="三大板块金融数据分析服务：中国市场、美国市场、有色金属",
     version=settings.VERSION,
     root_path="/analytics",
     lifespan=lifespan,
-    # 安全：隐藏 OpenAPI 文档（生产环境可取消注释）
-    # docs_url=None,
-    # redoc_url=None,
+    docs_url="/docs" if settings.ENABLE_DOCS else None,
+    redoc_url="/redoc" if settings.ENABLE_DOCS else None,
+    openapi_url="/openapi.json" if settings.ENABLE_DOCS else None,
 )
 
 # -----------------------------------------------------------------------------

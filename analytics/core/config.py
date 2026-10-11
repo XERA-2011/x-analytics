@@ -40,6 +40,9 @@ class Settings:
     CF_WORKER_PROXY_URL: Optional[str] = os.getenv("CF_WORKER_PROXY_URL")
     CF_WORKER_SECRET_KEY: Optional[str] = os.getenv("CF_WORKER_SECRET_KEY")
 
+    # API 文档暴露控制 (默认关闭以防外部端口扫描与资产暴露，如需开启可配置 ENABLE_DOCS=true)
+    ENABLE_DOCS: bool = os.getenv("ENABLE_DOCS", "false").lower() in ("true", "1", "yes")
+
     # 交易时间配置
     TRADING_HOURS: Dict[str, Dict[str, Any]] = {
         "market_asia": {

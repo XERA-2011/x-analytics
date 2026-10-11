@@ -30,3 +30,21 @@ def test_snapshot_local_persistence():
     res = load_snapshot(test_key)
     assert res is not None
     assert res["status"] == "ok"
+
+
+def test_proxy_domain_whitelist():
+    """验证 Worker 中继代理域名白名单与 SSRF 防护"""
+    from analytics.core.utils import _is_allowed_proxy_domain
+
+    # 受信合法白名单
+    assert _is_allowed_proxy_domain("https://api.fund.eastmoney.com/f10/lsjz?fundCode=519981")
+    assert _is_allowed_proxy_domain("http://fundf10.eastmoney.com/zcpz_519981.html")
+    assert _is_allowed_proxy_domain("https://hq.sinajs.cn/list=gb_ixic")
+    assert _is_allowed_proxy_domain("https://www.sse.com.cn/market/")
+
+    # 非法或可疑请求 (SSRF / 外部未知域名)
+    assert not _is_allowed_proxy_domain("http://127.0.0.1:8080/admin")
+    assert not _is_allowed_proxy_domain("http://169.254.169.254/latest/meta-data/")
+    assert not _is_allowed_proxy_domain("https://evil-attacker.com/steal")
+    assert not _is_allowed_proxy_domain("https://eastmoney.com.evil.com/test")
+

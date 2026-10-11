@@ -234,6 +234,32 @@ def akshare_call_with_retry(
     raise last_exception  # type: ignore
 
 
+from urllib.parse import urlparse
+
+# 中继代理受信目标域名白名单 (防 SSRF 探测与中继额度盗刷)
+ALLOWED_PROXY_DOMAINS = {
+    "eastmoney.com",
+    "sina.com.cn",
+    "sinajs.cn",
+    "sse.com.cn",
+    "szse.cn",
+    "csindex.com.cn",
+    "cninfo.com.cn",
+}
+
+
+def _is_allowed_proxy_domain(target_url: str) -> bool:
+    """验证目标 URL 域名是否属于受信金融数据源白名单"""
+    try:
+        parsed = urlparse(target_url)
+        hostname = (parsed.hostname or "").lower()
+        if not hostname:
+            return False
+        return any(hostname == domain or hostname.endswith("." + domain) for domain in ALLOWED_PROXY_DOMAINS)
+    except Exception:
+        return False
+
+
 def fetch_url_via_proxy(
     url: str,
     session: Optional[Any] = None,
@@ -244,10 +270,17 @@ def fetch_url_via_proxy(
 ) -> Optional[Any]:
     """必须通过 Cloudflare Worker 中继代理抓取目标 URL
     
-    严格规则：代理链接为必选项。若未配置 CF_WORKER_PROXY_URL，或代理中继失败/非200，则绝不发起直连请求，直接放弃返回 None。
+    严格规则：
+    1. 目标 URL 必须在 ALLOWED_PROXY_DOMAINS 白名单内，防 SSRF 滥用；
+    2. 代理链接为必选项。若未配置 CF_WORKER_PROXY_URL，或代理中继失败/非200，则绝不发起直连请求，直接放弃返回 None。
     """
     import time
     import requests
+
+    # 0. 目标域名白名单校验 (防 SSRF 与中继盗用)
+    if not _is_allowed_proxy_domain(url):
+        logger.warning(f"⛔ 拒绝非受信白名单目标域名中继请求: [{url}]")
+        return None
 
     proxy_url = getattr(settings, "CF_WORKER_PROXY_URL", None)
     secret = getattr(settings, "CF_WORKER_SECRET_KEY", None)
