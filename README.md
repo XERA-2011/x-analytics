@@ -59,18 +59,18 @@ graph TD
 
 ## 📡 API 接口
 
-完整 Swagger UI 接口文档：`/docs`
+完整 Swagger UI 接口文档：`/docs`（本地开发默认开启；生产环境为最小化攻击面默认关闭，可通过 `DOCS_ENABLED=true` 按需开启）
 
 公开核心接口：
 - 全球市场行情: `/market-asia/` / `/market-western/`
-- 全球主要指数走势对比: `/chart/indices-comparison`
+- 全球主要国家/地区主要指数走势对比: `/chart/indices-comparison`
 - 指数估值温度计: `/index-valuation/valuation/{index_code}`
 - AI 产业周期分析: `/ai/overview`
 - 黄金与贵金属数据: `/metals/` / `/gold/`
 - QDII 基金持仓穿透: `/qdii/funds` / `/qdii/holdings/{code}`
 - 宏观利率与基准: `/market-asia/lpr`
 
-服务启动后直接访问根路径或者对应端口即可查看 Swagger API 文档与仪表盘。
+服务启动后直接访问根路径或者对应端口即可查看仪表盘与数据接口。
 
 ---
 
@@ -135,12 +135,13 @@ docker compose logs -f xanalytics
 
 ## 🌐 访问地址
 
-- 本地开发直接访问:
+- **本地开发直接访问**:
   - Web 仪表盘: `http://localhost:8080/`
-  - API 文档: `http://localhost:8080/docs`
-- 生产环境部署访问 (映射端口):
-  - Web 仪表盘: `http://<服务器IP或域名>:2012/`
-  - API 文档: `http://<服务器IP或域名>:2012/docs`
+  - API 文档 (Swagger): `http://localhost:8080/docs`
+- **生产环境统一 HTTPS 访问 (推荐)**:
+  - Web 仪表盘与 API: `https://xera.dpdns.org/analytics/`
+- **生产环境直连端口访问**:
+  - Web 仪表盘与 API: `http://141.148.178.120:2012/` (或阿里云 `:2012/`)
 
 ---
 

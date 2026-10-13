@@ -49,14 +49,14 @@ When modifying `nginx.conf` or `docker-compose.yml` in the `x-actions` repositor
 ```bash
 cd /Users/xera/GitHub/x-actions
 
-# Full config sync & Nginx restart (~5s)
+# Full config sync & container rollout
 ./deploy.sh
 
-# Hot-reload Nginx only (zero downtime, ~1s)
-./deploy.sh --nginx-only
+# Hot-reload Nginx configuration only (zero downtime, ~1s)
+./deploy.sh --infra-only
 
-# Test Nginx syntax on production server
-./deploy.sh --test
+# Check container status across all production servers
+./deploy.sh --status --target all
 ```
 
 ---
