@@ -114,9 +114,33 @@ class App {
                 this.switchTab(tabId);
             });
         });
+
+        // 品牌/标题点击平滑跳转当前项目首页 (从任意子页面/子参数平滑返回首页)
+        const brand = document.querySelector('.brand');
+        if (brand) {
+            brand.addEventListener('click', (event) => {
+                // 允许辅助键（如 Ctrl/Cmd/Shift 键或鼠标中键新标签页打开等原生行为）
+                if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey || event.button !== 0) {
+                    return;
+                }
+                event.preventDefault();
+                this.switchTab('global');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+        }
+
+        // 监听浏览器前进/后退
+        window.addEventListener('popstate', () => {
+            const urlTab = utils.getUrlParam('tab') || 'global';
+            const validTabs = ['global', 'chart', 'ai', 'gold', 'qdii'];
+            const targetTab = validTabs.includes(urlTab) ? urlTab : 'global';
+            if (this.currentTab !== targetTab) {
+                this.switchTab(targetTab, false);
+            }
+        });
     }
 
-    switchTab(tabId) {
+    switchTab(tabId, updateHistory = true) {
         // 更新按钮状态
         document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.tab === tabId);
@@ -132,7 +156,11 @@ class App {
 
         // 更新URL并清除其他非当前 Tab 的子级参数（如 filter, subtab 等）
         const url = new URL(window.location.href);
-        url.searchParams.set('tab', tabId);
+        if (tabId === 'global') {
+            url.searchParams.delete('tab');
+        } else {
+            url.searchParams.set('tab', tabId);
+        }
         if (tabId !== 'qdii') {
             url.searchParams.delete('filter');
             url.searchParams.delete('subtab');
@@ -160,7 +188,12 @@ class App {
             url.searchParams.delete('index');
             url.searchParams.delete('code');
         }
-        window.history.replaceState({}, '', url.toString());
+
+        if (updateHistory) {
+            window.history.pushState({}, '', url.toString());
+        } else {
+            window.history.replaceState({}, '', url.toString());
+        }
 
         // 懒加载：仅首次切换到该 Tab 或数据超过 30 分钟时加载数据
         const lastLoaded = this.tabLoadedAt.get(tabId) || 0;
@@ -266,7 +299,7 @@ class App {
         const targetTab = legacyMap[urlTab] || urlTab;
 
         if (targetTab && validTabs.includes(targetTab)) {
-            this.switchTab(targetTab);
+            this.switchTab(targetTab, false);
         } else {
             await this.refreshCurrentTab(false);
         }
