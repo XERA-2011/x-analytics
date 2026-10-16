@@ -12,8 +12,8 @@ from analytics.modules.chart.indices_comparison import (
 
 
 def test_index_configs_structure():
-    """验证 15 大核心指数的配置项完整性"""
-    assert len(INDEX_CONFIGS) == 15
+    """验证 16 大核心指数与大类资产的配置项完整性"""
+    assert len(INDEX_CONFIGS) == 16
     codes = set()
     default_selected_count = 0
     for cfg in INDEX_CONFIGS:
@@ -29,18 +29,27 @@ def test_index_configs_structure():
         if cfg["default_selected"]:
             default_selected_count += 1
 
-    assert len(codes) == 15
-    # 默认选中 6 大基准 (NDX, SH000300, HSTECH, TWII, N225, KOSPI)
-    assert default_selected_count == 6
+    assert len(codes) == 16
+    # 默认选中 7 大核心基准 (NDX, SH000300, HSTECH, TWII, XAU, N225, KOSPI)
+    assert default_selected_count == 7
     assert "NDX" in codes
     assert "SH000300" in codes
     assert "HSTECH" in codes
     assert "TWII" in codes
+    assert "XAU" in codes
     assert "N225" in codes
     assert "KOSPI" in codes
 
     default_codes = {c["code"] for c in INDEX_CONFIGS if c["default_selected"]}
-    assert default_codes == {"NDX", "SH000300", "HSTECH", "TWII", "N225", "KOSPI"}
+    assert default_codes == {"NDX", "SH000300", "HSTECH", "TWII", "XAU", "N225", "KOSPI"}
+
+    # 验证黄金配置必须包含默认选中与标准金黄色系
+    gold_cfg = [c for c in INDEX_CONFIGS if c["code"] == "XAU"][0]
+    assert gold_cfg["name"] == "黄金"
+    assert "黄金" in gold_cfg["full_name"]
+    assert gold_cfg["default_selected"] is True
+    assert gold_cfg["type"] == "gold"
+    assert gold_cfg["color"].upper() in ["#EAB308", "#F59E0B", "#D97706", "#CA8A04"]
 
     # 验证中国台湾指数必须以前缀「中国台湾」命名，且为红色系
     tw_cfg = [c for c in INDEX_CONFIGS if c["code"] == "TWII"][0]
@@ -124,6 +133,29 @@ def test_fetch_taiwan_index(mock_akshare):
     assert res["name"] == "中国台湾加权"
     assert res["latest_close"] == 48400.0
     assert res["latest_date"] == "2024-10-02"
+
+
+@patch("analytics.modules.chart.indices_comparison.akshare_call_with_retry")
+def test_fetch_gold_index(mock_akshare):
+    """测试黄金数据抓取与结构"""
+    dates = ["2024-09-28", "2024-09-29", "2024-09-30", "2024-10-01", "2024-10-02"]
+    closes = [2650.0, 2660.0, 2670.0, 2680.0, 2690.0]
+    df = pd.DataFrame({"date": dates, "close": closes})
+    mock_akshare.return_value = df
+
+    cfg = [c for c in INDEX_CONFIGS if c["code"] == "XAU"][0]
+    assert cfg["name"] == "黄金"
+    assert cfg["default_selected"] is True
+    res = fetch_single_index(cfg, cutoff_date="2024-01-01")
+    assert res is not None
+    assert res["code"] == "XAU"
+    assert res["name"] == "黄金"
+    assert res["latest_close"] == 2690.0
+    assert res["latest_date"] == "2024-10-02"
+    assert res["default_selected"] is True
+    assert "returns" in res
+    assert res["returns"]["1D"] == round((2690.0 - 2680.0) / 2680.0 * 100, 2)
+
 
 
 from analytics.api.chart import get_global_indices_comparison

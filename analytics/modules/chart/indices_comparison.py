@@ -14,7 +14,7 @@ from ...core.cache import cached
 from ...core.utils import safe_float, akshare_call_with_retry
 from ...core.logger import logger
 
-# 15 大核心指数元数据配置
+# 16 大核心指数与资产元数据配置
 INDEX_CONFIGS = [
     {
         "code": "NDX",
@@ -114,6 +114,17 @@ INDEX_CONFIGS = [
         "default_selected": True,
         "type": "hk",
         "symbol": "HSTECH",
+    },
+    {
+        "code": "XAU",
+        "name": "黄金",
+        "full_name": "现货黄金 (伦敦金)",
+        "region": "GLOBAL",
+        "flag": "",
+        "color": "#EAB308",  # 黄金-经典金黄 (大类资产高对比度)
+        "default_selected": True,
+        "type": "gold",
+        "symbol": "XAU",
     },
     {
         "code": "N225",
@@ -218,6 +229,18 @@ def fetch_single_index(cfg: Dict[str, Any], cutoff_date: str) -> Optional[Dict[s
             df = akshare_call_with_retry(
                 ak.stock_zh_index_daily, symbol=symbol, max_retries=2, use_throttle=False
             )
+        elif source_type == "gold":
+            try:
+                df = akshare_call_with_retry(
+                    ak.futures_foreign_hist, symbol=symbol, max_retries=2, use_throttle=False
+                )
+            except Exception as e:
+                logger.warning(f"[IndicesComparison] 获取黄金 {symbol} 失败，尝试备用数据源: {e}")
+                df = None
+            if df is None or df.empty:
+                df = akshare_call_with_retry(
+                    ak.futures_foreign_hist, symbol="GC", max_retries=2, use_throttle=False
+                )
 
         if df is None or df.empty:
             logger.warning(f"[IndicesComparison] 未能获取指数 {name} ({code}) 的数据")
@@ -317,10 +340,10 @@ def fetch_single_index(cfg: Dict[str, Any], cutoff_date: str) -> Optional[Dict[s
         return None
 
 
-@cached("chart:indices_comparison:v4", ttl=1800, stale_ttl=86400, sync_on_cold=True)
+@cached("chart:indices_comparison:v5", ttl=1800, stale_ttl=86400, sync_on_cold=True)
 def get_indices_comparison() -> Dict[str, Any]:
     """
-    并发抓取全球 15 大核心指数历史数据，并返回归一化比对所需数据源
+    并发抓取全球 16 大核心指数与大类资产历史数据，并返回归一化比对所需数据源
     """
     # 截取近 3 年多一点 (3年 + 1个月缓冲)
     cutoff_date = (datetime.now() - timedelta(days=365 * 3 + 35)).strftime("%Y-%m-%d")

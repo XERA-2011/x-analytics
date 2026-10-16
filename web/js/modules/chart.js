@@ -9,7 +9,7 @@ class ChartController {
         // 全球指数对比模块状态
         this.indicesRawData = null;
         this.currentPeriod = '1y';
-        this.selectedIndices = new Set(['NDX', 'SH000300', 'HSTECH', 'TWII', 'N225', 'KOSPI']);
+        this.selectedIndices = new Set(['NDX', 'SH000300', 'HSTECH', 'TWII', 'XAU', 'N225', 'KOSPI']);
         this.comparisonEventsBound = false;
         this.matrixSortCol = '1Y';
         this.matrixSortDesc = true;
@@ -160,8 +160,8 @@ class ChartController {
             btnDefault.onclick = () => {
                 const defaults = this.indicesRawData
                     ? this.indicesRawData.filter(i => i.default_selected).map(i => i.code)
-                    : ['NDX', 'SH000300', 'HSTECH', 'TWII', 'N225', 'KOSPI'];
-                this.selectedIndices = new Set(defaults.length > 0 ? defaults : ['NDX', 'SH000300', 'HSTECH', 'TWII', 'N225', 'KOSPI']);
+                    : ['NDX', 'SH000300', 'HSTECH', 'TWII', 'XAU', 'N225', 'KOSPI'];
+                this.selectedIndices = new Set(defaults.length > 0 ? defaults : ['NDX', 'SH000300', 'HSTECH', 'TWII', 'XAU', 'N225', 'KOSPI']);
                 this.renderIndexChips();
                 this.updateComparisonChart();
                 this.renderPerformanceMatrix();
