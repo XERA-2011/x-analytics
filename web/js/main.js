@@ -5,7 +5,7 @@ class App {
     constructor() {
         this.currentTab = 'global';
         this.lastUpdateTime = null;
-        this.isRefreshing = false;
+        this.loadingTabs = new Set();
         this.loadedTabs = new Set();
         this.tabLoadedAt = new Map();
         this.refreshResetTimer = null;
@@ -23,6 +23,10 @@ class App {
         };
 
         this.init();
+    }
+
+    get isRefreshing() {
+        return this.loadingTabs.has(this.currentTab);
     }
 
     getPageTitle(tabId) {
@@ -111,7 +115,12 @@ class App {
         tabButtons.forEach(btn => {
             btn.addEventListener('click', () => {
                 const tabId = btn.dataset.tab;
-                this.switchTab(tabId);
+                if (this.currentTab === tabId) {
+                    // 用户已经在当前 Tab，再次点击该 Tab 按钮，强制重新拉取刷新
+                    this.loadTab(tabId, true);
+                } else {
+                    this.switchTab(tabId);
+                }
             });
         });
 
@@ -153,6 +162,7 @@ class App {
 
         this.currentTab = tabId;
         this.updatePageTitle(tabId);
+        this.updateRefreshButtonState();
 
         // 更新URL并清除其他非当前 Tab 的子级参数（如 filter, subtab 等）
         const url = new URL(window.location.href);
@@ -200,7 +210,7 @@ class App {
         const isStale = (Date.now() - lastLoaded) > 30 * 60 * 1000;
 
         if (!this.loadedTabs.has(tabId) || isStale) {
-            this.refreshCurrentTab(false);
+            this.loadTab(tabId, false);
         } else {
             // 已加载过的 Tab，切换时触发图表重绘适配尺寸
             requestAnimationFrame(() => {
@@ -301,13 +311,18 @@ class App {
         if (targetTab && validTabs.includes(targetTab)) {
             this.switchTab(targetTab, false);
         } else {
-            await this.refreshCurrentTab(false);
+            await this.loadTab('global', false);
         }
     }
 
     getActiveRefreshButton() {
         const activeTab = document.querySelector('.tab-content.active');
         return activeTab ? activeTab.querySelector('.refresh-btn') : null;
+    }
+
+    updateRefreshButtonState() {
+        const isCurrentLoading = this.loadingTabs.has(this.currentTab);
+        this.setRefreshButtonLoading(isCurrentLoading);
     }
 
     setRefreshButtonLoading(isLoading) {
@@ -339,31 +354,38 @@ class App {
         }
 
         this.refreshResetTimer = setTimeout(() => {
-            this.isRefreshing = false;
-            this.setRefreshButtonLoading(false);
+            this.loadingTabs.clear();
+            this.updateRefreshButtonState();
             this.refreshResetTimer = null;
         }, 20000);
     }
 
     clearRefreshButtonFallback() {
-        if (this.refreshResetTimer) {
+        if (this.loadingTabs.size === 0 && this.refreshResetTimer) {
             clearTimeout(this.refreshResetTimer);
             this.refreshResetTimer = null;
         }
     }
 
     async refreshCurrentTab(forceBackend = false) {
+        return this.loadTab(this.currentTab, forceBackend);
+    }
+
+    async loadTab(tabId, forceBackend = false) {
+        const targetTab = tabId || this.currentTab;
+        if (!targetTab) return false;
+
         if (!navigator.onLine) {
             console.log('离线状态，跳过数据刷新');
-            return;
+            return false;
         }
 
-        if (this.isRefreshing) {
-            console.log('数据刷新中，跳过重复请求');
-            return;
+        if (this.loadingTabs.has(targetTab)) {
+            console.log(`Tab [${targetTab}] 正在加载中，跳过重复请求`);
+            return false;
         }
 
-        this.isRefreshing = true;
+        this.loadingTabs.add(targetTab);
         this.currentCycleTimes = [];
         this.currentCycleStale = false;
 
@@ -372,28 +394,38 @@ class App {
             api.startForceRefresh();
         }
 
-        this.setRefreshButtonLoading(true);
+        this.updateRefreshButtonState();
         this.armRefreshButtonFallback();
 
+        let isLoadedOk = true;
         try {
             // Delegate to Module
-            const controller = this.modules[this.currentTab];
-            let isLoadedOk = true;
+            const controller = this.modules[targetTab];
             if (controller) {
                 const res = await controller.loadData();
                 if (res === false) {
                     isLoadedOk = false;
                 }
             } else {
-                console.error('No controller found for tab:', this.currentTab);
+                console.error('No controller found for tab:', targetTab);
                 isLoadedOk = false;
             }
 
             if (isLoadedOk) {
-                this.loadedTabs.add(this.currentTab);
-                this.tabLoadedAt.set(this.currentTab, Date.now());
+                // 关键防错：使用固定的 targetTab，绝不可使用异步等待期间可能已被切走的 this.currentTab
+                this.loadedTabs.add(targetTab);
+                this.tabLoadedAt.set(targetTab, Date.now());
             }
             this.updateGlobalTime();
+
+            // 若当前用户正停留在此 Tab，且含有图表，触发一次尺寸适配重绘
+            if (this.currentTab === targetTab) {
+                requestAnimationFrame(() => {
+                    if (window.charts && typeof window.charts.resize === 'function') {
+                        window.charts.resize();
+                    }
+                });
+            }
 
             if (this.currentCycleStale) {
                 if (window.utils && typeof window.utils.showStaleWarning === 'function') {
@@ -403,9 +435,9 @@ class App {
                     this._retriedStale = true;
                     console.log('🔄 检测到陈旧数据，5秒后自动刷新...');
                     setTimeout(() => {
-                        if (!this.isRefreshing && this.currentCycleStale) {
+                        if (!this.loadingTabs.has(targetTab) && this.currentCycleStale) {
                             api.clearLocalCache();
-                            this.refreshCurrentTab(true);
+                            this.loadTab(targetTab, true);
                         }
                     }, 5000);
                 }
@@ -416,15 +448,18 @@ class App {
                 }
             }
         } catch (error) {
-            console.error('刷新数据失败:', error);
+            console.error(`刷新 [${targetTab}] 数据失败:`, error);
+            isLoadedOk = false;
         } finally {
             if (forceBackend) {
                 api.endForceRefresh();
             }
-            this.isRefreshing = false;
+            this.loadingTabs.delete(targetTab);
             this.clearRefreshButtonFallback();
-            this.setRefreshButtonLoading(false);
+            this.updateRefreshButtonState();
         }
+
+        return isLoadedOk;
     }
 
     reportDataTime(timeStr) {
