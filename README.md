@@ -61,14 +61,3 @@ docker compose up -d --build
 - **本地仪表盘**：`http://localhost:8080/`
 - **Swagger API 文档**：`http://localhost:8080/docs`（生产环境默认关闭，通过 `DOCS_ENABLED=true` 按需开启）
 
----
-
-## 部署与生产运维
-
-本项目专注于业务逻辑与镜像构建。生产部署与基础设施编排由专用运维仓库收敛：
-- **发布入口**：统一使用 [`x-actions/deploy.sh`](../x-actions/deploy.sh) 执行本地原生双机构建与发布：
-  ```bash
-  ./deploy.sh --target all        # 双机滚动增量发布 (a1 + aliyun)
-  ./deploy.sh --rollback <tag>    # 秒级版本回滚
-  ```
-- **生产访问**：`https://xera.dpdns.org/analytics/`
