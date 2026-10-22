@@ -11,13 +11,14 @@ This document defines standard operating procedures for deployment, server opera
 
 ## 1. Deployment Architecture & Security Policy
 
-### 1.1 Two-Stage Pipeline
-1. **Image Build (`x-analytics`)**:
-   - Pushing code to `main` branch triggers GitHub Actions (`docker-publish.yml`) to build multi-arch Docker images (`linux/amd64,linux/arm64`) and push to GHCR and Aliyun Container Registry.
-   - *Security Note*: The build runs entirely on GitHub compute and pushes via Registry HTTPS APIs. It never connects directly to servers and contains zero server credentials.
+### 1.1 Native Host Build & Deployment Pipeline
+1. **Application Code (`x-analytics`)**:
+   - Focuses strictly on business logic, automated tests, and Dockerfile definitions. Contains zero server infrastructure configs or connection credentials.
+   - GitHub Actions (`docker-publish.yml`) is retained purely as a manual emergency fallback (`workflow_dispatch`), avoiding unnecessary CI compute runs.
 2. **Unified Deployment (`x-actions/deploy.sh`)**:
    - Production deployment is executed exclusively from the private repository `/Users/xera/GitHub/x-actions` via `./deploy.sh`.
-   - The deployment script connects directly to target servers (`a1`, `aliyun`, or `--target all`) via trusted domestic SSH connections configured in `~/.ssh/config`.
+   - The deployment script syncs source code incrementally via rsync over trusted domestic SSH connections, performs native high-speed Docker builds directly on target host architectures (`a1` linux/arm64, `aliyun` linux/amd64), recreates containers, and conducts automated health checks (`/api/health`).
+   - *Zero Foreign SSH*: Eliminates overseas cloud login alerts from foreign GitHub Actions runners.
 
 ---
 
@@ -66,18 +67,21 @@ cd /Users/xera/GitHub/x-actions
 ### 4.1 Verifying Live Deployment
 To verify that the production service is responding:
 ```bash
-# Verify base page response
-curl -sI http://<server-ip>:2012/?tab=qdii
+# Verify gateway response over unified HTTPS subpath
+curl -sI https://xera.dpdns.org/analytics/
 
-# Check specific script version or module asset
-curl -s http://<server-ip>:2012/?tab=qdii | grep qdii.js
+# Check specific script version or HTML assets
+curl -s https://xera.dpdns.org/analytics/ | grep main.js
+
+# Check internal direct port health (on server host or via SSH)
+curl -s http://127.0.0.1:2012/api/health
 ```
 
 ### 4.2 Cache Control APIs
-- **Manual Cache Warmup**: `POST http://<server-ip>:2012/api/cache/warmup` (requires `X-Admin-Token` header)
-- **Clear All Caches**: `DELETE http://<server-ip>:2012/api/cache/clear` (requires `X-Admin-Token` header)
-- **Clear Specific Pattern**: `DELETE http://<server-ip>:2012/api/cache/clear/{pattern}` (requires `X-Admin-Token` header)
-  - Example: `DELETE http://<server-ip>:2012/api/cache/clear/qdii:passive_funds*`
+- **Manual Cache Warmup**: `POST https://xera.dpdns.org/analytics/api/cache/warmup` (requires `X-Admin-Token` header)
+- **Clear All Caches**: `DELETE https://xera.dpdns.org/analytics/api/cache/clear` (requires `X-Admin-Token` header)
+- **Clear Specific Pattern**: `DELETE https://xera.dpdns.org/analytics/api/cache/clear/{pattern}` (requires `X-Admin-Token` header)
+  - Example: `DELETE https://xera.dpdns.org/analytics/api/cache/clear/qdii:passive_funds*`
 
 ---
 

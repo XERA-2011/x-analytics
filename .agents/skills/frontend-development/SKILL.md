@@ -54,8 +54,11 @@ Acts as the central application shell:
 - Manages tab switching, URL hash/query sync, and window resize listeners.
 - Instantiates and orchestrates module controllers in `this.modules`.
 - Routes refresh events to the currently active controller.
+- **Per-Tab Loading Queue (`this.loadingTabs = new Set()`)**: Never use a single global boolean lock (e.g. `isRefreshing`). Loading states are tracked per-tab so rapid tab navigation runs concurrently without dropping requests.
+- **Closure-Isolated Target Binding**: Completion caching (`this.loadedTabs.add(targetTab)`) MUST strictly use the closure-captured `targetTab` argument, NEVER the mutable `this.currentTab`, eliminating cross-tab state contamination.
 - **Tab State Machine**: Only add a tab to `this.loadedTabs` when controller `loadData()` succeeds (returns truthy, not `false`). Never mark a tab as loaded if it returned `_warming_up` or encountered an unhandled error.
-- **Cache-Bypass Policy**: Regular tab navigation must NEVER force backend cache invalidation (`forceBackend = false`). Only manual clicks on the refresh button or keyboard shortcuts (`Cmd+R` / `Ctrl+R`) pass `forceBackend = true`.
+- **Cache-Bypass Policy**: Regular tab navigation must NEVER force backend cache invalidation (`forceBackend = false`). Only manual clicks on the refresh button, keyboard shortcuts (`Cmd+R` / `Ctrl+R`), or clicking the already active tab button pass `forceBackend = true`.
+- **Active Tab Re-click Refresh**: When the user clicks the navigation button for the tab they are already viewing, trigger an immediate forced reload (`loadTab(tabId, true)`) instead of doing nothing.
 - **Auto-Staleness Refresh**: Each tab tracks its last loaded timestamp in `this.tabLoadedAt`. If a user navigates back to a tab loaded more than 30 minutes ago, `main.js` automatically triggers a silent background refresh.
 
 ### 4.2 Shared Services

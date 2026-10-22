@@ -1,63 +1,59 @@
 # X-Analytics
 
-全球科技与 AI 产业周期终端 / 金融数据中台，基于 [FastAPI](https://fastapi.tiangolo.com/) 与 [AKShare](https://github.com/akfamily/akshare) 构建。
+金融数据分析平台，基于 [FastAPI](https://fastapi.tiangolo.com/) 与 [AKShare](https://github.com/akfamily/akshare) 构建。
+
+> 本项目仅供技术交流与学习研究使用，不构成任何投资建议。
 
 ---
 
-## 架构与数据流
+## 架构
 
 ```mermaid
 graph TD
-    Client["用户端 (Web / 移动端)"] -->|"HTTPS /analytics"| App["FastAPI 后端 (:8080)"]
-    
-    subgraph CoreApp ["核心系统"]
-        App --> WebUI["原生 Web 仪表盘"]
-        App -->|"① 内存热缓存 (<5ms)"| Redis["Redis (内存热缓存)"]
-        App -->|"② 快照兜底"| Postgres["PostgreSQL (DataSnapshot)"]
-        
-        Scheduler["Task Scheduler (后台智能调度)"] --> Redis & Postgres
-        Scheduler -->|"国内行情直连 (<100ms)"| PublicAPIs["公开市场行情 (A/H/US/金银)"]
-        Scheduler -.->|"深层持仓防封代理"| ProxyWorker["边缘中继 (Cloudflare Worker)"]
-    end
+    Client["用户端 (Web / 移动端)"] -->|"HTTPS /analytics"| Nginx["Nginx 反向代理 (x-actions)"]
+    Nginx -->|"转发至 :8080"| App["FastAPI + 静态 Web UI"]
 
-    ProxyWorker -->|"资产配置/费率/持仓"| FundAPIs["基金深层数据"]
+    App --> Services["业务模块 (数据获取与计算)"]
+    Scheduler["后台调度 (Scheduler)"] -->|"定时预热"| Services
+
+    Services <--> Redis["Redis 热缓存"]
+    Services <--> Snapshot["PostgreSQL 快照 (含本地文件兜底)"]
+
+    Services -->|"直连请求"| Sources["公开行情与金融数据源"]
+    Services -->|"防封中继"| Worker["Cloudflare Worker (x-worker)"] --> FundSources["需代理的基金数据源"]
 ```
-
-- **三级高可用持久化**：Redis 内存热缓存 ➔ PostgreSQL 数据快照（`DataSnapshot`，冷启动/重启秒开兜底）➔ 容器本地 JSON 文件降级。
-- **双通道采集与安全中继**：高频行情直连国内网络；深层基金配置通过边缘 Worker 中继（防封锁且**严格阻断直连回退**，保护源站 IP）。
 
 ---
 
 ## 本地开发
 
-### 1. 环境准备
+### 依赖安装
+
 ```bash
 python -m venv .venv
-source .venv/bin/activate  # Windows: .venv\Scripts\Activate.ps1
+source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 2. 环境变量 (`.env.local`)
+### 环境变量 (`.env.local`)
+
 ```env
-# 通过本地 SSH 隧道连通云端数据库 (免公网暴露端口)
-REDIS_URL="redis://:Redis密码@127.0.0.1:6379/0"
-DATABASE_URL="postgres://postgres:数据库密码@127.0.0.1:5432/xanalytics"
+REDIS_URL="redis://:password@127.0.0.1:6379/0"
+DATABASE_URL="postgres://postgres:password@127.0.0.1:5432/xanalytics"
 DEPLOY_SSH_ALIAS="a1"
 
-# 边缘代理配置 (数据抓取防封)
 CF_WORKER_PROXY_URL="https://your-worker-proxy.domain"
 CF_WORKER_SECRET_KEY="your-secret-key"
 ```
 
-### 3. 启动服务
+### 运行
+
 ```bash
-# 启动本地开发服务 (自动拉起数据库安全隧道，退出时自动销毁)
 python server.py
 
-# 或使用 Docker 启动
+# 或使用 Docker
 docker compose up -d --build
 ```
 
-- **本地仪表盘**：`http://localhost:8080/`
-- **Swagger API 文档**：`http://localhost:8080/docs`（生产环境默认关闭，通过 `DOCS_ENABLED=true` 按需开启）
-
+- 仪表盘：`http://localhost:8080/`
+- API 文档：`http://localhost:8080/docs`
