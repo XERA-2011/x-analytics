@@ -652,9 +652,35 @@ class QDIIController {
             const res = await api.getQDIIHoldings(code);
             const data = res.data || res;
 
-            if (data.status === 'warming_up') {
+            if (data._warming_up || data.status === 'warming_up') {
                 const bodyEl = overlay.querySelector('.qdii-modal-body');
-                if (bodyEl) bodyEl.innerHTML = '<div class="loading">数据计算中，请稍后刷新...</div>';
+                if (bodyEl) {
+                    bodyEl.innerHTML = `
+                        <div style="text-align: center; padding: 32px 16px;">
+                            <div class="loading" style="margin-bottom: 12px; font-size: 0.85rem;"><i data-lucide="loader-2" class="spin"></i> 数据后台计算同步中，请稍候...</div>
+                            <button class="qdii-retry-btn" style="padding: 6px 16px; font-size: 0.8rem; border-radius: 6px; background: var(--accent-blue); color: #fff; border: none; cursor: pointer; font-weight: 500;">刷新重试</button>
+                        </div>
+                    `;
+                    const retryBtn = bodyEl.querySelector('.qdii-retry-btn');
+                    if (retryBtn) retryBtn.onclick = () => this.showHoldingsModal(code, name);
+                    if (window.lucide) lucide.createIcons();
+                }
+                return;
+            }
+
+            if (data._error || data.status === 'error') {
+                const bodyEl = overlay.querySelector('.qdii-modal-body');
+                if (bodyEl) {
+                    bodyEl.innerHTML = `
+                        <div style="text-align: center; padding: 32px 16px;">
+                            <div style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 12px;">${data.message || data.error || '获取持仓明细失败，请稍后重试'}</div>
+                            <button class="qdii-retry-btn" style="padding: 6px 16px; font-size: 0.8rem; border-radius: 6px; background: var(--accent-blue); color: #fff; border: none; cursor: pointer; font-weight: 500;">重新获取</button>
+                        </div>
+                    `;
+                    const retryBtn = bodyEl.querySelector('.qdii-retry-btn');
+                    if (retryBtn) retryBtn.onclick = () => this.showHoldingsModal(code, name);
+                    if (window.lucide) lucide.createIcons();
+                }
                 return;
             }
 
@@ -836,7 +862,18 @@ class QDIIController {
             if (window.lucide) lucide.createIcons();
         } catch (err) {
             console.error('获取持仓明细失败:', err);
-            utils.renderError('qdii-modal-body-content', '获取持仓明细失败，请稍后重试');
+            const bodyEl = overlay.querySelector('.qdii-modal-body');
+            if (bodyEl) {
+                bodyEl.innerHTML = `
+                    <div style="text-align: center; padding: 32px 16px;">
+                        <div style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 12px;">获取持仓明细超时或失败，请稍后重试</div>
+                        <button class="qdii-retry-btn" style="padding: 6px 16px; font-size: 0.8rem; border-radius: 6px; background: var(--accent-blue); color: #fff; border: none; cursor: pointer; font-weight: 500;">点击重试</button>
+                    </div>
+                `;
+                const retryBtn = bodyEl.querySelector('.qdii-retry-btn');
+                if (retryBtn) retryBtn.onclick = () => this.showHoldingsModal(code, name);
+                if (window.lucide) lucide.createIcons();
+            }
         }
     }
 

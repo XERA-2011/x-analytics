@@ -67,12 +67,14 @@ class API {
         try {
             const result = await requestPromise;
 
-            // 3. 写入缓存 (仅针对 GET 请求且成功响应)
+            // 3. 写入缓存 (仅针对 GET 请求且排除 warming_up 与 error 状态)
             if (method === 'GET' && !forceRefresh) {
-                this.cache.set(requestKey, {
-                    timestamp: Date.now(),
-                    data: result
-                });
+                if (result && !result._warming_up && !result._error) {
+                    this.cache.set(requestKey, {
+                        timestamp: Date.now(),
+                        data: result
+                    });
+                }
             }
 
             return result;

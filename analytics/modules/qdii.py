@@ -1891,8 +1891,8 @@ def get_qdii_top_holdings(code: str) -> Dict[str, Any]:
         session = requests.Session()
         url = f"http://fundf10.eastmoney.com/FundArchivesDatas.aspx?type=jjcc&code={fetch_code}&topline=100"
         
-        # 使用代理获取 (根据项目安全规范，严格禁止直连回退)
-        res = fetch_url_via_proxy(url, session=session, timeout=10)
+        # 使用代理获取 (根据项目安全规范，严格禁止直连回退；设置 6s 超时确保 2 次重试在前端 15s 超时内完成)
+        res = fetch_url_via_proxy(url, session=session, timeout=6)
                 
         if res is None:
             return {"status": "error", "error": True, "message": f"网络请求超时 (code: {code})", "holdings": []}
