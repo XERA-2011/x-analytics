@@ -482,7 +482,6 @@ class App {
 
     updateGlobalTime() {
         const timeElement = document.getElementById('global-update-time');
-        const footerTimeElement = document.getElementById('footer-update-time');
         
         let displayTime = new Date();
         if (this.currentCycleTimes && this.currentCycleTimes.length > 0) {
@@ -493,7 +492,6 @@ class App {
         const timeStr = displayTime.toLocaleTimeString('zh-CN', { hour12: false });
 
         if (timeElement) timeElement.textContent = `Updated: ${timeStr}`;
-        if (footerTimeElement) footerTimeElement.textContent = utils.formatDate(displayTime);
 
         this.lastUpdateTime = displayTime;
     }
