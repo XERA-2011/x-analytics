@@ -32,6 +32,19 @@ def test_snapshot_local_persistence():
     assert res["status"] == "ok"
 
 
+def test_snapshot_is_saved_locally_when_database_is_disabled(tmp_path, monkeypatch):
+    import analytics.core.snapshot as snapshot_module
+    from analytics.core import db
+
+    monkeypatch.setattr(snapshot_module, "SNAPSHOT_DIR", str(tmp_path))
+    monkeypatch.setattr(db, "DB_AVAILABLE", False)
+
+    key = "test:local-only:snapshot"
+    payload = {"status": "ok", "value": 42}
+    assert snapshot_module.save_snapshot(key, payload)
+    assert snapshot_module.load_snapshot(key) == payload
+
+
 def test_proxy_domain_whitelist():
     """验证 Worker 中继代理域名白名单与 SSRF 防护"""
     from analytics.core.utils import _is_allowed_proxy_domain

@@ -13,6 +13,8 @@ from redis import ConnectionPool
 import time
 import threading
 import contextvars
+import fnmatch
+from collections import OrderedDict
 from functools import wraps
 from typing import Optional, Any, Callable, Dict
 from datetime import datetime
@@ -43,7 +45,17 @@ class RedisCache:
         self._redis: Optional[redis.Redis] = None
         self._connected = False
         self._connect_attempted = False
+        self._last_connect_attempt = 0.0
+        self._connect_retry_interval = 5.0
+        self._connection_lock = threading.Lock()
         self._inflight_tasks = set()  # Track keys currently being refreshed locally
+        # Redis 故障时保留有限的进程内副本，避免冷启动请求不断重复。
+        self._local_cache = OrderedDict()
+        self._local_cache_lock = threading.RLock()
+        self._local_locks = {}
+        self._local_cache_max_entries = 256
+        self._local_cache_max_bytes = 32 * 1024 * 1024
+        self._local_cache_bytes = 0
 
     @classmethod
     def get_instance(cls) -> "RedisCache":
@@ -62,87 +74,168 @@ class RedisCache:
         Returns:
             Redis client if connected, None otherwise.
         """
-        if self._redis is None and not self._connect_attempted:
-            self._connect_attempted = True
-            try:
-                if self.redis_url is None:
-                    raise ValueError("Redis URL is not configured.")
-                pool = ConnectionPool.from_url(
-                    self.redis_url,
-                    max_connections=50,
-                    decode_responses=True,
-                    socket_connect_timeout=3,
-                    socket_timeout=3,
-                    retry_on_timeout=True,
-                    health_check_interval=30,
+        should_retry = (
+            not self._connect_attempted
+            or time.monotonic() - self._last_connect_attempt >= self._connect_retry_interval
+        )
+        if self._redis is None and should_retry:
+            with self._connection_lock:
+                should_retry = (
+                    not self._connect_attempted
+                    or time.monotonic() - self._last_connect_attempt >= self._connect_retry_interval
                 )
-                client = redis.Redis(connection_pool=pool)
-                client.ping()
-                self._redis = client
-                self._connected = True
-            except (redis.ConnectionError, redis.TimeoutError, ValueError) as e:
-                logger.warning(f"Redis 连接失败: {e}，将使用无缓存模式")
-                self._redis = None
-                self._connected = False
+                if self._redis is None and should_retry:
+                    self._connect_attempted = True
+                    self._last_connect_attempt = time.monotonic()
+                    try:
+                        if self.redis_url is None:
+                            raise ValueError("Redis URL is not configured.")
+                        pool = ConnectionPool.from_url(
+                            self.redis_url,
+                            max_connections=50,
+                            decode_responses=True,
+                            socket_connect_timeout=3,
+                            socket_timeout=3,
+                            retry_on_timeout=True,
+                            health_check_interval=30,
+                        )
+                        client = redis.Redis(connection_pool=pool)
+                        client.ping()
+                        self._redis = client
+                        self._connected = True
+                    except (redis.ConnectionError, redis.TimeoutError, ValueError) as e:
+                        logger.warning(f"Redis 连接失败: {e}，将使用进程内缓存并稍后重试")
+                        self._redis = None
+                        self._connected = False
 
         return self._redis
 
     @property
     def connected(self) -> bool:
         """检查是否已连接"""
-        if not self._connect_attempted:
-            _ = self.redis  # 触发首次连接
+        _ = self.redis  # 触发首次连接或到期后的重试
         return self._connected
 
 
     def get(self, key: str) -> Optional[dict]:
         """获取缓存值"""
         if not self.connected:
-            return None
+            return self._get_local(key)
         try:
             value = self.redis.get(key)
             if value:
                 return json.loads(value)
-        except (redis.RedisError, json.JSONDecodeError) as e:
+        except redis.RedisError as e:
             logger.error(f"缓存读取失败 [{key}]: {e}")
-        return None
+            self._mark_redis_unavailable()
+        except json.JSONDecodeError as e:
+            logger.error(f"缓存数据格式错误 [{key}]: {e}")
+        return self._get_local(key)
+
+    def _get_local(self, key: str) -> Optional[dict]:
+        """从进程内缓存读取，并惰性清理过期条目。"""
+        with self._local_cache_lock:
+            item = self._local_cache.get(key)
+            if item is None:
+                return None
+            serialized, expires_at, _size = item
+            if expires_at <= time.monotonic():
+                self._pop_local(key)
+                return None
+            self._local_cache.move_to_end(key)
+
+        try:
+            return json.loads(serialized)
+        except json.JSONDecodeError:
+            with self._local_cache_lock:
+                self._pop_local(key)
+            return None
+
+    def _set_local(self, key: str, serialized: str, ttl: int) -> None:
+        size = len(serialized.encode("utf-8"))
+        if size > self._local_cache_max_bytes:
+            return
+        with self._local_cache_lock:
+            self._pop_local(key)
+            while self._local_cache and (
+                len(self._local_cache) >= self._local_cache_max_entries
+                or self._local_cache_bytes + size > self._local_cache_max_bytes
+            ):
+                oldest_key = next(iter(self._local_cache))
+                self._pop_local(oldest_key)
+            self._local_cache[key] = (serialized, time.monotonic() + max(1, ttl), size)
+            self._local_cache_bytes += size
+            self._local_cache.move_to_end(key)
+
+    def _pop_local(self, key: str):
+        item = self._local_cache.pop(key, None)
+        if item is not None:
+            self._local_cache_bytes -= item[2]
+        return item
+
+    def _mark_redis_unavailable(self) -> None:
+        self._connected = False
+        self._redis = None
+        self._last_connect_attempt = time.monotonic()
 
     def set(self, key: str, value: Any, ttl: int = 60, ex: Optional[int] = None) -> bool:
         """设置缓存值"""
-        if not self.connected:
-            return False
         effective_ttl = ex if ex is not None else ttl
         try:
-            self.redis.setex(
-                key, effective_ttl, json.dumps(value, ensure_ascii=False, default=str)
-            )
+            serialized = json.dumps(value, ensure_ascii=False, default=str)
+        except (TypeError, ValueError) as e:
+            logger.error(f"缓存序列化失败 [{key}]: {e}")
+            return False
+
+        if not self.connected:
+            self._set_local(key, serialized, effective_ttl)
             return True
-        except (redis.RedisError, TypeError) as e:
+        try:
+            self.redis.setex(key, effective_ttl, serialized)
+            self._set_local(key, serialized, effective_ttl)
+            return True
+        except redis.RedisError as e:
             logger.error(f"缓存写入失败 [{key}]: {e}")
-        return False
+            self._mark_redis_unavailable()
+            self._set_local(key, serialized, effective_ttl)
+            return True
 
     def delete(self, key: str) -> bool:
         """删除缓存"""
         if not self.connected:
-            return False
+            with self._local_cache_lock:
+                return self._pop_local(key) is not None
         try:
             self.redis.delete(key)
+            with self._local_cache_lock:
+                self._pop_local(key)
             return True
         except redis.RedisError as e:
             logger.error(f"缓存删除失败 [{key}]: {e}")
-        return False
+            self._mark_redis_unavailable()
+            with self._local_cache_lock:
+                return self._pop_local(key) is not None
 
     def delete_pattern(self, pattern: str) -> int:
         """批量删除"""
         if not self.connected:
-            return 0
+            return self._delete_local_pattern(pattern)
         try:
             keys = list(self.redis.scan_iter(match=pattern))
-            if keys:
-                return self.redis.delete(*keys)
+            deleted = self.redis.delete(*keys) if keys else 0
+            local_deleted = self._delete_local_pattern(pattern)
+            return max(deleted, local_deleted)
         except redis.RedisError as e:
             logger.error(f"批量删除失败 [{pattern}]: {e}")
-        return 0
+            self._mark_redis_unavailable()
+            return self._delete_local_pattern(pattern)
+
+    def _delete_local_pattern(self, pattern: str) -> int:
+        with self._local_cache_lock:
+            keys = [key for key in self._local_cache if fnmatch.fnmatch(key, pattern)]
+            for key in keys:
+                self._pop_local(key)
+            return len(keys)
 
     def get_stats(self) -> dict:
         """获取统计（包含命中率）"""
@@ -185,21 +278,9 @@ class RedisCache:
     def lock(self, name: str, timeout: int = 10, blocking_timeout: int = 5):
         """获取分布式锁"""
         if not self.connected:
-            # 如果没连接，返回一个假的上下文管理器，不做任何事
-            class DummyLock:
-                def __enter__(self):
-                    return True
-
-                def __exit__(self, exc_type, exc_val, exc_tb):
-                    pass
-
-                def acquire(self, blocking=True):
-                    return True
-
-                def release(self):
-                    pass
-
-            return DummyLock()
+            # Redis 不可用时使用进程内锁，避免同一实例重复计算。
+            with self._local_cache_lock:
+                return self._local_locks.setdefault(name, threading.Lock())
 
         return self.redis.lock(
             f"lock:{name}", timeout=timeout, blocking_timeout=blocking_timeout

@@ -81,6 +81,8 @@ def save_snapshot(key: str, payload: Dict[str, Any]) -> bool:
     """同步保存快照（支持从后台线程、定时任务或同步函数中调用）"""
     from .db import DB_AVAILABLE
     if not DB_AVAILABLE:
+        # Keep the local disaster-recovery copy even when PostgreSQL is disabled.
+        _save_local_file(key, _clean_payload(payload))
         return True
 
     from .scheduler import _main_loop
