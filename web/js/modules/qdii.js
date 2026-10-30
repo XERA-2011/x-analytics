@@ -181,6 +181,8 @@ class QDIIController {
             allocTypeBadge = ' [基于总仓位地区推算]';
         } else if (allocSourceType === 'metadata_fallback') {
             allocTypeBadge = ' [静态基准兜底]';
+        } else if (allocSourceType === 'etf_penetrated') {
+            allocTypeBadge = ' [ETF穿透真实配置]';
         }
 
         const normSummary = segments.map(s => `${s.pctStr}% ${s.name}`).join(' · ');
@@ -787,7 +789,7 @@ class QDIIController {
                 penetrationHtml = `
                     <div style="background: rgba(59, 130, 246, 0.06); border: 1px solid rgba(59, 130, 246, 0.15); border-radius: 6px; padding: 8px 12px; font-size: 0.76rem; color: var(--accent-blue); margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
                         <i data-lucide="link" style="width: 14px; height: 14px; flex-shrink: 0;"></i>
-                        <span>当前持仓已自动穿透至底层联接的 ETF (<strong>${data.target_code}</strong>) 获取真实持仓</span>
+                        <span>当前持仓与资产配置已自动穿透至底层联接的 ETF (<strong>${data.target_code}</strong>) 获取真实资产数据</span>
                     </div>
                 `;
             }
@@ -872,6 +874,8 @@ class QDIIController {
                     allocTypeBadge = '总仓位地区推算';
                 } else if (allocSourceType === 'metadata_fallback') {
                     allocTypeBadge = '静态基准兜底';
+                } else if (allocSourceType === 'etf_penetrated') {
+                    allocTypeBadge = 'ETF穿透真实配置';
                 }
 
                 allocCardHtml = `

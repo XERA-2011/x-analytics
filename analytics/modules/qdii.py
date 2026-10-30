@@ -1168,9 +1168,34 @@ def _get_expected_quarter_date() -> Optional[str]:
     return expected_quarters.get(today.month)
 
 
+# 联接基金到目标 ETF 的精准映射，当联接基金本身无股票持仓或资产配置未穿透时，自动穿透到对应的目标 ETF 获取真实持仓与资产配置
+FEEDER_TO_TARGET_ETF: Dict[str, str] = {
+    "016055": "513390",  # 博时纳斯达克100ETF发起式联接A -> 博时纳斯达克100ETF (513390)
+    "017091": "159509",  # 景顺长城纳斯达克科技ETF联接A -> 景顺长城纳斯达克科技ETF (159509)
+    "018064": "159655",  # 华夏标普500ETF发起式联接A -> 华夏标普500ETF (159655)
+    "016532": "159501",  # 嘉实纳斯达克100ETF发起联接A -> 嘉实纳斯达克100ETF (159501)
+    "040046": "159518",  # 华安纳斯达克100ETF联接A -> 华安纳斯达克100ETF (159518)
+    "270042": "159941",  # 广发纳斯达克100ETF联接A -> 广发纳斯达克100ETF (159941)
+    "000834": "159513",  # 大成纳斯达克100ETF联接A -> 大成纳斯达克100ETF (159513)
+    "019454": "513310",  # 华泰柏瑞中韩半导体联接A -> 华泰柏瑞中韩半导体ETF (513310)
+    "019547": "159659",  # 招商纳斯达克100ETF发起式联接A -> 招商纳斯达克100ETF (159659)
+    "019524": "513110",  # 华泰柏瑞纳斯达克100ETF发起式联接A -> 华泰柏瑞纳斯达克100ETF (513110)
+    "018966": "159660",  # 汇添富纳斯达克100ETF发起式联接A -> 汇添富纳斯达克100ETF (159660)
+    "015299": "513300",  # 华夏纳斯达克100ETF发起式联接A -> 华夏纳斯达克100ETF (513300)
+    "050025": "513500",  # 博时标普500ETF联接A -> 博时标普500ETF (513500)
+    "007721": "513500",  # 天弘标普500 FOF -> 博时标普500ETF (513500)
+    "017028": "159612",  # 国泰标普500ETF发起联接A -> 国泰标普500ETF (159612)
+    "019441": "513100",  # 万家纳斯达克100指数发起式A -> 国泰纳斯达克100 (513100)
+    "016452": "513100",  # 南方纳斯达克100指数发起A -> 国泰纳斯达克100 (513100)
+}
+
+
 def fetch_fund_asset_allocation(session: requests.Session, code: str) -> Optional[Dict[str, Any]]:
     """获取指定 QDII 场外联接/被动基金的最新真实资产/持仓配置（股票/权益 %、现金/货币 %）"""
-    cache_key = f"{settings.CACHE_PREFIX}:qdii:asset_alloc_v8:{code}"
+    target_code = FEEDER_TO_TARGET_ETF.get(code)
+    fetch_code = target_code if target_code else code
+
+    cache_key = f"{settings.CACHE_PREFIX}:qdii:asset_alloc_v9:{code}"
     try:
         cached_val = cache.get(cache_key)
         if cached_val is not None:
@@ -1187,7 +1212,7 @@ def fetch_fund_asset_allocation(session: requests.Session, code: str) -> Optiona
         pass
     try:
         time.sleep(0.2)  # 延时分散并发请求，防代理超时
-        url = f"https://fundf10.eastmoney.com/zcpz_{code}.html"
+        url = f"https://fundf10.eastmoney.com/zcpz_{fetch_code}.html"
         res = fetch_url_via_proxy(url, session=session, timeout=10)
         if not res or res.status_code != 200:
             return None
@@ -1258,16 +1283,18 @@ def fetch_fund_asset_allocation(session: requests.Session, code: str) -> Optiona
         else:
             stock_val = 0.0
 
-        # 如果算出来的股票占比极小（如 0.00% 或 ---），无论属于联接型还是主动QDII（如主投海外ETF/基金的华宝海外科技501312），
-        # 只要有有效定期季报，说明实质为主投目标ETF或海外权益资产，需基于现金/债券回退计算：100% - 现金 - 债券
-        if stock_val < 1.0:
+        # 如果算出来的股票占比极小（如 0.00% 或 ---），或者由于基金投资科目未包含在 zcpz 导致三项之和异常偏低 (< 50%)，
+        # 只要有有效定期季报，说明实质为主投目标ETF或海外权益资产，需基于现金/债券回退计算真实股票权益敞口：100% - 现金 - 债券
+        if stock_val < 1.0 or (stock_val + cash_val + bond_val < 50.0):
             stock_val = max(0.0, round(100.0 - cash_val - bond_val, 2))
 
         result = {
             "stock_pct": stock_val,
             "cash_pct": cash_val,
             "bond_pct": bond_val,
-            "report_date": selected_row[0]
+            "report_date": selected_row[0],
+            "is_penetrated": bool(target_code),
+            "target_code": target_code
         }
         try:
             cache.set(cache_key, result, ttl=86400 * 50)  # 资产配置缓存 50 天
@@ -1316,8 +1343,14 @@ def resolve_fund_asset_allocation(
                 allocation_source_type = "metadata_fallback"
                 allocation_source_desc = "季报历史地区比例"
         else:
-            allocation_source_type = "quarterly_direct"
-            allocation_source_desc = "最新季报大类资产配置"
+            is_penetrated = live_alloc.get("is_penetrated", False)
+            target_code = live_alloc.get("target_code")
+            if is_penetrated and target_code:
+                allocation_source_type = "etf_penetrated"
+                allocation_source_desc = f"已穿透至底层目标ETF({target_code})获取真实配置"
+            else:
+                allocation_source_type = "quarterly_direct"
+                allocation_source_desc = "最新季报大类资产配置"
     else:
         asset_alloc = dict(default_alloc) if default_alloc else {}
         allocation_source_type = "metadata_fallback"
@@ -1334,8 +1367,9 @@ def resolve_fund_asset_allocation(
         and not any(k in asset_alloc for k in ["stock_hk_pct", "stock_cn_pct", "stock_other_pct"])
     ):
         asset_alloc["stock_us_pct"] = asset_alloc["stock_pct"]
-        allocation_source_type = "quarterly_direct"
-        allocation_source_desc = "纯美股指数基金契约 (股票资产100%美股)"
+        if not (live_alloc and live_alloc.get("is_penetrated")):
+            allocation_source_type = "quarterly_direct"
+            allocation_source_desc = "纯美股指数基金契约 (股票资产100%美股)"
 
     return asset_alloc, allocation_source_type, allocation_source_desc, alloc_report_date
 
@@ -1885,29 +1919,9 @@ def _fetch_full_holdings_count(session: requests.Session, fetch_code: str, defau
     return final_count
 
 
-@cached("qdii:top_holdings_v17", ttl=86400 * 7, stale_ttl=86400 * 30, sync_on_cold=True)
+@cached("qdii:top_holdings_v18", ttl=86400 * 7, stale_ttl=86400 * 30, sync_on_cold=True)
 def get_qdii_top_holdings(code: str) -> Dict[str, Any]:
     """获取 QDII 基金最新披露的重仓持仓股票列表（升级支持最大100只完整持仓）"""
-    # 联接基金到目标 ETF 的精准映射，当联接基金本身无股票持仓披露时，自动穿透到对应的目标 ETF 获取底层真实持仓
-    FEEDER_TO_TARGET_ETF = {
-        "016055": "513390",  # 博时纳斯达克100ETF发起式联接A -> 博时纳斯达克100ETF (513390)
-        "017091": "159509",  # 景顺长城纳斯达克科技ETF联接A -> 景顺长城纳斯达克科技ETF (159509)
-        "018064": "159655",  # 华夏标普500ETF发起式联接A -> 华夏标普500ETF (159655)
-        "016532": "159501",  # 嘉实纳斯达克100ETF发起联接A -> 嘉实纳斯达克100ETF (159501)
-        "040046": "159518",  # 华安纳斯达克100ETF联接A -> 华安纳斯达克100ETF (159518)
-        "270042": "159941",  # 广发纳斯达克100ETF联接A -> 广发纳斯达克100ETF (159941)
-        "000834": "159513",  # 大成纳斯达克100ETF联接A -> 大成纳斯达克100ETF (159513)
-        "019454": "513310",  # 华泰柏瑞中韩半导体联接A -> 华泰柏瑞中韩半导体ETF (513310)
-        "019547": "159659",  # 招商纳斯达克100ETF发起式联接A -> 招商纳斯达克100ETF (159659)
-        "019524": "513110",  # 华泰柏瑞纳斯达克100ETF发起式联接A -> 华泰柏瑞纳斯达克100ETF (513110)
-        "018966": "159660",  # 汇添富纳斯达克100ETF发起式联接A -> 汇添富纳斯达克100ETF (159660)
-        "015299": "513300",  # 华夏纳斯达克100ETF发起式联接A -> 华夏纳斯达克100ETF (513300)
-        "050025": "513500",  # 博时标普500ETF联接A -> 博时标普500ETF (513500)
-        "007721": "513500",  # 天弘标普500 FOF -> 博时标普500ETF (513500)
-        "017028": "159612",  # 国泰标普500ETF发起联接A -> 国泰标普500ETF (159612)
-        "019441": "513100",  # 万家纳斯达克100指数发起式A -> 国泰纳斯达克100 (513100)
-        "016452": "513100",  # 南方纳斯达克100指数发起A -> 国泰纳斯达克100 (513100)
-    }
     fetch_code = FEEDER_TO_TARGET_ETF.get(code, code)
     try:
         session = requests.Session()
@@ -1915,8 +1929,6 @@ def get_qdii_top_holdings(code: str) -> Dict[str, Any]:
         # 计算资产配置与仓位
         target_meta = next((m for m in QDII_FUND_METADATA if m["code"] == code), None)
         live_alloc = fetch_fund_asset_allocation(session, code)
-        if not live_alloc and fetch_code != code:
-            live_alloc = fetch_fund_asset_allocation(session, fetch_code)
         asset_alloc, alloc_src_type, alloc_src_desc, alloc_rep_date = resolve_fund_asset_allocation(
             code=code, target_meta=target_meta, live_alloc=live_alloc
         )
