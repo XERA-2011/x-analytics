@@ -3,12 +3,59 @@
 提供安全响应头、限流、管理 API 保护等功能
 """
 
-from typing import Callable
+from typing import Callable, Optional
+from urllib.parse import urlparse
 from fastapi import Request
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from .rate_limiter import public_limiter, admin_limiter
+
+
+# 常见自动化爬虫 User-Agent 关键词 (非回环请求时拦截)
+DISALLOWED_UA_KEYWORDS = [
+    "python-requests",
+    "aiohttp",
+    "httpx",
+    "scrapy",
+    "go-http-client",
+    "libwww-perl",
+    "urllib",
+]
+
+
+def _is_trusted_domain(url_or_domain: Optional[str]) -> bool:
+    """检查 Origin 或 Referer 是否属于受信任域名白名单"""
+    if not url_or_domain:
+        return True
+    try:
+        if "://" in url_or_domain:
+            hostname = (urlparse(url_or_domain).hostname or "").lower()
+        else:
+            hostname = url_or_domain.split(":")[0].strip().lower()
+
+        if not hostname:
+            return False
+
+        # 本地开发与测试环境放行
+        if hostname in ("localhost", "127.0.0.1", "testserver"):
+            return True
+
+        # 信任 xerafun.com 及其所有子域名 (如 analytics.xerafun.com)
+        if hostname == "xerafun.com" or hostname.endswith(".xerafun.com"):
+            return True
+
+        # 信任 dpdns.org 及其所有子域名 (如 xera.dpdns.org, sub.xera2011.dpdns.org)
+        if hostname == "dpdns.org" or hostname.endswith(".dpdns.org"):
+            return True
+
+        # 信任 Cloudflare Pages 个人主站 (xera.pages.dev)
+        if hostname == "xera.pages.dev" or hostname.endswith(".xera.pages.dev"):
+            return True
+
+        return False
+    except Exception:
+        return False
 
 
 # 管理 API 路径前缀 (支持有无 /analytics 前缀)
@@ -128,9 +175,49 @@ class SecurityMiddleware(BaseHTTPMiddleware):
                     }
                 )
         
-        # 2. 检查是否为公开 API（需要限流）
+        # 2. 检查是否为公开 API（需要安全与限流防护）
         elif _is_api_path(path):
             if not _is_static_path(path):
+                # OPTIONS 预检请求跳过安全与限流拦截，交由 CORSMiddleware 处理
+                if request.method != "OPTIONS":
+                    # 校验 Origin (防跨站非法调用)
+                    origin = request.headers.get("origin")
+                    if origin and not _is_trusted_domain(origin):
+                        return JSONResponse(
+                            status_code=403,
+                            content={
+                                "status": "error",
+                                "message": "Forbidden: untrusted origin",
+                            },
+                        )
+
+                    # 校验 Referer (防盗链)
+                    referer = request.headers.get("referer")
+                    if referer and not _is_trusted_domain(referer):
+                        return JSONResponse(
+                            status_code=403,
+                            content={
+                                "status": "error",
+                                "message": "Forbidden: untrusted referer",
+                            },
+                        )
+
+                    # 过滤常见未伪装爬虫 UA (仅对外部非回环客户端生效，保留单元测试与内部探测)
+                    is_loopback = (
+                        client_ip in ("127.0.0.1", "::1", "localhost", "testserver")
+                        or client_ip.startswith("127.")
+                    )
+                    if not is_loopback:
+                        user_agent = request.headers.get("user-agent", "").lower()
+                        if any(bot in user_agent for bot in DISALLOWED_UA_KEYWORDS):
+                            return JSONResponse(
+                                status_code=403,
+                                content={
+                                    "status": "error",
+                                    "message": "Forbidden: automated requests disallowed",
+                                },
+                            )
+
                 if not public_limiter.is_allowed(client_ip):
                     return JSONResponse(
                         status_code=429,
@@ -148,6 +235,7 @@ class SecurityMiddleware(BaseHTTPMiddleware):
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         if _is_api_path(path):
             # API 响应禁用缓存，避免客户端使用过期数据
             response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"

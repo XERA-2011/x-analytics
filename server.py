@@ -159,12 +159,24 @@ app = FastAPI(
 # 1. 安全中间件（限流 + Token 验证 + 安全头）
 app.add_middleware(SecurityMiddleware)
 
-# 2. CORS 配置 - 限制跨域访问
-#    由于前端和 API 在同一域名下，不需要开放 CORS
-#    如需开放特定域名，在 allow_origins 中添加
+# 2. CORS 配置 - 限制跨域访问，仅允许信任的主机与子域名
+ALLOWED_ORIGINS = [
+    "https://analytics.xerafun.com",
+    "https://xerafun.com",
+    "https://xera.dpdns.org",
+    "https://xera.pages.dev",
+    "http://localhost:8080",
+    "http://127.0.0.1:8080",
+    "http://127.0.0.1:2012",
+]
+ALLOW_ORIGIN_REGEX = (
+    r"^https?://([a-zA-Z0-9-]+\.)*(xerafun\.com|dpdns\.org|xera\.pages\.dev)(:[0-9]+)?$"
+)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
+    allow_origin_regex=ALLOW_ORIGIN_REGEX,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
