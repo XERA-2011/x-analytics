@@ -1279,6 +1279,67 @@ def fetch_fund_asset_allocation(session: requests.Session, code: str) -> Optiona
         return None
 
 
+def resolve_fund_asset_allocation(
+    code: str,
+    target_meta: Optional[Dict[str, Any]] = None,
+    live_alloc: Optional[Dict[str, Any]] = None
+) -> Tuple[Dict[str, Any], str, str, str]:
+    """根据最新季报或基准元数据推算并规整基金资产配置（股票/现金/债券及地区占比）"""
+    if target_meta is None:
+        target_meta = next((m for m in QDII_FUND_METADATA if m["code"] == code), None)
+
+    default_alloc = (target_meta and target_meta.get("default_asset_allocation")) or {}
+    alloc_report_date = (live_alloc and live_alloc.get("report_date")) or (target_meta and target_meta.get("default_nav_date")) or "2026-06-30"
+
+    allocation_source_type = "metadata_fallback"
+    allocation_source_desc = "季报静态基准兜底"
+
+    if live_alloc:
+        asset_alloc = dict(live_alloc)
+        sub_keys = [k for k in ["stock_us_pct", "stock_hk_pct", "stock_cn_pct", "stock_other_pct"] if k in default_alloc]
+        if sub_keys:
+            def_total_stock = default_alloc.get("stock_pct", 0.0)
+            if def_total_stock > 0 and live_alloc.get("stock_pct", 0) > 0:
+                live_stock = live_alloc["stock_pct"]
+                sub_sum = 0.0
+                for k in sub_keys[:-1]:
+                    val = round(live_stock * (default_alloc[k] / def_total_stock), 1)
+                    asset_alloc[k] = val
+                    sub_sum += val
+                last_k = sub_keys[-1]
+                asset_alloc[last_k] = round(max(0.0, live_stock - sub_sum), 1)
+                allocation_source_type = "stock_scaled_estimate"
+                allocation_source_desc = f"基于最新季报总仓位({live_stock}%)与历史地区结构推算"
+            else:
+                for k in sub_keys:
+                    asset_alloc[k] = default_alloc[k]
+                allocation_source_type = "metadata_fallback"
+                allocation_source_desc = "季报历史地区比例"
+        else:
+            allocation_source_type = "quarterly_direct"
+            allocation_source_desc = "最新季报大类资产配置"
+    else:
+        asset_alloc = dict(default_alloc) if default_alloc else {}
+        allocation_source_type = "metadata_fallback"
+        allocation_source_desc = "季报静态基准兜底"
+
+    # 对于纯美股指数/行业基金，契约明确规定 100% 美股股票
+    US_MARKET_INDICES = ["NDX", "SPX", "NBI", "TECH", "SPX_TECH", "CONS", "SPX_CONS", "SEMI", "SPX_100"]
+    idx_code = target_meta.get("index_code") if target_meta else ""
+    fund_tag = target_meta.get("tag") if target_meta else ""
+    if (
+        (idx_code in US_MARKET_INDICES or fund_tag in ["纳指100", "标普500", "生物科技", "信息科技", "消费精选", "半导体", "标普100"])
+        and "stock_us_pct" not in asset_alloc
+        and "stock_pct" in asset_alloc
+        and not any(k in asset_alloc for k in ["stock_hk_pct", "stock_cn_pct", "stock_other_pct"])
+    ):
+        asset_alloc["stock_us_pct"] = asset_alloc["stock_pct"]
+        allocation_source_type = "quarterly_direct"
+        allocation_source_desc = "纯美股指数基金契约 (股票资产100%美股)"
+
+    return asset_alloc, allocation_source_type, allocation_source_desc, alloc_report_date
+
+
 def fetch_fund_fee_rate(session: requests.Session, code: str) -> Optional[str]:
     """获取指定基金的最新综合运营费率（管理费率 + 托管费率 + 销售服务费率）"""
     cache_key = f"{settings.CACHE_PREFIX}:qdii:fee_rate:{code}"
@@ -1690,53 +1751,9 @@ def get_qdii_passive_funds() -> Dict[str, Any]:
         final_date = official_nav_date
 
         # 资产配置仓位与口径判定 (季报披露原值 vs 地区推算 vs 静态基准)
-        default_alloc = item.get("default_asset_allocation", {})
-        live_alloc = alloc_map.get(code)
-        alloc_report_date = (live_alloc and live_alloc.get("report_date")) or item.get("default_nav_date") or "2026-06-30"
-
-        allocation_source_type = "metadata_fallback"
-        allocation_source_desc = "季报静态基准兜底"
-
-        if live_alloc:
-            asset_alloc = dict(live_alloc)
-            sub_keys = [k for k in ["stock_us_pct", "stock_hk_pct", "stock_cn_pct", "stock_other_pct"] if k in default_alloc]
-            if sub_keys:
-                def_total_stock = default_alloc.get("stock_pct", 0.0)
-                if def_total_stock > 0 and live_alloc.get("stock_pct", 0) > 0:
-                    live_stock = live_alloc["stock_pct"]
-                    sub_sum = 0.0
-                    for k in sub_keys[:-1]:
-                        val = round(live_stock * (default_alloc[k] / def_total_stock), 1)
-                        asset_alloc[k] = val
-                        sub_sum += val
-                    last_k = sub_keys[-1]
-                    asset_alloc[last_k] = round(max(0.0, live_stock - sub_sum), 1)
-                    allocation_source_type = "stock_scaled_estimate"
-                    allocation_source_desc = f"基于最新季报总仓位({live_stock}%)与历史地区结构推算"
-                else:
-                    for k in sub_keys:
-                        asset_alloc[k] = default_alloc[k]
-                    allocation_source_type = "metadata_fallback"
-                    allocation_source_desc = "季报历史地区比例"
-            else:
-                allocation_source_type = "quarterly_direct"
-                allocation_source_desc = "最新季报大类资产配置"
-        else:
-            asset_alloc = dict(default_alloc)
-            allocation_source_type = "metadata_fallback"
-            allocation_source_desc = "季报静态基准兜底"
-
-        # 对于纯美股指数/行业基金，契约明确规定 100% 美股股票
-        US_MARKET_INDICES = ["NDX", "SPX", "NBI", "TECH", "SPX_TECH", "CONS", "SPX_CONS", "SEMI", "SPX_100"]
-        if (
-            (item.get("index_code") in US_MARKET_INDICES or item.get("tag") in ["纳指100", "标普500", "生物科技", "信息科技", "消费精选", "半导体", "标普100"])
-            and "stock_us_pct" not in asset_alloc
-            and "stock_pct" in asset_alloc
-            and not any(k in asset_alloc for k in ["stock_hk_pct", "stock_cn_pct", "stock_other_pct"])
-        ):
-            asset_alloc["stock_us_pct"] = asset_alloc["stock_pct"]
-            allocation_source_type = "quarterly_direct"
-            allocation_source_desc = "纯美股指数基金契约 (股票资产100%美股)"
+        asset_alloc, allocation_source_type, allocation_source_desc, alloc_report_date = resolve_fund_asset_allocation(
+            code=code, target_meta=item, live_alloc=alloc_map.get(code)
+        )
 
         fee_rate = fee_map.get(code) or item["fee_rate"]
         buy_status = status_map.get(code) or "开放申购"
@@ -1868,7 +1885,7 @@ def _fetch_full_holdings_count(session: requests.Session, fetch_code: str, defau
     return final_count
 
 
-@cached("qdii:top_holdings_v16", ttl=86400 * 7, stale_ttl=86400 * 30, sync_on_cold=True)
+@cached("qdii:top_holdings_v17", ttl=86400 * 7, stale_ttl=86400 * 30, sync_on_cold=True)
 def get_qdii_top_holdings(code: str) -> Dict[str, Any]:
     """获取 QDII 基金最新披露的重仓持仓股票列表（升级支持最大100只完整持仓）"""
     # 联接基金到目标 ETF 的精准映射，当联接基金本身无股票持仓披露时，自动穿透到对应的目标 ETF 获取底层真实持仓
@@ -1894,13 +1911,23 @@ def get_qdii_top_holdings(code: str) -> Dict[str, Any]:
     fetch_code = FEEDER_TO_TARGET_ETF.get(code, code)
     try:
         session = requests.Session()
+        
+        # 计算资产配置与仓位
+        target_meta = next((m for m in QDII_FUND_METADATA if m["code"] == code), None)
+        live_alloc = fetch_fund_asset_allocation(session, code)
+        if not live_alloc and fetch_code != code:
+            live_alloc = fetch_fund_asset_allocation(session, fetch_code)
+        asset_alloc, alloc_src_type, alloc_src_desc, alloc_rep_date = resolve_fund_asset_allocation(
+            code=code, target_meta=target_meta, live_alloc=live_alloc
+        )
+
         url = f"http://fundf10.eastmoney.com/FundArchivesDatas.aspx?type=jjcc&code={fetch_code}&topline=100"
         
         # 使用代理获取 (根据项目安全规范，严格禁止直连回退；设置 6s 超时确保 2 次重试在前端 15s 超时内完成)
         res = fetch_url_via_proxy(url, session=session, timeout=6)
                 
         if res is None:
-            return {"status": "error", "error": True, "message": f"网络请求超时 (code: {code})", "holdings": []}
+            return {"status": "error", "error": True, "message": f"网络请求超时 (code: {code})", "holdings": [], "asset_allocation": asset_alloc}
             
         if res.status_code == 404:
             # 404 表示该基金无相关持仓披露页面 (如某些联接基金或刚成立无数据)
@@ -1914,11 +1941,15 @@ def get_qdii_top_holdings(code: str) -> Dict[str, Any]:
                 "top10_concentration": 0.0,
                 "is_penetrated": fetch_code != code,
                 "target_code": fetch_code if fetch_code != code else None,
-                "holdings": []
+                "holdings": [],
+                "asset_allocation": asset_alloc,
+                "allocation_source_type": alloc_src_type,
+                "allocation_source_desc": alloc_src_desc,
+                "allocation_report_date": alloc_rep_date,
             }
             
         if res.status_code != 200:
-            return {"status": "error", "error": True, "message": f"接口异常 HTTP {res.status_code} (code: {code})", "holdings": []}
+            return {"status": "error", "error": True, "message": f"接口异常 HTTP {res.status_code} (code: {code})", "holdings": [], "asset_allocation": asset_alloc}
 
         match = re.search(r'content:\"(.*?)\"', res.text, re.DOTALL)
         if not match:
@@ -1931,7 +1962,11 @@ def get_qdii_top_holdings(code: str) -> Dict[str, Any]:
                 "top10_concentration": 0.0,
                 "is_penetrated": fetch_code != code,
                 "target_code": fetch_code if fetch_code != code else None,
-                "holdings": []
+                "holdings": [],
+                "asset_allocation": asset_alloc,
+                "allocation_source_type": alloc_src_type,
+                "allocation_source_desc": alloc_src_desc,
+                "allocation_report_date": alloc_rep_date,
             }
 
         html_content = match.group(1)
@@ -1951,7 +1986,11 @@ def get_qdii_top_holdings(code: str) -> Dict[str, Any]:
                 "is_penetrated": fetch_code != code,
                 "target_code": fetch_code if fetch_code != code else None,
                 "holdings": [],
-                "exited_holdings": []
+                "exited_holdings": [],
+                "asset_allocation": asset_alloc,
+                "allocation_source_type": alloc_src_type,
+                "allocation_source_desc": alloc_src_desc,
+                "allocation_report_date": alloc_rep_date,
             }
 
         # Helper to dynamically find the index of "占净值比例" based on table headers
@@ -2127,7 +2166,11 @@ def get_qdii_top_holdings(code: str) -> Dict[str, Any]:
             "is_penetrated": fetch_code != code,
             "target_code": fetch_code if fetch_code != code else None,
             "holdings": holdings,
-            "exited_holdings": exited_holdings
+            "exited_holdings": exited_holdings,
+            "asset_allocation": asset_alloc,
+            "allocation_source_type": alloc_src_type,
+            "allocation_source_desc": alloc_src_desc,
+            "allocation_report_date": alloc_rep_date,
         }
 
         # 智能 TTL 控制：若当前处于季报披露集中窗口期，且抓取的 report_date 仍非当前目标最新季度（尚未披露），

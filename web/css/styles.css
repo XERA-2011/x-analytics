@@ -3720,6 +3720,10 @@ footer a:hover {
     .qdii-holding-table td {
         padding: 7px 4px;
     }
+    .qdii-modal-alloc-card {
+        padding: 8px 10px !important;
+        margin-bottom: 12px !important;
+    }
 }
 
 .qdii-holding-ratio-wrapper {

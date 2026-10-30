@@ -831,18 +831,94 @@ class QDIIController {
             const sharpe = fundItem.sharpe != null ? `${fundItem.sharpe.toFixed(2)}` : '--';
             const r1y = fundItem.return_1y != null ? `${fundItem.return_1y > 0 ? '+' : ''}${utils.formatPercentage(fundItem.return_1y)}` : '--';
 
+            // 提取资产配置 / 仓位数据 (支持从当前持仓返回或全量列表中获取)
+            const allocData = data.asset_allocation || fundItem.asset_allocation;
+            const allocSourceType = data.allocation_source_type || fundItem.allocation_source_type || 'quarterly_direct';
+            const allocSourceDesc = data.allocation_source_desc || fundItem.allocation_source_desc || '季报大类资产配置';
+            const allocReportDate = data.allocation_report_date || fundItem.allocation_report_date || (allocData && allocData.report_date) || reportDate;
+
+            const allocItem = {
+                ...fundItem,
+                asset_allocation: allocData,
+                allocation_source_type: allocSourceType,
+                allocation_source_desc: allocSourceDesc,
+                allocation_report_date: allocReportDate,
+            };
+            const allocInfo = this._calcNormalizedAllocation(allocItem);
+
+            const stockVal = allocData?.stock_pct != null ? allocData.stock_pct : null;
+            const cashVal = allocData?.cash_pct != null ? allocData.cash_pct : null;
+            const bondVal = allocData?.bond_pct != null ? allocData.bond_pct : null;
+
+            let allocCardHtml = '';
+            if (allocInfo && allocInfo.segments && allocInfo.segments.length > 0) {
+                const barHtml = allocInfo.segments.map(s => {
+                    const w = s.pctStr;
+                    return `<div class="${s.cls}" style="flex: 0 0 ${w}%; width: ${w}%;" title="${s.name}: ${w}% (季报原值: ${s.rawStr}%)"></div>`;
+                }).join('');
+
+                const legendHtml = allocInfo.segments.map(s => {
+                    return `
+                        <div style="display: inline-flex; align-items: center; gap: 4px; font-size: 0.72rem;">
+                            <span class="${s.cls}" style="display: inline-block; width: 8px; height: 8px; border-radius: 2px;"></span>
+                            <span style="color: var(--text-secondary);">${s.name}:</span>
+                            <strong class="${s.textCls}" style="font-family: monospace; font-size: 0.76rem;">${s.pctStr}%</strong>
+                        </div>
+                    `;
+                }).join('');
+
+                let allocTypeBadge = '季报披露原值';
+                if (allocSourceType === 'stock_scaled_estimate') {
+                    allocTypeBadge = '总仓位地区推算';
+                } else if (allocSourceType === 'metadata_fallback') {
+                    allocTypeBadge = '静态基准兜底';
+                }
+
+                allocCardHtml = `
+                    <div class="qdii-modal-alloc-card" style="margin-bottom: 16px; padding: 10px 14px; background: var(--bg-subtle); border: 1px solid var(--border-light); border-radius: 8px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-wrap: wrap; gap: 6px;">
+                            <div style="font-size: 0.76rem; font-weight: 600; color: var(--text-secondary); display: flex; align-items: center; gap: 5px;">
+                                <i data-lucide="pie-chart" style="width: 14px; height: 14px; color: var(--accent-blue);"></i>
+                                <span>资产配置 / 仓位</span>
+                                <span style="font-size: 0.68rem; font-weight: normal; color: var(--text-tertiary);">${allocReportDate ? `(${allocReportDate} · ${allocTypeBadge})` : `(${allocTypeBadge})`}</span>
+                            </div>
+                            <div style="font-size: 0.72rem; color: var(--text-secondary); display: flex; align-items: center; gap: 6px;">
+                                <span>股票仓位: <strong style="color: var(--text-primary); font-family: monospace;">${stockVal != null ? stockVal + '%' : '--'}</strong></span>
+                                ${cashVal != null && cashVal > 0 ? `<span style="color: var(--text-tertiary);">·</span><span>现金: <strong style="color: #10b981; font-family: monospace;">${cashVal}%</strong></span>` : ''}
+                                ${bondVal != null && bondVal > 0 ? `<span style="color: var(--text-tertiary);">·</span><span>债券: <strong style="color: #f59e0b; font-family: monospace;">${bondVal}%</strong></span>` : ''}
+                            </div>
+                        </div>
+                        <div class="allocation-bar-track" style="height: 10px; border-radius: 4px; margin: 4px 0 8px 0; background: rgba(0,0,0,0.08);" title="${allocInfo.tooltip}">
+                            ${barHtml}
+                        </div>
+                        <div style="display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center;">
+                            ${legendHtml}
+                        </div>
+                    </div>
+                `;
+            }
+
             bodyEl.innerHTML = `
                 ${penetrationHtml}
-                <div class="qdii-holding-meta" style="flex-wrap: wrap; gap: 8px 14px; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px dashed var(--border-light); font-size: 0.76rem;">
+                <div class="qdii-holding-meta" style="flex-wrap: wrap; gap: 8px 14px; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px dashed var(--border-light); font-size: 0.76rem;">
                     <span>季报披露：<strong>${reportDate}</strong></span>
                     <span>官方净值：<strong>${officialNav != null ? officialNav : '--'}${navDateStr}</strong></span>
                     ${isEst ? `<span>盘中估算：<strong style="color: var(--accent-blue);">${fundItem.estimated_nav} (${estChangeStr})</strong> <small style="color: var(--text-secondary); font-size: 0.72rem;">(${fundItem.estimated_date || ''} ${fundItem.estimated_time || ''})</small></span>` : ''}
+                    <span>股票仓位：<strong style="color: var(--accent-blue); font-family: monospace;">${stockVal != null ? `${stockVal}%` : '--'}</strong></span>
                     <span>总持仓：<strong>${totalCount} 只</strong></span>
                     <span>前十占比：<strong>${top10Concentration}</strong></span>
                     <span>近1年收益：<strong class="${fundItem.return_1y != null ? (typeof APP_CONFIG !== 'undefined' ? APP_CONFIG.getChangeClass(fundItem.return_1y) : (fundItem.return_1y > 0 ? 'text-up' : 'text-down')) : ''}">${r1y}</strong></span>
                     <span>近1年回撤：<strong>${mdd}</strong></span>
                     <span>年化波动率：<strong>${vol}</strong></span>
                     <span>夏普比率：<strong>${sharpe}</strong></span>
+                </div>
+                ${allocCardHtml}
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                    <div style="font-size: 0.76rem; font-weight: 600; color: var(--text-secondary); display: flex; align-items: center; gap: 5px;">
+                        <i data-lucide="layers" style="width: 13px; height: 13px;"></i>
+                        <span>前十大重仓明细</span>
+                    </div>
+                    <span style="font-size: 0.7rem; color: var(--text-tertiary);">前十占比合计: <strong style="color: var(--text-primary); font-family: monospace;">${top10Concentration}</strong></span>
                 </div>
                 <table class="qdii-holding-table">
                     <thead>

@@ -28,3 +28,12 @@ def test_all_qdii_metadata_structure():
             assert k in item, f"Missing key '{k}' in fund {code}"
         assert isinstance(item["default_asset_allocation"], dict)
         assert "stock_pct" in item["default_asset_allocation"]
+
+
+def test_resolve_fund_asset_allocation():
+    from analytics.modules.qdii import resolve_fund_asset_allocation
+    alloc, src_type, src_desc, rep_date = resolve_fund_asset_allocation("457001")
+    assert alloc["stock_pct"] > 0
+    assert "cash_pct" in alloc
+    assert "bond_pct" in alloc
+    assert src_type in ("metadata_fallback", "quarterly_direct", "stock_scaled_estimate")
