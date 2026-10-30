@@ -51,7 +51,7 @@ Before finishing, you **MUST** perform these final actions:
 
 4.  **Deployment Check**:
     -   When deploying changes to production, **ALWAYS use `x-actions/deploy.sh`** from local domestic SSH connection.
-    -   `x-analytics` repository strictly handles code and multi-arch Docker image builds.
+    -   `x-data` repository strictly handles code and multi-arch Docker image builds.
 
 5.  **Self-Correction**: If any check fails, fix it immediately.
 

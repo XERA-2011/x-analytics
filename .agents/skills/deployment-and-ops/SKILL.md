@@ -5,14 +5,14 @@ description: "⚠️ MANDATORY: Core guidelines for server operations, local zer
 
 # Deployment and Operations
 
-This document defines standard operating procedures for deployment, server operations, cache warmups, and live verification of the X-Analytics service.
+This document defines standard operating procedures for deployment, server operations, cache warmups, and live verification of the X-Data service.
 
 ---
 
 ## 1. Deployment Architecture & Security Policy
 
 ### 1.1 Native Host Build & Deployment Pipeline
-1. **Application Code (`x-analytics`)**:
+1. **Application Code (`x-data`)**:
    - Focuses strictly on business logic, automated tests, and Dockerfile definitions. Contains zero server infrastructure configs or connection credentials.
    - GitHub Actions (`docker-publish.yml`) is retained purely as a manual emergency fallback (`workflow_dispatch`), avoiding unnecessary CI compute runs.
 2. **Unified Deployment (`x-actions/deploy.sh`)**:
@@ -67,21 +67,21 @@ cd /Users/xera/GitHub/x-actions
 ### 4.1 Verifying Live Deployment
 To verify that the production service is responding:
 ```bash
-# Verify gateway response over unified HTTPS subpath
-curl -sI https://xera.dpdns.org/analytics/
+# Verify gateway response over primary HTTPS domain
+curl -sI https://data.xerafun.com/
 
 # Check specific script version or HTML assets
-curl -s https://xera.dpdns.org/analytics/ | grep main.js
+curl -s https://data.xerafun.com/ | grep main.js
 
 # Check internal direct port health (on server host or via SSH)
 curl -s http://127.0.0.1:2012/api/health
 ```
 
 ### 4.2 Cache Control APIs
-- **Manual Cache Warmup**: `POST https://xera.dpdns.org/analytics/api/cache/warmup` (requires `X-Admin-Token` header)
-- **Clear All Caches**: `DELETE https://xera.dpdns.org/analytics/api/cache/clear` (requires `X-Admin-Token` header)
-- **Clear Specific Pattern**: `DELETE https://xera.dpdns.org/analytics/api/cache/clear/{pattern}` (requires `X-Admin-Token` header)
-  - Example: `DELETE https://xera.dpdns.org/analytics/api/cache/clear/qdii:passive_funds*`
+- **Manual Cache Warmup**: `POST https://data.xerafun.com/api/cache/warmup` (requires `X-Admin-Token` header)
+- **Clear All Caches**: `DELETE https://data.xerafun.com/api/cache/clear` (requires `X-Admin-Token` header)
+- **Clear Specific Pattern**: `DELETE https://data.xerafun.com/api/cache/clear/{pattern}` (requires `X-Admin-Token` header)
+  - Example: `DELETE https://data.xerafun.com/api/cache/clear/qdii:passive_funds*`
 
 ---
 
