@@ -49,8 +49,12 @@ def _is_trusted_domain(url_or_domain: Optional[str]) -> bool:
         if hostname == "dpdns.org" or hostname.endswith(".dpdns.org"):
             return True
 
-        # 信任 Cloudflare Pages 个人主站 (xera.pages.dev)
-        if hostname == "xera.pages.dev" or hostname.endswith(".xera.pages.dev"):
+        # 信任 Cloudflare Pages 站点 (xera.pages.dev, xerafun.pages.dev)
+        if (
+            hostname in ("xera.pages.dev", "xerafun.pages.dev")
+            or hostname.endswith(".xera.pages.dev")
+            or hostname.endswith(".xerafun.pages.dev")
+        ):
             return True
 
         return False

@@ -22,6 +22,8 @@ def test_is_trusted_domain():
     assert _is_trusted_domain("https://xera.dpdns.org") is True
     assert _is_trusted_domain("https://a1-hy2.xera2011.dpdns.org:443") is True
     assert _is_trusted_domain("https://xera.pages.dev") is True
+    assert _is_trusted_domain("https://xerafun.pages.dev") is True
+    assert _is_trusted_domain("https://sub.xerafun.pages.dev") is True
     assert _is_trusted_domain("http://localhost:8080") is True
     assert _is_trusted_domain("http://127.0.0.1:8080") is True
     assert _is_trusted_domain("testserver") is True

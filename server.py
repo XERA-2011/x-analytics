@@ -165,12 +165,13 @@ ALLOWED_ORIGINS = [
     "https://xerafun.com",
     "https://xera.dpdns.org",
     "https://xera.pages.dev",
+    "https://xerafun.pages.dev",
     "http://localhost:8080",
     "http://127.0.0.1:8080",
     "http://127.0.0.1:2012",
 ]
 ALLOW_ORIGIN_REGEX = (
-    r"^https?://([a-zA-Z0-9-]+\.)*(xerafun\.com|dpdns\.org|xera\.pages\.dev)(:[0-9]+)?$"
+    r"^https?://([a-zA-Z0-9-]+\.)*(xerafun\.com|dpdns\.org|xera\.pages\.dev|xerafun\.pages\.dev)(:[0-9]+)?$"
 )
 
 app.add_middleware(
