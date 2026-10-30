@@ -12,9 +12,13 @@ class API {
 
     _resolveBaseURL() {
         const path = window.location.pathname || '/';
-        return path === '/analytics' || path.startsWith('/analytics/')
-            ? '/analytics'
-            : '';
+        if (path === '/data' || path.startsWith('/data/')) {
+            return '/data';
+        }
+        if (path === '/analytics' || path.startsWith('/analytics/')) {
+            return '/analytics';
+        }
+        return '';
     }
 
     // 通用请求方法
