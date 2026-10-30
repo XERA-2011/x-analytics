@@ -1560,7 +1560,7 @@ def get_cn_holiday_info(target_date: Optional[date] = None) -> Dict[str, Any]:
     }
 
 
-@cached("qdii:passive_funds_v56", ttl=86400, stale_ttl=86400 * 7, sync_on_cold=True)
+@cached("qdii:passive_funds_v57", ttl=86400, stale_ttl=86400 * 7, sync_on_cold=True)
 def get_qdii_passive_funds() -> Dict[str, Any]:
     """获取国内纳斯达克100 & 标普500 场外被动 QDII A类基金数据列表
 
