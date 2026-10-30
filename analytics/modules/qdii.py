@@ -1155,6 +1155,19 @@ def _is_quarterly_report_window() -> bool:
     return False
 
 
+def _get_expected_quarter_date() -> Optional[str]:
+    """获取当前年份月份对应应当披露的最新季度截止日"""
+    today = datetime.now()
+    # 季报截止日预测映射：4-5月最新为 3-31；7-8月为 6-30；10-11月为 9-30；1-2月为上年 12-31
+    expected_quarters = {
+        1: f"{today.year-1}-12-31", 2: f"{today.year-1}-12-31",
+        4: f"{today.year}-03-31", 5: f"{today.year}-03-31",
+        7: f"{today.year}-06-30", 8: f"{today.year}-06-30",
+        10: f"{today.year}-09-30", 11: f"{today.year}-09-30"
+    }
+    return expected_quarters.get(today.month)
+
+
 def fetch_fund_asset_allocation(session: requests.Session, code: str) -> Optional[Dict[str, Any]]:
     """获取指定 QDII 场外联接/被动基金的最新真实资产/持仓配置（股票/权益 %、现金/货币 %）"""
     cache_key = f"{settings.CACHE_PREFIX}:qdii:asset_alloc_v8:{code}"
@@ -1167,15 +1180,7 @@ def fetch_fund_asset_allocation(session: requests.Session, code: str) -> Optiona
             # 如果处于窗口期，检查已有的 report_date 是不是就是最新的目标季度报告
             report_date = cached_val.get("report_date", "")
             if report_date:
-                today = datetime.now()
-                # 季报截止日预测映射：4-5月最新为 3-31；7-8月为 6-30；10-11月为 9-30；1-2月为上年 12-31
-                expected_quarters = {
-                    1: f"{today.year-1}-12-31", 2: f"{today.year-1}-12-31",
-                    4: f"{today.year}-03-31", 5: f"{today.year}-03-31",
-                    7: f"{today.year}-06-30", 8: f"{today.year}-06-30",
-                    10: f"{today.year}-09-30", 11: f"{today.year}-09-30"
-                }
-                expected_date = expected_quarters.get(today.month)
+                expected_date = _get_expected_quarter_date()
                 if expected_date and report_date == expected_date:
                     return cached_val
     except Exception:
@@ -2112,7 +2117,7 @@ def get_qdii_top_holdings(code: str) -> Dict[str, Any]:
         top10_concentration = round(sum(h["ratio_val"] for h in holdings[:10]), 2)
         total_count = _fetch_full_holdings_count(session, fetch_code, len(holdings))
 
-        return {
+        result = {
             "status": "ok",
             "code": code,
             "report_date": report_date,
@@ -2124,6 +2129,15 @@ def get_qdii_top_holdings(code: str) -> Dict[str, Any]:
             "holdings": holdings,
             "exited_holdings": exited_holdings
         }
+
+        # 智能 TTL 控制：若当前处于季报披露集中窗口期，且抓取的 report_date 仍非当前目标最新季度（尚未披露），
+        # 则大幅缩短缓存时间至 4 小时，避免长达 7 天的旧缓存堵塞新季报的及时更新
+        if _is_quarterly_report_window():
+            expected_quarter = _get_expected_quarter_date()
+            if expected_quarter and report_date != expected_quarter:
+                result["_cache_ttl"] = 3600 * 4
+
+        return result
     except Exception as e:
         return {"status": "error", "message": str(e), "holdings": [], "exited_holdings": []}
 

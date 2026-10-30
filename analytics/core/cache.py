@@ -457,13 +457,14 @@ def cached(key_prefix: str, ttl: int = 60, stale_ttl: Optional[int] = None, sync
                                         if not is_valid:
                                             is_error = True
                                     if not is_error:
+                                        actual_ttl = result.pop("_cache_ttl", ttl) if isinstance(result, dict) else ttl
                                         current_now = time.time()
-                                        p_ttl = ttl + (stale_ttl if stale_ttl else 0)
+                                        p_ttl = actual_ttl + (stale_ttl if stale_ttl else 0)
                                         val = {
                                             "_meta": {
-                                                "expire_at": current_now + ttl,
+                                                "expire_at": current_now + actual_ttl,
                                                 "cached_at": current_now,
-                                                "ttl": ttl
+                                                "ttl": actual_ttl
                                             },
                                             "data": result
                                         }
@@ -478,7 +479,7 @@ def cached(key_prefix: str, ttl: int = 60, stale_ttl: Optional[int] = None, sync
                                             status="ok",
                                             data=result,
                                             cached_at=current_now,
-                                            ttl=ttl
+                                            ttl=actual_ttl
                                         )
                             finally:
                                 try:
@@ -526,16 +527,17 @@ def cached(key_prefix: str, ttl: int = 60, stale_ttl: Optional[int] = None, sync
                                         
                                         if not is_error:
                                             # 写入缓存
+                                            actual_ttl = result.pop("_cache_ttl", ttl) if isinstance(result, dict) else ttl
                                             current_now = time.time()
                                             
                                             # 物理 TTL
-                                            p_ttl = ttl + (stale_ttl if stale_ttl else 0)
+                                            p_ttl = actual_ttl + (stale_ttl if stale_ttl else 0)
                                             
                                             val = {
                                                 "_meta": {
-                                                    "expire_at": current_now + ttl,
+                                                    "expire_at": current_now + actual_ttl,
                                                     "cached_at": current_now,
-                                                    "ttl": ttl
+                                                    "ttl": actual_ttl
                                                 },
                                                 "data": result
                                             }
