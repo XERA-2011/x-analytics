@@ -11,10 +11,12 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from .rate_limiter import public_limiter, admin_limiter
 
 
-# 管理 API 路径前缀 (支持有无 /analytics 前缀)
+# 管理 API 路径前缀 (支持直接访问或带 /data /analytics 前缀)
 ADMIN_API_PATHS = [
     "/api/cache/",
     "/api/scheduler/",
+    "/data/api/cache/",
+    "/data/api/scheduler/",
     "/analytics/api/cache/",
     "/analytics/api/scheduler/",
 ]
@@ -31,6 +33,16 @@ PUBLIC_API_PATHS = [
     "/metals/",
     "/ai/",
     "/qdii/",
+    "/data/api/",
+    "/data/chart/",
+    "/data/index-valuation/",
+    "/data/gold/",
+    "/data/market-asia/",
+    "/data/market-hk/",
+    "/data/market-western/",
+    "/data/metals/",
+    "/data/ai/",
+    "/data/qdii/",
     "/analytics/api/",
     "/analytics/chart/",
     "/analytics/index-valuation/",
@@ -48,6 +60,9 @@ STATIC_PATHS = [
     "/js/",
     "/css/",
     "/favicon.ico",
+    "/data/js/",
+    "/data/css/",
+    "/data/api/health",
     "/analytics/js/",
     "/analytics/css/",
     "/api/health",

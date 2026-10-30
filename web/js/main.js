@@ -37,8 +37,8 @@ class App {
             'gold': 'Gold',
             'qdii': 'QDII',
         };
-        const sectionTitle = titles[tabId] || 'X-Analytics';
-        return sectionTitle === 'X-Analytics' ? sectionTitle : `${sectionTitle}｜X-Analytics`;
+        const sectionTitle = titles[tabId] || 'X-Data';
+        return sectionTitle === 'X-Data' ? sectionTitle : `${sectionTitle}｜X-Data`;
     }
 
     updatePageTitle(tabId) {
@@ -46,7 +46,7 @@ class App {
     }
 
     async init() {
-        console.log('🚀 X-Analytics 启动中...');
+        console.log('🚀 X-Data 启动中...');
 
         // 设置事件监听器
         this.setupEventListeners();
@@ -66,7 +66,7 @@ class App {
         // 加载初始数据
         await this.loadInitialData();
 
-        console.log('✅ X-Analytics 启动完成');
+        console.log('✅ X-Data 启动完成');
     }
 
     setupEventListeners() {
