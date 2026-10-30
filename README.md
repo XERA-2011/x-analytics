@@ -1,6 +1,6 @@
-# X-Analytics
+# X-Data
 
-金融数据分析平台，基于 [FastAPI](https://fastapi.tiangolo.com/) 与 [AKShare](https://github.com/akfamily/akshare) 构建。
+全球宏观周期与金融数据看板，基于 [FastAPI](https://fastapi.tiangolo.com/) 与 [AKShare](https://github.com/akfamily/akshare) 构建。
 
 > 本项目仅供技术交流与学习研究使用，不构成任何投资建议。
 

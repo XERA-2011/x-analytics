@@ -142,7 +142,7 @@ async def lifespan(app: FastAPI):
 
 # 创建 FastAPI 应用 (生产环境默认隐藏 OpenAPI 文档，杜绝资产探测)
 app = FastAPI(
-    title="X-Analytics API",
+    title="X-Data API",
     description="三大板块金融数据分析服务：中国市场、美国市场、有色金属",
     version=settings.VERSION,
     root_path="/analytics",
